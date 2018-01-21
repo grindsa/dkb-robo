@@ -2,7 +2,7 @@
 
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch 
 - account information and current balances
-- transactions from creditcard accounts as well as checking accounts (Girokonten)
+- transactions from creditcards and checking accounts (Girokonten)
 
 ## Getting Started
 
@@ -50,7 +50,7 @@ this method will return
 2. the last login date
 ```
 > print(last)
-21.01.2018, 13:19 Uhr
+14.03.2017, 13:19 Uhr
 ```
 3. a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions 
 ```
@@ -86,7 +86,7 @@ this method will return
      'type': 'creditcard'}}
 ```
 
-to get the transaction for a checking account of a saving account use the follwing methon
+to get the list of transaction for a checking account or a saving account use the follwing method
 ```
 tlist = DKB.get_transactions(dkb_br, link, type, date_from, date_to)
 ```
@@ -127,4 +127,4 @@ I use [SemVer](http://semver.org/) for versioning. For the versions available, s
 
 ## License
 
-This project is licensed under the GPLv3 - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GPLv3 - see the [LICENSE.md](https://github.com/grindsa/dkb-robo/blob/master/LICENSE) file for details
