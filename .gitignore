@@ -100,5 +100,5 @@ ENV/
 
 # mystuff
 /*.py
-*.html
+/*.html
 *.json

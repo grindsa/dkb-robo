@@ -1,0 +1,192 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module dkb_robo</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>dkb_robo</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br></font></td></tr></table>
+    <p><tt>dkb&nbsp;internet&nbsp;banking&nbsp;automation&nbsp;library</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cookielib.html">cookielib</a><br>
+</td><td width="25%" valign=top><a href="mechanize.html">mechanize</a><br>
+</td><td width="25%" valign=top><a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="__builtin__.html#object">__builtin__.object</a>
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="dkb_robo.html#DKBRobo">DKBRobo</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DKBRobo">class <strong>DKBRobo</strong></a>(<a href="__builtin__.html#object">__builtin__.object</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>dkb_robo&nbsp;class<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DKBRobo-get_account_transactions"><strong>get_account_transactions</strong></a>(self, dkb_br, transaction_url, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;from&nbsp;an&nbsp;regular&nbsp;account&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;transaction_url&nbsp;-&nbsp;link&nbsp;to&nbsp;collect&nbsp;the&nbsp;transactions<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_from&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;transactions&nbsp;starting&nbsp;form<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-get_creditcard_transactions"><strong>get_creditcard_transactions</strong></a>(self, dkb_br, transaction_url, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;from&nbsp;an&nbsp;regular&nbsp;account&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;transaction_url&nbsp;-&nbsp;link&nbsp;to&nbsp;collect&nbsp;the&nbsp;transactions<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_from&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;transactions&nbsp;starting&nbsp;form<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-get_document_links"><strong>get_document_links</strong></a>(self, dkb_br, url)</dt><dd><tt>create&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;documents&nbsp;stored&nbsp;in&nbsp;a&nbsp;pbost&nbsp;folder<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;url&nbsp;-&nbsp;folder&nbsp;url<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;documents</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-get_transactions"><strong>get_transactions</strong></a>(self, dkb_br, transaction_url, atype, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;transaction_url&nbsp;-&nbsp;link&nbsp;to&nbsp;collect&nbsp;the&nbsp;transactions<br>
+&nbsp;&nbsp;&nbsp;&nbsp;atype&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;type&nbsp;(cash,&nbsp;creditcard,&nbsp;depot)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_from&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;transactions&nbsp;starting&nbsp;form<br>
+&nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions;&nbsp;each&nbsp;transaction&nbsp;gets&nbsp;represented&nbsp;as&nbsp;a&nbsp;dictionalry&nbsp;containing&nbsp;the&nbsp;following&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;&nbsp;&nbsp;-&nbsp;booking&nbsp;date<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;text&nbsp;&nbsp;&nbsp;-&nbsp;test</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-login"><strong>login</strong></a>(self, dkb_user, dkb_password)</dt><dd><tt>login&nbsp;into&nbsp;DKB&nbsp;banking&nbsp;area<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_user&nbsp;=&nbsp;dkb&nbsp;username<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_password&nbsp;&nbsp;=&nbsp;dkb_password<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;handle&nbsp;to&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;for&nbsp;further&nbsp;processing<br>
+&nbsp;&nbsp;&nbsp;&nbsp;last_login&nbsp;-&nbsp;last&nbsp;login&nbsp;date&nbsp;(german&nbsp;date&nbsp;format)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;account_dic&nbsp;-&nbsp;dictionary&nbsp;containig&nbsp;account&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;numner<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;type&nbsp;(account,&nbsp;creditcard,&nbsp;depot)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;balance<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;of&nbsp;balance<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;link&nbsp;to&nbsp;details<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;link&nbsp;to&nbsp;transactions</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-logout"><strong>logout</strong></a>(self, dkb_br)</dt><dd><tt>logout&nbsp;from&nbsp;DKB&nbsp;banking&nbsp;area<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;=&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;None</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-new_instance"><strong>new_instance</strong></a>(self)</dt><dd><tt>creates&nbsp;a&nbsp;new&nbsp;browser&nbsp;instance<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;None<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;instance</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-parse_account_transactions"><strong>parse_account_transactions</strong></a>(self, transactions)</dt><dd><tt>parses&nbsp;html&nbsp;code&nbsp;and&nbsp;creates&nbsp;a&nbsp;list&nbsp;of&nbsp;transactions&nbsp;included<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;transactions&nbsp;-&nbsp;html&nbsp;page&nbsp;including&nbsp;transactions<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;respresented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;follwoing&nbsp;values<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;-&nbsp;booking&nbsp;date<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;text&nbsp;-&nbsp;text</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-parse_cc_transactions"><strong>parse_cc_transactions</strong></a>(self, transactions)</dt><dd><tt>parses&nbsp;html&nbsp;code&nbsp;and&nbsp;creates&nbsp;a&nbsp;list&nbsp;of&nbsp;transactions&nbsp;included<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;transactions&nbsp;-&nbsp;html&nbsp;page&nbsp;including&nbsp;transactions<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;respresented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;follwoing&nbsp;values<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;bdate&nbsp;-&nbsp;booking&nbsp;date<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;vdate&nbsp;-&nbsp;valuta&nbsp;date<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;text&nbsp;-&nbsp;text</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-parse_overview"><strong>parse_overview</strong></a>(self, soup)</dt><dd><tt>creates&nbsp;a&nbsp;dictionary&nbsp;including&nbsp;account&nbsp;information<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;soup&nbsp;-&nbsp;BautifulSoup&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;overview_dic&nbsp;-&nbsp;dictionary&nbsp;containg&nbsp;following&nbsp;account&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;numner<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;type&nbsp;(account,&nbsp;creditcard,&nbsp;depot)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;balance<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;of&nbsp;balance<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;link&nbsp;to&nbsp;details<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;link&nbsp;to&nbsp;transactions</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-scan_postbox"><strong>scan_postbox</strong></a>(self, dkb_br)</dt><dd><tt>scans&nbsp;the&nbsp;DKB&nbsp;postbox&nbsp;and&nbsp;creates&nbsp;a&nbsp;dictionary&nbsp;out&nbsp;of&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;different&nbsp;documents<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;=&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;dictionary&nbsp;in&nbsp;the&nbsp;following&nbsp;format<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;-&nbsp;folder&nbsp;name&nbsp;in&nbsp;postbox<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;details&nbsp;-&gt;&nbsp;link&nbsp;to&nbsp;document&nbsp;overview<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;documents<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;name&nbsp;of&nbsp;document&nbsp;-&gt;&nbsp;document&nbsp;link</tt></dd></dl>
+
+<hr>
+Data descriptors defined here:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>base_url</strong> = 'https://www.dkb.de'</dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>print_function</strong> = _Feature((2, 6, 0, 'alpha', 2), (3, 0, 0, 'alpha', 0), 65536)</td></tr></table>
+</body></html>
