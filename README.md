@@ -114,9 +114,11 @@ this method returns a list of transactions in the below form
 ## Further documentation
 please check the doc folder of the project. You will documentation of all dkb-robo methods there.
 
+* [dkb-robo.html] (https://github.com/grindsa/dkb-robo/blob/master/doc/dkb_robo.html)
+
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on my code of conduct, and the process for submitting pull requests.
+Please read [CONTRIBUTING.md](https://github.com/grindsa/dkb-robo/blob/master/CONTRIBUTING.md) for details on my code of conduct, and the process for submitting pull requests.
 Please note that I have a life besides programming. Thus, expect a delay in answering.
 
 ## Versioning
