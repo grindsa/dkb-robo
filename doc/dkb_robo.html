@@ -20,8 +20,9 @@
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="cookielib.html">cookielib</a><br>
 </td><td width="25%" valign=top><a href="mechanize.html">mechanize</a><br>
+</td><td width="25%" valign=top><a href="re.html">re</a><br>
 </td><td width="25%" valign=top><a href="sys.html">sys</a><br>
-</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+</td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -53,6 +54,14 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;date_from&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;transactions&nbsp;starting&nbsp;form<br>
 &nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date</tt></dd></dl>
 
+<dl><dt><a name="DKBRobo-get_credit_limits"><strong>get_credit_limits</strong></a>(self, dkb_br)</dt><dd><tt>create&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;credit&nbsp;limites&nbsp;of&nbsp;the&nbsp;different&nbsp;accounts<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;accounts&nbsp;and&nbsp;limits</tt></dd></dl>
+
 <dl><dt><a name="DKBRobo-get_creditcard_transactions"><strong>get_creditcard_transactions</strong></a>(self, dkb_br, transaction_url, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;from&nbsp;an&nbsp;regular&nbsp;account&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
 args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
@@ -68,6 +77,15 @@ args:<br>
 &nbsp;<br>
 returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;documents</tt></dd></dl>
+
+<dl><dt><a name="DKBRobo-get_excemption_order"><strong>get_excemption_order</strong></a>(self, dkb_br)</dt><dd><tt>returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;stored&nbsp;excemption&nbsp;orders<br>
+&nbsp;<br>
+args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;url&nbsp;-&nbsp;folder&nbsp;url<br>
+&nbsp;<br>
+returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;excemption&nbsp;orders</tt></dd></dl>
 
 <dl><dt><a name="DKBRobo-get_transactions"><strong>get_transactions</strong></a>(self, dkb_br, transaction_url, atype, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
 args:<br>

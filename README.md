@@ -3,6 +3,9 @@
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch 
 - account information and current balances
 - transactions from creditcards and checking accounts (Girokonten)
+- query the content of "DKB Postbox"
+- get information about credit limits an excemption orders (Freistellungsauftrag)
+
 
 ## Getting Started
 
@@ -86,7 +89,7 @@ this method will return
      'type': 'creditcard'}}
 ```
 
-to get the list of transaction for a checking account or a saving account use the follwing method
+to get the list of transaction for a checking account or a credit card use the follwing method
 ```
 tlist = DKB.get_transactions(dkb_br, link, type, date_from, date_to)
 ```
@@ -110,6 +113,32 @@ this method returns a list of transactions in the below form
   'date': u'11.03.2017',
   'text': u'some text'}]
 ```
+
+to get the credit limits per account or credit-card the method get_credi_limits() must be used
+```
+> c_list = DKB.get_credit_limits(dkb_br)
+```
+Tis method returns a dictionary of all identfied accounts including the credit limit per account
+```
+{u'XXXX********XXXX': u'100.00',
+ u'4748********XXXX': u'10000.00',
+ u'XXXX********XXXX': u'10000.00',
+ u'DEXX XXXX XXXX XXXX XXXX XX': u'200.00',
+ u'DEXX XXXX XXXX XXXX XXXX XX': u'2000.00'}
+```
+
+The method get_excemption_order() can be used to get the excemtion orders (Freistellungsaufträge) stored in the system
+```
+> exo = DKB.get_excemption_order(dkb_br)
+> from pprint import pprint
+> pprint(exo)
+{1: {'amount': 1602.0,
+     'available': 1602.0,
+     'description': u'Gemeinsam mit XXXX XXXX',
+     'used': 0.0,
+     'validity': u'01.01.2017  unbefristet'}}
+
+A dictionary similar to the one below will be returned
 
 ## Further documentation
 please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documenation and an example scripts of all dkb-robo methods there.

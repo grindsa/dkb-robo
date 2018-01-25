@@ -22,7 +22,6 @@ if __name__ == "__main__":
     print(LAST_LOGIN)
     pprint(OVERVIEW_DIC)
 
-
     # get transaction
     LINK = OVERVIEW_DIC[3]['transactions']
     TYPE = OVERVIEW_DIC[3]['type']
@@ -32,8 +31,16 @@ if __name__ == "__main__":
     TRANSACTION_LIST = DKB.get_transactions(DKB_BR, LINK, TYPE, DATE_FROM, DATE_TO)
     pprint(TRANSACTION_LIST)
 
+    # get dkb postbox
     POSTBOX_DIC = DKB.scan_postbox(DKB_BR)
     pprint(POSTBOX_DIC)
+
+    # get credit limits
+    CLI = DKB.get_credit_limits(DKB_BR)
+    pprint(CLI)
+
+    EXO = DKB.get_excemption_order(DKB_BR)
+    pprint(EXO)
 
     # logout
     DKB.logout(DKB_BR)

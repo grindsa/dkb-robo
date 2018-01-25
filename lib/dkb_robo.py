@@ -7,8 +7,9 @@ import sys
 import cookielib
 from datetime import datetime
 import mechanize
-from BeautifulSoup import BeautifulSoup
-
+# from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
+import re
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -46,7 +47,7 @@ class DKBRobo(object):
         tr_lines = tr_response.read()
 
         # enter a loop to check all following pages
-        soup = BeautifulSoup(tr_lines)
+        soup = BeautifulSoup(tr_lines, "html5lib")
 
         # loop into the differnt pages
         loop_cnt = 1
@@ -102,7 +103,7 @@ class DKBRobo(object):
         kk_lines = kk_lines + kk_resp
 
         # check if there is a another page
-        soup = BeautifulSoup(kk_resp)
+        soup = BeautifulSoup(kk_resp, "html5lib")
         more_kktr = soup.findAll('a', attrs={'class':'icons butNext0'})
 
         while more_kktr:
@@ -111,12 +112,58 @@ class DKBRobo(object):
             mkk_page = dkb_br.open(link)
             mkk_lines = mkk_page.read()
             kk_lines = kk_lines + mkk_lines
-            soup = BeautifulSoup(mkk_lines)
+            soup = BeautifulSoup(mkk_lines, "html5lib")
             more_kktr = soup.findAll('a', attrs={'class':'icons butNext0'})
 
         transaction_list = self.parse_cc_transactions(kk_lines)
 
         return transaction_list
+
+    def get_credit_limits(self, dkb_br):
+        """ create a dictionary of credit limites of the different accounts
+
+        args:
+            dkb_br - browser object
+
+        returns:
+            dictionary of the accounts and limits
+        """
+        limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
+        limit_page = dkb_br.open(limit_url)
+
+        soup = BeautifulSoup(limit_page.read(), "html5lib")
+
+        form = soup.find('form', attrs={'id':'form597962073_1'})
+
+        # checking account limits
+        table = form.find('table', attrs={'class':'dropdownAnchor'})
+        rows = table.findAll("tr")
+        limit_dic = {}
+        for row in rows:
+            cols = row.findAll("td")
+            tmp = row.find("th")
+            if cols:
+                limit = tmp.find('span').text.strip()
+                limit = limit.replace('.', '')
+                limit = limit.replace(',', '.')
+                account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                limit_dic[account] = limit
+
+        # credit card  limits
+        table = form.find('table', attrs={'class':'multiColumn'})
+        rows = table.findAll("tr")
+        for row in rows:
+            cols = row.findAll("td")
+            tmp = row.find("th")
+            if cols > 0:
+                limit = tmp.find('span').text.strip()
+                limit = limit.replace('.', '')
+                limit = limit.replace(',', '.')
+                account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                limit_dic[account] = limit
+
+        return limit_dic
+
 
     def get_document_links(self, dkb_br, url):
         """ create a dictionary of the documents stored in a pbost folder
@@ -131,7 +178,7 @@ class DKBRobo(object):
         document_dic = {}
 
         category_result = dkb_br.open(url)
-        soup = BeautifulSoup(category_result.read())
+        soup = BeautifulSoup(category_result.read(), "html5lib")
         table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
         if table:
             tbody = table.find('tbody')
@@ -142,6 +189,56 @@ class DKBRobo(object):
                 document_dic[link.contents[0]] = self.base_url + link['href']
 
         return document_dic
+
+    def get_excemption_order(self, dkb_br):
+        """ returns a dictionary of the stored excemption orders
+
+        args:
+            dkb_br - browser object
+            url - folder url
+
+        returns:
+            dictionary of excemption orders
+        """
+        exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
+        exo_page = dkb_br.open(exo_url)
+
+        soup = BeautifulSoup(exo_page.read(), "html5lib")
+
+        for lbr in soup.findAll("br"):
+            lbr.replace_with("")
+            # br.replace('<br />', ' ')
+
+
+        table = soup.find('table', attrs={'class':'expandableTable'})
+
+        rows = table.findAll("tr")
+        exo_dic = {}
+        count = 0
+        for row in rows:
+            cols = row.findAll("td")
+            if cols > 0:
+                count += 1
+                exo_dic[count] = {}
+                # description
+                description = re.sub(' +', ' ', cols[1].text.strip())
+                description = description.replace('\n', '')
+                description = description.replace('  ', ' ')
+                exo_dic[count]['description'] = description
+
+                # validity
+                validity = re.sub(' +', ' ', cols[2].text.strip())
+                validity = validity.replace('\n', '')
+                validity = validity.replace('  ', ' ')
+                exo_dic[count]['validity'] = validity
+
+                # exo_dic[count]['validity'] = cols[2].text.strip()
+                exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
+                exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
+                exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
+
+        return exo_dic
+
 
     def get_transactions(self, dkb_br, transaction_url, atype, date_from, date_to):
         """ get transactions for a certain amount of time
@@ -199,7 +296,7 @@ class DKBRobo(object):
         response = dkb_br.submit()
 
         # parse the lines to get all account infos
-        soup = BeautifulSoup(response.read())
+        soup = BeautifulSoup(response.read(), "html5lib")
 
         # filter last login date
         last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
@@ -270,7 +367,7 @@ class DKBRobo(object):
             - text - text
         """
         # parse the lines to get all account infos
-        soup = BeautifulSoup(transactions)
+        soup = BeautifulSoup(transactions, "html5lib")
 
         # create empty list
         transaction_list = []
@@ -329,7 +426,7 @@ class DKBRobo(object):
             - text - text
         """
         # parse the lines to get all account infos
-        soup = BeautifulSoup(transactions)
+        soup = BeautifulSoup(transactions, "html5lib")
 
         # create empty dic
         transaction_list = []
@@ -453,7 +550,7 @@ class DKBRobo(object):
         """
         pb_url = self.base_url + '/banking/postfach'
         pb_result = dkb_br.open(pb_url)
-        soup = BeautifulSoup(pb_result.read())
+        soup = BeautifulSoup(pb_result.read(), "html5lib")
         table = soup.find('table', attrs={'id':'welcomeMboTable'})
         tbody = table.find('tbody')
 
