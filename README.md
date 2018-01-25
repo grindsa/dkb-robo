@@ -118,7 +118,7 @@ to get the credit limits per account or credit-card the method get_credi_limits(
 ```
 > c_list = DKB.get_credit_limits(dkb_br)
 ```
-Tis method returns a dictionary of all identfied accounts including the credit limit per account
+This method returns a dictionary of all identfied accounts including the credit limit per account
 ```
 {u'XXXX********XXXX': u'100.00',
  u'4748********XXXX': u'10000.00',
