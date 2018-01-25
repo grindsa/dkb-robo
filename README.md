@@ -137,7 +137,7 @@ The method get_excemption_order() can be used to get the excemtion orders (Freis
      'description': u'Gemeinsam mit XXXX XXXX',
      'used': 0.0,
      'validity': u'01.01.2017  unbefristet'}}
-
+```
 A dictionary similar to the one below will be returned
 
 ## Further documentation
