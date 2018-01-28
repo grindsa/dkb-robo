@@ -41,6 +41,9 @@ if __name__ == "__main__":
 
     EXO = DKB.get_excemption_order(DKB_BR)
     pprint(EXO)
-
+    
+    POINTS_DIC = DKB.get_points(DKB_BR)
+    pprint(POINTS_DIC)
+    
     # logout
     DKB.logout(DKB_BR)

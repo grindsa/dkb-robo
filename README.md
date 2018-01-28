@@ -130,7 +130,9 @@ This method returns a dictionary of all identfied accounts including the credit 
 The method get_excemption_order() can be used to get the excemtion orders (Freistellungsaufträge) stored in the system
 ```
 > exo = DKB.get_excemption_order(dkb_br)
-> from pprint import pprint
+```
+A dictionary similar to the one below will be returned
+```
 > pprint(exo)
 {1: {'amount': 1602.0,
      'available': 1602.0,
@@ -138,7 +140,18 @@ The method get_excemption_order() can be used to get the excemtion orders (Freis
      'used': 0.0,
      'validity': u'01.01.2017  unbefristet'}}
 ```
-A dictionary similar to the one below will be returned
+
+To get the amount of DKB points the below method must be used
+```
+> points_dic = DKB.get_get_points(dkb_br)
+```
+
+A dictionary similar to the below will be returnd
+```
+> pprint(points_dic)
+{u'DKB-Punkte': 99999, 
+ u'davon verfallen zum  31.12.2018': 999}
+```
 
 ## Further documentation
 please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documenation and an example scripts of all dkb-robo methods there.

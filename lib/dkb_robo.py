@@ -6,10 +6,10 @@ from __future__ import print_function
 import sys
 import cookielib
 from datetime import datetime
+import re
 import mechanize
 # from BeautifulSoup import BeautifulSoup
 from bs4 import BeautifulSoup
-import re
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -239,6 +239,45 @@ class DKBRobo(object):
 
         return exo_dic
 
+    def get_points(self, dkb_br):
+        """ returns the DKB points
+
+        args:
+            dkb_br - browser object
+
+        returns:
+            points - dkb points
+        """
+        point_url = self.base_url + '/DkbTransactionBanking/content/FavorableWorld/Overview.xhtml?$event=init'
+        point_page = dkb_br.open(point_url)
+
+        p_dic = {}
+        soup = BeautifulSoup(point_page.read(), "html5lib")
+        table = soup.find('table', attrs={'class':'expandableTable'})
+        if table:
+            tbody = table.find('tbody')
+            row = tbody.findAll('tr')[0]
+            cols = row.findAll("td")
+            # points
+            points = re.sub(' +', ' ', cols[1].text.strip())
+            points = points.replace('\n', '')
+            (pointsamount, pointsex) = points.replace('  ', ' ').split(' ', 1)
+            pointsamount = int(pointsamount.replace('.', ''))
+            pointsex = int(pointsex.replace('.', ''))
+
+            # text
+            ptext = cols[0].text.strip()
+            (tlist) = ptext.split('\n', 1)
+            ptext = tlist[0].lstrip()
+            ptext = ptext.rstrip()
+            etext = tlist[1].lstrip()
+            etext = etext.rstrip()
+
+            # store data
+            p_dic[ptext] = pointsamount
+            p_dic[etext] = pointsex
+
+        return p_dic
 
     def get_transactions(self, dkb_br, transaction_url, atype, date_from, date_to):
         """ get transactions for a certain amount of time
