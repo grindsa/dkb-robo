@@ -279,6 +279,49 @@ class DKBRobo(object):
 
         return p_dic
 
+    def get_standing_orders(self, dkb_br):
+        """ get standing orders
+        args:
+            dkb_br          - browser object
+
+        returns:
+            so_dic = standing order dic
+        """
+        so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
+        so_page = dkb_br.open(so_url)
+
+        so_list = []
+        soup = BeautifulSoup(so_page.read(), "html5lib")
+        table = soup.find('table', attrs={'class':'expandableTable'})
+        if table:
+            tbody = table.find('tbody')
+            rows = tbody.findAll('tr')
+            for row in rows:
+                tmp_dic = {}
+                cols = row.findAll("td")
+                tmp_dic['recipient'] = cols[0].text.strip()
+                amount = cols[1].text.strip()
+                amount = amount.replace('\n', '')
+                amount = amount.replace('.', '')
+                amount = amount.replace(',', '.')
+                amount = float(amount.replace('EUR', ''))
+                tmp_dic['amount'] = amount
+
+                interval = cols[2]
+                for brt in interval.findAll('br'):
+                    brt.unwrap()
+
+                interval = re.sub('\t', ' ', interval.text.strip())
+                interval = interval.replace('\n', '')
+                interval = re.sub(' +', ' ', interval)
+                tmp_dic['interval'] = interval
+                tmp_dic['purpose'] = cols[3].text.strip()
+
+                # store dict in list
+                so_list.append(tmp_dic)
+
+        return so_list
+
     def get_transactions(self, dkb_br, transaction_url, atype, date_from, date_to):
         """ get transactions for a certain amount of time
         args:

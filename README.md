@@ -4,6 +4,7 @@ dkb-robo is a python library to access the internet banking area of  "Deutsche K
 - account information and current balances
 - transactions from creditcards and checking accounts (Girokonten)
 - query the content of "DKB Postbox"
+- get standing orders (Dauerauftrag)
 - get information about credit limits an excemption orders (Freistellungsauftrag)
 
 
@@ -125,6 +126,23 @@ This method returns a dictionary of all identfied accounts including the credit 
  u'XXXX********XXXX': u'10000.00',
  u'DEXX XXXX XXXX XXXX XXXX XX': u'200.00',
  u'DEXX XXXX XXXX XXXX XXXX XX': u'2000.00'}
+```
+
+A list of standing orders (Daueraufträge) can be obtained by calling get_standing_orders() method
+```
+> so = DKB.get_standing_orders(dkb_br)
+```
+A list of standing orders will be return containing a dictionary per standing orders
+```
+> pprint(so)
+[{'amount': 900.0,
+  'interval': u'1. monatlich 01.03.2017',
+  'purpose': u'Rate FKB 1234567890',
+  'recipient': u'FOO BANK'},
+ {'amount': 100.0,
+  'interval': u'1. monatlich gel\xf6scht',
+  'purpose': u'TRANSACTION',
+  'recipient': u'ANY RECIEVER'}]
 ```
 
 The method get_excemption_order() can be used to get the excemtion orders (Freistellungsaufträge) stored in the system

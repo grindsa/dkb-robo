@@ -39,6 +39,11 @@ if __name__ == "__main__":
     CLI = DKB.get_credit_limits(DKB_BR)
     pprint(CLI)
 
+    # get standing orders (daueraufträge)
+    STO = DKB.get_standing_orders(DKB_BR)
+    pprint(STO)
+    
+    # get freitstellungsaufträge
     EXO = DKB.get_excemption_order(DKB_BR)
     pprint(EXO)
     
