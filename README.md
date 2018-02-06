@@ -25,14 +25,27 @@ Please make sure python and all the above modules had been installed successfull
 
 ### Installing
 
+#### via Pypi
+```
+> pip install dkb_robo
+```
+
+#### manually for all users
 1. download the archive and unpack it
-2. move the "lib" folder into the directory your script is located
+2. enter the directory and run the setup script
+```
+> python setup.py install
+```
+
+#### manually for a single user
+1. download the archive and unpack it
+2. move the "dkb_robo" subfolder into the directory your script is located
 
 ### Usage
 
 you need to import dkb-robo into your script
 ```
-> from lib.dkb_robo import DKBRobo
+> from dkb_robo import DKBRobo
 ``` 
 
 create a new instance of DKBRobo and assing this object to a local variable

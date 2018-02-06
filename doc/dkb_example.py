@@ -4,7 +4,7 @@
 from __future__ import print_function
 import sys
 from pprint import pprint
-from lib.dkb_robo import DKBRobo
+from dkb_robo import DKBRobo
 
 reload(sys)
 sys.setdefaultencoding('utf8')
