@@ -99,6 +99,8 @@ ENV/
 .mypy_cache/
 
 # mystuff
-/*.py
+/dkb_devel.py
+/dkb_scrap.py
+/wa_hack_cli.py
 /*.html
 *.json
