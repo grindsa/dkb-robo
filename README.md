@@ -17,7 +17,7 @@ These instructions will get you a copy of the project up and running on your loc
 To run dkb-robo on your system you need
 
 * [Python] - (https://www.python.org)
-* [mechanize] - (https://pypi.python.org/pypi/mechanize/) - Stateful programmatic web browsing library
+* [mechanicalsoup] - (https://github.com/MechanicalSoup/MechanicalSoup) - Stateful programmatic web browsing library
 * [cookielib] - (https://docs.python.org/2/library/cookielib.html) - library for Cookie handling for HTTP clients¶
 * [Beautiful Soup]  - (https://www.crummy.com/software/BeautifulSoup/) - a Python library for pulling data out of HTML and XML files.
 
@@ -59,7 +59,7 @@ login to https://www.dkb.de
 > (dkb_br, last, overview) = DKB.login(<your-username>, <your-password>)
 ```
 this method will return 
-1. a reference to a mechanize browser object you need for later queries
+1. a reference to a mechanicalsoup browser object you need for later queries
 ```
 > print(dkb_br)
 <Browser visiting https://www.dkb.de/banking/finanzstatus?$event=init>
@@ -107,7 +107,7 @@ to get the list of transaction for a checking account or a credit card use the f
 ```
 tlist = DKB.get_transactions(dkb_br, link, type, date_from, date_to)
 ```
-* dkb_br - the reference to the formerly created mechanize object
+* dkb_br - the reference to the formerly created mechanicalsoup browser object
 * link - link to get transactions for a specific account - see former step if you do not know how to get it
 * type - account type (either "account" or "creditcard") - see former step if you do not know how to get it
 * date_from - start date in European notation (DD.MM.YYYY)

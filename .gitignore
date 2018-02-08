@@ -102,5 +102,7 @@ ENV/
 /dkb_devel.py
 /dkb_scrap.py
 /wa_hack_cli.py
+/dkb_test.py
 /*.html
 *.json
+/*.txt

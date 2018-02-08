@@ -6,8 +6,14 @@ import sys
 from pprint import pprint
 from dkb_robo import DKBRobo
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+if sys.version_info > (3, 0):
+    import http.cookiejar as cookielib
+    import importlib
+    importlib.reload(sys)
+else:
+    import cookielib
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 
 if __name__ == "__main__":

@@ -4,14 +4,20 @@
 
 from __future__ import print_function
 import sys
-import cookielib
+
 from datetime import datetime
 import re
-import mechanize
-# from BeautifulSoup import BeautifulSoup
+import mechanicalsoup
 from bs4 import BeautifulSoup
-reload(sys)
-sys.setdefaultencoding('utf8')
+
+if sys.version_info > (3, 0):
+    import http.cookiejar as cookielib
+    import importlib
+    importlib.reload(sys)
+else:
+    import cookielib
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 class DKBRobo(object):
     """ dkb_robo class """
@@ -27,27 +33,19 @@ class DKBRobo(object):
             date_to         - end date
         """
         dkb_br.open(transaction_url)
-        dkb_br.select_form(name="form1615473160_1")
+        dkb_br.select_form('#form1615473160_1')
 
-        # fill form
-        try:
-            one = dkb_br.find_control(name="slBankAccount", nr=0)
-            one.value = ['0']
-        except:
-            pass
-
-        dkb_br["slTransactionStatus"] = ['0']
-        dkb_br["searchPeriodRadio"] = ['1']
-        dkb_br["slSearchPeriod"] = ['1']
+        dkb_br["slTransactionStatus"] = 0
+        dkb_br["searchPeriodRadio"] = 1
+        dkb_br["slSearchPeriod"] = 1
         dkb_br["transactionDate"] = str(date_from)
         dkb_br["toTransactionDate"] = str(date_to)
-        tr_response = dkb_br.submit()
+        dkb_br.submit_selected()
 
-        # parse the lines to get transactions from the day
-        tr_lines = tr_response.read()
-
+        tr_list = []
         # enter a loop to check all following pages
-        soup = BeautifulSoup(tr_lines, "html5lib")
+        tr_lines = dkb_br.get_current_page()
+        tr_list.append(tr_lines)
 
         # loop into the differnt pages
         loop_cnt = 1
@@ -58,21 +56,20 @@ class DKBRobo(object):
             # for the moment we assume that there is no further page
             more_pages = False
             loop_cnt += 1
-            more_tr = soup.findAll('a', attrs={'class':'gotoPage'})
+            more_tr = tr_lines.findAll('a', attrs={'class':'gotoPage'})
             for page in more_tr:
                 # check if there are more pages to download
                 if page.contents[0] == str(loop_cnt):
                     # more pages available fetch/parse the page and enter
                     # while loop again
                     new_link = self.base_url + page['href']
-                    mtr_page = dkb_br.open(new_link)
-                    mtr_lines = mtr_page.read()
-                    tr_lines = tr_lines + mtr_lines
+                    dkb_br.open(new_link)
+                    tr_list.append(dkb_br.get_current_page())
                     more_pages = True
                     break
 
-        transactions_dic = self.parse_account_transactions(tr_lines)
 
+        transactions_dic = self.parse_account_transactions(tr_list)
         return transactions_dic
 
     def get_creditcard_transactions(self, dkb_br, transaction_url, date_from, date_to):
@@ -85,38 +82,34 @@ class DKBRobo(object):
         """
 
         # get credit card transaction form yesterday
-        kk_lines = ''
+        kk_list = []
 
         more_kktr = None
         dkb_br.open(transaction_url)
-        dkb_br.select_form(name="form1579108072_1")
-        # br["slAllAccounts"]       = [str(kk)]
-        dkb_br["slSearchPeriod"] = ['0']
-        dkb_br["filterType"] = ['DATE_RANGE']
+        dkb_br.select_form('#form1579108072_1')
+
+        dkb_br["slSearchPeriod"] = 0
+        dkb_br["filterType"] = 'DATE_RANGE'
         dkb_br["postingDate"] = str(date_from)
         dkb_br["toPostingDate"] = str(date_to)
-
-        kk_response = dkb_br.submit()
+        dkb_br.submit_selected()
 
         # parse the lines to get transactions from the day
-        kk_resp = kk_response.read()
-        kk_lines = kk_lines + kk_resp
+        kk_resp = dkb_br.get_current_page()
+        kk_list.append(kk_resp)
 
         # check if there is a another page
-        soup = BeautifulSoup(kk_resp, "html5lib")
-        more_kktr = soup.findAll('a', attrs={'class':'icons butNext0'})
+        more_kktr = kk_resp.findAll('a', attrs={'class':'icons butNext0'})
 
         while more_kktr:
             # if so get link/transactions from 2nd page
             link = self.base_url + more_kktr[0]['href']
-            mkk_page = dkb_br.open(link)
-            mkk_lines = mkk_page.read()
-            kk_lines = kk_lines + mkk_lines
-            soup = BeautifulSoup(mkk_lines, "html5lib")
-            more_kktr = soup.findAll('a', attrs={'class':'icons butNext0'})
+            dkb_br.open(link)
+            mkk_lines = dkb_br.get_current_page()
+            kk_list.append(mkk_lines)
+            more_kktr = mkk_lines.findAll('a', attrs={'class':'icons butNext0'})
 
-        transaction_list = self.parse_cc_transactions(kk_lines)
-
+        transaction_list = self.parse_cc_transactions(kk_list)
         return transaction_list
 
     def get_credit_limits(self, dkb_br):
@@ -129,10 +122,9 @@ class DKBRobo(object):
             dictionary of the accounts and limits
         """
         limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
-        limit_page = dkb_br.open(limit_url)
+        dkb_br.open(limit_url)
 
-        soup = BeautifulSoup(limit_page.read(), "html5lib")
-
+        soup = dkb_br.get_current_page()
         form = soup.find('form', attrs={'id':'form597962073_1'})
 
         # checking account limits
@@ -155,12 +147,15 @@ class DKBRobo(object):
         for row in rows:
             cols = row.findAll("td")
             tmp = row.find("th")
-            if cols > 0:
-                limit = tmp.find('span').text.strip()
-                limit = limit.replace('.', '')
-                limit = limit.replace(',', '.')
-                account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
-                limit_dic[account] = limit
+            if len(cols) > 0:
+                try:
+                    limit = tmp.find('span').text.strip()
+                    limit = limit.replace('.', '')
+                    limit = limit.replace(',', '.')
+                    account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                    limit_dic[account] = limit
+                except:
+                    pass
 
         return limit_dic
 
@@ -177,15 +172,13 @@ class DKBRobo(object):
         """
         document_dic = {}
 
-        category_result = dkb_br.open(url)
-        soup = BeautifulSoup(category_result.read(), "html5lib")
+        dkb_br.open(url)
+        soup = dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
         if table:
             tbody = table.find('tbody')
             for row in tbody.findAll('tr'):
                 link = row.find('a')
-                # link_name = link.contents[0]
-                # url  = self.base_url + link['href']
                 document_dic[link.contents[0]] = self.base_url + link['href']
 
         return document_dic
@@ -201,9 +194,9 @@ class DKBRobo(object):
             dictionary of excemption orders
         """
         exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
-        exo_page = dkb_br.open(exo_url)
+        dkb_br.open(exo_url)
 
-        soup = BeautifulSoup(exo_page.read(), "html5lib")
+        soup = dkb_br.get_current_page()
 
         for lbr in soup.findAll("br"):
             lbr.replace_with("")
@@ -217,25 +210,31 @@ class DKBRobo(object):
         count = 0
         for row in rows:
             cols = row.findAll("td")
-            if cols > 0:
-                count += 1
-                exo_dic[count] = {}
-                # description
-                description = re.sub(' +', ' ', cols[1].text.strip())
-                description = description.replace('\n', '')
-                description = description.replace('  ', ' ')
-                exo_dic[count]['description'] = description
 
-                # validity
-                validity = re.sub(' +', ' ', cols[2].text.strip())
-                validity = validity.replace('\n', '')
-                validity = validity.replace('  ', ' ')
-                exo_dic[count]['validity'] = validity
+            if len(cols) > 0:
+                try:
+                    count += 1
+                    exo_dic[count] = {}
+                    # description
+                    description = re.sub(' +', ' ', cols[1].text.strip())
+                    description = description.replace('\n', '')
+                    description = description.replace('\r', '')
+                    description = description.replace('  ', ' ')
+                    exo_dic[count]['description'] = description
 
-                # exo_dic[count]['validity'] = cols[2].text.strip()
-                exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
-                exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
-                exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
+                    # validity
+                    validity = re.sub(' +', ' ', cols[2].text.strip())
+                    validity = validity.replace('\n', '')
+                    validity = validity.replace('\r', '')
+                    validity = validity.replace('  ', ' ')
+                    exo_dic[count]['validity'] = validity
+
+                    # exo_dic[count]['validity'] = cols[2].text.strip()
+                    exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
+                    exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
+                    exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
+                except:
+                    pass
 
         return exo_dic
 
@@ -249,10 +248,10 @@ class DKBRobo(object):
             points - dkb points
         """
         point_url = self.base_url + '/DkbTransactionBanking/content/FavorableWorld/Overview.xhtml?$event=init'
-        point_page = dkb_br.open(point_url)
+        dkb_br.open(point_url)
 
         p_dic = {}
-        soup = BeautifulSoup(point_page.read(), "html5lib")
+        soup = dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'expandableTable'})
         if table:
             tbody = table.find('tbody')
@@ -288,10 +287,10 @@ class DKBRobo(object):
             so_dic = standing order dic
         """
         so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
-        so_page = dkb_br.open(so_url)
+        dkb_br.open(so_url)
 
         so_list = []
-        soup = BeautifulSoup(so_page.read(), "html5lib")
+        soup = dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'expandableTable'})
         if table:
             tbody = table.find('tbody')
@@ -371,14 +370,13 @@ class DKBRobo(object):
         dkb_br = self.new_instance()
         dkb_br.open(login_url)
 
-        dkb_br.select_form(name="login")
+        dkb_br.select_form('#login')
         dkb_br["j_username"] = str(dkb_user)
         dkb_br["j_password"] = str(dkb_password)
 
-        response = dkb_br.submit()
-
-        # parse the lines to get all account infos
-        soup = BeautifulSoup(response.read(), "html5lib")
+        # submit form and check response
+        dkb_br.submit_selected()
+        soup = dkb_br.get_current_page()
 
         # filter last login date
         last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
@@ -415,7 +413,7 @@ class DKBRobo(object):
            dkb_br - instance
         """
         # create browser and cookiestore objects
-        dkb_br = mechanize.Browser()
+        dkb_br = mechanicalsoup.StatefulBrowser()
         dkb_cj = cookielib.LWPCookieJar()
         dkb_br.set_cookiejar = dkb_cj
 
@@ -449,48 +447,49 @@ class DKBRobo(object):
             - text - text
         """
         # parse the lines to get all account infos
-        soup = BeautifulSoup(transactions, "html5lib")
+        # soup = BeautifulSoup(transactions, "html5lib")
 
         # create empty list
         transaction_list = []
 
-        tr_lists = soup.findAll('table', attrs={'id':'umsatzTabelle'})
-        for tr_list in tr_lists:
-            try:
-                rows = tr_list.findAll("tr", attrs={'class':'mainRow'})
-            except:
-                rows = []
+        for chunk in transactions:
+            tr_lists = chunk.findAll('table', attrs={'id':'umsatzTabelle'})
+            for tr_list in tr_lists:
+                try:
+                    rows = tr_list.findAll("tr", attrs={'class':'mainRow'})
+                except:
+                    rows = []
 
-            for row in rows:
-                cols = row.findAll("td")
-                date = cols[0].find('span', attrs={'class':'valueDate'}).text.strip()
-                if date == '':
-                    date = 'vorgem.'
-                amount = cols[3].text.strip()
-                f_amount = amount.replace('.', '')
-                f_amount = f_amount.replace(',', '.')
+                for row in rows:
+                    cols = row.findAll("td")
+                    date = cols[0].find('span', attrs={'class':'valueDate'}).text.strip()
+                    if date == '':
+                        date = 'vorgem.'
+                    amount = cols[3].text.strip()
+                    f_amount = amount.replace('.', '')
+                    f_amount = f_amount.replace(',', '.')
 
-                text = ''
-                divs = cols[1].findAll('div')
-                if len(divs) > 2:
-                    if 'DATUM ' in  str(divs[2].text.strip()):
-                        text = divs[0].text.strip() + ' ' + divs[1].text.strip()
+                    text = ''
+                    divs = cols[1].findAll('div')
+                    if len(divs) > 2:
+                        if 'DATUM ' in  str(divs[2].text.strip()):
+                            text = divs[0].text.strip() + ' ' + divs[1].text.strip()
+                        else:
+                            text = divs[0].text.strip() + ' ' + divs[1].text.strip() + divs[2].text.strip()
                     else:
-                        text = divs[0].text.strip() + ' ' + divs[1].text.strip() + divs[2].text.strip()
-                else:
-                    text = divs[0].text.strip() + ' ' + divs[1].text.strip()
+                        text = divs[0].text.strip() + ' ' + divs[1].text.strip()
 
-                text = text.replace('  ', ' ')
-                text = text.replace('  ', ' ')
-                text = text.replace('  ', ' ')
-                text = text.replace('  ', ' ')
+                    text = text.replace('  ', ' ')
+                    text = text.replace('  ', ' ')
+                    text = text.replace('  ', ' ')
+                    text = text.replace('  ', ' ')
 
-                # store entry
-                tmp_dic = {}
-                tmp_dic['amount'] = f_amount
-                tmp_dic['date'] = date
-                tmp_dic['text'] = text
-                transaction_list.append(tmp_dic)
+                    # store entry
+                    tmp_dic = {}
+                    tmp_dic['amount'] = f_amount
+                    tmp_dic['date'] = date
+                    tmp_dic['text'] = text
+                    transaction_list.append(tmp_dic)
 
         return transaction_list
 
@@ -508,43 +507,44 @@ class DKBRobo(object):
             - text - text
         """
         # parse the lines to get all account infos
-        soup = BeautifulSoup(transactions, "html5lib")
+        # soup = BeautifulSoup(transactions, "html5lib")
 
         # create empty dic
         transaction_list = []
 
-        # get kk transactions
-        table_lists = soup.findAll("table", attrs={'class':'expandableTable dateHandling '})
+        for chunk in transactions:
+            # get kk transactions
+            table_lists = chunk.findAll("table", attrs={'class':'expandableTable dateHandling '})
 
-        for tr_line in table_lists:
+            for tr_line in table_lists:
 
-            rows = tr_line.findAll("tr", attrs={'class':'mainRow'})
-            for row in rows:
-                cols = row.findAll("td")
-                vdate = cols[1].find("span", attrs={'class':'valueDate'}).text.strip()
-                # reformat date
-                vdate = datetime.strptime(vdate, '%d.%m.%y').strftime("%d.%m.%Y")
-
-                try:
-                    bdate = cols[1].findAll(text=True)[3].strip()
+                rows = tr_line.findAll("tr", attrs={'class':'mainRow'})
+                for row in rows:
+                    cols = row.findAll("td")
+                    vdate = cols[1].find("span", attrs={'class':'valueDate'}).text.strip()
                     # reformat date
-                    bdate = datetime.strptime(bdate, '%d.%m.%y').strftime("%d.%m.%Y")
-                except:
-                    bdate = vdate
+                    vdate = datetime.strptime(vdate, '%d.%m.%y').strftime("%d.%m.%Y")
 
-                text = cols[2].text.strip()
-                amount = cols[3].find("span").text.strip()
-                f_amount = amount.replace('.', '')
-                f_amount = f_amount.replace(',', '.')
+                    try:
+                        bdate = cols[1].findAll(text=True)[3].strip()
+                        # reformat date
+                        bdate = datetime.strptime(bdate, '%d.%m.%y').strftime("%d.%m.%Y")
+                    except:
+                        bdate = vdate
 
-                tmp_dic = {}
-                tmp_dic['bdate'] = bdate
-                tmp_dic['show_date'] = bdate
-                tmp_dic['vdate'] = vdate
-                tmp_dic['store_date'] = vdate
-                tmp_dic['text'] = text
-                tmp_dic['amount'] = f_amount
-                transaction_list.append(tmp_dic)
+                    text = cols[2].text.strip()
+                    amount = cols[3].find("span").text.strip()
+                    f_amount = amount.replace('.', '')
+                    f_amount = f_amount.replace(',', '.')
+
+                    tmp_dic = {}
+                    tmp_dic['bdate'] = bdate
+                    tmp_dic['show_date'] = bdate
+                    tmp_dic['vdate'] = vdate
+                    tmp_dic['store_date'] = vdate
+                    tmp_dic['text'] = text
+                    tmp_dic['amount'] = f_amount
+                    transaction_list.append(tmp_dic)
 
         return transaction_list
 
@@ -631,8 +631,8 @@ class DKBRobo(object):
                     - name of document -> document link
         """
         pb_url = self.base_url + '/banking/postfach'
-        pb_result = dkb_br.open(pb_url)
-        soup = BeautifulSoup(pb_result.read(), "html5lib")
+        dkb_br.open(pb_url)
+        soup = dkb_br.get_current_page()
         table = soup.find('table', attrs={'id':'welcomeMboTable'})
         tbody = table.find('tbody')
 
