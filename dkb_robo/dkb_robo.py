@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 import re
 import mechanicalsoup
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 if sys.version_info > (3, 0):
     import http.cookiejar as cookielib
@@ -147,7 +147,7 @@ class DKBRobo(object):
         for row in rows:
             cols = row.findAll("td")
             tmp = row.find("th")
-            if len(cols) > 0:
+            if cols:
                 try:
                     limit = tmp.find('span').text.strip()
                     limit = limit.replace('.', '')
@@ -211,7 +211,7 @@ class DKBRobo(object):
         for row in rows:
             cols = row.findAll("td")
 
-            if len(cols) > 0:
+            if cols > 0:
                 try:
                     count += 1
                     exo_dic[count] = {}
@@ -377,12 +377,12 @@ class DKBRobo(object):
         # submit form and check response
         dkb_br.submit_selected()
         soup = dkb_br.get_current_page()
-        
+
         # catch login error
         if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
             print('Login failed! Aborting...')
             sys.exit(0)
-        
+
         # filter last login date
         last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
         # remove crlf
