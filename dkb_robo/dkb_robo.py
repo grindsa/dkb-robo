@@ -377,7 +377,12 @@ class DKBRobo(object):
         # submit form and check response
         dkb_br.submit_selected()
         soup = dkb_br.get_current_page()
-
+        
+        # catch login error
+        if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+            print('Login failed! Aborting...')
+            sys.exit(0)
+        
         # filter last login date
         last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
         # remove crlf
