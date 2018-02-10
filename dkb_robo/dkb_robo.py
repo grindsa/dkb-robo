@@ -154,7 +154,9 @@ class DKBRobo(object):
                     limit = limit.replace(',', '.')
                     account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
                     limit_dic[account] = limit
-                except:
+                except IndexError:
+                    pass
+                except AttributeError:
                     pass
 
         return limit_dic
@@ -211,7 +213,7 @@ class DKBRobo(object):
         for row in rows:
             cols = row.findAll("td")
 
-            if cols > 0:
+            if cols:
                 try:
                     count += 1
                     exo_dic[count] = {}
@@ -233,7 +235,9 @@ class DKBRobo(object):
                     exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
                     exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
                     exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
-                except:
+                except IndexError:
+                    pass
+                except AttributeError:
                     pass
 
         return exo_dic
@@ -460,11 +464,7 @@ class DKBRobo(object):
         for chunk in transactions:
             tr_lists = chunk.findAll('table', attrs={'id':'umsatzTabelle'})
             for tr_list in tr_lists:
-                try:
-                    rows = tr_list.findAll("tr", attrs={'class':'mainRow'})
-                except:
-                    rows = []
-
+                rows = tr_list.findAll("tr", attrs={'class':'mainRow'})
                 for row in rows:
                     cols = row.findAll("td")
                     date = cols[0].find('span', attrs={'class':'valueDate'}).text.strip()
@@ -534,7 +534,9 @@ class DKBRobo(object):
                         bdate = cols[1].findAll(text=True)[3].strip()
                         # reformat date
                         bdate = datetime.strptime(bdate, '%d.%m.%y').strftime("%d.%m.%Y")
-                    except:
+                    except IndexError:
+                        bdate = vdate
+                    except AttributeError:
                         bdate = vdate
 
                     text = cols[2].text.strip()
@@ -605,14 +607,14 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4].find('a', attrs={'class':'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except:
+                except IndexError:
                     pass
 
             # get link for details
             try:
                 link = cols[4].find('a', attrs={'class':'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except:
+            except IndexError:
                 pass
 
             # increase counter
