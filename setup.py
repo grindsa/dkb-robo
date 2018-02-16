@@ -24,4 +24,5 @@ setup(name='dkb_robo',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules'
         ],    
-    zip_safe=False)
+    zip_safe=False,
+    test_suite="test")
