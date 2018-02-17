@@ -22,11 +22,11 @@ if __name__ == "__main__":
     DKB_PASSWORD = '*****'
 
     DKB = DKBRobo()
-
-    # login and get accounts overview
-    (DKB_BR, LAST_LOGIN, OVERVIEW_DIC) = DKB.login(DKB_USER, DKB_PASSWORD)
-    print(LAST_LOGIN)
-    pprint(OVERVIEW_DIC)
+    
+    # Using a Contexthandler (with) makes sure that the connection is closed after use
+    with DKBRobo('USER','PWD') as dkb:
+        print(dkb.last_login)
+        pprint(dkb.overview_dic)
 
     # get transaction
     LINK = OVERVIEW_DIC[3]['transactions']

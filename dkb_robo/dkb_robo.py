@@ -23,28 +23,54 @@ class DKBRobo(object):
     """ dkb_robo class """
 
     base_url = 'https://www.dkb.de'
+    dkb_user=None
+    dkb_password=None
+    dkb_br = None
+    last_login = None
+    account_dic = None
+    
+    def __init__(self, dkb_user=None, dkb_password=None):
+        self.dkb_user = dkb_user # TODO additional checks (Fail on config, not fail on first use)
+        self.dkb_password = dkb_password # TODO additional checks
+        
+    def __enter__(self):
+        """
+        Makes DKBRobo a Context Manager
+        
+        with DKBRobo("user","pwd") as dkb:
+            print (dkb.lastlogin)
+        """
+        if not self.dkb_br:
+            self.login()
+        return self
+        
+    def __exit__(self, *args):
+        """
+        Close the connection at the end of the context
+        """
+        self.logout()
 
-    def get_account_transactions(self, dkb_br, transaction_url, date_from, date_to):
+    def get_account_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
         args:
-            dkb_br          - browser object
+            self.dkb_br          - browser object
             transaction_url - link to collect the transactions
             date_from       - transactions starting form
             date_to         - end date
         """
-        dkb_br.open(transaction_url)
-        dkb_br.select_form('#form1615473160_1')
+        self.dkb_br.open(transaction_url)
+        self.dkb_br.select_form('#form1615473160_1')
 
-        dkb_br["slTransactionStatus"] = 0
-        dkb_br["searchPeriodRadio"] = 1
-        dkb_br["slSearchPeriod"] = 1
-        dkb_br["transactionDate"] = str(date_from)
-        dkb_br["toTransactionDate"] = str(date_to)
-        dkb_br.submit_selected()
+        self.dkb_br["slTransactionStatus"] = 0
+        self.dkb_br["searchPeriodRadio"] = 1
+        self.dkb_br["slSearchPeriod"] = 1
+        self.dkb_br["transactionDate"] = str(date_from)
+        self.dkb_br["toTransactionDate"] = str(date_to)
+        self.dkb_br.submit_selected()
 
         tr_list = []
         # enter a loop to check all following pages
-        tr_lines = dkb_br.get_current_page()
+        tr_lines = self.dkb_br.get_current_page()
         tr_list.append(tr_lines)
 
         # loop into the differnt pages
@@ -63,8 +89,8 @@ class DKBRobo(object):
                     # more pages available fetch/parse the page and enter
                     # while loop again
                     new_link = self.base_url + page['href']
-                    dkb_br.open(new_link)
-                    tr_list.append(dkb_br.get_current_page())
+                    self.dkb_br.open(new_link)
+                    tr_list.append(self.dkb_br.get_current_page())
                     more_pages = True
                     break
 
@@ -72,10 +98,10 @@ class DKBRobo(object):
         transactions_dic = self.parse_account_transactions(tr_list)
         return transactions_dic
 
-    def get_creditcard_transactions(self, dkb_br, transaction_url, date_from, date_to):
+    def get_creditcard_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
         args:
-            dkb_br          - browser object
+            self.dkb_br          - browser object
             transaction_url - link to collect the transactions
             date_from       - transactions starting form
             date_to         - end date
@@ -85,17 +111,17 @@ class DKBRobo(object):
         kk_list = []
 
         more_kktr = None
-        dkb_br.open(transaction_url)
-        dkb_br.select_form('#form1579108072_1')
+        self.dkb_br.open(transaction_url)
+        self.dkb_br.select_form('#form1579108072_1')
 
-        dkb_br["slSearchPeriod"] = 0
-        dkb_br["filterType"] = 'DATE_RANGE'
-        dkb_br["postingDate"] = str(date_from)
-        dkb_br["toPostingDate"] = str(date_to)
-        dkb_br.submit_selected()
+        self.dkb_br["slSearchPeriod"] = 0
+        self.dkb_br["filterType"] = 'DATE_RANGE'
+        self.dkb_br["postingDate"] = str(date_from)
+        self.dkb_br["toPostingDate"] = str(date_to)
+        self.dkb_br.submit_selected()
 
         # parse the lines to get transactions from the day
-        kk_resp = dkb_br.get_current_page()
+        kk_resp = self.dkb_br.get_current_page()
         kk_list.append(kk_resp)
 
         # check if there is a another page
@@ -104,27 +130,27 @@ class DKBRobo(object):
         while more_kktr:
             # if so get link/transactions from 2nd page
             link = self.base_url + more_kktr[0]['href']
-            dkb_br.open(link)
-            mkk_lines = dkb_br.get_current_page()
+            self.dkb_br.open(link)
+            mkk_lines = self.dkb_br.get_current_page()
             kk_list.append(mkk_lines)
             more_kktr = mkk_lines.findAll('a', attrs={'class':'icons butNext0'})
 
         transaction_list = self.parse_cc_transactions(kk_list)
         return transaction_list
 
-    def get_credit_limits(self, dkb_br):
+    def get_credit_limits(self):
         """ create a dictionary of credit limites of the different accounts
 
         args:
-            dkb_br - browser object
+            self.dkb_br - browser object
 
         returns:
             dictionary of the accounts and limits
         """
         limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
-        dkb_br.open(limit_url)
+        self.dkb_br.open(limit_url)
 
-        soup = dkb_br.get_current_page()
+        soup = self.dkb_br.get_current_page()
         form = soup.find('form', attrs={'id':'form597962073_1'})
 
         # checking account limits
@@ -162,11 +188,11 @@ class DKBRobo(object):
         return limit_dic
 
 
-    def get_document_links(self, dkb_br, url):
+    def get_document_links(self, url):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
-            dkb_br - browser object
+            self.dkb_br - browser object
             url - folder url
 
         returns:
@@ -174,8 +200,8 @@ class DKBRobo(object):
         """
         document_dic = {}
 
-        dkb_br.open(url)
-        soup = dkb_br.get_current_page()
+        self.dkb_br.open(url)
+        soup = self.dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
         if table:
             tbody = table.find('tbody')
@@ -185,20 +211,20 @@ class DKBRobo(object):
 
         return document_dic
 
-    def get_excemption_order(self, dkb_br):
+    def get_excemption_order(self):
         """ returns a dictionary of the stored excemption orders
 
         args:
-            dkb_br - browser object
+            self.dkb_br - browser object
             url - folder url
 
         returns:
             dictionary of excemption orders
         """
         exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
-        dkb_br.open(exo_url)
+        self.dkb_br.open(exo_url)
 
-        soup = dkb_br.get_current_page()
+        soup = self.dkb_br.get_current_page()
 
         for lbr in soup.findAll("br"):
             lbr.replace_with("")
@@ -242,20 +268,20 @@ class DKBRobo(object):
 
         return exo_dic
 
-    def get_points(self, dkb_br):
+    def get_points(self):
         """ returns the DKB points
 
         args:
-            dkb_br - browser object
+            self.dkb_br - browser object
 
         returns:
             points - dkb points
         """
         point_url = self.base_url + '/DkbTransactionBanking/content/FavorableWorld/Overview.xhtml?$event=init'
-        dkb_br.open(point_url)
+        self.dkb_br.open(point_url)
 
         p_dic = {}
-        soup = dkb_br.get_current_page()
+        soup = self.dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'expandableTable'})
         if table:
             tbody = table.find('tbody')
@@ -282,19 +308,19 @@ class DKBRobo(object):
 
         return p_dic
 
-    def get_standing_orders(self, dkb_br):
+    def get_standing_orders(self):
         """ get standing orders
         args:
-            dkb_br          - browser object
+            self.dkb_br          - browser object
 
         returns:
             so_dic = standing order dic
         """
         so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
-        dkb_br.open(so_url)
+        self.dkb_br.open(so_url)
 
         so_list = []
-        soup = dkb_br.get_current_page()
+        soup = self.dkb_br.get_current_page()
         table = soup.find('table', attrs={'class':'expandableTable'})
         if table:
             tbody = table.find('tbody')
@@ -325,10 +351,10 @@ class DKBRobo(object):
 
         return so_list
 
-    def get_transactions(self, dkb_br, transaction_url, atype, date_from, date_to):
+    def get_transactions(self, transaction_url, atype, date_from, date_to):
         """ get transactions for a certain amount of time
         args:
-            dkb_br          - browser object
+            self.dkb_br          - browser object
             transaction_url - link to collect the transactions
             atype           - account type (cash, creditcard, depot)
             date_from       - transactions starting form
@@ -342,13 +368,13 @@ class DKBRobo(object):
         """
         transaction_list = []
         if atype == 'account':
-            transaction_list = self.get_account_transactions(dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_account_transactions(self.dkb_br, transaction_url, date_from, date_to)
         elif atype == 'creditcard':
-            transaction_list = self.get_creditcard_transactions(dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_creditcard_transactions(self.dkb_br, transaction_url, date_from, date_to)
 
         return transaction_list
 
-    def login(self, dkb_user, dkb_password):
+    def login(self):
         """ login into DKB banking area
 
         args:
@@ -356,7 +382,7 @@ class DKBRobo(object):
             dkb_password  = dkb_password
 
         returns:
-            dkb_br - handle to browser object for further processing
+            self.dkb_br - handle to browser object for further processing
             last_login - last login date (german date format)
             account_dic - dictionary containig account information
             - name
@@ -371,16 +397,16 @@ class DKBRobo(object):
         login_url = self.base_url + '/' + 'banking'
 
         # create browser and login
-        dkb_br = self.new_instance()
-        dkb_br.open(login_url)
+        self.dkb_br = self.new_instance()
+        self.dkb_br.open(login_url)
 
-        dkb_br.select_form('#login')
-        dkb_br["j_username"] = str(dkb_user)
-        dkb_br["j_password"] = str(dkb_password)
+        self.dkb_br.select_form('#login')
+        self.dkb_br["j_username"] = str(self.dkb_user)
+        self.dkb_br["j_password"] = str(self.dkb_password)
 
         # submit form and check response
-        dkb_br.submit_selected()
-        soup = dkb_br.get_current_page()
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
 
         # catch login error
         if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
@@ -394,23 +420,22 @@ class DKBRobo(object):
         # format string in a way we need it
         last_login = last_login.replace('  ', '')
         last_login = last_login.replace('Letzte Anmeldung:', '')
-
+        self.last_login = last_login
         # parse account date
-        overview_dic = self.parse_overview(soup)
+        self.account_dic = self.parse_overview(soup)
 
-        return(dkb_br, last_login, overview_dic)
 
-    def logout(self, dkb_br):
+    def logout(self):
         """ logout from DKB banking area
 
         args:
-            dkb_br = browser object
+            self.dkb_br = browser object
 
         returns:
             None
         """
         logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
-        dkb_br.open(logout_url)
+        self.dkb_br.open(logout_url)
 
     def new_instance(self):
         """ creates a new browser instance
@@ -419,19 +444,19 @@ class DKBRobo(object):
            None
 
         returns:
-           dkb_br - instance
+           self.dkb_br - instance
         """
         # create browser and cookiestore objects
-        dkb_br = mechanicalsoup.StatefulBrowser()
+        self.dkb_br = mechanicalsoup.StatefulBrowser()
         dkb_cj = cookielib.LWPCookieJar()
-        dkb_br.set_cookiejar = dkb_cj
+        self.dkb_br.set_cookiejar = dkb_cj
 
         # configure browser
-        dkb_br.set_handle_equiv = True
-        dkb_br.set_handle_redirect = True
-        dkb_br.set_handle_referer = True
-        dkb_br.set_handle_robots = False
-        dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
+        self.dkb_br.set_handle_equiv = True
+        self.dkb_br.set_handle_redirect = True
+        self.dkb_br.set_handle_referer = True
+        self.dkb_br.set_handle_robots = False
+        self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
 
         # initilize some cookies to fool dkb
         dkb_ck = cookielib.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
@@ -441,7 +466,7 @@ class DKBRobo(object):
         dkb_ck = cookielib.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
 
-        return dkb_br
+        return self.dkb_br
 
     def parse_account_transactions(self, transactions):
         """ parses html code and creates a list of transactions included
@@ -622,12 +647,12 @@ class DKBRobo(object):
 
         return overview_dic
 
-    def scan_postbox(self, dkb_br):
+    def scan_postbox(self):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
 
         args:
-            dkb_br = browser object
+            self.dkb_br = browser object
 
         returns:
            dictionary in the following format
@@ -638,8 +663,8 @@ class DKBRobo(object):
                     - name of document -> document link
         """
         pb_url = self.base_url + '/banking/postfach'
-        dkb_br.open(pb_url)
-        soup = dkb_br.get_current_page()
+        self.dkb_br.open(pb_url)
+        soup = self.dkb_br.get_current_page()
         table = soup.find('table', attrs={'id':'welcomeMboTable'})
         tbody = table.find('tbody')
 
@@ -650,6 +675,10 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(dkb_br, pb_dic[link_name]['details'])
+            pb_dic[link_name]['documents'] = self.get_document_links(self.dkb_br, pb_dic[link_name]['details'])
 
         return pb_dic
+
+    
+
+        
