@@ -23,27 +23,27 @@ class DKBRobo(object):
     """ dkb_robo class """
 
     base_url = 'https://www.dkb.de'
-    dkb_user=None
-    dkb_password=None
+    dkb_user = None
+    dkb_password = None
     dkb_br = None
     last_login = None
     account_dic = None
-    
+
     def __init__(self, dkb_user=None, dkb_password=None):
         self.dkb_user = dkb_user # TODO additional checks (Fail on config, not fail on first use)
         self.dkb_password = dkb_password # TODO additional checks
-        
+
     def __enter__(self):
         """
         Makes DKBRobo a Context Manager
-        
+
         with DKBRobo("user","pwd") as dkb:
             print (dkb.lastlogin)
         """
         if not self.dkb_br:
             self.login()
         return self
-        
+
     def __exit__(self, *args):
         """
         Close the connection at the end of the context
@@ -368,9 +368,9 @@ class DKBRobo(object):
         """
         transaction_list = []
         if atype == 'account':
-            transaction_list = self.get_account_transactions(self.dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_account_transactions(transaction_url, date_from, date_to)
         elif atype == 'creditcard':
-            transaction_list = self.get_creditcard_transactions(self.dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_creditcard_transactions(transaction_url, date_from, date_to)
 
         return transaction_list
 
@@ -675,10 +675,6 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(self.dkb_br, pb_dic[link_name]['details'])
+            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
 
         return pb_dic
-
-    
-
-        

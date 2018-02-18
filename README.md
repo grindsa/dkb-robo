@@ -48,31 +48,21 @@ you need to import dkb-robo into your script
 > from dkb_robo import DKBRobo
 ``` 
 
-create a new instance of DKBRobo and assing this object to a local variable
+create a new DKBRobo context handler and login to DKB portal
 ```
-> DKB = DKBRobo()
+> with DKBRobo(dkb_user, dkb_password) as dkb:
 ```
 
-login to https://www.dkb.de
-
+After login you can return the 
+* the last login date
 ```
-> (dkb_br, last, overview) = DKB.login(<your-username>, <your-password>)
-```
-this method will return 
-1. a reference to a mechanicalsoup browser object you need for later queries
-```
-> print(dkb_br)
-<Browser visiting https://www.dkb.de/banking/finanzstatus?$event=init>
-```    
-2. the last login date
-```
-> print(last)
+> print(dkb.last_login)
 14.03.2017, 13:19 Uhr
 ```
-3. a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions 
+* a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions 
 ```
 > from pprint import pprint
-> pprint(overview)
+> pprint(dkb.account_dic)
 {0: {'account': u'DExx xxx xxxx xxxx xxx xx',
      'amount': -9999.99,
      'date': u'15.03.2017',
@@ -103,17 +93,16 @@ this method will return
      'type': 'creditcard'}}
 ```
 
-to get the list of transaction for a checking account or a credit card use the follwing method
+to get the list of transaction for a certain checking account or a credit card use the following method
 ```
-tlist = DKB.get_transactions(dkb_br, link, type, date_from, date_to)
+tlist = DKB.get_transactions(link, type, date_from, date_to)
 ```
-* dkb_br - the reference to the formerly created mechanicalsoup browser object
 * link - link to get transactions for a specific account - see former step if you do not know how to get it
 * type - account type (either "account" or "creditcard") - see former step if you do not know how to get it
 * date_from - start date in European notation (DD.MM.YYYY)
 * date_to   - end date in European notation (DD.MM.YYYY)
 
-this method returns a list of transactions in the below form
+this method returns a list of transactions in the below format
 ```
 > from pprint import pprint
 > pprint(tlist)
@@ -130,9 +119,9 @@ this method returns a list of transactions in the below form
 
 to get the credit limits per account or credit-card the method get_credi_limits() must be used
 ```
-> c_list = DKB.get_credit_limits(dkb_br)
+> c_list = DKB.get_credit_limits()
 ```
-This method returns a dictionary of all identfied accounts including the credit limit per account
+This method returns a dictionary of all identified accounts including the credit limit per account
 ```
 {u'XXXX********XXXX': u'100.00',
  u'4748********XXXX': u'10000.00',
@@ -143,9 +132,9 @@ This method returns a dictionary of all identfied accounts including the credit 
 
 A list of standing orders (Daueraufträge) can be obtained by calling get_standing_orders() method
 ```
-> so = DKB.get_standing_orders(dkb_br)
+> so = DKB.get_standing_orders()
 ```
-A list of standing orders will be return containing a dictionary per standing orders
+A list of standing orders will be returned containing a dictionary per standing orders
 ```
 > pprint(so)
 [{'amount': 900.0,
@@ -158,9 +147,9 @@ A list of standing orders will be return containing a dictionary per standing or
   'recipient': u'ANY RECIEVER'}]
 ```
 
-The method get_excemption_order() can be used to get the excemtion orders (Freistellungsaufträge) stored in the system
+The method get_excemption_order() can be used to get the exemption orders (Freistellungsaufträge)
 ```
-> exo = DKB.get_excemption_order(dkb_br)
+> exo = DKB.get_excemption_order()
 ```
 A dictionary similar to the one below will be returned
 ```
@@ -172,12 +161,12 @@ A dictionary similar to the one below will be returned
      'validity': u'01.01.2017  unbefristet'}}
 ```
 
-To get the amount of DKB points the below method must be used
+To get the amount of DKB points the below method can be used
 ```
-> points_dic = DKB.get_get_points(dkb_br)
+> points_dic = DKB.get_get_points()
 ```
 
-A dictionary similar to the below will be returnd
+A dictionary similar to the below will be returned
 ```
 > pprint(points_dic)
 {u'DKB-Punkte': 99999, 

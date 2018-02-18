@@ -22,39 +22,36 @@ if __name__ == "__main__":
     DKB_PASSWORD = '*****'
 
     DKB = DKBRobo()
-    
+
     # Using a Contexthandler (with) makes sure that the connection is closed after use
-    with DKBRobo('USER','PWD') as dkb:
+    with DKBRobo(DKB_USER, DKB_PASSWORD) as dkb:
         print(dkb.last_login)
-        pprint(dkb.overview_dic)
+        pprint(dkb.account_dic)
 
-    # get transaction
-    LINK = OVERVIEW_DIC[3]['transactions']
-    TYPE = OVERVIEW_DIC[3]['type']
-    DATE_FROM = '14.03.2017'
-    DATE_TO = '21.08.2017'
+        # get transaction
+        LINK = dkb.account_dic[0]['transactions']
+        TYPE = dkb.account_dic[0]['type']
+        DATE_FROM = '14.03.2017'
+        DATE_TO = '21.08.2017'
 
-    TRANSACTION_LIST = DKB.get_transactions(DKB_BR, LINK, TYPE, DATE_FROM, DATE_TO)
-    pprint(TRANSACTION_LIST)
+        TRANSACTION_LIST = dkb.get_transactions(LINK, TYPE, DATE_FROM, DATE_TO)
+        pprint(TRANSACTION_LIST)
 
-    # get dkb postbox
-    POSTBOX_DIC = DKB.scan_postbox(DKB_BR)
-    pprint(POSTBOX_DIC)
+        # get dkb postbox
+        POSTBOX_DIC = DKB.scan_postbox()
+        pprint(POSTBOX_DIC)
 
-    # get credit limits
-    CLI = DKB.get_credit_limits(DKB_BR)
-    pprint(CLI)
+        # get credit limits
+        CLI = DKB.get_credit_limits()
+        pprint(CLI)
 
-    # get standing orders (daueraufträge)
-    STO = DKB.get_standing_orders(DKB_BR)
-    pprint(STO)
-    
-    # get freitstellungsaufträge
-    EXO = DKB.get_excemption_order(DKB_BR)
-    pprint(EXO)
-    
-    POINTS_DIC = DKB.get_points(DKB_BR)
-    pprint(POINTS_DIC)
-    
-    # logout
-    DKB.logout(DKB_BR)
+        # get standing orders (daueraufträge)
+        STO = DKB.get_standing_orders()
+        pprint(STO)
+
+        # get freitstellungsaufträge
+        EXO = DKB.get_excemption_order()
+        pprint(EXO)
+
+        POINTS_DIC = DKB.get_points()
+        pprint(POINTS_DIC)
