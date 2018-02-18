@@ -95,7 +95,7 @@ After login you can return the
 
 to get the list of transaction for a certain checking account or a credit card use the following method
 ```
-tlist = DKB.get_transactions(link, type, date_from, date_to)
+tlist = dkb.get_transactions(link, type, date_from, date_to)
 ```
 * link - link to get transactions for a specific account - see former step if you do not know how to get it
 * type - account type (either "account" or "creditcard") - see former step if you do not know how to get it
@@ -119,7 +119,7 @@ this method returns a list of transactions in the below format
 
 to get the credit limits per account or credit-card the method get_credi_limits() must be used
 ```
-> c_list = DKB.get_credit_limits()
+> c_list = dkb.get_credit_limits()
 ```
 This method returns a dictionary of all identified accounts including the credit limit per account
 ```
@@ -132,7 +132,7 @@ This method returns a dictionary of all identified accounts including the credit
 
 A list of standing orders (Daueraufträge) can be obtained by calling get_standing_orders() method
 ```
-> so = DKB.get_standing_orders()
+> so = dkb.get_standing_orders()
 ```
 A list of standing orders will be returned containing a dictionary per standing orders
 ```
@@ -149,7 +149,7 @@ A list of standing orders will be returned containing a dictionary per standing 
 
 The method get_excemption_order() can be used to get the exemption orders (Freistellungsaufträge)
 ```
-> exo = DKB.get_excemption_order()
+> exo = dkb.get_excemption_order()
 ```
 A dictionary similar to the one below will be returned
 ```
@@ -161,9 +161,9 @@ A dictionary similar to the one below will be returned
      'validity': u'01.01.2017  unbefristet'}}
 ```
 
-To get the amount of DKB points the below method can be used
+To get the amount of dkb points the below method can be used
 ```
-> points_dic = DKB.get_get_points()
+> points_dic = dkb.get_get_points()
 ```
 
 A dictionary similar to the below will be returned
