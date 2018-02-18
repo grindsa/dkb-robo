@@ -368,9 +368,9 @@ class DKBRobo(object):
         """
         transaction_list = []
         if atype == 'account':
-            transaction_list = self.get_account_transactions(self.dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_account_transactions(transaction_url, date_from, date_to)
         elif atype == 'creditcard':
-            transaction_list = self.get_creditcard_transactions(self.dkb_br, transaction_url, date_from, date_to)
+            transaction_list = self.get_creditcard_transactions(transaction_url, date_from, date_to)
 
         return transaction_list
 
@@ -675,7 +675,7 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(self.dkb_br, pb_dic[link_name]['details'])
+            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
 
         return pb_dic
 
