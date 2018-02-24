@@ -613,7 +613,10 @@ class DKBRobo(object):
             overview_dic[counter]['date'] = cols[2].text.strip()
             # amount (to be reformated)
             amount = cols[3].text.strip().replace('.', '')
-            overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
+            try:
+                overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
+            except ValueError:
+                pass
 
             # get link for transactions
             link = cols[4].find('a', attrs={'class':'evt-paymentTransaction'})
