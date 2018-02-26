@@ -413,6 +413,11 @@ class DKBRobo(object):
             print('Login failed! Aborting...')
             sys.exit(0)
 
+        # catch generic notices
+        if soup.find("form", attrs={'id':'genericNoticeForm'}): 
+            self.dkb_br.open(login_url)   
+            soup = self.dkb_br.get_current_page()            
+            
         # filter last login date
         last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
         # remove crlf
