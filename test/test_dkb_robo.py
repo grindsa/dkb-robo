@@ -338,7 +338,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(self.dkb.get_standing_orders(), e_result)
 
     @patch('dkb_robo.DKBRobo.new_instance')
-    def test_login(self, moc_instance, mock_browser):
+    def test_login(self, mock_instance, mock_browser):
         """ test DKBRobo.login() method """
         html = """
                 <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
@@ -347,7 +347,7 @@ class TestDKBRobo(unittest.TestCase):
                 </div>
                """
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
-        moc_instance.return_value = mock_browser
+        mock_instance.return_value = mock_browser
         self.assertEqual(self.dkb.login(), None)
 
     def test_parse_overview(self, _unused):
@@ -486,6 +486,49 @@ class TestDKBRobo(unittest.TestCase):
         e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.dkb.de/doc-2',
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
         self.assertEqual(self.dkb.get_document_links('http://foo.bar/foo'), e_result)
+
+    @patch('dkb_robo.DKBRobo.get_document_links')
+    def test_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo.scan_postbox() method """
+        html = """
+                <table class="widget widget abaxx-table expandableTable" id="welcomeMboTable" cellspacing="0" cellpadding="0">
+                    <tbody>
+                        <tr id="Mitteilungen">
+                            <td></td>
+                            <td></td>
+                            <td><a href="/banking/postfach/Mitteilungen">Mitteilungen</a></td>
+                        </tr>
+
+                        <tr id="Vertragsinformationen">
+                            <td></td>
+                            <td></td>
+                            <td><a href="/banking/postfach/Vertragsinformationen">Vertragsinformationen</a></td>
+                        </tr>
+
+                        <tr id="Kreditkartenabrechnungen">
+                            <td></td>
+                            <td></td>
+                            <td><a href="/banking/postfach/Kreditkartenabrechnungen">Kreditkartenabrechnungen</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_doclinks.return_value = {}
+        e_result = {u'Kreditkartenabrechnungen':
+                        {'documents': {},
+                        'name': u'Kreditkartenabrechnungen',
+                        'details': u'https://www.dkb.de/banking/postfach/Kreditkartenabrechnungen'},
+                    u'Mitteilungen':
+                        {'documents': {},
+                        'name': u'Mitteilungen',
+                        'details': u'https://www.dkb.de/banking/postfach/Mitteilungen'},
+                    u'Vertragsinformationen':
+                        {'documents': {},
+                        'name': u'Vertragsinformationen',
+                        'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
+                    }
+        self.assertEqual(self.dkb.scan_postbox(), e_result)
 
 if __name__ == '__main__':
 
