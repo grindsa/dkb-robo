@@ -211,7 +211,7 @@ class DKBRobo(object):
 
         return document_dic
 
-    def get_excemption_order(self):
+    def get_exemption_order(self):
         """ returns a dictionary of the stored excemption orders
 
         args:
@@ -225,46 +225,46 @@ class DKBRobo(object):
         self.dkb_br.open(exo_url)
 
         soup = self.dkb_br.get_current_page()
-
+        
         for lbr in soup.findAll("br"):
             lbr.replace_with("")
             # br.replace('<br />', ' ')
 
 
         table = soup.find('table', attrs={'class':'expandableTable'})
-
-        rows = table.findAll("tr")
+        
         exo_dic = {}
-        count = 0
-        for row in rows:
-            cols = row.findAll("td")
+        if(table):
+            count = 0
+            for row in table.findAll("tr"):
+                cols = row.findAll("td")
 
-            if cols:
-                try:
-                    count += 1
-                    exo_dic[count] = {}
-                    # description
-                    description = re.sub(' +', ' ', cols[1].text.strip())
-                    description = description.replace('\n', '')
-                    description = description.replace('\r', '')
-                    description = description.replace('  ', ' ')
-                    exo_dic[count]['description'] = description
+                if cols:
+                    try:
+                        count += 1
+                        exo_dic[count] = {}
+                        # description
+                        description = re.sub(' +', ' ', cols[1].text.strip())
+                        description = description.replace('\n', '')
+                        description = description.replace('\r', '')
+                        description = description.replace('  ', ' ')
+                        exo_dic[count]['description'] = description
 
-                    # validity
-                    validity = re.sub(' +', ' ', cols[2].text.strip())
-                    validity = validity.replace('\n', '')
-                    validity = validity.replace('\r', '')
-                    validity = validity.replace('  ', ' ')
-                    exo_dic[count]['validity'] = validity
+                        # validity
+                        validity = re.sub(' +', ' ', cols[2].text.strip())
+                        validity = validity.replace('\n', '')
+                        validity = validity.replace('\r', '')
+                        validity = validity.replace('  ', ' ')
+                        exo_dic[count]['validity'] = validity
 
-                    # exo_dic[count]['validity'] = cols[2].text.strip()
-                    exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
-                    exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
-                    exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
-                except IndexError:
-                    pass
-                except AttributeError:
-                    pass
+                        # exo_dic[count]['validity'] = cols[2].text.strip()
+                        exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
+                        exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
+                        exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
+                    except IndexError:
+                        pass
+                    except AttributeError:
+                        pass
 
         return exo_dic
 

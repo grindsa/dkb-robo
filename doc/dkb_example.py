@@ -50,7 +50,7 @@ if __name__ == "__main__":
         pprint(STO)
 
         # get freitstellungsaufträge
-        EXO = DKB.get_excemption_order()
+        EXO = DKB.get_exemption_order()
         pprint(EXO)
 
         POINTS_DIC = DKB.get_points()
