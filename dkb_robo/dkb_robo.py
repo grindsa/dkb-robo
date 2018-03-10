@@ -153,37 +153,39 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         form = soup.find('form', attrs={'id':'form597962073_1'})
 
-        # checking account limits
-        table = form.find('table', attrs={'class':'dropdownAnchor'})
-        rows = table.findAll("tr")
         limit_dic = {}
-        for row in rows:
-            cols = row.findAll("td")
-            tmp = row.find("th")
-            if cols:
-                limit = tmp.find('span').text.strip()
-                limit = limit.replace('.', '')
-                limit = limit.replace(',', '.')
-                account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
-                limit_dic[account] = limit
+        if form:
+            # checking account limits
+            table = form.find('table', attrs={'class':'dropdownAnchor'})
+            if table:
+                for row in table.findAll("tr"):
+                    cols = row.findAll("td")
+                    tmp = row.find("th")
+                    if cols:
+                        limit = tmp.find('span').text.strip()
+                        limit = limit.replace('.', '')
+                        limit = limit.replace(',', '.')
+                        account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                        limit_dic[account] = limit
 
-        # credit card  limits
-        table = form.find('table', attrs={'class':'multiColumn'})
-        rows = table.findAll("tr")
-        for row in rows:
-            cols = row.findAll("td")
-            tmp = row.find("th")
-            if cols:
-                try:
-                    limit = tmp.find('span').text.strip()
-                    limit = limit.replace('.', '')
-                    limit = limit.replace(',', '.')
-                    account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
-                    limit_dic[account] = limit
-                except IndexError:
-                    pass
-                except AttributeError:
-                    pass
+            # credit card  limits
+            table = form.find('table', attrs={'class':'multiColumn'})
+            if table:
+                rows = table.findAll("tr")
+                for row in rows:
+                    cols = row.findAll("td")
+                    tmp = row.find("th")
+                    if cols:
+                        try:
+                            limit = tmp.find('span').text.strip()
+                            limit = limit.replace('.', '')
+                            limit = limit.replace(',', '.')
+                            account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                            limit_dic[account] = limit
+                        except IndexError:
+                            pass
+                        except AttributeError:
+                            pass
 
         return limit_dic
 
@@ -225,16 +227,16 @@ class DKBRobo(object):
         self.dkb_br.open(exo_url)
 
         soup = self.dkb_br.get_current_page()
-        
+
         for lbr in soup.findAll("br"):
             lbr.replace_with("")
             # br.replace('<br />', ' ')
 
 
         table = soup.find('table', attrs={'class':'expandableTable'})
-        
+
         exo_dic = {}
-        if(table):
+        if table:
             count = 0
             for row in table.findAll("tr"):
                 cols = row.findAll("td")
@@ -398,8 +400,8 @@ class DKBRobo(object):
 
         # create browser and login
         self.dkb_br = self.new_instance()
-        self.dkb_br.open(login_url)
 
+        self.dkb_br.open(login_url)
         self.dkb_br.select_form('#login')
         self.dkb_br["j_username"] = str(self.dkb_user)
         self.dkb_br["j_password"] = str(self.dkb_password)
@@ -414,20 +416,22 @@ class DKBRobo(object):
             sys.exit(0)
 
         # catch generic notices
-        if soup.find("form", attrs={'id':'genericNoticeForm'}): 
-            self.dkb_br.open(login_url)   
-            soup = self.dkb_br.get_current_page()            
-            
+        if soup.find("form", attrs={'id':'genericNoticeForm'}):
+            self.dkb_br.open(login_url)
+            soup = self.dkb_br.get_current_page()
+
         # filter last login date
-        last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
-        # remove crlf
-        last_login = last_login.replace('\n', '')
-        # format string in a way we need it
-        last_login = last_login.replace('  ', '')
-        last_login = last_login.replace('Letzte Anmeldung:', '')
-        self.last_login = last_login
-        # parse account date
-        self.account_dic = self.parse_overview(soup)
+        if soup.find("div", attrs={'id':'lastLoginContainer'}):
+            last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
+            # remove crlf
+            last_login = last_login.replace('\n', '')
+            # format string in a way we need it
+            last_login = last_login.replace('  ', '')
+            last_login = last_login.replace('Letzte Anmeldung:', '')
+            self.last_login = last_login
+
+            # parse account date
+            self.account_dic = self.parse_overview(soup)
 
 
     def logout(self):
@@ -592,10 +596,10 @@ class DKBRobo(object):
             soup - BautifulSoup object
 
         returns:
-            overview_dic - dictionary containg following account information
+            overview_dic - dictionary containing following account information
             - name
-            - account numner
-            - type (account, creditcard, depot)
+            - account number
+            - type (account, credit-card, depot)
             - account balance
             - date of balance
             - link to details
