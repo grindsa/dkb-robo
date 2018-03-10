@@ -323,7 +323,7 @@ class TestDKBRobo(unittest.TestCase):
                         1.<br>
                         monatlich
                         <br>
-                        gelöscht
+                        geloescht
                     </td>
                     <td class="hide-for-small-down" headers="table4438440f:paymentPurposeLine">
                         KV 0987654321&nbsp;
@@ -334,7 +334,7 @@ class TestDKBRobo(unittest.TestCase):
             """
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = [{'amount': 100.0, 'interval': u'1. monatlich 01.03.2017', 'recipient': u'RECPIPIENT-1', 'purpose': u'KV 1234567890'},
-                    {'amount': 200.0, 'interval': u'1. monatlich gel\xc3\xb6scht', 'recipient': u'RECPIPIENT-2', 'purpose': u'KV 0987654321'}]
+                    {'amount': 200.0, 'interval': u'1. monatlich geloescht', 'recipient': u'RECPIPIENT-2', 'purpose': u'KV 0987654321'}]
         self.assertEqual(self.dkb.get_standing_orders(), e_result)
 
     @patch('dkb_robo.DKBRobo.new_instance')
@@ -463,6 +463,29 @@ class TestDKBRobo(unittest.TestCase):
                         'date': u'06.03.2017',
                         'type': 'depot'}}
         self.assertEqual(self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+
+    def test_get_document_links(self, mock_browser):
+        """ test DKBRobo.get_document_links() method """
+        html = """
+                <table class="widget widget abaxx-table expandableTable expandableTable-with-sort">
+                <tbody>
+                    <tr>
+                        <td><input name="rowSelector" value="0"></td>
+                        <td>02.03.2017</td>
+                        <td>02.03.2017</div><a href="/doc-1">Kontoauszug Nr. 003_2017 zu Konto 12345678</a><p>Löschung zum&nbsp;02.03.2017</p></td>
+                    </tr>
+                    <tr>
+                        <td><input name="rowSelector" value="0"></td>
+                        <td>02.03.2017</td>
+                        <td>02.03.2017</div><a href="/doc-2">Kontoauszug Nr. 003_2017 zu Konto 87654321</a><p>Löschung zum&nbsp;02.03.2017</p></td>
+                    </tr>
+                </tbody>
+                </table>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.dkb.de/doc-2',
+                    u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
+        self.assertEqual(self.dkb.get_document_links('http://foo.bar/foo'), e_result)
 
 if __name__ == '__main__':
 
