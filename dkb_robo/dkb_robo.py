@@ -94,7 +94,6 @@ class DKBRobo(object):
                     more_pages = True
                     break
 
-
         transactions_dic = self.parse_account_transactions(tr_list)
         return transactions_dic
 
@@ -127,13 +126,20 @@ class DKBRobo(object):
         # check if there is a another page
         more_kktr = kk_resp.findAll('a', attrs={'class':'icons butNext0'})
 
+        # loop into the differnt pages
+        loop_cnt = 1
         while more_kktr:
+            loop_cnt += 1
             # if so get link/transactions from 2nd page
             link = self.base_url + more_kktr[0]['href']
             self.dkb_br.open(link)
             mkk_lines = self.dkb_br.get_current_page()
             kk_list.append(mkk_lines)
-            more_kktr = mkk_lines.findAll('a', attrs={'class':'icons butNext0'})
+            # limit loop to 200 iteration (cc transactions to 200 pages)
+            if loop_cnt < 200:
+                more_kktr = mkk_lines.findAll('a', attrs={'class':'icons butNext0'})
+            else:
+                more_kktr = None
 
         transaction_list = self.parse_cc_transactions(kk_list)
         return transaction_list
@@ -553,10 +559,8 @@ class DKBRobo(object):
 
         for chunk in transactions:
             # get kk transactions
-            table_lists = chunk.findAll("table", attrs={'class':'expandableTable dateHandling '})
-
+            table_lists = chunk.findAll("table", attrs={'class':'expandableTable dateHandling creditcardtransactionsTable'})
             for tr_line in table_lists:
-
                 rows = tr_line.findAll("tr", attrs={'class':'mainRow'})
                 for row in rows:
                     cols = row.findAll("td")

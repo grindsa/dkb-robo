@@ -13,6 +13,10 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, '..')
 from dkb_robo import DKBRobo
 
+def cnt_list(value):
+    """ customized function return just the number if entries in input list """
+    return len(value)
+
 @patch('dkb_robo.DKBRobo.dkb_br')
 class TestDKBRobo(unittest.TestCase):
     """ test class """
@@ -23,82 +27,40 @@ class TestDKBRobo(unittest.TestCase):
     def test_get_cc_limit(self, mock_browser):
         """ test DKBRobo.get_credit_limits() method """
         html = """"
-            <form action="/DkbTransactionBanking/content/service/CreditcardLimit.xhtml" method="post" id="form597962073_1" name="form597962073_1" class="form" data-xpopup-mode="auto"><button style="position: absolute; left: -9999px; width: 1px; height: 1px;" name="hiddenSubmit" type="submit">&nbsp;</button>
-                <table style="width:100%;" class="dropdownAnchor" id="overdraftLimit" border="0" cellspacing="0" cellpadding="0">
+            <form action="/foo" method="post" id="form597962073_1">
+                <table class="dropdownAnchor">
                     <tbody>
                         <tr>
-                            <td class="account limit">
-                                <strong class="hide-for-medium-up">Girokonto-1</strong>
-                                <div class="minorLine">
-                                            DE01 1111 1111 1111 1111 11
-                                </div>
-                            </td>
-                            <td class="show-for-medium-up">Girokonto-1</td>
-                            <th class="alignRight">
-                                <span style="white-space: nowrap">1.000,00</span>
-                            </th>
+                            <td><strong>Girokonto-1</strong><div class="minorLine">DE01 1111 1111 1111 1111 11</div></td>
+                            <td>Girokonto-1</td>
+                            <th><span style="white-space: nowrap">1.000,00</span></th>
                         </tr>
                         <tr>
-                            <td class="account limit">
-                                <strong class="hide-for-medium-up">Girokonto-2</strong>
-                                <div class="minorLine">
-                                            DE02 1111 1111 1111 1111 12
-                                </div>
-                            </td>
-                            <td class="show-for-medium-up">Girokonto-2</td>
-                            <th class="alignRight">
-                                <span style="white-space: nowrap">2000,00</span>
-                            </th>
+                            <td><strong>Girokonto-2</strong><div class="minorLine">DE02 1111 1111 1111 1111 12</div></td>
+                            <td>Girokonto-2</td>
+                            <th><span>2000,00</span></th>
                         </tr>
                     </tbody>
                 </table>
-                <table style="width:100%;" class="multiColumn" id="creditCardLimit" border="0" cellspacing="0" cellpadding="0">
+                <table class="multiColumn" id="creditCardLimit" border="0">
                     <tbody>
                         <tr>
-                            <td class="account limit">
-                                <strong class="hide-for-medium-up">CC-1</strong>
-                                <div class="minorLine">1111********1111</div>
-                            </td>
-                            <td class="show-for-medium-up">
-                                CC-1
-                            </td>
-                            <th class="alignRight">
-                                        <span style="white-space: nowrap">100,00</span>
-                            </th>
+                            <td><strong>CC-1</strong><div class="minorLine">1111********1111</div></td>
+                            <td>CC-1</td>
+                            <th><span>100,00</span></th>
                         </tr>
                         <tr>
-                            <td class="account limit">
-                                <strong class="hide-for-medium-up">CC-2</strong>
-                                <div class="minorLine">1111********1112</div>
-                            </td>
-                            <td class="show-for-medium-up">
-                                CC-2
-                            </td>
-                            <th class="alignRight">
-                                        <span style="white-space: nowrap">2.000,00</span>
-                            </th>
+                            <td><strong>CC-2</strong><div class="minorLine">1111********1112</div></td>
+                            <td>CC-2</td>
+                            <th><span>2.000,00</span></th>
                         </tr>
-                        <tr>
-                            <td class="account limit">
-                                <strong class="hide-for-medium-up">CC-3</strong>
-                                <div class="minorLine">1111********1113</div>
-                            </td>
-                            <td class="show-for-medium-up">
-                                CC-3
-                            </td>
-                            <th class="alignRight">
-                                        <span style="white-space: nowrap">3.000,00</span>
-                            </th>
-                        </tr>
-
-                </tbody>
+                    </tbody>
                 </table>
             </form>
             """
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'1111********1111': u'100.00',
                     u'1111********1112': u'2000.00',
-                    u'1111********1113': u'3000.00',
                     u'DE01 1111 1111 1111 1111 11': u'1000.00',
                     u'DE02 1111 1111 1111 1111 12': u'2000.00'}
         self.assertEqual(self.dkb.get_credit_limits(), e_result)
@@ -517,18 +479,237 @@ class TestDKBRobo(unittest.TestCase):
         mock_doclinks.return_value = {}
         e_result = {u'Kreditkartenabrechnungen':
                         {'documents': {},
-                        'name': u'Kreditkartenabrechnungen',
-                        'details': u'https://www.dkb.de/banking/postfach/Kreditkartenabrechnungen'},
+                         'name': u'Kreditkartenabrechnungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Kreditkartenabrechnungen'},
                     u'Mitteilungen':
                         {'documents': {},
-                        'name': u'Mitteilungen',
-                        'details': u'https://www.dkb.de/banking/postfach/Mitteilungen'},
+                         'name': u'Mitteilungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Mitteilungen'},
                     u'Vertragsinformationen':
                         {'documents': {},
-                        'name': u'Vertragsinformationen',
-                        'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
-                    }
+                         'name': u'Vertragsinformationen',
+                         'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
+                   }
         self.assertEqual(self.dkb.scan_postbox(), e_result)
+
+    def test_get_tr_invalid(self, _unused):
+        """ test DKBRobo.get_transactions() method with an invalid account type"""
+        self.assertEqual(self.dkb.get_transactions('url', 'foo', '01.03.2017', '02.03.2017'), [])
+
+    @patch('dkb_robo.DKBRobo.get_creditcard_transactions')
+    def test_get_tr_cc(self, mock_cc_tran, _unused):
+        """ test DKBRobo.get_transactions() method with an credit-card account"""
+        mock_cc_tran.return_value = ['credit_card']
+        self.assertEqual(self.dkb.get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
+
+    @patch('dkb_robo.DKBRobo.get_account_transactions')
+    def test_get_tr_ac(self, mock_ca_tran, _unused):
+        """ test DKBRobo.get_transactions() method with an checking account"""
+        mock_ca_tran.return_value = ['account']
+        self.assertEqual(self.dkb.get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
+
+    @patch('dkb_robo.DKBRobo.parse_account_transactions', wraps=cnt_list)
+    def test_get_tr_ac_one(self, _unused, mock_browser):
+        """ test DKBRobo.get_account_transactions for one page only """
+        html = """
+            <p>foo</p>
+        """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertEqual(self.dkb.get_account_transactions('url', '01.03.2017', '02.03.2017'), 1)
+
+    @patch('dkb_robo.DKBRobo.parse_account_transactions', wraps=cnt_list)
+    def test_get_tr_ac_two(self, _unused, mock_browser):
+        """ test DKBRobo.get_account_transactions for two pages """
+        html = """
+            <p>foo</p>
+            <ul>
+                <li><a href="/foo-2" class="gotoPage">2</a></li>
+            </ul>
+        """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        # mock_parse_ca_tran.return_value = 1
+        self.assertEqual(self.dkb.get_account_transactions('url', '01.03.2017', '02.03.2017'), 2)
+
+    @patch('dkb_robo.DKBRobo.parse_account_transactions', wraps=cnt_list)
+    def test_get_tr_ac_three(self, _unused, mock_browser):
+        """ test DKBRobo.get_account_transactions for three pages """
+        html = """
+            <p>foo</p>
+            <ul>
+                <li><a href="/foo-2" class="gotoPage">2</a></li>
+                <li><a href="/foo-3" class="gotoPage">3</a></li>
+            </ul>
+        """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        # mock_parse_ca_tran.return_value = 1
+        self.assertEqual(self.dkb.get_account_transactions('url', '01.03.2017', '02.03.2017'), 3)
+
+    @patch('dkb_robo.DKBRobo.parse_cc_transactions', wraps=cnt_list)
+    def test_get_tr_cc_single(self, _unused, mock_browser):
+        """ test DKBRobo.get_creditcard_transactions for one page only """
+        html = """
+            <p>foo</p>
+        """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertEqual(self.dkb.get_creditcard_transactions('url', '01.03.2017', '02.03.2017'), 1)
+
+    @patch('dkb_robo.DKBRobo.parse_cc_transactions', wraps=cnt_list)
+    def test_get_tr_cc_multiple(self, _unused, mock_browser):
+        """ test DKBRobo.get_creditcard_transactions for multiple pages.
+            force to end loop after 200 iterations
+        """
+        html = """
+            <p>foo</p>
+            <a href="/foo" class="icons butNext0" title="Nächste Seite"></a>
+        """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertEqual(self.dkb.get_creditcard_transactions('url', '01.03.2017', '02.03.2017'), 200)
+
+    def test_parse_atrans_single(self, _unused):
+        """ test DKBRobo.parse_account_transactions() method for a single page"""
+        html = """
+            <table id="umsatzTabelle">
+            <tbody>
+                <tr class="mainRow">
+                    <td>01.03.2017<br><span class="valueDate">01.03.2017</span></td>
+                    <td><div>line-11</div><div>line-12</div><div>line-13</div></td>
+                    <td><div>DE11 1111 1111 1111 1111 11</div>XXXXXXXXXXX</td>
+                    <td><nobr><span>-100,00</span></nobr></td>
+                </tr>
+                <tr class="mainRow">
+                    <td>01.03.2017<br><span class="valueDate">01.03.2017</span></td>
+                    <td><div>line-21</div><div>line-22</div><div>line-23</div></td>
+                    <td><div>DE11 1111 1111 1111 1111 11</div>XXXXXXXXXXX</td>
+                    <td><nobr><span>-200,00</span></nobr></td>
+                </tr>
+            </tbody>
+            </table>
+        """
+        e_result = [{'date': u'01.03.2017',
+                     'text': u'line-11 line-12line-13',
+                     'amount': u'-100.00'},
+                    {'date': u'01.03.2017',
+                     'text': u'line-21 line-22line-23',
+                     'amount': u'-200.00'}]
+        self.assertEqual(self.dkb.parse_account_transactions([BeautifulSoup(html, 'html5lib')]), e_result)
+
+    def test_parse_atrans_multiple(self, _unused):
+        """ test DKBRobo.parse_account_transactions() method for multiple pages"""
+        html = """
+            <table id="umsatzTabelle">
+            <tbody>
+                <tr class="mainRow">
+                    <td>01.03.2017<br><span class="valueDate">01.03.2017</span></td>
+                    <td><div>line-11</div><div>line-12</div><div>line-13</div></td>
+                    <td><div>DE11 1111 1111 1111 1111 11</div>XXXXXXXXXXX</td>
+                    <td><nobr><span>-100,00</span></nobr></td>
+                </tr>
+                <tr class="mainRow">
+                    <td>01.03.2017<br><span class="valueDate">01.03.2017</span></td>
+                    <td><div>line-21</div><div>line-22</div><div>line-23</div></td>
+                    <td><div>DE11 1111 1111 1111 1111 11</div>XXXXXXXXXXX</td>
+                    <td><nobr><span>-200,00</span></nobr></td>
+                </tr>
+            </tbody>
+            </table>
+        """
+        e_result = [{'date': u'01.03.2017',
+                     'text': u'line-11 line-12line-13',
+                     'amount': u'-100.00'},
+                    {'date': u'01.03.2017',
+                     'text': u'line-21 line-22line-23',
+                     'amount': u'-200.00'},
+                    {'date': u'01.03.2017',
+                     'text': u'line-11 line-12line-13',
+                     'amount': u'-100.00'},
+                    {'date': u'01.03.2017',
+                     'text': u'line-21 line-22line-23',
+                     'amount': u'-200.00'}]
+        self.assertEqual(self.dkb.parse_account_transactions([BeautifulSoup(html, 'html5lib'), BeautifulSoup(html, 'html5lib')]), e_result)
+
+    def test_parse_ctrans_single(self, _unused):
+        """ test DKBRobo.parse_cc_transactions() method for a single line """
+        html = """
+                <table class="expandableTable dateHandling creditcardtransactionsTable">
+                <tbody>
+                <tr class="mainRow">
+                    <td>&nbsp;</td>
+                    <td><span class="valueDate">01.03.17</span><br>01.03.17</td>
+                    <td><div>Line-1</div></td>
+                    <td><nobr><span>-100,00</span></nobr></td>
+                    <td>EUR</td>
+                </tr>
+                <tr class="mainRow">
+                    <td>&nbsp;</td>
+                    <td><span class="valueDate">02.03.17</span><br>02.03.17</td>
+                    <td><div>Line-2</div></td>
+                    <td><nobr><span>-200,00</span></nobr></td>
+                    <td>EUR</td>
+                </tr>
+                </tbody>
+                </table>
+        """
+        e_result = [{'bdate': '01.03.2017',
+                     'vdate': '01.03.2017',
+                     'text': u'Line-1',
+                     'show_date': '01.03.2017',
+                     'store_date': '01.03.2017',
+                     'amount': u'-100.00'},
+                    {'bdate': '02.03.2017',
+                     'vdate': '02.03.2017',
+                     'text': u'Line-2',
+                     'show_date': '02.03.2017',
+                     'store_date': '02.03.2017',
+                     'amount': u'-200.00'}]
+        self.assertEqual(self.dkb.parse_cc_transactions([BeautifulSoup(html, 'html5lib')]), e_result)
+
+    def test_parse_ctrans_multiple(self, _unused):
+        """ test DKBRobo.parse_cc_transactions() method for multiple pages """
+        html = """
+                <table class="expandableTable dateHandling creditcardtransactionsTable">
+                <tbody>
+                <tr class="mainRow">
+                    <td>&nbsp;</td>
+                    <td><span class="valueDate">01.03.17</span><br>01.03.17</td>
+                    <td><div>Line-1</div></td>
+                    <td><nobr><span>-100,00</span></nobr></td>
+                    <td>EUR</td>
+                </tr>
+                <tr class="mainRow">
+                    <td>&nbsp;</td>
+                    <td><span class="valueDate">02.03.17</span><br>02.03.17</td>
+                    <td><div>Line-2</div></td>
+                    <td><nobr><span>-200,00</span></nobr></td>
+                    <td>EUR</td>
+                </tr>
+                </tbody>
+                </table>
+        """
+        e_result = [{'bdate': '01.03.2017',
+                     'vdate': '01.03.2017',
+                     'text': u'Line-1',
+                     'show_date': '01.03.2017',
+                     'store_date': '01.03.2017',
+                     'amount': u'-100.00'},
+                    {'bdate': '02.03.2017',
+                     'vdate': '02.03.2017',
+                     'text': u'Line-2',
+                     'show_date': '02.03.2017',
+                     'store_date': '02.03.2017',
+                     'amount': u'-200.00'},
+                    {'bdate': '01.03.2017',
+                     'vdate': '01.03.2017',
+                     'text': u'Line-1',
+                     'show_date': '01.03.2017',
+                     'store_date': '01.03.2017',
+                     'amount': u'-100.00'},
+                    {'bdate': '02.03.2017',
+                     'vdate': '02.03.2017',
+                     'text': u'Line-2',
+                     'show_date': '02.03.2017',
+                     'store_date': '02.03.2017',
+                     'amount': u'-200.00'}]
+        self.assertEqual(self.dkb.parse_cc_transactions([BeautifulSoup(html, 'html5lib'), BeautifulSoup(html, 'html5lib')]), e_result)
 
 if __name__ == '__main__':
 
