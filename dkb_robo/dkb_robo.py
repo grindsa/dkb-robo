@@ -449,7 +449,7 @@ class DKBRobo(object):
         transaction_list = []
 
         # parse CSV
-        for row in csv.reader(transactions.splitlines(), delimiter=';'):
+        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
             if len(row) == 12:
                 # skip first line
                 if row[0] != 'Buchungstag':
@@ -502,7 +502,7 @@ class DKBRobo(object):
         transaction_list = []
 
         # parse CSV
-        for row in csv.reader(transactions.splitlines(), delimiter=';'):
+        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
             if len(row) == 7:
                 # skip first line
                 if row[1] != 'Wertstellung':
