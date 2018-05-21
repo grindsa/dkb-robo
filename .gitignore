@@ -101,6 +101,7 @@ ENV/
 # mystuff
 /dkb_devel.py
 /dkb_scrap.py
+/dkb_check.py
 /wa_hack_cli.py
 /dkb_test.py
 /*.html

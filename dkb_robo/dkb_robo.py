@@ -4,7 +4,7 @@
 
 from __future__ import print_function
 import sys
-
+import csv
 from datetime import datetime
 import re
 import mechanicalsoup
@@ -68,34 +68,9 @@ class DKBRobo(object):
         self.dkb_br["toTransactionDate"] = str(date_to)
         self.dkb_br.submit_selected()
 
-        tr_list = []
-        # enter a loop to check all following pages
-        tr_lines = self.dkb_br.get_current_page()
-        tr_list.append(tr_lines)
-
-        # loop into the differnt pages
-        loop_cnt = 1
-
-        # we need to set more_pages to true to enter loop
-        more_pages = True
-        while more_pages:
-            # for the moment we assume that there is no further page
-            more_pages = False
-            loop_cnt += 1
-            more_tr = tr_lines.findAll('a', attrs={'class':'gotoPage'})
-            for page in more_tr:
-                # check if there are more pages to download
-                if page.contents[0] == str(loop_cnt):
-                    # more pages available fetch/parse the page and enter
-                    # while loop again
-                    new_link = self.base_url + page['href']
-                    self.dkb_br.open(new_link)
-                    tr_list.append(self.dkb_br.get_current_page())
-                    more_pages = True
-                    break
-
-        transactions_dic = self.parse_account_transactions(tr_list)
-        return transactions_dic
+        self.dkb_br.get_current_page()
+        response = self.dkb_br.follow_link('csvExport')
+        return self.parse_account_transactions(response.content)
 
     def get_creditcard_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
@@ -107,9 +82,6 @@ class DKBRobo(object):
         """
 
         # get credit card transaction form yesterday
-        kk_list = []
-
-        more_kktr = None
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
 
@@ -119,30 +91,8 @@ class DKBRobo(object):
         self.dkb_br["toPostingDate"] = str(date_to)
         self.dkb_br.submit_selected()
 
-        # parse the lines to get transactions from the day
-        kk_resp = self.dkb_br.get_current_page()
-        kk_list.append(kk_resp)
-
-        # check if there is a another page
-        more_kktr = kk_resp.findAll('a', attrs={'class':'icons butNext0'})
-
-        # loop into the differnt pages
-        loop_cnt = 1
-        while more_kktr:
-            loop_cnt += 1
-            # if so get link/transactions from 2nd page
-            link = self.base_url + more_kktr[0]['href']
-            self.dkb_br.open(link)
-            mkk_lines = self.dkb_br.get_current_page()
-            kk_list.append(mkk_lines)
-            # limit loop to 200 iteration (cc transactions to 200 pages)
-            if loop_cnt < 200:
-                more_kktr = mkk_lines.findAll('a', attrs={'class':'icons butNext0'})
-            else:
-                more_kktr = None
-
-        transaction_list = self.parse_cc_transactions(kk_list)
-        return transaction_list
+        response = self.dkb_br.follow_link('csvExport')
+        return self.parse_cc_transactions(response.content)
 
     def get_credit_limits(self):
         """ create a dictionary of credit limites of the different accounts
@@ -495,47 +445,41 @@ class DKBRobo(object):
             - amount - amount
             - text - text
         """
-        # parse the lines to get all account infos
-        # soup = BeautifulSoup(transactions, "html5lib")
-
         # create empty list
         transaction_list = []
 
-        for chunk in transactions:
-            tr_lists = chunk.findAll('table', attrs={'id':'umsatzTabelle'})
-            for tr_list in tr_lists:
-                rows = tr_list.findAll("tr", attrs={'class':'mainRow'})
-                for row in rows:
-                    cols = row.findAll("td")
-                    date = cols[0].find('span', attrs={'class':'valueDate'}).text.strip()
-                    if date == '':
-                        date = 'vorgem.'
-                    amount = cols[3].text.strip()
-                    f_amount = amount.replace('.', '')
-                    f_amount = f_amount.replace(',', '.')
-
-                    text = ''
-                    divs = cols[1].findAll('div')
-                    if len(divs) > 2:
-                        if 'DATUM ' in  str(divs[2].text.strip()):
-                            text = divs[0].text.strip() + ' ' + divs[1].text.strip()
-                        else:
-                            text = divs[0].text.strip() + ' ' + divs[1].text.strip() + divs[2].text.strip()
-                    else:
-                        text = divs[0].text.strip() + ' ' + divs[1].text.strip()
-
-                    text = text.replace('  ', ' ')
-                    text = text.replace('  ', ' ')
-                    text = text.replace('  ', ' ')
-                    text = text.replace('  ', ' ')
-
-                    # store entry
+        # parse CSV
+        for row in csv.reader(transactions.splitlines(), delimiter=';'):
+            if len(row) == 12:
+                # skip first line
+                if row[0] != 'Buchungstag':
                     tmp_dic = {}
-                    tmp_dic['amount'] = f_amount
-                    tmp_dic['date'] = date
-                    tmp_dic['text'] = text
-                    transaction_list.append(tmp_dic)
 
+                    # data from CSV
+                    tmp_dic['bdate'] = row[0]
+                    tmp_dic['vdate'] = row[1]
+                    # remove double spaces
+                    tmp_dic['postingtext'] = ' '.join(row[2].split())
+                    tmp_dic['peer'] = ' '.join(row[3].split())
+                    tmp_dic['reasonforpayment'] = ' '.join(row[4].split())
+                    tmp_dic['mandatereference'] = ' '.join(row[9].split())
+                    tmp_dic['customerreferenz'] = ' '.join(row[10].split())
+
+                    tmp_dic['peeraccount'] = row[5]
+                    tmp_dic['peerbic'] = row[6]
+                    tmp_dic['peerid'] = row[8]
+
+                    # reformat amount
+                    amount = row[7]
+                    amount = amount.replace('.', '')
+                    tmp_dic['amount'] = amount.replace(',', '.')
+
+                    #  date is only for backwards compability
+                    tmp_dic['date'] = row[0]
+                    tmp_dic['text'] = '{0} {1} {2}'.format(tmp_dic['postingtext'], tmp_dic['peer'], tmp_dic['reasonforpayment'])
+
+                    # append dic to list
+                    transaction_list.append(tmp_dic)
         return transaction_list
 
     def parse_cc_transactions(self, transactions):
@@ -554,43 +498,25 @@ class DKBRobo(object):
         # parse the lines to get all account infos
         # soup = BeautifulSoup(transactions, "html5lib")
 
-        # create empty dic
+        # create empty list
         transaction_list = []
 
-        for chunk in transactions:
-            # get kk transactions
-            table_lists = chunk.findAll("table", attrs={'class':'expandableTable dateHandling creditcardtransactionsTable'})
-            for tr_line in table_lists:
-                rows = tr_line.findAll("tr", attrs={'class':'mainRow'})
-                for row in rows:
-                    cols = row.findAll("td")
-                    vdate = cols[1].find("span", attrs={'class':'valueDate'}).text.strip()
-                    # reformat date
-                    vdate = datetime.strptime(vdate, '%d.%m.%y').strftime("%d.%m.%Y")
-
-                    try:
-                        bdate = cols[1].findAll(text=True)[3].strip()
-                        # reformat date
-                        bdate = datetime.strptime(bdate, '%d.%m.%y').strftime("%d.%m.%Y")
-                    except IndexError:
-                        bdate = vdate
-                    except AttributeError:
-                        bdate = vdate
-
-                    text = cols[2].text.strip()
-                    amount = cols[3].find("span").text.strip()
-                    f_amount = amount.replace('.', '')
-                    f_amount = f_amount.replace(',', '.')
-
+        # parse CSV
+        for row in csv.reader(transactions.splitlines(), delimiter=';'):
+            if len(row) == 7:
+                # skip first line
+                if row[1] != 'Wertstellung':
                     tmp_dic = {}
-                    tmp_dic['bdate'] = bdate
-                    tmp_dic['show_date'] = bdate
-                    tmp_dic['vdate'] = vdate
-                    tmp_dic['store_date'] = vdate
-                    tmp_dic['text'] = text
-                    tmp_dic['amount'] = f_amount
-                    transaction_list.append(tmp_dic)
+                    tmp_dic['vdate'] = row[1]
+                    tmp_dic['show_date'] = row[1]
+                    tmp_dic['bdate'] = row[2]
+                    tmp_dic['store_date'] = row[2]
+                    tmp_dic['text'] = row[3]
+                    amount = row[4].replace('.', '')
+                    tmp_dic['amount'] = amount.replace(',', '.')
 
+                    # append dic to list
+                    transaction_list.append(tmp_dic)
         return transaction_list
 
     def parse_overview(self, soup):
