@@ -30,8 +30,8 @@ class DKBRobo(object):
     account_dic = None
 
     def __init__(self, dkb_user=None, dkb_password=None):
-        self.dkb_user = dkb_user # TODO additional checks (Fail on config, not fail on first use)
-        self.dkb_password = dkb_password # TODO additional checks
+        self.dkb_user = dkb_user
+        self.dkb_password = dkb_password
 
     def __enter__(self):
         """
@@ -544,11 +544,11 @@ class DKBRobo(object):
             overview_dic[counter] = {}
             cols = row.findAll("td")
 
-            # check if we have accounts from other banks in overview 
+            # check if we have accounts from other banks in overview
             # in this case we need to shift colums by one
             if cols[0].find("img"):
                 ontop = 1
-                        
+
             # account name
             overview_dic[counter]['name'] = cols[0 + ontop].find('div').text.strip()
 
