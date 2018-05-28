@@ -539,29 +539,35 @@ class DKBRobo(object):
         overview_dic = {}
         # to_remove = 0
         counter = 0
+        ontop = 0
         for row in soup.findAll("tr", attrs={'class':'mainRow'}):
             overview_dic[counter] = {}
             cols = row.findAll("td")
 
+            # check if we have accounts from other banks in overview 
+            # in this case we need to shift colums by one
+            if cols[0].find("img"):
+                ontop = 1
+                        
             # account name
-            overview_dic[counter]['name'] = cols[0].find('div').text.strip()
+            overview_dic[counter]['name'] = cols[0 + ontop].find('div').text.strip()
 
             # account number
-            overview_dic[counter]['account'] = cols[1].text.strip()
+            overview_dic[counter]['account'] = cols[1 + ontop].text.strip()
             # date
-            overview_dic[counter]['date'] = cols[2].text.strip()
+            overview_dic[counter]['date'] = cols[2 + ontop].text.strip()
             # amount (to be reformated)
-            amount = cols[3].text.strip().replace('.', '')
+            amount = cols[3 + ontop].text.strip().replace('.', '')
             try:
                 overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
             except ValueError:
                 pass
 
             # get link for transactions
-            link = cols[4].find('a', attrs={'class':'evt-paymentTransaction'})
+            link = cols[4 + ontop].find('a', attrs={'class':'evt-paymentTransaction'})
             if link:
                 # thats a cash account or a credit card
-                if 'cash' in cols[4].text.strip().lower():
+                if 'cash' in cols[4 + ontop].text.strip().lower():
                     # this is a cash account
                     overview_dic[counter]['type'] = 'account'
                 else:
@@ -572,14 +578,14 @@ class DKBRobo(object):
                 try:
                     # thats a depot
                     overview_dic[counter]['type'] = 'depot'
-                    link = cols[4].find('a', attrs={'class':'evt-depot'})
+                    link = cols[4 + ontop].find('a', attrs={'class':'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
                 except IndexError:
                     pass
 
             # get link for details
             try:
-                link = cols[4].find('a', attrs={'class':'evt-details'})
+                link = cols[4 + ontop].find('a', attrs={'class':'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
             except IndexError:
                 pass
