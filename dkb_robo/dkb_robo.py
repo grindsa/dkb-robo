@@ -67,7 +67,6 @@ class DKBRobo(object):
         self.dkb_br["transactionDate"] = str(date_from)
         self.dkb_br["toTransactionDate"] = str(date_to)
         self.dkb_br.submit_selected()
-
         self.dkb_br.get_current_page()
         response = self.dkb_br.follow_link('csvExport')
         return self.parse_account_transactions(response.content)
@@ -80,7 +79,6 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
-
         # get credit card transaction form yesterday
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
