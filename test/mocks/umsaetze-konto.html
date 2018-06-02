@@ -1,0 +1,3735 @@
+<!DOCTYPE html>
+<html lang="de" class="dasKannBank " x-ms-format-detection="none">
+	<head>
+        <script type="text/javascript" src="/dtagent_ICA23jr_6000500101012.js" data-dtconfig="rid=RID_-9900032403|rpid=1955549756|rt=1000|tp=371,53,3|lab=1|reportUrl=/dynaTraceMonitor|domain=dkb.de|agentUri=/dtagent_ICA23jr_6000500101012.js"></script><link href="/wro/dkb-global.css?etag=2a0d22d5ac2ade079859186957946a34295bc511" rel="stylesheet" type="text/css" /><link href="/wro/dkb-global-print.css?etag=55577e052ae1a643cb69b150effaec45521e0a3" media="print" rel="stylesheet" type="text/css" /><meta name="viewport" content="width=device-width, initial-scale=1, NAME5imum-scale=1, user-scalable=no"/>
+    <link href="/responsive/scss_generated/dkb_responsive.min.css?etag=9772b584" rev="responsive" rel="stylesheet" type="text/css" /><script src="/wro/product-global.js?etag=3e9ccb734611fead3c4d6de2749ba2333d13f822" type="text/javascript"></script><script src="/wro/dkb-global.js?etag=8e9ff378a54975928c7795da098b8b9e5721d834" type="text/javascript"></script><script src="/wro/highcharts.js?etag=f9a92c1cbaf7ab340ccb2255f89159e57aeebd61" type="text/javascript"></script><script src="/wro/dkb-payment-transaction.js?etag=c73ea6bd0a5ecd07fcb3c362d573e4f3c498206d" type="text/javascript"></script><script type="text/javascript">
+	jQuery.noConflict();
+</script>
+
+
+<script type="text/javascript">Abaxx.init('de','de','/')</script><!--[if lte IE 9]>
+<script src="/scripts/dkb/ie_scripts.min.js?etag=f8008862" type="text/javascript"></script><![endif]-->
+
+
+<!--[if IE ]>
+    <link href="/styles/dkb/ie.min.css?etag=5a9e7291" rel="stylesheet" type="text/css" /><script type="text/javascript">if (typeof iTim != 'undefined') iTim.init();</script>
+<![endif]-->
+<!--[if IE 7]>
+    <link href="/styles/dkb/ie7.min.css?etag=63fa9945" rel="stylesheet" type="text/css" /><![endif]-->
+<!--[if IE 8]>
+    <link href="/styles/dkb/ie8.min.css?etag=bdffae8e" rel="stylesheet" type="text/css" /><![endif]-->
+
+<style type="text/css">.ajax_loading .ui-widget-overlay{z-index:3000;position:fixed;background:#FFF;opacity:0.7;filter:Alpha(Opacity=70)}.ajax_loading .spinner_container{top:0;position:fixed;width:100%;height:100%;display:block;z-index:3001}.ajax_loading .spinner_container .spinner{position:fixed;top:55%;left:50%}.ajax_loading .spinner_container .spinner:after{content:" ";display:block;height:125px;width:125px;margin-top:-115px;margin-left:-59.5px;background-image:url("data:image/svg+xml;base64,PHN2ZyBpZD0iREtCIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjE1MSA3Ny4zIDgyLjkgNDAiPjxzdHlsZT4uc3Qwe2ZpbGw6IzE0OGRlYX08L3N0eWxlPjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xNTEgNzcuM2g4Mi45djEuNkgxNTF6bTAgMzguNGg4Mi45djEuNkgxNTF6bTEyLTIuNWM0LjUgMCA3LjUtLjYgMTAuOS0zLjkgMy0zIDQuNi03IDQuNi0xMS44IDAtNS4zLTEuNi05LjQtNC42LTEyLjMtMy4zLTMuMS02LjktMy44LTExLjktMy44aC0xMXYzMS44aDEyem0tMS4xLTdoLTMuMXYtMThoMy4xYzUuNyAwIDguOCAzLjIgOC44IDkgMCA2LjItMi44IDktOC44IDltMjguMSA3Vjk5LjRsOC4zIDEzLjhoOS40bC0xMC4yLTE1LjZMMjA4IDgxLjRoLTguNmwtOS40IDE1di0xNWgtNy45djMxLjh6bTIxLjcgMGg5LjdjNC4yIDAgNy4xLS4zIDkuNC0yLjQgMi0xLjggMy4xLTQuNSAzLjEtNy41IDAtMy44LTEuOC02LjItNS41LTcuMyAyLjgtMS40IDQtMy41IDQtNi44IDAtNS0zLjQtNy44LTkuOC03LjhoLTEwLjl2MzEuOHptNy41LTYuN3YtNi43aDIuNWMzLjEgMCA0LjUuNyA0LjUgMy40IDAgMi42LTEuNCAzLjMtNC4zIDMuM2gtMi43em0wLTEyLjhWODhoMi42YzIuNCAwIDMuNi45IDMuNiAzcy0xLjMgMi43LTQuMiAyLjdoLTJ6Ii8+PC9zdmc+");background-repeat:no-repeat;background-size:125px}html.dasKannBank .ajax_loading .spinner_container .spinner:after{background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGlkPSJFYmVuZV8xIiB2aWV3Qm94PSItMTA0LjUgMzE2LjUgMjgzLjQgMTYwLjYiPjxzdHlsZSBpZD0ic3R5bGUzIj4uc3Qwe2ZpbGw6IzE0OGRlYX08L3N0eWxlPjxnIGlkPSJMb2dvIj48ZyBpZD0iZzYiPjxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0tMTA0LjUgMzE2LjVoNDEuMmMyMy42IDAgNTEuNiAxNy43IDUxLjYgNTMgMCAzMi40LTI4IDUzLTUxLjYgNTNoLTQxLjJ2LTEwNnptNjMuMyA1M2MwLTIyLjEtMTcuNy0yNi41LTMzLjktMjYuNXY1M2MxNi4yIDAgMzMuOS00LjQgMzMuOS0yNi41eiIgaWQ9InBhdGg4Ii8+PHBhdGggY2xhc3M9InN0MCIgZD0iTS0uMSAzMTYuNWgyOS41djM5LjhoLjNMNTMgMzE2LjVoMzMuOUw1NiAzNjUuMWwzMy45IDU3LjVINTZsLTI2LjItNDUuN2gtLjN2NDUuN0gwVjMxNi41aC0uMXoiIGlkPSJwYXRoMTAiLz48cGF0aCBjbGFzcz0ic3QwIiBkPSJNOTcuOSAzMTYuNWg0Mi43YzE5LjIgMCAzMi40IDExLjUgMzIuNCAyNi41IDAgMTAtMy41IDE4LjYtMTEuNSAyMS4xdi4zYzYuNiAyLjUgMTcuNCAxMS41IDE3LjQgMjUuOCAwIDIxLjItMTYuMiAzMi40LTMzLjkgMzIuNEg5Ny45VjMxNi41em0zOC41IDQyLjRjNSAwIDkuMy0zLjIgOS4zLTkuMyAwLTUuNy00LjMtOS4zLTkuMy05LjNoLTl2MTguNmg5em0yLjYgMzguNGM1LjkgMCA5LjMtNC43IDkuMy0xMC42IDAtNS45LTQuNy0xMC42LTEwLjYtMTAuNmgtMTAuM3YyMS4ySDEzOXoiIGlkPSJwYXRoMTIiLz48L2c+PC9nPjwvc3ZnPg==");background-repeat:no-repeat;background-size:125px}html.hilton .ajax_loading .spinner_container .spinner{top:50%}html.hilton .ajax_loading .spinner_container .spinner:after{background-image:none}
+</style>
+<style type="text/css">html:not(.is_android) .ajax_loading .spinner div{position:absolute;background-color:transparent;-webkit-transform-origin:center -14px;-ms-transform-origin:center -14px;transform-origin:center -14px;-webkit-animation:spinner-fade-blue 1s infinite linear;-moz-animation:spinner-fade-blue 1s infinite linear;animation:spinner-fade-blue 1s infinite linear}html:not(.is_android) .ajax_loading .spinner div:nth-child(1){-webkit-animation-delay:0s;-moz-animation-delay:0s;animation-delay:0s;-webkit-transform:rotate(0deg);-moz-transform:rotate(0deg);-ms-transform:rotate(0deg);transform:rotate(0deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(2){-webkit-animation-delay:.083s;-moz-animation-delay:.083s;animation-delay:.083s;-webkit-transform:rotate(30deg);-moz-transform:rotate(30deg);-ms-transform:rotate(30deg);transform:rotate(30deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(3){-webkit-animation-delay:.166s;-moz-animation-delay:.166s;animation-delay:.166s;-webkit-transform:rotate(60deg);-moz-transform:rotate(60deg);-ms-transform:rotate(60deg);transform:rotate(60deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(4){-webkit-animation-delay:.249s;-moz-animation-delay:.249s;animation-delay:.249s;-webkit-transform:rotate(90deg);-moz-transform:rotate(90deg);-ms-transform:rotate(90deg);transform:rotate(90deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(5){-webkit-animation-delay:.332s;-moz-animation-delay:.332s;animation-delay:.332s;-webkit-transform:rotate(120deg);-moz-transform:rotate(120deg);-ms-transform:rotate(120deg);transform:rotate(120deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(6){-webkit-animation-delay:.415s;-moz-animation-delay:.415s;animation-delay:.415s;-webkit-transform:rotate(150deg);-moz-transform:rotate(150deg);-ms-transform:rotate(150deg);transform:rotate(150deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(7){-webkit-animation-delay:.498s;-moz-animation-delay:.498s;animation-delay:.498s;-webkit-transform:rotate(180deg);-moz-transform:rotate(180deg);-ms-transform:rotate(180deg);transform:rotate(180deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(8){-webkit-animation-delay:.581s;-moz-animation-delay:.581s;animation-delay:.581s;-webkit-transform:rotate(210deg);-moz-transform:rotate(210deg);-ms-transform:rotate(210deg);transform:rotate(210deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(9){-webkit-animation-delay:.664s;-moz-animation-delay:.664s;animation-delay:.664s;-webkit-transform:rotate(240deg);-moz-transform:rotate(240deg);-ms-transform:rotate(240deg);transform:rotate(240deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(10){-webkit-animation-delay:.747s;-moz-animation-delay:.747s;animation-delay:.747s;-webkit-transform:rotate(270deg);-moz-transform:rotate(270deg);-ms-transform:rotate(270deg);transform:rotate(270deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(11){-webkit-animation-delay:.83s;-moz-animation-delay:.83s;animation-delay:.83s;-webkit-transform:rotate(300deg);-moz-transform:rotate(300deg);-ms-transform:rotate(300deg);transform:rotate(300deg)}html:not(.is_android) .ajax_loading .spinner div:nth-child(12){-webkit-animation-delay:.913s;-moz-animation-delay:.913s;animation-delay:.913s;-webkit-transform:rotate(330deg);-moz-transform:rotate(330deg);-ms-transform:rotate(330deg);transform:rotate(330deg)}@-webkit-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@-moz-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@-o-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}html:not(.is_android) .ajax_loading .spinner div{width:4px;height:14px;border-radius:4px}.miniSpinnerWhite,.miniSpinnerBlue{width:20px;height:20px;display:inline-block;position:relative}.miniSpinnerWhite div,.miniSpinnerBlue div{top:14px;left:10px;width:1px;height:5px;border-radius:4px}.miniSpinnerWhite div{position:absolute;background-color:transparent;-webkit-transform-origin:center -4px;-ms-transform-origin:center -4px;transform-origin:center -4px;-webkit-animation:spinner-fade-white 1s infinite linear;-moz-animation:spinner-fade-white 1s infinite linear;animation:spinner-fade-white 1s infinite linear}.miniSpinnerWhite div:nth-child(1){-webkit-animation-delay:0s;-moz-animation-delay:0s;animation-delay:0s;-webkit-transform:rotate(0deg);-moz-transform:rotate(0deg);-ms-transform:rotate(0deg);transform:rotate(0deg)}.miniSpinnerWhite div:nth-child(2){-webkit-animation-delay:.083s;-moz-animation-delay:.083s;animation-delay:.083s;-webkit-transform:rotate(30deg);-moz-transform:rotate(30deg);-ms-transform:rotate(30deg);transform:rotate(30deg)}.miniSpinnerWhite div:nth-child(3){-webkit-animation-delay:.166s;-moz-animation-delay:.166s;animation-delay:.166s;-webkit-transform:rotate(60deg);-moz-transform:rotate(60deg);-ms-transform:rotate(60deg);transform:rotate(60deg)}.miniSpinnerWhite div:nth-child(4){-webkit-animation-delay:.249s;-moz-animation-delay:.249s;animation-delay:.249s;-webkit-transform:rotate(90deg);-moz-transform:rotate(90deg);-ms-transform:rotate(90deg);transform:rotate(90deg)}.miniSpinnerWhite div:nth-child(5){-webkit-animation-delay:.332s;-moz-animation-delay:.332s;animation-delay:.332s;-webkit-transform:rotate(120deg);-moz-transform:rotate(120deg);-ms-transform:rotate(120deg);transform:rotate(120deg)}.miniSpinnerWhite div:nth-child(6){-webkit-animation-delay:.415s;-moz-animation-delay:.415s;animation-delay:.415s;-webkit-transform:rotate(150deg);-moz-transform:rotate(150deg);-ms-transform:rotate(150deg);transform:rotate(150deg)}.miniSpinnerWhite div:nth-child(7){-webkit-animation-delay:.498s;-moz-animation-delay:.498s;animation-delay:.498s;-webkit-transform:rotate(180deg);-moz-transform:rotate(180deg);-ms-transform:rotate(180deg);transform:rotate(180deg)}.miniSpinnerWhite div:nth-child(8){-webkit-animation-delay:.581s;-moz-animation-delay:.581s;animation-delay:.581s;-webkit-transform:rotate(210deg);-moz-transform:rotate(210deg);-ms-transform:rotate(210deg);transform:rotate(210deg)}.miniSpinnerWhite div:nth-child(9){-webkit-animation-delay:.664s;-moz-animation-delay:.664s;animation-delay:.664s;-webkit-transform:rotate(240deg);-moz-transform:rotate(240deg);-ms-transform:rotate(240deg);transform:rotate(240deg)}.miniSpinnerWhite div:nth-child(10){-webkit-animation-delay:.747s;-moz-animation-delay:.747s;animation-delay:.747s;-webkit-transform:rotate(270deg);-moz-transform:rotate(270deg);-ms-transform:rotate(270deg);transform:rotate(270deg)}.miniSpinnerWhite div:nth-child(11){-webkit-animation-delay:.83s;-moz-animation-delay:.83s;animation-delay:.83s;-webkit-transform:rotate(300deg);-moz-transform:rotate(300deg);-ms-transform:rotate(300deg);transform:rotate(300deg)}.miniSpinnerWhite div:nth-child(12){-webkit-animation-delay:.913s;-moz-animation-delay:.913s;animation-delay:.913s;-webkit-transform:rotate(330deg);-moz-transform:rotate(330deg);-ms-transform:rotate(330deg);transform:rotate(330deg)}@-webkit-keyframes spinner-fade-white{0%{background-color:#fff}100%{background-color:transparent}}@-moz-keyframes spinner-fade-white{0%{background-color:#fff}100%{background-color:transparent}}@-o-keyframes spinner-fade-white{0%{background-color:#fff}100%{background-color:transparent}}@keyframes spinner-fade-white{0%{background-color:#fff}100%{background-color:transparent}}.miniSpinnerBlue div{position:absolute;background-color:transparent;-webkit-transform-origin:center -4px;-ms-transform-origin:center -4px;transform-origin:center -4px;-webkit-animation:spinner-fade-blue 1s infinite linear;-moz-animation:spinner-fade-blue 1s infinite linear;animation:spinner-fade-blue 1s infinite linear}.miniSpinnerBlue div:nth-child(1){-webkit-animation-delay:0s;-moz-animation-delay:0s;animation-delay:0s;-webkit-transform:rotate(0deg);-moz-transform:rotate(0deg);-ms-transform:rotate(0deg);transform:rotate(0deg)}.miniSpinnerBlue div:nth-child(2){-webkit-animation-delay:.083s;-moz-animation-delay:.083s;animation-delay:.083s;-webkit-transform:rotate(30deg);-moz-transform:rotate(30deg);-ms-transform:rotate(30deg);transform:rotate(30deg)}.miniSpinnerBlue div:nth-child(3){-webkit-animation-delay:.166s;-moz-animation-delay:.166s;animation-delay:.166s;-webkit-transform:rotate(60deg);-moz-transform:rotate(60deg);-ms-transform:rotate(60deg);transform:rotate(60deg)}.miniSpinnerBlue div:nth-child(4){-webkit-animation-delay:.249s;-moz-animation-delay:.249s;animation-delay:.249s;-webkit-transform:rotate(90deg);-moz-transform:rotate(90deg);-ms-transform:rotate(90deg);transform:rotate(90deg)}.miniSpinnerBlue div:nth-child(5){-webkit-animation-delay:.332s;-moz-animation-delay:.332s;animation-delay:.332s;-webkit-transform:rotate(120deg);-moz-transform:rotate(120deg);-ms-transform:rotate(120deg);transform:rotate(120deg)}.miniSpinnerBlue div:nth-child(6){-webkit-animation-delay:.415s;-moz-animation-delay:.415s;animation-delay:.415s;-webkit-transform:rotate(150deg);-moz-transform:rotate(150deg);-ms-transform:rotate(150deg);transform:rotate(150deg)}.miniSpinnerBlue div:nth-child(7){-webkit-animation-delay:.498s;-moz-animation-delay:.498s;animation-delay:.498s;-webkit-transform:rotate(180deg);-moz-transform:rotate(180deg);-ms-transform:rotate(180deg);transform:rotate(180deg)}.miniSpinnerBlue div:nth-child(8){-webkit-animation-delay:.581s;-moz-animation-delay:.581s;animation-delay:.581s;-webkit-transform:rotate(210deg);-moz-transform:rotate(210deg);-ms-transform:rotate(210deg);transform:rotate(210deg)}.miniSpinnerBlue div:nth-child(9){-webkit-animation-delay:.664s;-moz-animation-delay:.664s;animation-delay:.664s;-webkit-transform:rotate(240deg);-moz-transform:rotate(240deg);-ms-transform:rotate(240deg);transform:rotate(240deg)}.miniSpinnerBlue div:nth-child(10){-webkit-animation-delay:.747s;-moz-animation-delay:.747s;animation-delay:.747s;-webkit-transform:rotate(270deg);-moz-transform:rotate(270deg);-ms-transform:rotate(270deg);transform:rotate(270deg)}.miniSpinnerBlue div:nth-child(11){-webkit-animation-delay:.83s;-moz-animation-delay:.83s;animation-delay:.83s;-webkit-transform:rotate(300deg);-moz-transform:rotate(300deg);-ms-transform:rotate(300deg);transform:rotate(300deg)}.miniSpinnerBlue div:nth-child(12){-webkit-animation-delay:.913s;-moz-animation-delay:.913s;animation-delay:.913s;-webkit-transform:rotate(330deg);-moz-transform:rotate(330deg);-ms-transform:rotate(330deg);transform:rotate(330deg)}@-webkit-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@-moz-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@-o-keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@keyframes spinner-fade-blue{0%{background-color:#148DEA}100%{background-color:transparent}}@media only screen and (NAME5-width: 749px){.ios-login-spinner{display:inline}.ios-login-spinner .spinner{font-size:26px;margin-bottom:-8px}}
+</style>
+  <title>DKB - Deutsche Kreditbank AG - Internet Banking</title>
+<meta name="email" content="info@dkb.de"/>
+<meta name="copyright" content="Deutsche Kreditbank AG"/>
+<meta name="author" content="Deutsche Kreditbank AG"/>
+<meta name="robots" content="INDEX,FOLLOW,NOARCHIVE,NOODP,NOYDIR"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <link rel="shortcut icon" href="/favicon.ico"/>
+        <link rel="apple-touch-icon"
+              href="/images/dkb/devices/170407_76x76_Logo_Banking_App.png" sizes="76x76"/>
+        <link rel="apple-touch-icon"
+              href="/images/dkb/devices/170407_120x120_Logo_Banking_App.png"
+              sizes="120x120"/>
+        <link rel="apple-touch-icon"
+              href="/images/dkb/devices/170407_152x152_Logo_Banking_App.png"
+              sizes="152x152"/>
+        <link rel="apple-touch-icon"
+              href="/images/dkb/devices/170407_180x180_Logo_Banking_App.png"
+              sizes="180x180"/>
+        <link rel="apple-touch-icon"
+              href="/images/dkb/devices/170407_1024x1024_Logo_Banking_App.png"
+              sizes="1024x1024"/>
+        <link rel="manifest" href="/images/dkb/devices/manifest.json">
+
+
+        <meta name="format-detection" content="telephone=no">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+
+		<script type="text/javascript">
+                (function () {
+                    var m = document.createElement('script'); m.type = 'text/javascript'; m.async = true;
+                    m.src = '//cdn.m-pathy.com/js/a3034.js'; m.crossOrigin = 'anonymous';
+                    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(m, s);
+                })();
+            </script>
+        </head>
+
+    <body class="">
+
+        <script type="text/javascript">try { 
+iSPB=~[];iSPB={___:++iSPB,$$$$:(![]+"")[iSPB],__$:++iSPB,$_$_:(![]+"")[iSPB],_$_:++iSPB,$_$$:({}+"")[iSPB],$$_$:(iSPB[iSPB]+"")[iSPB],_$$:++iSPB,$$$_:(!""+"")[iSPB],$__:++iSPB,$_$:++iSPB,$$__:({}+"")[iSPB],$$_:++iSPB,$$$:++iSPB,$___:++iSPB,$__$:++iSPB};iSPB.$_=(iSPB.$_=iSPB+"")[iSPB.$_$]+(iSPB._$=iSPB.$_[iSPB.__$])+(iSPB.$$=(iSPB.$+"")[iSPB.__$])+((!iSPB)+"")[iSPB._$$]+(iSPB.__=iSPB.$_[iSPB.$$_])+(iSPB.$=(!""+"")[iSPB.__$])+(iSPB._=(!""+"")[iSPB._$_])+iSPB.$_[iSPB.$_$]+iSPB.__+iSPB._$+iSPB.$;iSPB.$$=iSPB.$+(!""+"")[iSPB._$$]+iSPB.__+iSPB._+iSPB.$+iSPB.$$;iSPB.$=(iSPB.___)[iSPB.$_][iSPB.$_];iSPB.$(iSPB.$(iSPB.$$+"\""+iSPB.$$$$+iSPB._+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+iSPB.$$__+iSPB.__+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+iSPB._$+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB._+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+iSPB.__$+iSPB.__$+iSPB.$_$+"()\\"+iSPB.$__+iSPB.___+"{\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+iSPB.$$$$+"("+iSPB.__+"\\"+iSPB.__$+iSPB.$$$+iSPB.__$+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+iSPB.$$$_+iSPB._$+iSPB.$$$$+"\\"+iSPB.$__+iSPB.___+iSPB._$+iSPB.___+"_"+iSPB._$+"__"+iSPB._$+"_____\\"+iSPB.$__+iSPB.___+"===\\"+iSPB.$__+iSPB.___+"\\\""+iSPB.$$$$+iSPB._+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+iSPB.$$__+iSPB.__+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+iSPB._$+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+"\\\")\\"+iSPB.$__+iSPB.___+"{\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.__$+iSPB.$_$+iSPB._$_+"\\"+iSPB.__$+iSPB._$_+iSPB.__$+iSPB._+iSPB.$$$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$_+"\\"+iSPB.__$+iSPB.$$$+iSPB.__$+".\\"+iSPB.__$+iSPB.$$_+iSPB.___+iSPB._$+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.__+"(\\\"/"+iSPB.$$_$+"\\"+iSPB.__$+iSPB.$_$+iSPB._$$+iSPB.$_$$+"/\\"+iSPB.__$+iSPB.__$+iSPB.$__+iSPB._$+iSPB.$_$_+iSPB.$$_$+"\\"+iSPB.__$+iSPB._$_+iSPB._$$+iSPB.$$$_+(![]+"")[iSPB._$_]+iSPB.$$$_+iSPB.$$__+iSPB.__+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+iSPB._$+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+"\\\",\\"+iSPB.$__+iSPB.___+"{\\"+iSPB.$__+iSPB.___+(![]+"")[iSPB._$_]+iSPB._$+iSPB.$_$_+iSPB.$$_$+":\\"+iSPB.$__+iSPB.___+"\\\""+iSPB.__$+"\\"+iSPB.__$+iSPB.__$+iSPB.___+"\\"+iSPB.__$+iSPB.___+iSPB.$$$+"\\"+iSPB.__$+iSPB.$__+iSPB.$$$+"\\"+iSPB.__$+iSPB.$_$+iSPB.___+"\\"+iSPB.__$+iSPB.$$$+iSPB._$_+iSPB._$+"\\"+iSPB.__$+iSPB.$_$+iSPB._$$+iSPB.$$$_+"\\"+iSPB.__$+iSPB.__$+iSPB.___+"\\"+iSPB.__$+iSPB.$_$+iSPB._$$+"\\"+iSPB.__$+iSPB.$$$+iSPB.__$+"\\"+iSPB.__$+iSPB._$$+iSPB.__$+"\\"+iSPB.__$+iSPB.___+iSPB.$_$+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+"\\"+iSPB.__$+iSPB.___+iSPB.$$_+"\\"+iSPB.__$+iSPB._$_+iSPB.$$$+"\\"+iSPB.__$+iSPB.___+iSPB.$$$+iSPB.__$+"\\\"}\\"+iSPB.$__+iSPB.___+");\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"}\\"+iSPB.$__+iSPB.___+iSPB.$$$_+(![]+"")[iSPB._$_]+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.$$$_+"\\"+iSPB.$__+iSPB.___+"{\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.__$+iSPB.$_$+iSPB._$_+"\\"+iSPB.__$+iSPB._$_+iSPB.__$+iSPB._+iSPB.$$$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$_+"\\"+iSPB.__$+iSPB.$$$+iSPB.__$+".\\"+iSPB.__$+iSPB.$$_+iSPB.___+iSPB._$+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.__+"(\\\"/"+iSPB.$$_$+"\\"+iSPB.__$+iSPB.$_$+iSPB._$$+iSPB.$_$$+"/\\"+iSPB.__$+iSPB.__$+iSPB.$__+iSPB._$+iSPB.$_$_+iSPB.$$_$+"\\"+iSPB.__$+iSPB._$_+iSPB._$$+iSPB.$$$_+(![]+"")[iSPB._$_]+iSPB.$$$_+iSPB.$$__+iSPB.__+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+iSPB._$+"\\"+iSPB.__$+iSPB.$_$+iSPB.$$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+"\\\",\\"+iSPB.$__+iSPB.___+"{\\"+iSPB.$__+iSPB.___+(![]+"")[iSPB._$_]+iSPB._$+iSPB.$_$_+iSPB.$$_$+":\\"+iSPB.$__+iSPB.___+"\\\"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.$$_$+iSPB.$_$_+iSPB.$_$_+iSPB.$_$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.$___+"\\"+iSPB.__$+iSPB.___+iSPB.__$+iSPB.$___+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+"\\"+iSPB.__$+iSPB.$_$+iSPB._$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+"\\\"}\\"+iSPB.$__+iSPB.___+");\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"\\"+iSPB.$__+iSPB.___+"}\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"}\\"+iSPB.__$+iSPB.$_$+"\\"+iSPB.__$+iSPB._$_+"\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB.$$$_+iSPB.__+"\\"+iSPB.__$+iSPB._$_+iSPB.$__+"\\"+iSPB.__$+iSPB.$_$+iSPB.__$+"\\"+iSPB.__$+iSPB.$_$+iSPB.$_$+iSPB.$$$_+iSPB._$+iSPB._+iSPB.__+"(\\"+iSPB.__$+iSPB.$$_+iSPB._$$+iSPB._+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+"\\"+iSPB.__$+iSPB.$$_+iSPB.___+iSPB.__$+iSPB.__$+iSPB.$_$+",\\"+iSPB.$__+iSPB.___+iSPB.__$+iSPB.___+iSPB.___+iSPB.___+");"+"\"")())();
+
+} catch (e) {}
+</script><div>
+            <a id="top" st="0" ></a>
+        </div>
+        <div class="clearfix pageWrapper">
+            <div class="clearfix page">
+                <div id="dkb_banking_header" class="pint banking_header  clearfix " >
+                    <div class="header_inner_wrap">
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+    function pintHeaderEnabled() {
+
+        
+
+        //
+        return true;
+    }
+</script>
+
+<a href="#mobile_menu" class="mobile_menu_btn ">
+    <span class="menu_icon "></span>
+    <span class="unread_count no_number"></span>
+</a>
+<span class="clearfix logo">
+		
+			 <a  href="/DkbTransactionBanking/login.xhtml" class="clearfix"><span class="dkb_logo_container"> </span></a>
+		
+	</span>
+
+
+            
+                
+                    <form action="/DkbTransactionBanking/banner.xhtml" method="post" id="logoutform" name="logoutform" data-xpopup-mode="auto">
+                        <a  data-abx-jsevent="logout" href="/DkbTransactionBanking/banner.xhtml?$event=logout" title="Abmelden" class="clearfix abmelden evt-logout" id=logout tid="logout">Abmelden</a>
+                    
+<input type="hidden" name="$event" value="" />
+</form>
+                
+                
+            
+            <span class="search_mobile_toggle" id="search_mobile_toggle"></span>
+            <form action="/Suche" id="search" method="get" name="search" class="noSpinner" data-xpopup-mode="auto"><button style='position: absolute; left: -9999px; width: 1px; height: 1px;' name='hiddenSubmit' type='submit'>&nbsp;</button>
+                
+                <input class="field {'default': 'Ihre Suche...'} dkbSearchField" name="searchField" id="searchField" type="text"  tid="searchField" autocomplete='off' role='textbox' aria-autocomplete='list' aria-haspopup='true' aria-controls='autocomplelist' tid="searchField" />
+                <input class="field submit icons iconLoupe dkbSearchField" name="" id="id-1297932265_" title="Suche starten" type="submit" value=""  onClick='return checkEmpty()' />
+            
+<input type="hidden" name="$event" value="search" />
+</form>
+
+
+
+<script type="text/javascript">
+
+    jQuery('#searchField').autocomplete({
+        source: function (request, response) {
+            jQuery.ajax({
+
+                url: '/DkbTransactionBanking/banner.xhtml?$event=quick-search&term=' + jQuery('#searchField').val(),
+                dataType: "json",
+                success: function (data) {
+                    response(data);
+                }
+            });
+        },
+        select: function (event, ui) {
+            jQuery('#searchField').val(ui.item.value)
+            jQuery('#search').submit();
+        },
+        minLength: 3
+    });
+    jQuery('#search_mobile_toggle').click(function (event) {
+        if (jQuery("html").hasClass('mm-opened')) {
+            var menuMobileNode = jQuery("#mobile_menu");
+            jQuery(menuMobileNode).data("mmenu").close();
+        }
+        jQuery('#search_mobile_toggle').toggleClass("active");
+        jQuery('#search').fadeToggle(200);
+    });
+
+    jQuery('#search').submit(function (e) {
+        return checkEmpty();
+    });
+
+    function checkEmpty() {
+        var text = jQuery('#searchField').val();
+
+        if (text == "" || text == "Ihre Suche...") {
+            return false;
+        } else {
+            return true;
+        }
+
+    }
+</script>
+
+
+
+
+
+
+    
+        <div class="clearfix bankingStatusBox userInfo loggedIn" style="clear: both">
+            <div class="clearfix">
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="statusName floatLeft">
+    
+        
+        NAME8 NAME0
+        
+    
+
+    
+        <a href="/banking/Service/Aktivkunde.html"><span class="icons activeCustomerBlTrans"></span></a>
+        <a class="hide-for-small-down floatRight customer-status-link" href="/banking/Service/Aktivkunde.html">Ihr Status: Aktivkunde <span class="icons arrowNext"></span></a>
+    
+    
+
+
+    
+</div>
+
+
+    <div id="lastLoginContainer" class="lastLogin deviceFloatRight hidden">
+        Letzte Anmeldung:
+        26.04.2018, 17:30 Uhr
+    </div>
+
+
+
+<script type="text/javascript">
+    Abaxx.core.onReady(function () {
+        Abaxx.dkb_session_handler.init({
+            uiCountdownId: 'sessionInfoCountdown',
+            updateIntervalInMs: 60000,
+            initialSessionDurationInMs: 720000,
+            ajaxPollingUrl: '/DkbTransactionBanking/infobar/UserLoginInfo.xhtml?$event=currentSessionInfo&%24ignore.request=true',
+            updateSessionDurationUrl: '/DkbTransactionBanking/infobar/UserLoginInfo.xhtml?$event=currentSessionInfo',
+            timeoutTarget: '/logout.html'
+        });
+    });
+</script>
+
+<div id="session-info" class='showAlwaysUserInfo floatRight '>
+    <span class="hide-for-small-down default-display-inline-block">Automatische Abmeldung in</span>
+    <a href="javascript:Abaxx.dkb_session_handler.refreshSession();" class="sessionTimer" title="Zurücksetzen"> <span
+            id="sessionInfoCountdown">12:00</span> &#x21bb;</a>
+</div>
+
+
+
+
+
+
+            </div>
+        </div>
+    
+
+
+</div>
+                </div>
+                <div id="contentHome" class="clearfix contentArea contentPage paymentOrdersPage"> <!-- sonst -->
+                    <div class="clearfix grid_1 col1">
+                        
+
+
+
+
+
+
+
+	<div class="clearfix mainNav" id="mainNav">
+		<h6 class="ubar">Hauptnavigation</h6>
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+    ul.menu li a.active {
+        color: #127ED0;
+    }
+</style>
+
+    
+        <nav id="mobile_menu"></nav>
+        <nav id="desktop_menu">
+            <ul class='clearfix navigationMain' id="menu"><li id="menu_0-node"  tid="Mein_Banking" class=" label_Mein_Banking  selected">
+                
+                    
+                        
+  <a href="/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init">
+  Mein Banking
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_0.0-node"  tid="Finanzstatus" class=" label_Finanzstatus  selected">
+                
+                    
+                        
+  <a href="/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init">
+  Finanzstatus
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_0.0.0-node"  tid="Umsaetze" class=" label_Umsaetze  selected selectedLeaf">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/kontoumsaetze?$event=init">
+  Umsätze
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.1-node"  tid="Ueberweisung" class=" label_Ueberweisung  ">
+                
+                    
+                        
+  <a href="/DkbTransactionBanking/content/banking/payments/JoinedPaymentComp/JoinedPaymentStart.xhtml?$event=default">
+  Überweisung
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.2-node"  tid="Auftragsvorlagen" class=" label_Auftragsvorlagen  ">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/auftragsvorlagen?$event=infoPresetRemittance">
+  Auftragsvorlagen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.3-node"  tid="Terminueberweisungen" class=" label_Terminueberweisungen  ">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/terminueberweisungen?$event=infoScheduledRemittance">
+  Terminüberweisungen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.4-node"  tid="Dauerauftraege" class=" label_Dauerauftraege  ">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder">
+  Daueraufträge
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.5-node"  tid="VISA-Sparauftraege" class=" label_VISA-Sparauftraege  ">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/sparauftraege?$event=infoVisaSavings">
+  VISA-Sparaufträge
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.6-node"  tid="Lastschriftrueckgabe" class=" label_Lastschriftrueckgabe  ">
+                
+                    
+                        
+  <a href="/banking/finanzstatus/lastschriftrueckgabe?$event=init">
+  Lastschriftrückgabe
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.0.7-node"  tid="Cash_im_Shop" class=" label_Cash_im_Shop  ">
+                
+                    
+                        
+  <a href="/DkbTransactionBanking/content/Barzahlen/BarzahlenPortlet/active/BarzahlenActiveEntries.xhtml?$event=init">
+  Cash im Shop
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_0.1-node"  tid="Depotstatus" class=" label_Depotstatus  ">
+                
+                    
+                        
+  <a href="/banking/depotstatus?$event=init">
+  Depotstatus
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_0.1.0-node"  tid="Kauf_Verkauf" class=" label_Kauf_Verkauf  ">
+                
+                    
+                        
+  <a href="/banking/Produkte/Allgemeines/KeinDepot.html">
+  Kauf/Verkauf
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.1.1-node"  tid="Wertpapiersparplaene" class=" label_Wertpapiersparplaene  ">
+                
+                    
+                        
+  <a href="/banking/depotstatus/fondssparplaene?$event=init">
+  Wertpapiersparpläne
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.1.2-node"  tid="Marktueberblick" class=" label_Marktueberblick  ">
+                
+                    
+                        
+  <a href="https://dkb.mdgms.com/MIS/?id=0107980" target="_blank">
+  Marktüberblick
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.1.3-node"  tid="Wertpapier-Finder" class=" label_Wertpapier-Finder  ">
+                
+                    
+                        
+  <a href="/banking/depotstatus/fonds?$event=init">
+  Wertpapier-Finder
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.1.4-node"  tid="Orderbuch" class=" label_Orderbuch  ">
+                
+                    
+                        
+  <a href="/banking/Produkte/Allgemeines/KeinDepot.html">
+  Orderbuch
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_0.2-node"  tid="Banking+" class=" label_Banking+  ">
+                
+                    
+                        
+  <a href="/banking/plus/">
+  Banking+
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3-node"  tid="Postfach" class=" label_Postfach  ">
+                
+                    
+                        
+  <a href="/banking/postfach">
+  Postfach
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_0.3.0-node"  tid="Mitteilungen" class=" label_Mitteilungen  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24inbox">
+  Mitteilungen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.1-node"  tid="Vertragsinformationen" class=" label_Vertragsinformationen  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24vertragsinformationen">
+  Vertragsinformationen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.2-node"  tid="Kontoauszuege" class=" label_Kontoauszuege  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24kontoauszuege">
+  Kontoauszüge
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.3-node"  tid="Kreditkartenabrechnungen" class=" label_Kreditkartenabrechnungen  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24kreditkartenabrechnungen">
+  Kreditkartenabrechnungen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.4-node"  tid="Wertpapierdokumente" class=" label_Wertpapierdokumente  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24wertpapierdokumente">
+  Wertpapierdokumente
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.5-node"  tid="Steuerbescheinigungen" class=" label_Steuerbescheinigungen  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=%24steuerbescheinigungen">
+  Steuerbescheinigungen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.6-node"  tid="Archiv" class=" label_Archiv  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv">
+  Archiv
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.3.7-node"  tid="Tresor" class=" label_Tresor  ">
+                
+                    
+                        
+  <a href="/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=tresor">
+  Tresor
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_0.4-node"  tid="Service" class=" label_Service  ">
+                
+                    
+                        
+  <a href="/banking/Service/">
+  Service
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_0.5-node"  tid="Banking_erklaert" class=" label_Banking_erklaert  ">
+                
+                    
+                        
+  <a href="/banking/erklaert/">
+  Banking erklärt
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_1-node"  tid="Privatkunden" class=" label_Privatkunden  ">
+                
+                    
+                        
+  <a href="/">
+  Privatkunden
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_1.0-node"  tid="Konten_und_Karten" class=" label_Konten_und_Karten  ">
+                
+                    
+                        
+  <a href="/privatkunden/konten-und-karten/">
+  Konten und Karten
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_1.1-node"  tid="Sparen_und_Geldanlage" class=" label_Sparen_und_Geldanlage  ">
+                
+                    
+                        
+  <a href="/privatkunden/sparen-und-geldanlage/">
+  Sparen und Geldanlage
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_1.2-node"  tid="Depot_und_Wertpapiere" class=" label_Depot_und_Wertpapiere  ">
+                
+                    
+                        
+  <a href="/privatkunden/depot-und-wertpapiere/">
+  Depot und Wertpapiere
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_1.3-node"  tid="Kredite_und_Finanzierung" class=" label_Kredite_und_Finanzierung  ">
+                
+                    
+                        
+  <a href="/privatkunden/kredite-und-finanzierung/">
+  Kredite und Finanzierung
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_1.4-node"  tid="Eigentum_und_Miete" class=" label_Eigentum_und_Miete  ">
+                
+                    
+                        
+  <a href="/privatkunden/eigentum-und-zweitkonto/">
+  Eigentum und zweitkonto
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_2-node"  tid="Geschaeftskunden" class=" label_Geschaeftskunden  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/">
+  Geschäftskunden
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_2.0-node"  tid="Branchenloesungen" class=" label_Branchenloesungen  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/branchen/">
+  Branchenlösungen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_2.1-node"  tid="Kompetenzen" class=" label_Kompetenzen  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/kompetenzen/">
+  Kompetenzen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_2.2-node"  tid="DKB-Business" class=" label_DKB-Business  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/branchen/freie_berufe/dkb_business/">
+  DKB-Business
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_2.3-node"  tid="DKB-Verwalterplattform" class=" label_DKB-Verwalterplattform  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/branchen/wohnungswirtschaft/verwalter/">
+  DKB-Verwalterplattform
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_2.4-node"  tid="DKB-Treuhaenderpaket" class=" label_DKB-Treuhaenderpaket  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/branchen/freie_berufe/dkb_treuhaenderpaket/">
+  DKB-Treuhänderpaket
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_2.5-node"  tid="Referenzen" class=" label_Referenzen  ">
+                
+                    
+                        
+  <a href="/geschaeftskunden/referenzen.html">
+  Referenzen
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_3-node"  tid="DKB_bewegt" class=" label_DKB_bewegt  ">
+                
+                    
+                        
+  <a href="/bewegt/">
+  DKB bewegt
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_3.0-node"  tid="Nachhaltigkeit" class=" label_Nachhaltigkeit  ">
+                
+                    
+                        
+  <a href="/bewegt/nachhaltigkeit/">
+  Nachhaltigkeit
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_3.1-node"  tid="Digitale_Innovationen" class=" label_Digitale_Innovationen  ">
+                
+                    
+                        
+  <a href="/bewegt/digitale_innovationen/">
+  Digitale Innovationen
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_3.2-node"  tid="Wirtschaft" class=" label_Wirtschaft  ">
+                
+                    
+                        
+  <a href="/bewegt/wirtschaft/">
+  Wirtschaft
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_3.3-node"  tid="Wissenschaft" class=" label_Wissenschaft  ">
+                
+                    
+                        
+  <a href="/bewegt/wissenschaft/">
+  Wissenschaft
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_3.4-node"  tid="Sport" class=" label_Sport  ">
+                
+                    
+                        
+  <a href="/bewegt/sport/">
+  Sport
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_3.5-node"  tid="Auszeichnungen" class=" label_Auszeichnungen  ">
+                
+                    
+                        
+  <a href="/bewegt/testsiege/">
+  Auszeichnungen
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_4-node"  tid="Ueber_uns" class=" label_Ueber_uns  ">
+                
+                    
+                        
+  <a href="/ueber_uns/">
+  Über uns
+  </a>
+
+                    
+                    
+                
+            <ul>
+<li id="menu_4.0-node"  tid="Zahlen_&_Fakten" class=" label_Zahlen_&_Fakten  ">
+                
+                    
+                        
+  <a href="/ueber_uns/zahlen_fakten/">
+  Zahlen & Fakten
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_4.1-node"  tid="Vorstand" class=" label_Vorstand  ">
+                
+                    
+                        
+  <a href="/ueber_uns/vorstand/">
+  Vorstand
+  </a>
+
+                    
+                    
+                
+            </li>
+<li id="menu_4.2-node"  tid="Verantwortung" class=" label_Verantwortung  ">
+                
+                    
+                        
+  <a href="/ueber_uns/verantwortung/">
+  Verantwortung
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul></li><li id="menu_5-node"  tid="Karriere" class=" label_Karriere  ">
+                
+                    
+                        
+  <a href="/ueber_uns/karriere/">
+  Karriere
+  </a>
+
+                    
+                    
+                
+            </li>
+</ul>
+        </nav>
+    
+    
+
+
+
+
+
+
+<script type="text/javascript">
+    var mailboxUnreadCounterMap = {"Mitteilungen":0,"Wertpapierdokumente":0,"Steuerbescheinigungen":0,"Kontoauszuege":5,"Kreditkartenabrechnungen":2,"Vertragsinformationen":1,"Gehaltsabrechnungen":0};
+    addMboUnReadCounter(mailboxUnreadCounterMap);
+</script>
+
+
+	</div>
+
+
+</div>
+
+                    <div class="clearfix grid_4 col2">
+                        
+
+
+
+
+	
+	
+	
+	  
+
+	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<div class="clearfix content">
+
+		<h6 class="ubar">Inhaltsbereich</h6>
+		<a id="content"></a>
+		<h1>
+			
+				
+					
+					
+						  Umsätze  
+					
+				
+			
+
+			
+
+
+			
+                            <a onclick='Abaxx.core.openWindow ("/PaymentTransaction/PaymentTransactionSearchPrint.xhtml?%24printPart=DkbTransactionBanking.content.transaction.Payment.PaymentTransactionSearch", "Druckseite", { width: 960, height: 750, features: "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=no, copyhistory=yes",$:0 });return false;' >
+                                <span class="floatRight icons iconPrint0" title="Drucken" ></span>
+                            </a>
+            
+
+			
+
+			
+					<a  data-abx-jsevent="csvExport" href="/banking/finanzstatus/kontoumsaetze?$event=csvExport" class="noSpinner evt-csvExport" tid="csvExport"><span title="CSV-Export" class="floatRight icons iconExport0" ></span></a>
+			
+			
+		</h1>
+		
+        
+        
+
+		
+
+
+
+
+
+
+
+
+
+<script>
+    function setDateFields(type) {
+        var radio = document.getElementsByName('searchPeriodRadio');
+        radio[type].checked = true;
+    }
+</script>
+
+
+
+
+<div class="clearfix module shadowBox applicationContainer">
+
+    <div class="clearfix applicationForm">
+
+        <form action="/banking/finanzstatus/kontoumsaetze" method="post" id='form1615473160_1' name="form1615473160_1" class="form validate" data-xpopup-mode="auto"><button style='position: absolute; left: -9999px; width: 1px; height: 1px;' name='hiddenSubmit' type='submit'>&nbsp;</button>
+            
+
+            
+
+            <fieldset>
+                <p class="clearfix formBox full_width_on_small">
+					<span class="col50 marginRight containsActiveDropdown">
+                            <label for="id-1615473160_bankAccount" id="id-1615473160_bankAccount-label" class="label" tid="id-1615473160_bankAccount-label" >
+                Konto / Karte              </label>
+
+                        <span class="mandatory"><select class="field text" name="slAllAccounts" onchange="searchbuttonclick();" id="id-1615473160_slAllAccounts" tid="slAllAccounts"   >
+<optgroup  label="hauptkonto"><option id="id-1615473160_slAllAccounts-0" value="0" dkb-optgroup-start="dkb-optgroup-start" selected="selected" dkb-optgroup-label="hauptkonto"  tid="0" >XY99 1111 1111 0000 1111 99 / hauptkonto</option>XY99 1111 1111 0000 1111 99 / hauptkonto<option dkb-optgroup-end="dkb-optgroup-end" id="id-1615473160_slAllAccounts-1" value="1"  tid="1" >9999********1111 / first visa</option></optgroup>9999********1111 / first visa<optgroup  label="2nd group"><option id="id-1615473160_slAllAccounts-2" value="2" dkb-optgroup-start="dkb-optgroup-start" dkb-optgroup-label="2nd group"  tid="2" >9999********2222 / second visa</option>9999********2222 / second visa<option id="id-1615473160_slAllAccounts-3" value="3"  tid="3" >XY99 1111 1111 2155 2788 99 / zweitkonto</option>XY99 1111 1111 2155 2788 99 / zweitkonto<option id="id-1615473160_slAllAccounts-4" value="4"  tid="4" >9999********3333 / 3rd visa</option>9999********3333 / 3rd visa<option dkb-optgroup-end="dkb-optgroup-end" id="id-1615473160_slAllAccounts-5" value="5"  tid="5" >XY99 3333 1111 0000 3333 99 / 3rd acc</option></optgroup>XY99 3333 1111 0000 3333 99 / 3rd acc
+</select>
+</span>	<input type="hidden" name="slAllAccounts" value="-2147482982"  tid="slAllAccounts" tid="slAllAccounts" tid="-2147482982"/>
+
+					</span>
+					
+                        <span class="col25  containsActiveDropdown full_width_on_small">
+						    <label for="id-1615473160_transactionstatus" id="id-1615473160_transactionstatus-label" class="label" tid="id-1615473160_transactionstatus-label" >
+                Umsatzart              </label>
+
+                        <select class="field text" name="slTransactionStatus" onchange="searchbuttonclick();" id="id-1615473160_slTransactionStatus" tid="slTransactionStatus"   >
+<option id="id-1615473160_slTransactionStatus-0" value="0" selected="selected"  tid="0" >Gebucht</option>Gebucht<option id="id-1615473160_slTransactionStatus-1" value="1"  tid="1" >Vorgemerkt</option>Vorgemerkt
+</select>
+
+
+                        </span>
+                    
+                </p>
+
+                <h3 class="border">
+                    <span>Zeitraum</span>
+                </h3>
+
+                <p class="clearfix formBox col35 full_width_on_small">
+
+                    <input type="radio" class="abaxx-selected floatLeft marginRight radio hide-for-small-down" name="searchPeriodRadio" checked="checked" id="id-1615473160_searchPeriodRadio:0" value="0" tid="searchPeriodRadio"  />
+
+
+                    <span class="col75 containsActiveDropdown full_width_on_small">
+						    <label for="id-1615473160_slSearchPeriod" id="id-1615473160_slSearchPeriod-label" class="label" tid="id-1615473160_slSearchPeriod-label" >
+                Auswahl              </label>
+
+						<select class="field text" name="slSearchPeriod" onchange="setDateFields(0);" id="id-1615473160_slSearchPeriod" tid="slSearchPeriod"   >
+<option id="id-1615473160_slSearchPeriod-0" value="0"  tid="0" >aktueller Monat</option>aktueller Monat<option id="id-1615473160_slSearchPeriod-1" value="1" selected="selected"  tid="1" >letzten 30 Tage</option>letzten 30 Tage<option id="id-1615473160_slSearchPeriod-2" value="2"  tid="2" >letzten 60 Tage</option>letzten 60 Tage<option id="id-1615473160_slSearchPeriod-3" value="3"  tid="3" >letzten 90 Tage</option>letzten 90 Tage<option id="id-1615473160_slSearchPeriod-4" value="4"  tid="4" >aktuelles Jahr</option>aktuelles Jahr<option id="id-1615473160_slSearchPeriod-5" value="5"  tid="5" >letztes Jahr</option>letztes Jahr<option id="id-1615473160_slSearchPeriod-6" value="6"  tid="6" >vorletztes Jahr</option>vorletztes Jahr
+</select>
+
+					</span>
+                </p>
+
+                <p class="clearfix formBox col65 hide-for-small-down default-display-inline-block">
+                    <input type="radio" class=" floatLeft marginRight radio" name="searchPeriodRadio" id="id-1615473160_searchPeriodRadio:1" value="1" tid="searchPeriodRadio"  />
+
+                    
+                        
+                        
+                        
+							<span class="col35 marginRight">
+								    <label for="id-1615473160_transactionDate" id="id-1615473160_transactionDate-label" class="label" tid="id-1615473160_transactionDate-label" >
+                vom              </label>
+
+                                <link href="/scripts/jquery-ui/themes/datepicker/jquery-ui-datepicker.css?etag=45cfd799" rel="stylesheet" type="text/css" /><span class='abaxx-datepicker'><input class="field text small3" data-abx-options="{&#034;futureLimit&#034;:{&#034;month&#034;:3,&#034;year&#034;:2018,&#034;day&#034;:27},&#034;blockSaturdays&#034;:false,&#034;blockSundays&#034;:false,&#034;dateFormat&#034;:&#034;dd.mm.yy&#034;,&#034;pastLimit&#034;:{&#034;month&#034;:3,&#034;year&#034;:2015,&#034;day&#034;:28},&#034;language&#034;:&#034;de&#034;,&#034;datePickerImage&#034;:&#034;/icons/calendar.png&#034;,&#034;changeMonthYear&#034;:true,&#034;separator&#034;:&#034; &#034;,&#034;initialDate&#034;:&#034;&#034;,&#034;mode&#034;:&#034;datepicker&#034;,&#034;blockedDates&#034;:[],&#034;timeFormat&#034;:&#034;&#034;,&#034;showOn&#034;:&#034;button&#034;,&#034;buttonImageOnly&#034;:true}" name="transactionDate" onchange="setDateFields(1);" data-abx-widget="dateinput" id="id-1615473160_transactionDate" type="text" value="28.03.2018"  tid="transactionDate" /></span>
+
+							</span>
+                            <span class="col35">
+								    <label for="toTransactionDate" id="toTransactionDate-label" class="indentation label" tid="toTransactionDate-label" >
+                bis              </label>
+
+                                <span class='abaxx-datepicker'><input class="field text small3" data-abx-options="{&#034;futureLimit&#034;:{&#034;month&#034;:3,&#034;year&#034;:2018,&#034;day&#034;:27},&#034;blockSaturdays&#034;:false,&#034;blockSundays&#034;:false,&#034;dateFormat&#034;:&#034;dd.mm.yy&#034;,&#034;pastLimit&#034;:{&#034;month&#034;:3,&#034;year&#034;:2015,&#034;day&#034;:28},&#034;language&#034;:&#034;de&#034;,&#034;datePickerImage&#034;:&#034;/icons/calendar.png&#034;,&#034;changeMonthYear&#034;:true,&#034;separator&#034;:&#034; &#034;,&#034;initialDate&#034;:&#034;&#034;,&#034;mode&#034;:&#034;datepicker&#034;,&#034;blockedDates&#034;:[],&#034;timeFormat&#034;:&#034;&#034;,&#034;showOn&#034;:&#034;button&#034;,&#034;buttonImageOnly&#034;:true}" name="toTransactionDate" onchange="setDateFields(1);" data-abx-widget="dateinput" id="id-1615473160_toTransactionDate" type="text" value="27.04.2018"  tid="toTransactionDate" /></span>
+
+							</span>
+                        
+                    
+                </p>
+
+                
+            </fieldset>
+            <div class="clearfix send">
+                <div class="clearfix button reset" style="margin-right: 15px">
+                    
+                        
+                        
+                            <button data-abx-jsevent="extend" type="button" title="Erweiterte Suche anzeigen" tid="extend" data-xevent="extend" class="clearfix floatLeft submit evt-extend submit"><span class="abaxx-button-label">Erweiterte Suche</span></button>
+                        
+                    
+                </div>
+                <div class="clearfix button">
+                    <button data-xevent="search" id="searchbutton" data-abx-jsevent="search" type="button" title="Umsätze anzeigen" tid="search" class="clearfix submit evt-search submit"><span class="abaxx-button-label">Umsätze anzeigen<span class="icons arrowButton0"></span></span></button>
+                </div>
+                <input type="checkbox" class=" radio" name="dailyBalance" style="visibility: hidden" id="showDailyBalance" tid="showDailyBalance"  />
+	<input type="hidden" name="dailyBalance"/>
+
+                <input type="checkbox" class=" radio" name="dailyBalanceDiagram" style="visibility: hidden" id="showDailyBalanceDiagram" tid="showDailyBalanceDiagram"  />
+	<input type="hidden" name="dailyBalanceDiagram"/>
+
+            </div>
+        
+<input type="hidden" name="$event" value="search" />
+</form>
+    </div>
+</div>
+
+    
+        <div class="clearfix module dailyBalanceMenuDiv mobilecheckbox show-for-small-up">
+            <div class="dailyBalanceDiagramToggle" onclick="Abaxx.dkb_paymenttransaction.toggleDailyBalanceDiagram();">
+                Tagessaldo <span class="icons iconInfo0 toolTippLink"><span class="tooltipp"><span class="icons toolTippArrow"></span><span class="toolTippInner">Es werden nur Tagessalden angezeigt, die vom vorherigen Tagessaldo abweichen.</span></span></span> <span id="iconExpandDiagram"></span>
+            </div>
+            <div class="dailyBalanceToggle">
+                    <label for="showDailyBalanceInTableCheckBox" id="showDailyBalanceLabel" class="radio" tid="showDailyBalanceLabel" >
+                In Umsatzliste anzeigen              </label>
+
+                <input name="dailyBalance" id="showDailyBalanceInTableCheckBox" type="checkbox" onchange="Abaxx.dkb_paymenttransaction.toggleDailyBalanceInTable()" class="radio"/>
+            </div>
+        </div>
+    
+    
+        <div class="show-for-small-up"><div id="dailyBalanceDiagram"></div></div>
+    
+
+
+
+    <div class="clearfix module accountBalance">
+		
+            
+            
+                <span>
+			        Kontostand vom&nbsp;27.04.2018
+                    
+                </span>
+                <span class="floatRight">
+                   <strong><span style="white-space: nowrap" >1.367,82 EUR</span></strong>
+                </span>
+            
+        
+    </div>
+
+
+<div class="clearfix module textDefaultModule">
+    
+
+
+
+
+
+
+
+
+    
+    
+        
+    
+
+
+
+
+
+
+<a name="umsatzTabelle_anchor"></a><div id="umsatzTabelle_outer" class="clearfix text orderTpl "><input type="hidden" name="table" value="table51bfe7df" />
+<table  id="umsatzTabelle" class="expandableTable transactionsTable" >
+<thead><tr>
+
+    
+    
+    
+    
+    
+    
+
+    
+        <th class="hide-for-xsmall-down transactionDate " id="table51bfe7df:transactionDate">
+            <a href="/banking/finanzstatus/kontoumsaetze?column=transactionDate&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=transactionDate&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">Buchungstag <span class="icons iconSortdown0"></span></a>
+            <a href="/banking/finanzstatus/kontoumsaetze?column=valutaDate&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=valutaDate&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">Wertstellung</a>
+        </th>
+
+        
+    
+    
+        <th class="transactionText " id="table51bfe7df:type">
+            <a href="/banking/finanzstatus/kontoumsaetze?column=transactionType&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=transactionType&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">Buchungstext</a>
+            <a href="/banking/finanzstatus/kontoumsaetze?column=text&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=text&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">Auftraggeber / Begünstigter</a>
+            <a href="/banking/finanzstatus/kontoumsaetze?column=purposeLine1&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=purposeLine1&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">Verwendungszweck</a>
+        </th>
+
+        
+    
+    
+        <th class="show-for-large-up " id="table51bfe7df:payeeAccountNo">
+            <a href="/banking/finanzstatus/kontoumsaetze?column=payeeAccountNo&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=payeeAccountNo&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">IBAN / Kontonummer</a>
+            <a href="/banking/finanzstatus/kontoumsaetze?column=payeeBankCode&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=payeeBankCode&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">BIC / Bankleitzahl</a>
+        </th>
+
+        
+    
+    
+        <th class="alignRight " id="table51bfe7df:localAmount.value"><a href="/banking/finanzstatus/kontoumsaetze?column=localAmount.value&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor"  onclick="return Abaxx.table.tableAction('umsatzTabelle_outer','/banking/finanzstatus/kontoumsaetze?column=localAmount.value&tableAction_table51bfe7df=sort&table_table51bfe7df=table51bfe7df&order=asc#umsatzTabelle_anchor', true);">
+            Betrag in €
+        </a></th>
+
+
+        
+    
+
+    
+        
+            <th class="actions " id="table51bfe7df:select">
+            </th>
+
+            
+        
+    
+
+    
+</tr>
+</thead>
+<tbody>
+<tr class="mainRow" id="umsatzTabelle_0">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        0,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '27.04.2018',
+                                        '27.04.2018',
+                                        '18.04.2018',
+                                        '',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        27.04.2018
+                        <br>
+                        <span class="valueDate">27.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>ZAHL. NAME46</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME21 Trier</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>EL 213527181 04 ZV91571083 A00123517016810232304004003</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 9406 8063 99</div>
+                MARKDEF1590
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" >373,25</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=0" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=0" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_1">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        1,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '18.04.2018',
+                                        '27.04.2018',
+                                        '18.04.2018',
+                                        '1.236,65',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        18.04.2018
+                        <br>
+                        <span class="valueDate">18.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME22 GERMANY G</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME23180412W1TWZ Number19                    ABWE+JanNAME0</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 4436 9547 99</div>
+                HYVEDEMMXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-28,65</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=1" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=1" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_2">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        2,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '18.04.2018',
+                                        '18.04.2018',
+                                        '16.04.2018',
+                                        '1.236,65',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        18.04.2018
+                        <br>
+                        <span class="valueDate">18.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Überweisung</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>S. NAME24</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Pirateninsel          DATUM 18.04.2018, 17.07 UHR1.558406</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 0288 3284 99</div>
+                HELADEF1SLS
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-517,52</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=2" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=2" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_3">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        3,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '16.04.2018',
+                                        '18.04.2018',
+                                        '16.04.2018',
+                                        '1.877,68',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        16.04.2018
+                        <br>
+                        <span class="valueDate">16.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Dauerauftrag</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME25 ARD,ZDF,DRADIO</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number13</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 7339 8211 99</div>
+                HELADEFFXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-342,94</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=3" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=3" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_4">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        4,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '16.04.2018',
+                                        '16.04.2018',
+                                        '13.04.2018',
+                                        '1.877,68',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        16.04.2018
+                        <br>
+                        <span class="valueDate">16.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME26 NAME27. eV.</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>CCCNAME27 47, 03/2018</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 1364 4425 99</div>
+                MVBMDE55
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-159,91</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=4" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=4" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_5">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        5,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '13.04.2018',
+                                        '16.04.2018',
+                                        '12.04.2018',
+                                        '1.742,10',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        13.04.2018
+                        <br>
+                        <span class="valueDate">13.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME28 mobilitaetssysteme GmbH</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number14 Ihre Rechnung vom 04.04.18</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 0185 6004 99</div>
+                WIBADE5W
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-856,35</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=5" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=5" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_6">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        6,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '12.04.2018',
+                                        '13.04.2018',
+                                        '12.04.2018',
+                                        '1.194,88',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        12.04.2018
+                        <br>
+                        <span class="valueDate">12.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Überweisung</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME29 NAME30</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME31 - NAME32 DATUM 11.04.2018, 22.01 UHR1.385331</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 8804 4653 99</div>
+                CHEKDE81XXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-322,34</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=6" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=6" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_7">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        7,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '12.04.2018',
+                                        '12.04.2018',
+                                        '10.04.2018',
+                                        '1.194,88',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        12.04.2018
+                        <br>
+                        <span class="valueDate">12.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>DEUTSCHE KREDITBANK AG</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Kartennummer Number0 LH9900256652 748,55  ABWA+Abrechnung Lufthansa Card</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 7770 0508 99</div>
+                BYLADEM1001
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-1.942,07</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=7" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_8">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        8,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '10.04.2018',
+                                        '12.04.2018',
+                                        '09.04.2018',
+                                        '2.926,98',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        10.04.2018
+                        <br>
+                        <span class="valueDate">10.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Gutschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME8 NAME0</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number5 Guthabenerstattung nach Abloesung Ihr NAME44 NAME45</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 1933 7386 99</div>
+                BARCDEHAXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" >724,09</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=8" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=8" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_9">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        9,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '09.04.2018',
+                                        '10.04.2018',
+                                        '09.04.2018',
+                                        '2.461,00',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        09.04.2018
+                        <br>
+                        <span class="valueDate">09.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Gutschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME43</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number2 0418 40032105829/Number3</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 5671 7531 99</div>
+                MARKDEF1760
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" >527,82</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=9" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=9" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_10">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        10,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '09.04.2018',
+                                        '09.04.2018',
+                                        '06.04.2018',
+                                        '2.461,00',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        09.04.2018
+                        <br>
+                        <span class="valueDate">09.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Überweisung</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME35 NAME34</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME31 - NAME32 DATUM 08.04.2018, 21.58 UHR1.291575</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 6159 1492 99</div>
+                PBNKDEFFXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-221,63</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=10" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=10" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_11">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        11,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '06.04.2018',
+                                        '09.04.2018',
+                                        '04.04.2018',
+                                        '2.900,27',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        06.04.2018
+                        <br>
+                        <span class="valueDate">06.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Dauerauftrag</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>HERR NAME8 NAME0</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME36</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 2155 2788 99</div>
+                BYLADEM1001
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-7322,34</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=11" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=11" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_12">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        12,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '04.04.2018',
+                                        '06.04.2018',
+                                        '03.04.2018',
+                                        '2.420,04',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        04.04.2018
+                        <br>
+                        <span class="valueDate">04.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Gutschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME5 NAME6</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME37</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 6034 9769 99</div>
+                DEUTDEDBFRA
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" >920,97</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=12" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=12" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_13">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        13,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '03.04.2018',
+                                        '04.04.2018',
+                                        '03.04.2018',
+                                        '2.370,44',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        03.04.2018
+                        <br>
+                        <span class="valueDate">01.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Abschluss</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div></div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Abrechnung 29.03.2018      siehe Anlage<br />Abrechnung 29.03.2018<br />Information zur Abrechnung<br />Kontostand am 29.03.2018                                        2.15,77 +<br />Abrechnungszeitraum vom 01.01.2018 bis 31.03.2018<br />Zinsen für Dispositionskredit                                        60,71-<br /> 6,9000 v.H. Kred-Zins  bis 08.02.2018<br />Abrechnung 31.03.2018                                                60,71-<br />Sollzinssätze am 30.03.2018<br /> 6,9000 v.H. für Dispositionskredit<br />(aktuelle Kreditlinie       2.274,36)<br /> 6,9000 v.H. für Kontoüberziehungen<br />über die Kreditlinie hinaus<br />Kontostand/Rechnungsabschluss am 29.03.2018                     2.749,57 +<br />Rechnungsnummer: 9900968724-BY111-00048295244</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">1019853918</div>
+                9900353652
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-60,71</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=13" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_14">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        14,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '2.370,44',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        03.04.2018
+                        <br>
+                        <span class="valueDate">03.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Überweisung</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME38</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME32             DATUM 02.04.2018, 22.35 UHR1.158740</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 6829 8523 99</div>
+                PBNKDEFFXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-4,72</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=14" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=14" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_15">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        15,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '2.370,44',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        03.04.2018
+                        <br>
+                        <span class="valueDate">03.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME39 mbH</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>ABSCHLAG Gas 04/18 VK: Number6 NAME47</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 3946 4101 99</div>
+                AARBDE5WDOM
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-499,10</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=15" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=15" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_16">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        16,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '2.370,44',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        03.04.2018
+                        <br>
+                        <span class="valueDate">03.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME42</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number15.9906766111 BLZ.9900911154 32932303BH322 -?EHPL2018-03-28</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 4323 3685 99</div>
+                SCFBDE33XXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-968,78</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=16" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=16" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_17">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        17,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '03.04.2018',
+                                        '03.04.2018',
+                                        '29.03.2018',
+                                        '2.370,44',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        03.04.2018
+                        <br>
+                        <span class="valueDate">03.04.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Lastschrift</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME8 NAME0</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>Number5 Ihr NAME44 NAME45 MONATLICHE RATE 89,24 EUR</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 1933 7386 99</div>
+                BARCDEHAXXX
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-89,24</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                
+                    <a  data-abx-jsevent="reject" href="/banking/finanzstatus/kontoumsaetze?$event=reject&id=17" class="evt-reject" tid="reject"><span class="icons icondebitReturn0" title="Widerruf prüfen"></span></a>
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=17" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_18">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        18,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '29.03.2018',
+                                        '03.04.2018',
+                                        '29.03.2018',
+                                        '2.15,77',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        29.03.2018
+                        <br>
+                        <span class="valueDate">29.03.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Dauerauftrag</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME1 NAME2</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME40</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 7256 1308 99</div>
+                HELADEF1822
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-527,82</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=18" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=18" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+<tr class="mainRow" id="umsatzTabelle_19">
+    
+    
+    
+    
+    
+    
+
+    <td class="hide-for-xsmall-down transactionDate" headers="table51bfe7df:transactionDate">
+        
+        
+            
+                
+                    
+                        
+                            
+                                <script>
+                                    Abaxx.dkb_paymenttransaction.addDailyBalanceTableRow(
+                                        19,
+                                        false,
+                                        20,
+                                        '27.04.2018',
+                                        '29.03.2018',
+                                        '29.03.2018',
+                                        '29.03.2018',
+                                        '2.15,77',
+                                        'Tagessaldo'
+                                    );
+                                </script>
+                            
+                        
+                    
+                    
+                
+            
+
+            
+                
+                    
+                        29.03.2018
+                        <br>
+                        <span class="valueDate">29.03.2018</span>
+                    
+                    
+                
+            
+            
+        
+    </td>
+    <td class="transactionText" headers="table51bfe7df:type">
+        
+        
+            
+            <!-- GV-Code:  -->
+            
+                
+                
+                    <div>Dauerauftrag</div>
+                
+            
+            
+            
+                
+                    
+                    
+                        <div>NAME0</div>
+                    
+                
+            
+            
+                
+                    
+                        <div>NAME41 NAME7</div>
+                    
+                
+                
+            
+        
+    </td>
+    <td class="show-for-large-up" headers="table51bfe7df:payeeAccountNo">
+        
+        
+            
+                <div class="nowrap trimmed_iban">XY99 1111 1111 8956 6917 99</div>
+                BYLADEM1001
+            
+            
+        
+    </td>
+    <td class="alignRight" headers="table51bfe7df:localAmount.value">
+        
+
+        
+            <nobr><span style="white-space: nowrap" class="dkbred">-312,65</span></nobr>
+        
+    </td>
+
+    
+        <td class="alignRight actions nowidth" headers="table51bfe7df:select">
+            
+            
+                
+                    <a  data-abx-jsevent="remittance" href="/banking/finanzstatus/kontoumsaetze?$event=remittance&id=19" class="evt-remittance" tid="remittance"><span class="icons iconAdopt0" title="Als Überweisung verwenden"></span></a>
+                
+                
+                <a  data-abx-jsevent="pick" href="/banking/finanzstatus/kontoumsaetze?$event=pick&id=19" class="evt-pick" tid="pick"><span class="icons iconLoupe0" title="Umsatzdetails"></span></a>
+            
+        </td>
+    
+
+    
+</tr>
+</tbody>
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+        
+    
+
+    
+</table>
+
+</div><div class="clearfix pagingModule"><div class="clearfix pager"><ul class="page"><li class="activeLi"><span class="active">1</span></li><li><a href="/banking/finanzstatus/kontoumsaetze?tableAction_table51bfe7df=gotoPage&table=table51bfe7df&gotoPage_table51bfe7df=2#umsatzTabelle_anchor" class="gotoPage">2</a></li></ul><a href="/banking/finanzstatus/kontoumsaetze?tableAction_table51bfe7df=gotoPage&table=table51bfe7df&gotoPage_table51bfe7df=2#umsatzTabelle_anchor" class="icons butNext0" title="Nächste Seite" ></a>&nbsp;<a href="/banking/finanzstatus/kontoumsaetze?tableAction_table51bfe7df=gotoPage&table=table51bfe7df&gotoPage_table51bfe7df=2#umsatzTabelle_anchor" class="icons butEnd0" title="Letzte Seite" ></a></div></div>
+
+
+<br/>
+
+</div>
+
+<div class="clearfix module textDefaultModule">
+    
+</div>
+
+
+    <script type="text/javascript">
+
+        
+            var diagramValuesJson = '[{"date":"2018-03-28","balance":2751.33},{"date":"2018-03-29","balance":2751.33},{"date":"2018-04-03","balance":2185.13},{"date":"2018-04-04","balance":2206.36},{"date":"2018-04-06","balance":2132.36},{"date":"2018-04-09","balance":2325.36},{"date":"2018-04-10","balance":2408},{"date":"2018-04-12","balance":1330.81},{"date":"2018-04-13","balance":1319.06},{"date":"2018-04-16","balance":1283.56},{"date":"2018-04-18","balance":1228.57},{"date":"2018-04-27","balance":1528.57}]';
+            var extendedView = 'false';
+            var dailyBalance = 'false';
+            var dailyBalanceDiagram = 'false';
+
+            Abaxx.dkb_paymenttransaction.init(extendedView, dailyBalance, dailyBalanceDiagram, '/banking/finanzstatus/kontoumsaetze?$event=updateDailyBalanceFlag');
+        
+
+        if (!is_small_up() && (!jQuery('#showDailyBalance').prop("checked") || !true)) {
+            Abaxx.dkb_paymenttransaction.forceDailyBalanceInTable();
+        }
+
+        function searchbuttonclick() {
+            var searchbutton = document.getElementById('searchbutton');
+            searchbutton.click();
+        }
+    </script>
+
+					<script type="text/javascript">
+						function openPrintWindow2()	{
+							var d=document;
+							d.location="/banking/finanzstatus/kontoumsaetze?$event=openPrintWindow";
+						}
+
+						function openPrintWindow(url, name, args) {
+                            Abaxx.core.openWindow(url, name, args);
+							return false;
+						}
+					</script>
+		
+	</div>
+
+	
+
+</div>
+                    </div>
+                
+
+
+
+
+
+
+
+
+
+<div class="clearfix richfooter_wrap" id="richfooter_wrap">
+  <div class="richfooter mobileAccordion">
+          <script type="text/javascript">
+  jQuery(document).ready(function() {
+    jQuery('.anmelden').each(function() {
+      if(document.location.protocol == "http:") {
+        var originalUrl = jQuery(this).attr('href');
+        var targetUrl = "https://" + document.location.hostname + originalUrl;
+        jQuery(this).attr('href', targetUrl);
+      }
+    });
+  });
+</script>
+          <div class="footer_col">
+  <div class="h4" >DKB AG<span class="trigger_icon"></span></div>
+  <ul>
+          <li>            <a href="/ueber_uns/karriere/" class="suggestLink " name="RF Jobs"><span class='icons arrowNext'></span>Jobs</a></li>
+          <li>            <a href="/groups/presse/" class="suggestLink " name="RF Presse"><span class='icons arrowNext'></span>Presse</a></li>
+          <li><a href="/CmsDirectOutputPart.xhtml?$event=display&docId=5838628832" class="modal {content:{player: 'ajax'}}" name="RF Investor Relations">Investor Relations</a></li>
+          <li>            <a href="/groups/partner_vermittler/" class="suggestLink " name="RF Vertriebspartner"><span class='icons arrowNext'></span>Vertriebspartner</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://medium.com/deutsche-kreditbank"      target="_blank"     class="suggestLink medium_icon" 
+    name="RF Blog "Das kann Bank""        >Blog</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://www.facebook.com/Deutsche.Kreditbank"      target="_blank"     class="suggestLink fb_icon" 
+            >Facebook</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://www.instagram.com/dkbsportreporter/"      target="_blank"     class="suggestLink instagram_icon" 
+            >Instagram</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://www.youtube.com/user/DeutscheKreditbankAG"      target="_blank"     class="suggestLink youtube_icon" 
+            >Youtube</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://www.das-kann-bank.de"      target="_blank"     class="suggestLink dkb_ft_icon" 
+            >Das kann Bank</a></li>
+      </ul>
+</div>
+          <div class="footer_col">
+  <div class="h4" >Beliebte Produkte<span class="trigger_icon"></span></div>
+  <ul>
+          <li>            <a href="/privatkunden/dkb_cash/" class="suggestLink " name="RF Girokonto"><span class='icons arrowNext'></span>Kostenloses Girokonto</a></li>
+          <li>            <a href="/privatkunden/visa-card/" class="suggestLink " name="RF Online-Depot"><span class='icons arrowNext'></span>Kreditkarte</a></li>
+          <li>            <a href="/privatkunden/broker/" class="suggestLink " name="RF Online-Depot"><span class='icons arrowNext'></span>Online-Depot</a></li>
+          <li>            <a href="/privatkunden/privatdarlehen/" class="suggestLink " name="RF Privatkredit"><span class='icons arrowNext'></span>Privatkredit</a></li>
+          <li>            <a href="/privatkunden/studenten-bildungsfonds/" class="suggestLink " name="RF Studienkredit"><span class='icons arrowNext'></span>Studienkredit</a></li>
+          <li>            <a href="/geschaeftskunden/branchen/freie_berufe/dkb_business/" class="suggestLink " name="RF Geschäftskonto"><span class='icons arrowNext'></span>Geschäftskonto</a></li>
+          <li>            <a href="/privatkunden/immobilien/" class="suggestLink " name="RF Immobilienangebote"><span class='icons arrowNext'></span>Immobilienangebote</a></li>
+          <li>            <a href="/privatkunden/immobilienfinanzierung.html" class="suggestLink " name="RF Baufinanzierung"><span class='icons arrowNext'></span>Baufinanzierung</a></li>
+      </ul>
+</div>
+          <div class="footer_col">
+  <div class="h4" >Banking & Apps<span class="trigger_icon"></span></div>
+  <ul>
+          <li>    
+<a href="/banking" class="suggestLink ">
+  <span class='icons arrowNext'></span>Internet-Banking
+</a></li>
+          <li>            <a href="/info/banking_app/" class="suggestLink "><span class='icons arrowNext'></span>Banking-App</a></li>
+          <li>            <a href="/info/tan-verfahren/TAN2go/" class="suggestLink "><span class='icons arrowNext'></span>TAN2go-App</a></li>
+          <li>            <a href="/info/sicherheit/dkb-card-secure/" class="suggestLink "><span class='icons arrowNext'></span>Card-Secure App</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://treuhand.dkb.de/thk/?referer=vmpf"      target="_blank"     class="suggestLink " 
+    name="RF Verwalterplattform"        >Verwalterplattform</a></li>
+          <li>    
+
+<span class='icons arrowNext'></span>
+<a href="https://treuhand.dkb.de/thk/?referer=thpf"      target="_blank"     class="suggestLink " 
+    name="RF Treuhänderplattform"        >Treuhänderplattform</a></li>
+      </ul>
+</div>
+          <div class="footer_col">
+  <div class="h4" >Sicherheit<span class="trigger_icon"></span></div>
+  <ul>
+          <li></li>
+          <li>    
+<a href="/DkbTransactionBanking/content/service/CardBlock/process/CardBlockProcess.xhtml?$event=%24pageflow-start" class="suggestLink " name="RF Karte sperren">
+  <span class='icons arrowNext'></span>Karte sperren
+</a></li>
+          <li>            <a href="/kundenservice/sicherheit/sicherheitsgarantie.html" class="suggestLink "><span class='icons arrowNext'></span>Sicherheitsgarantie</a></li>
+          <li>            <a href="/kundenservice/sicherheit/#ibsicherheit" class="suggestLink "><span class='icons arrowNext'></span>Sicherheit im Überblick</a></li>
+          <li>            <a href="/info/tan-verfahren/" class="suggestLink "><span class='icons arrowNext'></span>TAN-Verfahren</a></li>
+          <li>            <a href="/kundenservice/einlagensicherung/" class="suggestLink " name="RF Einlagensicherung"><span class='icons arrowNext'></span>Einlagensicherung</a></li>
+          <li>            <a href="/info/sicherheit/verified-by-visa/" class="suggestLink " name="RF Verified by Visa"><span class='icons arrowNext'></span>Verified by Visa</a></li>
+      </ul>
+</div>
+          <div class="footer_col">
+  <div class="h4" class="initopen">Kontakt & Service<span class="trigger_icon"></span></div>
+  <ul>
+          <li><p><span class="tel_icon" name="RF anrufen">030 120 300 00</span></p></li>
+          <li></li>
+          <li>    
+<a href="/DkbTransactionBanking/content/service/Contact/process/ContactProcess.xhtml?$event=%24pageflow-start&callerevent=overview&caller=self" class="suggestLink mail_icon">
+  <span class='icons arrowNext'></span>Nachricht schreiben
+</a></li>
+          <li>            <a href="/kunden-werben-kunden/" class="suggestLink "><span class='icons arrowNext'></span>Kunden werben Kunden</a></li>
+          <li>            <a href="/info/fragen-und-antworten/" class="suggestLink " name="RF Fragen & Antworten"><span class='icons arrowNext'></span>Fragen & Antworten</a></li>
+          <li>            <a href="/formulare/" class="suggestLink " name="RF Formulare?"><span class='icons arrowNext'></span>Formulare</a></li>
+          <li>            <a href="/kundenservice/schon_gewusst/" class="suggestLink " name="RF Schon gewusst?"><span class='icons arrowNext'></span>Schon gewusst?</a></li>
+          <li>            <a href="/info/erklaervideos/" class="suggestLink " name="RF Erklärvideos"><span class='icons arrowNext'></span>Erklärvideos</a></li>
+          <li>    
+<a href="/DkbTransactionBanking/content/AtmSearch.xhtml" class="suggestLink " name="RF Geldautomaten suchen">
+  <span class='icons arrowNext'></span>Geldautomaten suchen
+</a></li>
+          <li>            <a href="/info/iban-rechner/" class="suggestLink " name="RF IBAN-Rechner"><span class='icons arrowNext'></span>IBAN-Rechner</a></li>
+      </ul>
+</div>
+          <script language="JavaScript">
+function createCookie(e,r,t){if(t){var o=new Date;o.setTime(o.getTime()+24*t*60*60*1e3);var i="; expires="+o.toGMTString()}else var i="";document.cookie=e+"="+r+i+"; path=/"}function readCookie(e){for(var r=e+"=",t=document.cookie.split(";"),o=0;o<t.length;o++){for(var i=t[o];" "==i.charAt(0);)i=i.substring(1,i.length);if(0==i.indexOf(r))return i.substring(r.length,i.length)}return null}var serverId=readCookie("SERVERID");createCookie("ALT_SERVER_ID",serverId,1);
+jQuery(document).ready(function() {
+if ( jQuery( "#abxSIdCode" ).length ) {
+   jQuery('#abxSIdCode').html('Server-ID: ' + serverId);
+}});
+
+var now = new Date();
+var expireDate = new Date(now.getTime() + (1000*60*12));
+document.cookie = "DKB_SESS_TIMEOUT=" + expireDate.toISOString() + "; expires=" + expireDate.toGMTString() + ";path=/;";
+</script>
+        <div class="footer_col footer_special">
+      <a href="/" name="Deutsche Kreditbank AG"><div class="dkb_ag_logo_container"></div></a>
+    </div>
+  </div>
+</div>
+
+</div>
+        </div>
+        
+
+
+
+<div class="outerfooter" id="outerfooter">
+<ul>
+	<li><a href="/info/impressum/">Impressum</a></li>
+	<li><a href="/kundenservice/datenschutz/">Datenschutz</a></li>
+	<li><a href="/kundenservice/preise_bedingungen/">Preise &amp; Bedingungen</a></li>
+	<li>BIC: BYLADEM1001</li>
+	<li class="forceDesktopLink hide_for_app"><a href="#" onclick="forceViewportDesktop(true)" title="zur Desktop Ansicht">zur Desktop Ansicht</a></li>
+	<li class="unForceDesktopLink hide_for_app"><a href="#" onclick="forceViewportDesktop(false)" title="zur mobilen Ansicht">zur mobilen Ansicht</a></li>
+</ul>
+</div>
+<script type="text/javascript">
+        if (typeof is_touch_device === 'function' && is_touch_device()) {
+            jQuery('html').addClass('is_touch_device');
+        }
+    </script>
+    <script src="/scripts/dkb/dtAgentApi/dtagentApi.js" type="text/javascript"></script></body>
+</html>
+
