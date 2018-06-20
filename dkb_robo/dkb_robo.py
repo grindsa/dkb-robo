@@ -590,7 +590,6 @@ class DKBRobo(object):
 
             # increase counter
             counter += 1
-
         return overview_dic
 
     def scan_postbox(self):
