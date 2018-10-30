@@ -578,7 +578,7 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class':'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except IndexError:
+                except (IndexError, TypeError):
                     pass
 
             # get link for details
