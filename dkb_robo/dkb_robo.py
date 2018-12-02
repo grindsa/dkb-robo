@@ -578,7 +578,7 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class':'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except IndexError:
+                except (IndexError, TypeError):
                     pass
 
             # get link for details
@@ -590,7 +590,6 @@ class DKBRobo(object):
 
             # increase counter
             counter += 1
-
         return overview_dic
 
     def scan_postbox(self):
