@@ -22,7 +22,6 @@ def cnt_list(value):
     """ customized function return just the number if entries in input list """
     return len(value)
 
-@patch('dkb_robo.DKBRobo.dkb_br')
 class TestDKBRobo(unittest.TestCase):
     """ test class """
 
