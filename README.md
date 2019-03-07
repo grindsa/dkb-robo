@@ -1,4 +1,7 @@
 # dkb-robo
+![GitHub release](https://img.shields.io/github/release/grindsa/dkb-robo.svg) 
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/master.svg?label=last%20commit%20into%20master)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/devel.svg?label=last%20commit%20into%20devel)
 
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch 
 - account information and current balances
