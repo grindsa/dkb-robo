@@ -54,7 +54,7 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;date_from&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;transactions&nbsp;starting&nbsp;form<br>
 &nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date</tt></dd></dl>
 
-<dl><dt><a name="DKBRobo-get_credit_limits"><strong>get_credit_limits</strong></a>(self, dkb_br)</dt><dd><tt>create&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;credit&nbsp;limites&nbsp;of&nbsp;the&nbsp;different&nbsp;accounts<br>
+<dl><dt><a name="DKBRobo-get_credit_limits"><strong>get_credit_limits</strong></a>(self, dkb_br)</dt><dd><tt>create&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;credit&nbsp;limits&nbsp;of&nbsp;the&nbsp;different&nbsp;accounts<br>
 &nbsp;<br>
 args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
@@ -78,14 +78,14 @@ args:<br>
 returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;documents</tt></dd></dl>
 
-<dl><dt><a name="DKBRobo-get_excemption_order"><strong>get_excemption_order</strong></a>(self, dkb_br)</dt><dd><tt>returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;stored&nbsp;excemption&nbsp;orders<br>
+<dl><dt><a name="DKBRobo-get_exemption_order"><strong>get_exemption_order</strong></a>(self, dkb_br)</dt><dd><tt>returns&nbsp;a&nbsp;dictionary&nbsp;of&nbsp;the&nbsp;stored&nbsp;exemption&nbsp;orders<br>
 &nbsp;<br>
 args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;url&nbsp;-&nbsp;folder&nbsp;url<br>
 &nbsp;<br>
 returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;excemption&nbsp;orders</tt></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;dictionary&nbsp;of&nbsp;exemption&nbsp;orders</tt></dd></dl>
 
 <dl><dt><a name="DKBRobo-get_transactions"><strong>get_transactions</strong></a>(self, dkb_br, transaction_url, atype, date_from, date_to)</dt><dd><tt>get&nbsp;transactions&nbsp;for&nbsp;a&nbsp;certain&nbsp;amount&nbsp;of&nbsp;time<br>
 args:<br>
@@ -96,7 +96,7 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;date_to&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;end&nbsp;date<br>
 &nbsp;<br>
 returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions;&nbsp;each&nbsp;transaction&nbsp;gets&nbsp;represented&nbsp;as&nbsp;a&nbsp;dictionalry&nbsp;containing&nbsp;the&nbsp;following&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions;&nbsp;each&nbsp;transaction&nbsp;gets&nbsp;represented&nbsp;as&nbsp;a&nbsp;dictionary&nbsp;containing&nbsp;the&nbsp;following&nbsp;information<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;&nbsp;&nbsp;-&nbsp;booking&nbsp;date<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;text&nbsp;&nbsp;&nbsp;-&nbsp;test</tt></dd></dl>
@@ -109,10 +109,10 @@ args:<br>
 &nbsp;<br>
 returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;dkb_br&nbsp;-&nbsp;handle&nbsp;to&nbsp;browser&nbsp;<a href="__builtin__.html#object">object</a>&nbsp;for&nbsp;further&nbsp;processing<br>
-&nbsp;&nbsp;&nbsp;&nbsp;last_login&nbsp;-&nbsp;last&nbsp;login&nbsp;date&nbsp;(german&nbsp;date&nbsp;format)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;account_dic&nbsp;-&nbsp;dictionary&nbsp;containig&nbsp;account&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;last_login&nbsp;-&nbsp;last&nbsp;login&nbsp;date&nbsp;(German&nbsp;date&nbsp;format)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;account_dic&nbsp;-&nbsp;dictionary&nbsp;containing&nbsp;account&nbsp;information<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;name<br>
-&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;numner<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;number<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;type&nbsp;(account,&nbsp;creditcard,&nbsp;depot)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;balance<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;of&nbsp;balance<br>
@@ -141,7 +141,7 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;transactions&nbsp;-&nbsp;html&nbsp;page&nbsp;including&nbsp;transactions<br>
 &nbsp;<br>
 returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;respresented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;follwoing&nbsp;values<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;represented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;following&nbsp;values<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;-&nbsp;booking&nbsp;date<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;text&nbsp;-&nbsp;text</tt></dd></dl>
@@ -152,7 +152,7 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;transactions&nbsp;-&nbsp;html&nbsp;page&nbsp;including&nbsp;transactions<br>
 &nbsp;<br>
 returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;respresented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;follwoing&nbsp;values<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;of&nbsp;transactions&nbsp;captured.&nbsp;Each&nbsp;transaction&nbsp;gets&nbsp;represented&nbsp;by&nbsp;a&nbsp;hash&nbsp;containing&nbsp;the&nbsp;following&nbsp;values<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;bdate&nbsp;-&nbsp;booking&nbsp;date<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;vdate&nbsp;-&nbsp;valuta&nbsp;date<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;amount&nbsp;-&nbsp;amount<br>
@@ -164,9 +164,9 @@ args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;soup&nbsp;-&nbsp;BautifulSoup&nbsp;<a href="__builtin__.html#object">object</a><br>
 &nbsp;<br>
 returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;overview_dic&nbsp;-&nbsp;dictionary&nbsp;containg&nbsp;following&nbsp;account&nbsp;information<br>
+&nbsp;&nbsp;&nbsp;&nbsp;overview_dic&nbsp;-&nbsp;dictionary&nbsp;containing&nbsp;following&nbsp;account&nbsp;information<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;name<br>
-&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;numner<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;number<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;type&nbsp;(account,&nbsp;creditcard,&nbsp;depot)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;account&nbsp;balance<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;date&nbsp;of&nbsp;balance<br>

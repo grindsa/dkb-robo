@@ -8,7 +8,7 @@ dkb-robo is a python library to access the internet banking area of  "Deutsche K
 - transactions from creditcards and checking accounts (Girokonten)
 - query the content of "DKB Postbox"
 - get standing orders (Dauerauftrag)
-- get information about credit limits an excemption orders (Freistellungsauftrag)
+- get information about credit limits and exemption orders (Freistellungsauftrag)
 
 
 ## Getting Started
@@ -21,7 +21,7 @@ To run dkb-robo on your system you need
 
 * [Python] - (https://www.python.org)
 * [mechanicalsoup] - (https://github.com/MechanicalSoup/MechanicalSoup) - Stateful programmatic web browsing library
-* [cookielib] - (https://docs.python.org/2/library/cookielib.html) - library for Cookie handling for HTTP clients¶
+* [cookielib] - (https://docs.python.org/2/library/cookielib.html) - library for Cookie handling for HTTP clients
 * [Beautiful Soup]  - (https://www.crummy.com/software/BeautifulSoup/) - a Python library for pulling data out of HTML and XML files.
 
 Please make sure python and all the above modules had been installed successfully before you start any kind of testing.
@@ -96,7 +96,7 @@ After login you can return the
      'type': 'creditcard'}}
 ```
 
-to get the list of transaction for a certain checking account or a credit card use the following method
+to get the list of transactions for a certain checking account or a credit card use the following method
 ```
 tlist = dkb.get_transactions(link, type, date_from, date_to)
 ```
@@ -120,7 +120,7 @@ this method returns a list of transactions in the below format
   'text': u'some text'}]
 ```
 
-to get the credit limits per account or credit-card the method get_credi_limits() must be used
+to get the credit limits per account or credit-card the method get_credit_limits() must be used
 ```
 > c_list = dkb.get_credit_limits()
 ```
@@ -137,7 +137,7 @@ A list of standing orders (Daueraufträge) can be obtained by calling get_standi
 ```
 > so = dkb.get_standing_orders()
 ```
-A list of standing orders will be returned containing a dictionary per standing orders
+A list of standing orders will be returned containing a dictionary per standing order
 ```
 > pprint(so)
 [{'amount': 900.0,
@@ -150,9 +150,9 @@ A list of standing orders will be returned containing a dictionary per standing 
   'recipient': u'ANY RECIEVER'}]
 ```
 
-The method get_excemption_order() can be used to get the exemption orders (Freistellungsaufträge)
+The method get_exemption_order() can be used to get the exemption orders (Freistellungsaufträge)
 ```
-> exo = dkb.get_excemption_order()
+> exo = dkb.get_exemption_order()
 ```
 A dictionary similar to the one below will be returned
 ```
@@ -177,7 +177,7 @@ A dictionary similar to the below will be returned
 ```
 
 ## Further documentation
-please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documenation and an example scripts of all dkb-robo methods there.
+please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documentation and an example scripts of all dkb-robo methods there.
 
 
 ## Contributing

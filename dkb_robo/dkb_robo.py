@@ -93,7 +93,7 @@ class DKBRobo(object):
         return self.parse_cc_transactions(response.content)
 
     def get_credit_limits(self):
-        """ create a dictionary of credit limites of the different accounts
+        """ create a dictionary of credit limits of the different accounts
 
         args:
             self.dkb_br - browser object
@@ -168,14 +168,14 @@ class DKBRobo(object):
         return document_dic
 
     def get_exemption_order(self):
-        """ returns a dictionary of the stored excemption orders
+        """ returns a dictionary of the stored exemption orders
 
         args:
             self.dkb_br - browser object
             url - folder url
 
         returns:
-            dictionary of excemption orders
+            dictionary of exemption orders
         """
         exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
         self.dkb_br.open(exo_url)
@@ -317,7 +317,7 @@ class DKBRobo(object):
             date_to         - end date
 
         returns:
-            list of transactions; each transaction gets represented as a dictionalry containing the following information
+            list of transactions; each transaction gets represented as a dictionary containing the following information
             - date   - booking date
             - amount - amount
             - text   - test
@@ -339,10 +339,10 @@ class DKBRobo(object):
 
         returns:
             self.dkb_br - handle to browser object for further processing
-            last_login - last login date (german date format)
-            account_dic - dictionary containig account information
+            last_login - last login date (German date format)
+            account_dic - dictionary containing account information
             - name
-            - account numner
+            - account number
             - type (account, creditcard, depot)
             - account balance
             - date of balance
@@ -421,7 +421,7 @@ class DKBRobo(object):
         self.dkb_br.set_handle_robots = False
         self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
 
-        # initilize some cookies to fool dkb
+        # initialize some cookies to fool dkb
         dkb_ck = cookielib.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
         dkb_ck = cookielib.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
@@ -438,7 +438,7 @@ class DKBRobo(object):
             transactions - html page including transactions
 
         returns:
-            list of transactions captured. Each transaction gets respresented by a hash containing the follwoing values
+            list of transactions captured. Each transaction gets represented by a hash containing the following values
             - date - booking date
             - amount - amount
             - text - text
@@ -472,7 +472,7 @@ class DKBRobo(object):
                     amount = amount.replace('.', '')
                     tmp_dic['amount'] = amount.replace(',', '.')
 
-                    #  date is only for backwards compability
+                    #  date is only for backwards compatibility
                     tmp_dic['date'] = row[0]
                     tmp_dic['text'] = '{0} {1} {2}'.format(tmp_dic['postingtext'], tmp_dic['peer'], tmp_dic['reasonforpayment'])
 
@@ -487,7 +487,7 @@ class DKBRobo(object):
             transactions - html page including transactions
 
         returns:
-            list of transactions captured. Each transaction gets respresented by a hash containing the follwoing values
+            list of transactions captured. Each transaction gets represented by a hash containing the following values
             - bdate - booking date
             - vdate - valuta date
             - amount - amount
@@ -543,7 +543,7 @@ class DKBRobo(object):
             cols = row.findAll("td")
 
             # check if we have accounts from other banks in overview
-            # in this case we need to shift colums by one
+            # in this case we need to shift columns by one
             if cols[0].find("img"):
                 ontop = 1
 

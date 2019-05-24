@@ -41,21 +41,21 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(self.dkb.get_credit_limits(), e_result)
 
     def test_get_exo_single(self, mock_browser):
-        """ test DKBRobo.get_excemption_order() method for a single exemption order """
+        """ test DKBRobo.get_exemption_order() method for a single exemption order """
         html = read_file('mocks/freistellungsauftrag.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0, 'amount': 1000.0, 'used': 0.0, 'description': u'Gemeinsam mit Firstname Familyname', 'validity': u'01.01.2016 unbefristet'}}
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
 
     def test_get_exo_single_nobr(self, mock_browser):
-        """ test DKBRobo.get_excemption_order() method for a single exemption order without line-breaks"""
+        """ test DKBRobo.get_exemption_order() method for a single exemption order without line-breaks"""
         html = read_file('mocks/freistellungsauftrag-nobr.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0, 'amount': 1000.0, 'used': 0.0, 'description': u'Gemeinsam mit Firstname Familyname', 'validity': u'01.01.2016 unbefristet'}}
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
 
     def test_get_exo_multiple(self, mock_browser):
-        """ test DKBRobo.get_excemption_order() method for a multiple exemption orders """
+        """ test DKBRobo.get_exemption_order() method for a multiple exemption orders """
         html = read_file('mocks/freistellungsauftrag-multiple.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0,
