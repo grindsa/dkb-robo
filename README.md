@@ -19,10 +19,10 @@ These instructions will get you a copy of the project up and running on your loc
 
 To run dkb-robo on your system you need
 
-* [Python] - (https://www.python.org)
-* [mechanicalsoup] - (https://github.com/MechanicalSoup/MechanicalSoup) - Stateful programmatic web browsing library
-* [cookielib] - (https://docs.python.org/2/library/cookielib.html) - library for Cookie handling for HTTP clients
-* [Beautiful Soup]  - (https://www.crummy.com/software/BeautifulSoup/) - a Python library for pulling data out of HTML and XML files.
+* [Python](https://www.python.org)
+* [mechanicalsoup](https://github.com/MechanicalSoup/MechanicalSoup) - Stateful programmatic web browsing library
+* [cookielib](https://docs.python.org/2/library/cookielib.html) - library for Cookie handling for HTTP clients
+* [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) - a Python library for pulling data out of HTML and XML files.
 
 Please make sure python and all the above modules had been installed successfully before you start any kind of testing.
 
