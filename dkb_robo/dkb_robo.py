@@ -27,7 +27,7 @@ class DKBRobo(object):
     dkb_password = None
     dkb_br = None
     last_login = None
-    account_dic = None
+    account_dic = {}
 
     def __init__(self, dkb_user=None, dkb_password=None):
         self.dkb_user = dkb_user
