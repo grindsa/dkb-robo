@@ -387,7 +387,6 @@ class DKBRobo(object):
             # parse account date
             self.account_dic = self.parse_overview(soup)
 
-
     def logout(self):
         """ logout from DKB banking area
 
