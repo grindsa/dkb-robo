@@ -3,8 +3,8 @@
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/master.svg?label=last%20commit%20into%20master)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/devel.svg?label=last%20commit%20into%20devel)
 
-<span style="color:red"><b>IMPORTANT: Deutsche Kreditbarnk changed their login procedure on Sept, 10th and activated a 2nd factor. Thus, dkb_robo does not work for the time being anymore. I am already in contact with DKB to check alternate options.
-<br><br>The communication is a bid  ...complicated.... but I will keep you guys posted on the progress...</b></span>.
+<span style="color:red"><b>IMPORTANT: Deutsche Kreditbarnk changed their login procedure on Sept, 10th and activated a 2nd factor. Thus, dkb_robo does not work for the time being. I am already in contact with DKB to check alternate options.
+<p>The communication is a bid  ...complicated.... but I will keep you guys posted on the progress...</b></span>.
 
 
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch 
