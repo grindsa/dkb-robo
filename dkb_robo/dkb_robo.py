@@ -441,7 +441,14 @@ class DKBRobo(object):
             if 'guiState' in result:
                 print_debug(self.debug, 'poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
                 if result['guiState'] == 'MAP_TO_EXIT':
+                    print_debug(self.debug, 'session got confirmed...\n')                
                     login_confirmed = True
+                elif result['guiState'] == 'EXPIRED':
+                    print('Session got expired. Aborting...')
+                    sys.exit(0)                      
+            else:
+                print('Timeout during session confirmation. Aborting...')
+                sys.exit(0)
             time.sleep(2)
 
         post_data = {'$event': 'next', 'XSRFPreventionToken': generate_random_string(25)}
