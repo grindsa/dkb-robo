@@ -5,16 +5,12 @@
 from __future__ import print_function
 import sys
 import csv
+import random
 import time
 from datetime import datetime
 import re
+from string import digits, ascii_letters
 import mechanicalsoup
-# from bs4 import BeautifulSoup
-
-def print_debug(debug, text):
-    """ little helper to print debug messages """
-    if debug:
-        print('{0}: {1}'.format(datetime.now(), text))
 
 if sys.version_info > (3, 0):
     import http.cookiejar as cookielib
@@ -24,6 +20,17 @@ else:
     import cookielib
     reload(sys)
     sys.setdefaultencoding('utf8')
+
+def generate_random_string(length):
+    """ generate random string to be used as name """
+    char_set = digits + ascii_letters
+    return ''.join(random.choice(char_set) for _ in range(length))
+
+def print_debug(debug, text):
+    """ little helper to print debug messages """
+    if debug:
+        print('{0}: {1}'.format(datetime.now(), text))
+
 
 class DKBRobo(object):
     """ dkb_robo class """
@@ -398,30 +405,49 @@ class DKBRobo(object):
                 # app confirmation needed to continue
                 login_confirmed = self.login_confirm()
                 if login_confirmed:
-                    print('weidder')
-
-            # parse account date
-            # self.account_dic = self.parse_overview(soup)
+                    # login got confirmed get overview and parse data
+                    soup_new = self.get_financial_statement()
+                    self.account_dic = self.parse_overview(soup_new)
 
     def login_confirm(self):
-        """ confirm login to dkb via app """
+        """ confirm login to dkb via app
+
+        returns:
+            true/false - depending if login has been confirmed
+        """
         print_debug(self.debug, 'DKBRobo.login_confirm()\n')
         print('check your banking app and confirm login...')
         # timestamp in miliseconds
         poll_id = int(datetime.utcnow().timestamp()*1e3)
-
+        # poll url
+        poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
         login_confirmed = False
         while not login_confirmed:
             poll_id += 1
-            poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml?$event=pollingVerification&_=' + str(poll_id)
-            result = self.dkb_br.open(poll_url).json()
+            # add id to pollurl
+            url = poll_url + '?$event=pollingVerification&_=' + str(poll_id)
+            result = self.dkb_br.open(url).json()
             if 'guiState' in result:
                 print_debug(self.debug, 'poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
                 if result['guiState'] == 'MAP_TO_EXIT':
                     login_confirmed = True
             time.sleep(2)
 
+        post_data = {'$event': 'next', 'XSRFPreventionToken': generate_random_string(25)}
+        self.dkb_br.post(url=poll_url, data=post_data)
+
         return login_confirmed
+
+    def get_financial_statement(self):
+        """ get finanical statement """
+        print_debug(self.debug, 'DKBRobo.get_financial_statement()\n')
+        statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
+
+        # statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        self.dkb_br.open(statement_url)
+        soup = self.dkb_br.get_current_page()
+        return soup
+
 
     def logout(self):
         """ logout from DKB banking area
