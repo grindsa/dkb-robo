@@ -31,7 +31,6 @@ def print_debug(debug, text):
     if debug:
         print('{0}: {1}'.format(datetime.now(), text))
 
-
 class DKBRobo(object):
     """ dkb_robo class """
 
