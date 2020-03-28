@@ -5,6 +5,7 @@
 from __future__ import print_function
 import sys
 import csv
+import time
 from datetime import datetime
 import re
 import mechanicalsoup
@@ -28,10 +29,12 @@ class DKBRobo(object):
     dkb_br = None
     last_login = None
     account_dic = {}
+    debug = False
 
-    def __init__(self, dkb_user=None, dkb_password=None):
+    def __init__(self, dkb_user=None, dkb_password=None, debug=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
+        self.debug = debug
 
     def __enter__(self):
         """
