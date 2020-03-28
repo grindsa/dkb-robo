@@ -73,6 +73,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
+        print_debug(self.debug, 'DKBRobo.get_account_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1615473160_1')
 
@@ -94,6 +95,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
+        print_debug(self.debug, 'DKBRobo.get_creditcard_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
         # get credit card transaction form yesterday
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
@@ -116,6 +118,7 @@ class DKBRobo(object):
         returns:
             dictionary of the accounts and limits
         """
+        print_debug(self.debug, 'DKBRobo.get_credit_limits()\n')
         limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
         self.dkb_br.open(limit_url)
 
@@ -158,7 +161,6 @@ class DKBRobo(object):
 
         return limit_dic
 
-
     def get_document_links(self, url):
         """ create a dictionary of the documents stored in a pbost folder
 
@@ -169,6 +171,7 @@ class DKBRobo(object):
         returns:
             dictionary of the documents
         """
+        print_debug(self.debug, 'DKBRobo.get_document_links({0})\n'.format(url))
         document_dic = {}
 
         self.dkb_br.open(url)
@@ -192,6 +195,7 @@ class DKBRobo(object):
         returns:
             dictionary of exemption orders
         """
+        print_debug(self.debug, 'DKBRobo.get_exemption_order()\n')
         exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
         self.dkb_br.open(exo_url)
 
@@ -248,6 +252,7 @@ class DKBRobo(object):
         returns:
             points - dkb points
         """
+        print_debug(self.debug, 'DKBRobo.get_points()\n')
         point_url = self.base_url + '/DkbTransactionBanking/content/FavorableWorld/Overview.xhtml?$event=init'
         self.dkb_br.open(point_url)
 
@@ -287,6 +292,7 @@ class DKBRobo(object):
         returns:
             so_dic = standing order dic
         """
+        print_debug(self.debug, 'DKBRobo.get_standing_orders()\n')
         so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
         self.dkb_br.open(so_url)
 
@@ -337,6 +343,7 @@ class DKBRobo(object):
             - amount - amount
             - text   - test
         """
+        print_debug(self.debug, 'DKBRobo.get_account_transactions({0}/{1}: {2}/{3})\n'.format(transaction_url, atype, date_from, date_to))
         transaction_list = []
         if atype == 'account':
             transaction_list = self.get_account_transactions(transaction_url, date_from, date_to)
@@ -448,7 +455,6 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         return soup
 
-
     def logout(self):
         """ logout from DKB banking area
 
@@ -458,6 +464,7 @@ class DKBRobo(object):
         returns:
             None
         """
+        print_debug(self.debug, 'DKBRobo.logout()\n')
         logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
         self.dkb_br.open(logout_url)
 
@@ -505,6 +512,7 @@ class DKBRobo(object):
             - amount - amount
             - text - text
         """
+        print_debug(self.debug, 'DKBRobo.parse_account_transactions()\n')
         # create empty list
         transaction_list = []
 
@@ -555,6 +563,7 @@ class DKBRobo(object):
             - amount - amount
             - text - text
         """
+        print_debug(self.debug, 'DKBRobo.parse_cc_transactions()\n')
         # parse the lines to get all account infos
         # soup = BeautifulSoup(transactions, "html5lib")
 
@@ -595,6 +604,7 @@ class DKBRobo(object):
             - link to details
             - link to transactions
         """
+        print_debug(self.debug, 'DKBRobo.parse_overview()\n')
         # get account information
         overview_dic = {}
         # to_remove = 0
@@ -669,6 +679,7 @@ class DKBRobo(object):
                 - documents
                     - name of document -> document link
         """
+        print_debug(self.debug, 'DKBRobo.scan_postbox()\n')
         pb_url = self.base_url + '/banking/postfach'
         self.dkb_br.open(pb_url)
         soup = self.dkb_br.get_current_page()
