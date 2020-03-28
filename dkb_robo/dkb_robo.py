@@ -11,6 +11,11 @@ import re
 import mechanicalsoup
 # from bs4 import BeautifulSoup
 
+def print_debug(debug, text):
+    """ little helper to print debug messages """
+    if debug:
+        print('{0}: {1}'.format(datetime.now(), text))
+
 if sys.version_info > (3, 0):
     import http.cookiejar as cookielib
     import importlib
@@ -352,6 +357,8 @@ class DKBRobo(object):
             - link to details
             - link to transactions
         """
+        print_debug(self.debug, 'DKBRobo.login()\n')
+
         # login url
         login_url = self.base_url + '/' + 'banking'
 
@@ -387,8 +394,34 @@ class DKBRobo(object):
             last_login = last_login.replace('Letzte Anmeldung:', '')
             self.last_login = last_login
 
+            if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
+                # app confirmation needed to continue
+                login_confirmed = self.login_confirm()
+                if login_confirmed:
+                    print('weidder')
+
             # parse account date
-            self.account_dic = self.parse_overview(soup)
+            # self.account_dic = self.parse_overview(soup)
+
+    def login_confirm(self):
+        """ confirm login to dkb via app """
+        print_debug(self.debug, 'DKBRobo.login_confirm()\n')
+        print('check your banking app and confirm login...')
+        # timestamp in miliseconds
+        poll_id = int(datetime.utcnow().timestamp()*1e3)
+
+        login_confirmed = False
+        while not login_confirmed:
+            poll_id += 1
+            poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml?$event=pollingVerification&_=' + str(poll_id)
+            result = self.dkb_br.open(poll_url).json()
+            if 'guiState' in result:
+                print_debug(self.debug, 'poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
+                if result['guiState'] == 'MAP_TO_EXIT':
+                    login_confirmed = True
+            time.sleep(2)
+
+        return login_confirmed
 
     def logout(self):
         """ logout from DKB banking area
@@ -411,6 +444,7 @@ class DKBRobo(object):
         returns:
            self.dkb_br - instance
         """
+        print_debug(self.debug, 'DKBRobo.new_instance()\n')
         # create browser and cookiestore objects
         self.dkb_br = mechanicalsoup.StatefulBrowser()
         dkb_cj = cookielib.LWPCookieJar()
