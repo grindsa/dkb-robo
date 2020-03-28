@@ -40,11 +40,13 @@ class DKBRobo(object):
     dkb_br = None
     last_login = None
     account_dic = {}
+    chip_tan = False
     debug = False
 
-    def __init__(self, dkb_user=None, dkb_password=None, debug=False):
+    def __init__(self, dkb_user=None, dkb_password=None, chip_tan=False, debug=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
+        self.chip_tan = chip_tan
         self.debug = debug
 
     def __enter__(self):
@@ -408,12 +410,53 @@ class DKBRobo(object):
             self.last_login = last_login
 
             if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
-                # app confirmation needed to continue
-                login_confirmed = self.login_confirm()
+                if self.chip_tan:
+                    # chiptan input
+                    login_confirmed = self.ctan_check(soup)
+                else:
+                    # app confirmation needed to continue
+                    login_confirmed = self.login_confirm()
+
                 if login_confirmed:
                     # login got confirmed get overview and parse data
                     soup_new = self.get_financial_statement()
                     self.account_dic = self.parse_overview(soup_new)
+
+    def ctan_check(self, _soup):
+        """ input of chiptan during login """
+        print_debug(self.debug, 'DKBRobo.ctan_check()\n')
+        # search form
+        self.dkb_br.select_form('form[name="confirmForm"]')
+        self.dkb_br["$event"] = 'tanVerification'
+        # open page to inser tan
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
+
+        login_confirm = False
+
+        # select tan form
+        self.dkb_br.select_form('#next')
+        # print steps to be done
+        olist = soup.find("ol")
+        for li in olist.findAll('li'):
+            print(li.text.strip())
+
+        # ask for TAN
+        self.dkb_br["tan"] = input("TAN: ")
+
+        # submit form and check response
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
+
+        # catch tan error
+        if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+            print('Login failed due to wrong tan! Aborting...')
+            sys.exit(0)
+        else:
+            print_debug(self.debug, 'TAN is correct...\n')        
+            login_confirm = True
+
+        return login_confirm
 
     def login_confirm(self):
         """ confirm login to dkb via app
@@ -441,11 +484,11 @@ class DKBRobo(object):
             if 'guiState' in result:
                 print_debug(self.debug, 'poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
                 if result['guiState'] == 'MAP_TO_EXIT':
-                    print_debug(self.debug, 'session got confirmed...\n')                
+                    print_debug(self.debug, 'session got confirmed...\n')
                     login_confirmed = True
                 elif result['guiState'] == 'EXPIRED':
                     print('Session got expired. Aborting...')
-                    sys.exit(0)                      
+                    sys.exit(0)
             else:
                 print('Timeout during session confirmation. Aborting...')
                 sys.exit(0)
