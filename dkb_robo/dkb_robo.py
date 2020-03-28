@@ -423,8 +423,13 @@ class DKBRobo(object):
         """
         print_debug(self.debug, 'DKBRobo.login_confirm()\n')
         print('check your banking app and confirm login...')
-        # timestamp in miliseconds
-        poll_id = int(datetime.utcnow().timestamp()*1e3)
+
+        # timestamp in miliseconds for py3 and py2
+        try:
+            poll_id = int(datetime.utcnow().timestamp()*1e3)
+        except BaseException:
+            poll_id = int(round(time.time() * 1000))
+
         # poll url
         poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
         login_confirmed = False
