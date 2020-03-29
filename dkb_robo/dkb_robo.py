@@ -244,6 +244,16 @@ class DKBRobo(object):
 
         return exo_dic
 
+    def get_financial_statement(self):
+        """ get finanical statement """
+        print_debug(self.debug, 'DKBRobo.get_financial_statement()\n')
+        statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
+
+        # statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        self.dkb_br.open(statement_url)
+        soup = self.dkb_br.get_current_page()
+        return soup
+
     def get_points(self):
         """ returns the DKB points
 
@@ -425,10 +435,11 @@ class DKBRobo(object):
     def ctan_check(self, _soup):
         """ input of chiptan during login """
         print_debug(self.debug, 'DKBRobo.ctan_check()\n')
+
         # search form
         self.dkb_br.select_form('form[name="confirmForm"]')
         self.dkb_br["$event"] = 'tanVerification'
-        # open page to inser tan
+        # open page to insert tan
         self.dkb_br.submit_selected()
         soup = self.dkb_br.get_current_page()
 
@@ -438,8 +449,8 @@ class DKBRobo(object):
         self.dkb_br.select_form('#next')
         # print steps to be done
         olist = soup.find("ol")
-        for li in olist.findAll('li'):
-            print(li.text.strip())
+        for li_ in olist.findAll('li'):
+            print(li_.text.strip())
 
         # ask for TAN
         self.dkb_br["tan"] = input("TAN: ")
@@ -453,7 +464,7 @@ class DKBRobo(object):
             print('Login failed due to wrong tan! Aborting...')
             sys.exit(0)
         else:
-            print_debug(self.debug, 'TAN is correct...\n')        
+            print_debug(self.debug, 'TAN is correct...\n')
             login_confirm = True
 
         return login_confirm
@@ -466,6 +477,14 @@ class DKBRobo(object):
         """
         print_debug(self.debug, 'DKBRobo.login_confirm()\n')
         print('check your banking app and confirm login...')
+
+        try:
+            # get xsrf token
+            soup = self.dkb_br.get_current_page()
+            xsrf_token = soup.find('input', attrs={'name':'XSRFPreventionToken'}).get('value')
+        except BaseException:
+            # fallback
+            xsrf_token = generate_random_string(25)
 
         # timestamp in miliseconds for py3 and py2
         try:
@@ -494,20 +513,10 @@ class DKBRobo(object):
                 sys.exit(0)
             time.sleep(2)
 
-        post_data = {'$event': 'next', 'XSRFPreventionToken': generate_random_string(25)}
+        post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
         self.dkb_br.post(url=poll_url, data=post_data)
 
         return login_confirmed
-
-    def get_financial_statement(self):
-        """ get finanical statement """
-        print_debug(self.debug, 'DKBRobo.get_financial_statement()\n')
-        statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
-
-        # statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
-        self.dkb_br.open(statement_url)
-        soup = self.dkb_br.get_current_page()
-        return soup
 
     def logout(self):
         """ logout from DKB banking area
