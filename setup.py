@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dkb_robo',
-    version='0.8.3',
+    version='0.9',
     description='library to access the internet banking area of "Deutsche Kreditbank" to get account information and transactions.',
     url='https://github.com/grindsa/dkb-robo',
     author='grindsa',
