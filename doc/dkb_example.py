@@ -31,27 +31,27 @@ if __name__ == "__main__":
         # get transaction
         LINK = dkb.account_dic[0]['transactions']
         TYPE = dkb.account_dic[0]['type']
-        DATE_FROM = '14.03.2017'
-        DATE_TO = '21.08.2017'
+        DATE_FROM = '01.03.2020'
+        DATE_TO = '31.03.2020'
 
         TRANSACTION_LIST = dkb.get_transactions(LINK, TYPE, DATE_FROM, DATE_TO)
         pprint(TRANSACTION_LIST)
 
         # get dkb postbox
-        POSTBOX_DIC = DKB.scan_postbox()
+        POSTBOX_DIC = dkb.scan_postbox()
         pprint(POSTBOX_DIC)
 
         # get credit limits
-        CLI = DKB.get_credit_limits()
+        CLI = dkb.get_credit_limits()
         pprint(CLI)
 
         # get standing orders (daueraufträge)
-        STO = DKB.get_standing_orders()
+        STO = dkb.get_standing_orders()
         pprint(STO)
 
         # get freitstellungsaufträge
-        EXO = DKB.get_exemption_order()
+        EXO = dkb.get_exemption_order()
         pprint(EXO)
 
-        POINTS_DIC = DKB.get_points()
+        POINTS_DIC = dkb.get_points()
         pprint(POINTS_DIC)
