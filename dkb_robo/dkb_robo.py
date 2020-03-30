@@ -720,7 +720,7 @@ class DKBRobo(object):
             try:
                 link = cols[4 + ontop].find('a', attrs={'class':'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except IndexError:
+            except (IndexError, TypeError):
                 pass
 
             # increase counter
