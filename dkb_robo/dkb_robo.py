@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 import sys
+import os
 import csv
 import random
 import time
@@ -162,12 +163,13 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def get_document_links(self, url):
+    def get_document_links(self, url, path):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
             self.dkb_br - browser object
             url - folder url
+            path - path for document download
 
         returns:
             dictionary of the documents
@@ -182,9 +184,53 @@ class DKBRobo(object):
             tbody = table.find('tbody')
             for row in tbody.findAll('tr'):
                 link = row.find('a')
-                document_dic[link.contents[0]] = self.base_url + link['href']
+                # download file
+                if path:
+                    rcode = self.get_document(path, self.base_url + link['href'])
+                    if rcode:
+                        document_dic[link.contents[0]] = {'rcode': rcode, 'link':  self.base_url + link['href']}
+                    else:
+                        document_dic[link.contents[0]] = self.base_url + link['href']
+                else:
+                    document_dic[link.contents[0]] = self.base_url + link['href']
 
         return document_dic
+
+    def get_document(self, path, url):
+        """ get download document from postbox
+
+        args:
+            self.dkb_br - browser object
+            path - path to store the document
+            url - download url
+        returns:
+            http response code
+        """
+        print_debug(self.debug, 'DKBRobo.get_document({0})\n'.format(url))
+
+        # create directory if not existing
+        if not os.path.exists(path):
+            print_debug(self.debug, 'create directory {0}\n'.format(path))
+            os.makedirs(path)
+
+        # fetch file
+        response = self.dkb_br.open(url)
+
+        # gt filename from response header
+        fname = ''
+        if "Content-Disposition" in response.headers.keys():
+            fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+            # dump content to file
+            print_debug(self.debug, 'writing to {0}/{1}\n'.format(path, fname))
+            pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
+            pdf_file.write(response.content)
+            pdf_file.close()
+            result = response.status_code
+        else:
+            fname = '{0}.pdf'.format(generate_random_string(20))
+            result = None
+
+        return result
 
     def get_exemption_order(self):
         """ returns a dictionary of the stored exemption orders
@@ -727,7 +773,7 @@ class DKBRobo(object):
             counter += 1
         return overview_dic
 
-    def scan_postbox(self):
+    def scan_postbox(self, path):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
 
@@ -756,6 +802,6 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
+            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path)
 
         return pb_dic
