@@ -191,9 +191,10 @@ A dictionary similar to the below will be returned
 To scan the DKB postbox for documents  the below method can be used
 
 ```
-> document_dic = dkb.scan_postbox(path)
+> document_dic = dkb.scan_postbox(path, download_all)
 ```
 * path - optional argument. If specified documents will be downloaded and stored 
+* dowload_all (True/**False**) - optional argument. By default only unread documents from DKB postbox will get downloaded. By setting this parameter all documents will be downloaded 
 
 The method will return a dictionary containing the different postbox folders and links to download the corresponding documents
 

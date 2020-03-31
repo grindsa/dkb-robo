@@ -181,7 +181,7 @@ class DKBRobo(object):
         if path and not download_all:
             class_filter = {'class': 'mbo-messageState-unread'}
         else:
-            class_filter = {}            
+            class_filter = {}
 
         self.dkb_br.open(url)
         while True:
@@ -200,7 +200,6 @@ class DKBRobo(object):
                             document_dic[link.contents[0]] = self.base_url + link['href']
                     else:
                         document_dic[link.contents[0]] = self.base_url + link['href']
-
 
             next_site = soup.find('span', attrs={'class':'pager-navigator-next'})
             if next_site:
