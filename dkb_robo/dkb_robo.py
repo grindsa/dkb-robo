@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 import re
 from string import digits, ascii_letters
+from urllib import parse
 import mechanicalsoup
 
 if sys.version_info > (3, 0):
@@ -163,7 +164,7 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def get_document_links(self, url, path=None, download_all=False):
+    def get_document_links(self, url, path=None, link_name=None, download_all=False):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
@@ -193,7 +194,11 @@ class DKBRobo(object):
                     link = row.find('a')
                     # download file
                     if path:
-                        rcode = self.get_document(path, self.base_url + link['href'])
+                        fname = f'{path}/{link_name}'
+                        rcode = self.get_document(fname, self.base_url + link['href'])
+                        if rcode == 200:
+                            # mark url as read
+                            self.update_downloadstate(link_name, self.base_url + link['href'])
                         if rcode:
                             document_dic[link.contents[0]] = {'rcode': rcode, 'link':  self.base_url + link['href']}
                         else:
@@ -819,8 +824,26 @@ class DKBRobo(object):
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
             if path:
-                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}', download_all)
+                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path, link_name, download_all)
             else:
                 pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
 
         return pb_dic
+
+    def update_downloadstate(self, link_name, url):
+        """ mark document and read
+
+            args:
+            self.dkb_br - browser object
+            link_name - link_name
+            url - download url
+        """
+        print_debug(self.debug, 'DKBRobo.update_downloadstate({0}, {1})\n'.format(link_name, url))
+
+        # get row number to be marked as read
+        row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]
+        # construct url
+        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, link_name.lower(), row_num)
+        # fetch file
+        _response = self.dkb_br.open(mark_url)
+        # return response.status_code
