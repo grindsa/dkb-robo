@@ -163,7 +163,7 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def get_document_links(self, url, path, download_all):
+    def get_document_links(self, url, path=None, download_all=False):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
@@ -177,12 +177,11 @@ class DKBRobo(object):
         print_debug(self.debug, 'DKBRobo.get_document_links({0})\n'.format(url))
         document_dic = {}
 
-        # download filter
-        if download_all:
-            class_filter = {}
-        else:
+        # set download filter if there is a need to do so
+        if path and not download_all:
             class_filter = {'class': 'mbo-messageState-unread'}
-
+        else:
+            class_filter = {}            
 
         self.dkb_br.open(url)
         while True:
@@ -820,6 +819,9 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}', download_all)
+            if path:
+                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}', download_all)
+            else:
+                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
 
         return pb_dic
