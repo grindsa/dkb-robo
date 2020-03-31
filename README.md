@@ -188,6 +188,15 @@ A dictionary similar to the below will be returned
  u'davon verfallen zum  31.12.2018': 999}
 ```
 
+To scan the DKB postbox for documents  the below method can be used
+
+```
+> document_dic = dkb.scan_postbox(path)
+```
+* path - optional argument. If specified documents will be downloaded and stored 
+
+The method will return a dictionary containing the different postbox folders and links to download the corresponding documents
+
 ## Further documentation
 please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documentation and an example scripts of all dkb-robo methods there.
 
