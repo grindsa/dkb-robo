@@ -178,21 +178,31 @@ class DKBRobo(object):
         document_dic = {}
 
         self.dkb_br.open(url)
-        soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
-        if table:
-            tbody = table.find('tbody')
-            for row in tbody.findAll('tr'):
-                link = row.find('a')
-                # download file
-                if path:
-                    rcode = self.get_document(path, self.base_url + link['href'])
-                    if rcode:
-                        document_dic[link.contents[0]] = {'rcode': rcode, 'link':  self.base_url + link['href']}
+
+        while True:
+            soup = self.dkb_br.get_current_page()
+            table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
+            if table:
+                tbody = table.find('tbody')
+                for row in tbody.findAll('tr'):
+                    link = row.find('a')
+                    # download file
+                    if path:
+                        rcode = self.get_document(path, self.base_url + link['href'])
+                        if rcode:
+                            document_dic[link.contents[0]] = {'rcode': rcode, 'link':  self.base_url + link['href']}
+                        else:
+                            document_dic[link.contents[0]] = self.base_url + link['href']
                     else:
                         document_dic[link.contents[0]] = self.base_url + link['href']
-                else:
-                    document_dic[link.contents[0]] = self.base_url + link['href']
+
+
+            next_site = soup.find('span', attrs={'class':'pager-navigator-next'})
+            if next_site:
+                next_url = self.base_url + next_site.find('a')['href']
+                self.dkb_br.open(next_url)
+            else:
+                break
 
         return document_dic
 
@@ -802,6 +812,6 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path)
+            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}')
 
         return pb_dic
