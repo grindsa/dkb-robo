@@ -163,7 +163,7 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def get_document_links(self, url, path):
+    def get_document_links(self, url, path, download_all):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
@@ -177,14 +177,20 @@ class DKBRobo(object):
         print_debug(self.debug, 'DKBRobo.get_document_links({0})\n'.format(url))
         document_dic = {}
 
-        self.dkb_br.open(url)
+        # download filter
+        if download_all:
+            class_filter = {}
+        else:
+            class_filter = {'class': 'mbo-messageState-unread'}
 
+
+        self.dkb_br.open(url)
         while True:
             soup = self.dkb_br.get_current_page()
             table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
             if table:
                 tbody = table.find('tbody')
-                for row in tbody.findAll('tr'):
+                for row in tbody.findAll('tr', class_filter):
                     link = row.find('a')
                     # download file
                     if path:
@@ -783,12 +789,14 @@ class DKBRobo(object):
             counter += 1
         return overview_dic
 
-    def scan_postbox(self, path):
+    def scan_postbox(self, path=None, download_all=False):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
 
         args:
             self.dkb_br = browser object
+            path = directory to store the downloaded data
+            download_all = download all documents instead just the new ones
 
         returns:
            dictionary in the following format
@@ -812,6 +820,6 @@ class DKBRobo(object):
             pb_dic[link_name] = {}
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
-            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}')
+            pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], f'{path}/{link_name}', download_all)
 
         return pb_dic
