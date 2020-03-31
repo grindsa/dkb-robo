@@ -3,8 +3,6 @@
 """ example script for dkb-robo """
 from __future__ import print_function
 import sys
-import os
-from pprint import pprint
 from dkb_robo import DKBRobo
 
 if sys.version_info > (3, 0):
@@ -22,10 +20,10 @@ if __name__ == "__main__":
     DKB_USER = 'xxx'
     DKB_PASSWORD = 'xxx'
     try:
-        path = sys.argv[1]
-    except:
+        PATH = sys.argv[1]
+    except BaseException:
         print("No path given")
-        exit(1)
+        sys.exit(1)
 
     DKB = DKBRobo()
 
@@ -33,6 +31,5 @@ if __name__ == "__main__":
     with DKBRobo(DKB_USER, DKB_PASSWORD, False, True) as dkb:
         print(dkb.last_login)
 
-        print(f'Writing documents to {path}')
-        POSTBOX_DIC = dkb.scan_postbox(path)
-
+        print(f'Writing documents to {PATH}')
+        POSTBOX_DIC = dkb.scan_postbox(PATH)
