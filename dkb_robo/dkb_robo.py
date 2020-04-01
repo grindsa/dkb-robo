@@ -42,13 +42,13 @@ class DKBRobo(object):
     dkb_br = None
     last_login = None
     account_dic = {}
-    chip_tan = False
+    tan_insert = False
     debug = False
 
-    def __init__(self, dkb_user=None, dkb_password=None, chip_tan=False, debug=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, debug=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
-        self.chip_tan = chip_tan
+        self.tan_insert = tan_insert
         self.debug = debug
 
     def __enter__(self):
@@ -485,7 +485,7 @@ class DKBRobo(object):
             self.last_login = last_login
 
             if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
-                if self.chip_tan:
+                if self.tan_insert:
                     # chiptan input
                     login_confirmed = self.ctan_check(soup)
                 else:
@@ -514,8 +514,11 @@ class DKBRobo(object):
         self.dkb_br.select_form('#next')
         # print steps to be done
         olist = soup.find("ol")
-        for li_ in olist.findAll('li'):
-            print(li_.text.strip())
+        if olist:
+            for li_ in olist.findAll('li'):
+                print(li_.text.strip())
+        else:
+            print('Please open the TAN2GO app to get a TAN to be inserted below.')
 
         # ask for TAN
         self.dkb_br["tan"] = input("TAN: ")
