@@ -11,7 +11,10 @@ import time
 from datetime import datetime
 import re
 from string import digits, ascii_letters
-from urllib import parse
+try:
+    from urllib import parse
+except BaseException:
+    import urlparse as parse
 import mechanicalsoup
 
 if sys.version_info > (3, 0):
@@ -194,7 +197,7 @@ class DKBRobo(object):
                     link = row.find('a')
                     # download file
                     if path:
-                        fname = f'{path}/{link_name}'
+                        fname = '{0}/{1}'.format(path, link_name)
                         rcode = self.get_document(fname, self.base_url + link['href'])
                         if rcode == 200:
                             # mark url as read
