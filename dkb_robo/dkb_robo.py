@@ -849,7 +849,11 @@ class DKBRobo(object):
         # get row number to be marked as read
         row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]
         # construct url
-        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, link_name.lower(), row_num)
+        if link_name == 'Kontoauszüge':
+            mark_link = 'kontoauszuege'
+        else:
+            mark_link = link.lower()
+        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
         # fetch file
         _response = self.dkb_br.open(mark_url)
         # return response.status_code
