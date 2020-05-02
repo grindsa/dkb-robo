@@ -852,7 +852,7 @@ class DKBRobo(object):
         if link_name == 'Kontoauszüge':
             mark_link = 'kontoauszuege'
         else:
-            mark_link = link.lower()
+            mark_link = link_name.lower()
         mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
         # fetch file
         _response = self.dkb_br.open(mark_url)
