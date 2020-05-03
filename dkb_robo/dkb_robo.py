@@ -459,46 +459,49 @@ class DKBRobo(object):
         self.dkb_br = self.new_instance()
 
         self.dkb_br.open(login_url)
-        self.dkb_br.select_form('#login')
-        self.dkb_br["j_username"] = str(self.dkb_user)
-        self.dkb_br["j_password"] = str(self.dkb_password)
+        try:
+            self.dkb_br.select_form('#login')
+            self.dkb_br["j_username"] = str(self.dkb_user)
+            self.dkb_br["j_password"] = str(self.dkb_password)
 
-        # submit form and check response
-        self.dkb_br.submit_selected()
-        soup = self.dkb_br.get_current_page()
-
-        # catch login error
-        if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
-            print('Login failed! Aborting...')
-            sys.exit(0)
-
-        # catch generic notices
-        if soup.find("form", attrs={'id':'genericNoticeForm'}):
-            self.dkb_br.open(login_url)
+            # submit form and check response
+            self.dkb_br.submit_selected()
             soup = self.dkb_br.get_current_page()
 
-        # filter last login date
-        if soup.find("div", attrs={'id':'lastLoginContainer'}):
-            last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
-            # remove crlf
-            last_login = last_login.replace('\n', '')
-            # format string in a way we need it
-            last_login = last_login.replace('  ', '')
-            last_login = last_login.replace('Letzte Anmeldung:', '')
-            self.last_login = last_login
+            # catch login error
+            if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+                print('Login failed! Aborting...')
+                sys.exit(0)
 
-            if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
-                if self.tan_insert:
-                    # chiptan input
-                    login_confirmed = self.ctan_check(soup)
-                else:
-                    # app confirmation needed to continue
-                    login_confirmed = self.login_confirm()
+            # catch generic notices
+            if soup.find("form", attrs={'id':'genericNoticeForm'}):
+                self.dkb_br.open(login_url)
+                soup = self.dkb_br.get_current_page()
 
-                if login_confirmed:
-                    # login got confirmed get overview and parse data
-                    soup_new = self.get_financial_statement()
-                    self.account_dic = self.parse_overview(soup_new)
+            # filter last login date
+            if soup.find("div", attrs={'id':'lastLoginContainer'}):
+                last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
+                # remove crlf
+                last_login = last_login.replace('\n', '')
+                # format string in a way we need it
+                last_login = last_login.replace('  ', '')
+                last_login = last_login.replace('Letzte Anmeldung:', '')
+                self.last_login = last_login
+
+                if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
+                    if self.tan_insert:
+                        # chiptan input
+                        login_confirmed = self.ctan_check(soup)
+                    else:
+                        # app confirmation needed to continue
+                        login_confirmed = self.login_confirm()
+
+                    if login_confirmed:
+                        # login got confirmed get overview and parse data
+                        soup_new = self.get_financial_statement()
+                        self.account_dic = self.parse_overview(soup_new)
+        except mechanicalsoup.utils.LinkNotFoundError:
+            print('login failed: LinkNotFoundError')
 
     def ctan_check(self, _soup):
         """ input of chiptan during login """
