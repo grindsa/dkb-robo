@@ -27,7 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pylint pylint-exit
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: cp
       - name: "Pylint folder: dkb_robo"
         run: |
           pylint --rcfile=".github/pylintrc" dkb_robo/ || pylint-exit $?

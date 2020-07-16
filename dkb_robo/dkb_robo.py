@@ -22,9 +22,12 @@ if sys.version_info > (3, 0):
     import importlib
     importlib.reload(sys)
 else:
-    import cookielib
+    import cookielib # pylint: disable=E0401
+    # pylint: disable=E0602, E1101
     reload(sys)
     sys.setdefaultencoding('utf8')
+
+
 
 def generate_random_string(length):
     """ generate random string to be used as name """
