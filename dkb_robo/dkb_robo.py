@@ -27,8 +27,6 @@ else:
     reload(sys)
     sys.setdefaultencoding('utf8')
 
-
-
 def generate_random_string(length):
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
