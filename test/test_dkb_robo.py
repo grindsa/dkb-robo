@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 """ unittests for dkb_robo """
 import sys
+import os
 import unittest
 try:
     from mock import patch
 except ImportError:
     from unittest.mock import patch
 from bs4 import BeautifulSoup
+sys.path.insert(0, '.')
 sys.path.insert(0, '..')
 from dkb_robo import DKBRobo
 
@@ -30,10 +32,11 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dkb = DKBRobo()
+        self.dir_path = os.path.dirname(os.path.realpath(__file__))
 
     def test_001_get_cc_limit(self, mock_browser):
         """ test DKBRobo.get_credit_limits() method """
-        html = read_file('mocks/konto-kreditkarten-limits.html')
+        html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'1111********1111': u'100.00',
                     u'1111********1112': u'2000.00',
@@ -43,21 +46,21 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_002_get_exo_single(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order """
-        html = read_file('mocks/freistellungsauftrag.html')
+        html = read_file(self.dir_path + '/mocks/freistellungsauftrag.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0, 'amount': 1000.0, 'used': 0.0, 'description': u'Gemeinsam mit Firstname Familyname', 'validity': u'01.01.2016 unbefristet'}}
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
 
     def test_003_get_exo_single_nobr(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order without line-breaks"""
-        html = read_file('mocks/freistellungsauftrag-nobr.html')
+        html = read_file(self.dir_path + '/mocks/freistellungsauftrag-nobr.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0, 'amount': 1000.0, 'used': 0.0, 'description': u'Gemeinsam mit Firstname Familyname', 'validity': u'01.01.2016 unbefristet'}}
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
 
     def test_004_get_exo_multiple(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a multiple exemption orders """
-        html = read_file('mocks/freistellungsauftrag-multiple.html')
+        html = read_file(self.dir_path + '/mocks/freistellungsauftrag-multiple.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1: {'available': 1000.0,
                         'amount': 1000.0,
@@ -78,14 +81,14 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_006_get_points(self, mock_browser):
         """ test DKBRobo.get_points() method """
-        html = read_file('mocks/dkb_punkte.html')
+        html = read_file(self.dir_path + '/mocks/dkb_punkte.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'DKB-Punkte': 100000, u'davon verfallen zum  31.12.2017': 90000}
         self.assertEqual(self.dkb.get_points(), e_result)
 
     def test_007_get_so_multiple(self, mock_browser):
         """ test DKBRobo.get_standing_orders() method """
-        html = read_file('mocks/dauerauftraege.html')
+        html = read_file(self.dir_path + '/mocks/dauerauftraege.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = [{'amount': 100.0, 'interval': u'1. monatlich 01.03.2017', 'recipient': u'RECPIPIENT-1', 'purpose': u'KV 1234567890'},
                     {'amount': 200.0, 'interval': u'1. monatlich geloescht', 'recipient': u'RECPIPIENT-2', 'purpose': u'KV 0987654321'}]
@@ -106,7 +109,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_009_parse_overview(self, _unused):
         """ test DKBRobo.parse_overview() method """
-        html = read_file('mocks/finanzstatus.html')
+        html = read_file(self.dir_path + '/mocks/finanzstatus.html')
         e_result = {0: {'account': u'XY99 1111 1111 0000 1111 99',
                         'amount': 1367.82,
                         'date': u'27.04.2018',
@@ -160,7 +163,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_010_parse_overview_mbank(self, _unused):
         """ test DKBRobo.parse_overview() method for accounts from other banks"""
-        html = read_file('mocks/finanzstatus-mbank.html')
+        html = read_file(self.dir_path + '/mocks/finanzstatus-mbank.html')
         e_result = {0: {'account': u'1111********1111',
                         'name': u'credit-card-1',
                         'transactions': u'https://www.dkb.de/tcc-1',
@@ -207,7 +210,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_011_get_document_links(self, mock_browser):
         """ test DKBRobo.get_document_links() method """
-        html = read_file('mocks/doclinks.html')
+        html = read_file(self.dir_path + '/mocks/doclinks.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.dkb.de/doc-2',
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
@@ -216,7 +219,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo.get_document_links')
     def test_012_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo.scan_postbox() method """
-        html = read_file('mocks/postbox.html')
+        html = read_file(self.dir_path + '/mocks/postbox.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_doclinks.return_value = {}
         e_result = {u'Kreditkartenabrechnungen':
@@ -252,7 +255,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_016_parse_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
-        csv = read_file('mocks/test_parse_account_tr.csv')
+        csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
         self.assertEqual(self.dkb.parse_account_transactions(csv), [{'amount': 'AAAAA',
                                                                      'bdate': '01.03.2017',
                                                                      'customerreferenz': 'AA',
@@ -282,12 +285,12 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_017_parse_no_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
-        csv = read_file('mocks/test_parse_no_account_tr.csv')
+        csv = read_file(self.dir_path + '/mocks/test_parse_no_account_tr.csv')
         self.assertEqual(self.dkb.parse_account_transactions(csv), [])
 
     def test_018_parse_dkb_cc_tr(self, _mock_browser):
         """ test DKBRobo.parse_cc_transactions """
-        csv = read_file('mocks/test_parse_dkb_cc_tr.csv')
+        csv = read_file(self.dir_path + '/mocks/test_parse_dkb_cc_tr.csv')
         self.assertEqual(self.dkb.parse_cc_transactions(csv), [{'amount': '-100.00"',
                                                                 'bdate': '01.03.2017',
                                                                 'show_date': '01.03.2017',
@@ -309,7 +312,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_019_parse_no_cc_tr(self, _mock_browser):
         """ test DKBRobo.parse_cc_transactions """
-        csv = read_file('mocks/test_parse_no_cc_tr.csv')
+        csv = read_file(self.dir_path + '/mocks/test_parse_no_cc_tr.csv')
         self.assertEqual(self.dkb.parse_cc_transactions(csv), [])
 
 if __name__ == '__main__':
