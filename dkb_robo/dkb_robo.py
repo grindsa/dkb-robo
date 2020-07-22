@@ -316,9 +316,12 @@ class DKBRobo(object):
     def get_financial_statement(self):
         """ get finanical statement """
         print_debug(self.debug, 'DKBRobo.get_financial_statement()\n')
-        statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
 
-        # statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        if self.tan_insert:
+            statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        else:
+            statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
+
         self.dkb_br.open(statement_url)
         soup = self.dkb_br.get_current_page()
         return soup
@@ -508,9 +511,18 @@ class DKBRobo(object):
         """ input of chiptan during login """
         print_debug(self.debug, 'DKBRobo.ctan_check()\n')
 
-        # search form
-        self.dkb_br.select_form('form[name="confirmForm"]')
-        self.dkb_br["$event"] = 'tanVerification'
+        try:
+            self.dkb_br.select_form('form[name="confirmForm"]')
+            self.dkb_br["$event"] = 'tanVerification'
+        except BaseException as err_:
+            print_debug(self.debug, 'confirmForm not found\n')
+
+        try:
+            self.dkb_br.select_form('form[name="next"]')
+            self.dkb_br["$event"] = 'next'
+        except BaseException:
+            print_debug(self.debug, 'nextForm not found\n')
+
         # open page to insert tan
         self.dkb_br.submit_selected()
         soup = self.dkb_br.get_current_page()
@@ -529,6 +541,7 @@ class DKBRobo(object):
 
         # ask for TAN
         self.dkb_br["tan"] = input("TAN: ")
+        self.dkb_br["$event"] = 'next'
 
         # submit form and check response
         self.dkb_br.submit_selected()
@@ -542,6 +555,7 @@ class DKBRobo(object):
             print_debug(self.debug, 'TAN is correct...\n')
             login_confirm = True
 
+        print_debug(self.debug, 'DKBRobo.ctan_check() ended with :{0}\n'.format(login_confirm))
         return login_confirm
 
     def login_confirm(self):
