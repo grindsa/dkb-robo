@@ -789,7 +789,7 @@ class DKBRobo(object):
             link = cols[4 + ontop].find('a', attrs={'class':'evt-paymentTransaction'})
             if link:
                 # thats a cash account or a credit card
-                if 'cash' in cols[4 + ontop].text.strip().lower():
+                if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
                     # this is a cash account
                     overview_dic[counter]['type'] = 'account'
                 else:
