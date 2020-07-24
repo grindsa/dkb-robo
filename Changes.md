@@ -1,6 +1,12 @@
-# Acme2certifier changelog
+# dkb-robo changelog
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
+
+## Changes in 0.10.3
+
+**Bugfixes***
+- daf35c9 improved checking account detection (DKB removed the "Cash im Shop" link)
+- d40200e0 fix for faulty TAN handling reported in #18
 
 ## Changes in 0.10.2
 
