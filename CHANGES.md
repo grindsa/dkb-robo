@@ -42,7 +42,6 @@ This is a high-level summary of the most important changes. For a full list of c
 
 - fix typos - thanks to tbm
 
-
 ## Changes in 0.8.1
 
 **Features**:
