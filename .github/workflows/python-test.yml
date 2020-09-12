@@ -8,7 +8,7 @@ on:
     branches: [ devel ]
   schedule:
     - cron:  '0 2 * * 6'
-    
+
 jobs:
   pylint:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint pylint-exit
+          pip install pylint pylint-exit mechanicalsoup
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: "Pylint folder: dkb_robo"
         run: |

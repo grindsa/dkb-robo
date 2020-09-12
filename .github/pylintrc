@@ -5,10 +5,11 @@
 # r0801 - Similar lines in 2 files
 # r0902 - too-many-instance-attributes
 # r0903 - too-few-public methods
+# r0913 - too-many-arguments
 # r1702 - too many nested blocks
 # w0703 - too general exception
 # W1202 - logging-format-interpolation
-disable=C0301, R0205, R0801, R0902, R0903, R1702, W0703, W1202
+disable=C0301, R0205, R0801, R0902, R0903, R0913, R1702, W0703, W1202
 
 [DESIGN]
 # Maximum number of locals for function / method

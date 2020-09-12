@@ -514,7 +514,7 @@ class DKBRobo(object):
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
             self.dkb_br["$event"] = 'tanVerification'
-        except BaseException as err_:
+        except BaseException as _err:
             print_debug(self.debug, 'confirmForm not found\n')
 
         try:
