@@ -7,7 +7,6 @@ on:
   pull_request:
     branches: [ devel ]
   schedule:
-    # * is a special character in YAML so you have to quote this string
     - cron:  '0 2 * * 6'
 
 jobs:
@@ -19,4 +18,4 @@ jobs:
     - name: Lint changelog file root
       uses: avto-dev/markdown-lint@v1
       with:
-        args: '*.md'    
+        args: '*.md'
