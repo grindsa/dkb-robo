@@ -203,7 +203,7 @@ A dictionary similar to the one below will be returned
 To get the amount of dkb points the below method can be used
 
 ```python
-> points_dic = dkb.get_get_points()
+> points_dic = dkb.get_points()
 ```
 
 A dictionary similar to the below will be returned
