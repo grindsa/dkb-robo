@@ -13,12 +13,12 @@ dkb-robo is a python library to access the internet banking area of  "Deutsche K
 - get standing orders (Dauerauftrag)
 - get information about credit limits and exemption orders (Freistellungsauftrag)
 
-Starting from version 0.9 dkb-robo can handle the 2nd factor DKB introduced to fullfill the [PSD2 obligations](https://en.wikipedia.org/wiki/Payment_Services_Directive). Starting from Septemter 2019 logins must be confirmed by either
+Starting from version 0.9 dkb-robo can handle the 2nd factor DKB introduced to fulfill the [PSD2 obligations](https://en.wikipedia.org/wiki/Payment_Services_Directive). Starting from September 2019 logins must be confirmed by either
 
 - DKB app
 - Insertion of a TAN created by either ChipTan method or TAN2Go app
 
-The introduction of a 2nd factor does limit the usage of dkb-robo for automation purposes. DKB is unfortuately ~~not willing/ not able~~ not allowed to open their PSD2-API for non-Fintechs. I disccues this with them for weeks but some point they stopped responding to my emails.
+The introduction of a 2nd factor does limit the usage of dkb-robo for automation purposes. DKB is unfortunately ~~not willing/ not able~~ not allowed to open their PSD2-API for non-Fintechs. I discussed this with them for weeks at some point they stopped responding to my emails so I gave up.
 
 ## Getting Started
 
