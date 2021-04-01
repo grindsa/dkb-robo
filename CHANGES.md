@@ -3,6 +3,16 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.10.5
+
+**Improvements**:
+
+- fix release summing-up smaller improvements from last few months
+
+  - harmonized workflows
+  - code-scanning via CodeQL and OSSAR
+  - modifications due to pylint error messages
+  
 ## Changes in 0.10.4
 
 **Improvements**:
