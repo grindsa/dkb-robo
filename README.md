@@ -82,7 +82,7 @@ After login you can return the
 
 ```python
 > print(dkb.last_login)
-14.03.2017, 13:19 Uhr
+14.03.2019, 13:19 Uhr
 ```
 
 - a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
