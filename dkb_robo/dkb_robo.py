@@ -199,12 +199,12 @@ class DKBRobo(object):
                     # download file
                     if path:
                         fname = '{0}/{1}'.format(path, link_name)
-                        rcode = self.get_document(fname, self.base_url + link['href'])
+                        rcode, fname = self.get_document(fname, self.base_url + link['href'])
                         if rcode == 200:
                             # mark url as read
                             self.update_downloadstate(link_name, self.base_url + link['href'])
                         if rcode:
-                            document_dic[link.contents[0]] = {'rcode': rcode, 'link':  self.base_url + link['href']}
+                            document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
                         else:
                             document_dic[link.contents[0]] = self.base_url + link['href']
                     else:
@@ -253,7 +253,7 @@ class DKBRobo(object):
             fname = '{0}.pdf'.format(generate_random_string(20))
             result = None
 
-        return result
+        return result, '{0}/{1}'.format(path, fname)
 
     def get_exemption_order(self):
         """ returns a dictionary of the stored exemption orders
