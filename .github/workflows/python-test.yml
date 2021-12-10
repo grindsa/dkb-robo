@@ -31,3 +31,8 @@ jobs:
       - name: "Pylint folder: dkb_robo"
         run: |
           pylint --rcfile=".github/pylintrc" dkb_robo/ || pylint-exit $?
+
+      - name: Lint with pycodestyle
+        run: |
+          pip install pycodestyle
+          pycodestyle --max-line-length=220  dkb_robo/.

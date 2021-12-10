@@ -22,20 +22,23 @@ if sys.version_info > (3, 0):
     import importlib
     importlib.reload(sys)
 else:
-    import cookielib # pylint: disable=E0401
+    import cookielib  # pylint: disable=E0401
     # pylint: disable=E0602, E1101
     reload(sys)
     sys.setdefaultencoding('utf8')
+
 
 def generate_random_string(length):
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
     return ''.join(random.choice(char_set) for _ in range(length))
 
+
 def print_debug(debug, text):
     """ little helper to print debug messages """
     if debug:
         print('{0}: {1}'.format(datetime.now(), text))
+
 
 class DKBRobo(object):
     """ dkb_robo class """
@@ -130,12 +133,12 @@ class DKBRobo(object):
         self.dkb_br.open(limit_url)
 
         soup = self.dkb_br.get_current_page()
-        form = soup.find('form', attrs={'id':'form597962073_1'})
+        form = soup.find('form', attrs={'id': 'form597962073_1'})
 
         limit_dic = {}
         if form:
             # checking account limits
-            table = form.find('table', attrs={'class':'dropdownAnchor'})
+            table = form.find('table', attrs={'class': 'dropdownAnchor'})
             if table:
                 for row in table.findAll("tr"):
                     cols = row.findAll("td")
@@ -144,11 +147,11 @@ class DKBRobo(object):
                         limit = tmp.find('span').text.strip()
                         limit = limit.replace('.', '')
                         limit = limit.replace(',', '.')
-                        account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                        account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                         limit_dic[account] = limit
 
             # credit card  limits
-            table = form.find('table', attrs={'class':'multiColumn'})
+            table = form.find('table', attrs={'class': 'multiColumn'})
             if table:
                 rows = table.findAll("tr")
                 for row in rows:
@@ -159,7 +162,7 @@ class DKBRobo(object):
                             limit = tmp.find('span').text.strip()
                             limit = limit.replace('.', '')
                             limit = limit.replace(',', '.')
-                            account = cols[0].find('div', attrs={'class':'minorLine'}).text.strip()
+                            account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = limit
                         except IndexError:
                             pass
@@ -191,7 +194,7 @@ class DKBRobo(object):
         self.dkb_br.open(url)
         while True:
             soup = self.dkb_br.get_current_page()
-            table = soup.find('table', attrs={'class':'widget widget abaxx-table expandableTable expandableTable-with-sort'})
+            table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
             if table:
                 tbody = table.find('tbody')
                 for row in tbody.findAll('tr', class_filter):
@@ -210,7 +213,7 @@ class DKBRobo(object):
                     else:
                         document_dic[link.contents[0]] = self.base_url + link['href']
 
-            next_site = soup.find('span', attrs={'class':'pager-navigator-next'})
+            next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
             if next_site:
                 next_url = self.base_url + next_site.find('a')['href']
                 self.dkb_br.open(next_url)
@@ -275,8 +278,7 @@ class DKBRobo(object):
             lbr.replace_with("")
             # br.replace('<br />', ' ')
 
-
-        table = soup.find('table', attrs={'class':'expandableTable'})
+        table = soup.find('table', attrs={'class': 'expandableTable'})
 
         exo_dic = {}
         if table:
@@ -341,7 +343,7 @@ class DKBRobo(object):
 
         p_dic = {}
         soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'class':'expandableTable'})
+        table = soup.find('table', attrs={'class': 'expandableTable'})
         if table:
             tbody = table.find('tbody')
             row = tbody.findAll('tr')[0]
@@ -381,7 +383,7 @@ class DKBRobo(object):
 
         so_list = []
         soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'class':'expandableTable'})
+        table = soup.find('table', attrs={'class': 'expandableTable'})
         if table:
             tbody = table.find('tbody')
             rows = tbody.findAll('tr')
@@ -473,18 +475,18 @@ class DKBRobo(object):
             soup = self.dkb_br.get_current_page()
 
             # catch login error
-            if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+            if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
                 print('Login failed! Aborting...')
                 sys.exit(0)
 
             # catch generic notices
-            if soup.find("form", attrs={'id':'genericNoticeForm'}):
+            if soup.find("form", attrs={'id': 'genericNoticeForm'}):
                 self.dkb_br.open(login_url)
                 soup = self.dkb_br.get_current_page()
 
             # filter last login date
-            if soup.find("div", attrs={'id':'lastLoginContainer'}):
-                last_login = soup.find("div", attrs={'id':'lastLoginContainer'}).text.strip()
+            if soup.find("div", attrs={'id': 'lastLoginContainer'}):
+                last_login = soup.find("div", attrs={'id': 'lastLoginContainer'}).text.strip()
                 # remove crlf
                 last_login = last_login.replace('\n', '')
                 # format string in a way we need it
@@ -548,7 +550,7 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
 
         # catch tan error
-        if soup.find("div", attrs={'class':'clearfix module text errorMessage'}):
+        if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
             print('Login failed due to wrong tan! Aborting...')
             sys.exit(0)
         else:
@@ -570,14 +572,14 @@ class DKBRobo(object):
         try:
             # get xsrf token
             soup = self.dkb_br.get_current_page()
-            xsrf_token = soup.find('input', attrs={'name':'XSRFPreventionToken'}).get('value')
+            xsrf_token = soup.find('input', attrs={'name': 'XSRFPreventionToken'}).get('value')
         except BaseException:
             # fallback
             xsrf_token = generate_random_string(25)
 
         # timestamp in miliseconds for py3 and py2
         try:
-            poll_id = int(datetime.utcnow().timestamp()*1e3)
+            poll_id = int(datetime.utcnow().timestamp() * 1e3)
         except BaseException:
             poll_id = int(round(time.time() * 1000))
 
@@ -762,7 +764,7 @@ class DKBRobo(object):
         # to_remove = 0
         counter = 0
         ontop = 0
-        for row in soup.findAll("tr", attrs={'class':'mainRow'}):
+        for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
             overview_dic[counter] = {}
             cols = row.findAll("td")
 
@@ -786,7 +788,7 @@ class DKBRobo(object):
                 pass
 
             # get link for transactions
-            link = cols[4 + ontop].find('a', attrs={'class':'evt-paymentTransaction'})
+            link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
             if link:
                 # thats a cash account or a credit card
                 if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
@@ -800,14 +802,14 @@ class DKBRobo(object):
                 try:
                     # thats a depot
                     overview_dic[counter]['type'] = 'depot'
-                    link = cols[4 + ontop].find('a', attrs={'class':'evt-depot'})
+                    link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
                 except (IndexError, TypeError):
                     pass
 
             # get link for details
             try:
-                link = cols[4 + ontop].find('a', attrs={'class':'evt-details'})
+                link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
             except (IndexError, TypeError):
                 pass
@@ -837,7 +839,7 @@ class DKBRobo(object):
         pb_url = self.base_url + '/banking/postfach'
         self.dkb_br.open(pb_url)
         soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'id':'welcomeMboTable'})
+        table = soup.find('table', attrs={'id': 'welcomeMboTable'})
         tbody = table.find('tbody')
 
         pb_dic = {}
