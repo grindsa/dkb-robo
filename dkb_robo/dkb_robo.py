@@ -290,7 +290,7 @@ class DKBRobo(object):
             dictionary of exemption orders
         """
         self.logger.debug('DKBRobo.get_exemption_order()\n')
-        exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
+        exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrderOverview.xhtml'
 
         self.dkb_br.open(exo_url)
 
