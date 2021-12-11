@@ -14,7 +14,8 @@ from string import digits, ascii_letters
 from urllib import parse
 import mechanicalsoup
 import http.cookiejar as cookielib
-# import importlib
+import logging
+#  import importlib
 # importlib.reload(sys)
 
 
@@ -24,24 +25,35 @@ def generate_random_string(length):
     return ''.join(random.choice(char_set) for _ in range(length))
 
 
-def print_debug(debug, text):
-    """ little helper to print debug messages """
+def logger_setup(debug):
+    """ setup logger """
     if debug:
-        print('{0}: {1}'.format(datetime.now(), text))
+        log_mode = logging.DEBUG
+    else:
+        log_mode = logging.INFO
+
+    # define standard log format
+    log_format = '%(message)s'
+    logging.basicConfig(
+        format=log_format,
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=log_mode)
+    logger = logging.getLogger('dkb_robo')
+    return logger
 
 
-def validate_dates(debug, date_from, date_to):
+def validate_dates(logger, date_from, date_to):
     """ correct dates if needed """
-    print_debug(debug, 'validate_dates()')
+    logger.debug('validate_dates()')
     date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
     date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
     now_uts = int(time.time())
 
     if date_from_uts > now_uts:
-        print_debug(debug, 'validate_dates(): adjust date_from to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.debug('validate_dates(): adjust date_from to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
         date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts:
-        print_debug(debug, 'validate_dates(): adjust date_to to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.debug('validate_dates(): adjust date_to to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
         date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
     return (date_from, date_to)
@@ -57,13 +69,14 @@ class DKBRobo(object):
     last_login = None
     account_dic = {}
     tan_insert = False
-    debug = False
+    logger = None
+
 
     def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, debug=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.tan_insert = tan_insert
-        self.debug = debug
+        self.logger = logger_setup(debug)
 
     def __enter__(self):
         """
@@ -90,7 +103,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
-        print_debug(self.debug, 'DKBRobo.get_account_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
+        self.logger.debug('DKBRobo.get_account_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1615473160_1')
 
@@ -112,7 +125,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
-        print_debug(self.debug, 'DKBRobo.get_creditcard_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
+        self.logger.debug('DKBRobo.get_creditcard_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
         # get credit card transaction form yesterday
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
@@ -135,7 +148,7 @@ class DKBRobo(object):
         returns:
             dictionary of the accounts and limits
         """
-        print_debug(self.debug, 'DKBRobo.get_credit_limits()\n')
+        self.logger.debug('DKBRobo.get_credit_limits()\n')
         limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
         self.dkb_br.open(limit_url)
 
@@ -190,7 +203,7 @@ class DKBRobo(object):
             dictionary of the documents
         """
         # pylint: disable=R0914
-        print_debug(self.debug, 'DKBRobo.get_document_links({0})\n'.format(url))
+        self.logger.debug('DKBRobo.get_document_links({0})\n'.format(url))
         document_dic = {}
 
         # set download filter if there is a need to do so
@@ -240,11 +253,11 @@ class DKBRobo(object):
         returns:
             http response code
         """
-        print_debug(self.debug, 'DKBRobo.get_document({0})\n'.format(url))
+        self.logger.debug('DKBRobo.get_document({0})\n'.format(url))
 
         # create directory if not existing
         if not os.path.exists(path):
-            print_debug(self.debug, 'create directory {0}\n'.format(path))
+            self.logger.debug('create directory {0}\n'.format(path))
             os.makedirs(path)
 
         # fetch file
@@ -255,7 +268,7 @@ class DKBRobo(object):
         if "Content-Disposition" in response.headers.keys():
             fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
             # dump content to file
-            print_debug(self.debug, 'writing to {0}/{1}\n'.format(path, fname))
+            self.logger.debug('writing to {0}/{1}\n'.format(path, fname))
             pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
             pdf_file.write(response.content)
             pdf_file.close()
@@ -276,8 +289,9 @@ class DKBRobo(object):
         returns:
             dictionary of exemption orders
         """
-        print_debug(self.debug, 'DKBRobo.get_exemption_order()\n')
+        self.logger.debug('DKBRobo.get_exemption_order()\n')
         exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrder/ExemptionOrderOverview.xhtml'
+
         self.dkb_br.open(exo_url)
 
         soup = self.dkb_br.get_current_page()
@@ -325,7 +339,7 @@ class DKBRobo(object):
 
     def get_financial_statement(self):
         """ get finanical statement """
-        print_debug(self.debug, 'DKBRobo.get_financial_statement()\n')
+        self.logger.debug('DKBRobo.get_financial_statement()\n')
 
         if self.tan_insert:
             statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
@@ -345,7 +359,7 @@ class DKBRobo(object):
         returns:
             points - dkb points
         """
-        print_debug(self.debug, 'DKBRobo.get_points()\n')
+        self.logger.debug('DKBRobo.get_points()\n')
         point_url = self.base_url + '/DkbTransactionBanking/content/FavorableWorld/Overview.xhtml?$event=init'
         self.dkb_br.open(point_url)
 
@@ -385,7 +399,7 @@ class DKBRobo(object):
         returns:
             so_dic = standing order dic
         """
-        print_debug(self.debug, 'DKBRobo.get_standing_orders()\n')
+        self.logger.debug('DKBRobo.get_standing_orders()\n')
         so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
         self.dkb_br.open(so_url)
 
@@ -436,9 +450,9 @@ class DKBRobo(object):
             - amount - amount
             - text   - test
         """
-        print_debug(self.debug, 'DKBRobo.get_account_transactions({0}/{1}: {2}/{3})\n'.format(transaction_url, atype, date_from, date_to))
+        self.logger.debug('DKBRobo.get_account_transactions({0}/{1}: {2}/{3})\n'.format(transaction_url, atype, date_from, date_to))
 
-        (date_from, date_to) = validate_dates(self.debug, date_from, date_to)
+        (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
 
         transaction_list = []
         if atype == 'account':
@@ -467,7 +481,7 @@ class DKBRobo(object):
             - link to details
             - link to transactions
         """
-        print_debug(self.debug, 'DKBRobo.login()\n')
+        self.logger.debug('DKBRobo.login()\n')
 
         # login url
         login_url = self.base_url + '/' + 'banking'
@@ -522,19 +536,19 @@ class DKBRobo(object):
 
     def ctan_check(self, _soup):
         """ input of chiptan during login """
-        print_debug(self.debug, 'DKBRobo.ctan_check()\n')
+        self.logger.debug('DKBRobo.ctan_check()\n')
 
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
             self.dkb_br["$event"] = 'tanVerification'
         except BaseException as _err:
-            print_debug(self.debug, 'confirmForm not found\n')
+            self.logger.debug('confirmForm not found\n')
 
         try:
             self.dkb_br.select_form('form[name="next"]')
             self.dkb_br["$event"] = 'next'
         except BaseException:
-            print_debug(self.debug, 'nextForm not found\n')
+            self.logger.debug('nextForm not found\n')
 
         # open page to insert tan
         self.dkb_br.submit_selected()
@@ -565,10 +579,10 @@ class DKBRobo(object):
             print('Login failed due to wrong tan! Aborting...')
             sys.exit(0)
         else:
-            print_debug(self.debug, 'TAN is correct...\n')
+            self.logger.debug('TAN is correct...\n')
             login_confirm = True
 
-        print_debug(self.debug, 'DKBRobo.ctan_check() ended with :{0}\n'.format(login_confirm))
+        self.logger.debug('DKBRobo.ctan_check() ended with :{0}\n'.format(login_confirm))
         return login_confirm
 
     def login_confirm(self):
@@ -577,7 +591,7 @@ class DKBRobo(object):
         returns:
             true/false - depending if login has been confirmed
         """
-        print_debug(self.debug, 'DKBRobo.login_confirm()\n')
+        self.logger.debug('DKBRobo.login_confirm()\n')
         print('check your banking app and confirm login...')
 
         try:
@@ -603,9 +617,9 @@ class DKBRobo(object):
             url = poll_url + '?$event=pollingVerification&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
             if 'guiState' in result:
-                print_debug(self.debug, 'poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
+                self.logger.debug('poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
                 if result['guiState'] == 'MAP_TO_EXIT':
-                    print_debug(self.debug, 'session got confirmed...\n')
+                    self.logger.debug('session got confirmed...\n')
                     login_confirmed = True
                 elif result['guiState'] == 'EXPIRED':
                     print('Session got expired. Aborting...')
@@ -629,7 +643,7 @@ class DKBRobo(object):
         returns:
             None
         """
-        print_debug(self.debug, 'DKBRobo.logout()\n')
+        self.logger.debug('DKBRobo.logout()\n')
         logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
         self.dkb_br.open(logout_url)
 
@@ -642,7 +656,7 @@ class DKBRobo(object):
         returns:
            self.dkb_br - instance
         """
-        print_debug(self.debug, 'DKBRobo.new_instance()\n')
+        self.logger.debug('DKBRobo.new_instance()\n')
         # create browser and cookiestore objects
         self.dkb_br = mechanicalsoup.StatefulBrowser()
         dkb_cj = cookielib.LWPCookieJar()
@@ -677,7 +691,7 @@ class DKBRobo(object):
             - amount - amount
             - text - text
         """
-        print_debug(self.debug, 'DKBRobo.parse_account_transactions()\n')
+        self.logger.debug('DKBRobo.parse_account_transactions()\n')
         # create empty list
         transaction_list = []
 
@@ -728,7 +742,7 @@ class DKBRobo(object):
             - amount - amount
             - text - text
         """
-        print_debug(self.debug, 'DKBRobo.parse_cc_transactions()\n')
+        self.logger.debug('DKBRobo.parse_cc_transactions()\n')
         # parse the lines to get all account infos
         # soup = BeautifulSoup(transactions, "html5lib")
 
@@ -769,7 +783,7 @@ class DKBRobo(object):
             - link to details
             - link to transactions
         """
-        print_debug(self.debug, 'DKBRobo.parse_overview()\n')
+        self.logger.debug('DKBRobo.parse_overview()\n')
         # get account information
         overview_dic = {}
         # to_remove = 0
@@ -846,7 +860,7 @@ class DKBRobo(object):
                 - documents
                     - name of document -> document link
         """
-        print_debug(self.debug, 'DKBRobo.scan_postbox()\n')
+        self.logger.debug('DKBRobo.scan_postbox()\n')
         pb_url = self.base_url + '/banking/postfach'
         self.dkb_br.open(pb_url)
         soup = self.dkb_br.get_current_page()
@@ -875,7 +889,7 @@ class DKBRobo(object):
             link_name - link_name
             url - download url
         """
-        print_debug(self.debug, 'DKBRobo.update_downloadstate({0}, {1})\n'.format(link_name, url))
+        self.logger.debug('DKBRobo.update_downloadstate({0}, {1})\n'.format(link_name, url))
 
         # get row number to be marked as read
         row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]
