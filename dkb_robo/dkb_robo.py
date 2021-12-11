@@ -518,7 +518,6 @@ class DKBRobo(object):
                 last_login = last_login.replace('  ', '')
                 last_login = last_login.replace('Letzte Anmeldung:', '')
                 self.last_login = last_login
-
                 if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
                     if self.tan_insert:
                         # chiptan input
@@ -526,7 +525,6 @@ class DKBRobo(object):
                     else:
                         # app confirmation needed to continue
                         login_confirmed = self.login_confirm()
-
                     if login_confirmed:
                         # login got confirmed get overview and parse data
                         soup_new = self.get_financial_statement()

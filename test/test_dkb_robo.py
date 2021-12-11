@@ -4,14 +4,12 @@
 import sys
 import os
 import unittest
-try:
-    from mock import patch
-except ImportError:
-    from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from bs4 import BeautifulSoup
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
 from dkb_robo import DKBRobo
+import logging
 
 def read_file(fname):
     """ read file into string """
@@ -33,6 +31,9 @@ class TestDKBRobo(unittest.TestCase):
     def setUp(self):
         self.dkb = DKBRobo()
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        from dkb_robo.dkb_robo import validate_dates
+        self.validate_dates = validate_dates
+        self.logger = logging.getLogger('dkb_robo')
 
     def test_001_get_cc_limit(self, mock_browser):
         """ test DKBRobo.get_credit_limits() method """
@@ -94,20 +95,113 @@ class TestDKBRobo(unittest.TestCase):
                     {'amount': 200.0, 'interval': u'1. monatlich geloescht', 'recipient': u'RECPIPIENT-2', 'purpose': u'KV 0987654321'}]
         self.assertEqual(self.dkb.get_standing_orders(), e_result)
 
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
     @patch('dkb_robo.DKBRobo.new_instance')
-    def test_008_login(self, mock_instance, mock_browser):
-        """ test DKBRobo.login() method """
+    def test_008_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() method - no confirmation """
         html = """
+                <h1>Anmeldung bestätigen</h1>
                 <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
                         Letzte Anmeldung:
                         01.03.2017, 01:00 Uhr
                 </div>
                """
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = False
+        mock_confirm.return_value = False
         mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
         self.assertEqual(self.dkb.login(), None)
+        self.assertTrue(mock_confirm.called)
+        self.assertFalse(mock_ctan.called)
+        self.assertFalse(mock_fs.called)
+        self.assertFalse(mock_pov.called)
 
-    def test_009_parse_overview(self, _unused):
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_009_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() method - confirmation """
+        html = """
+                <h1>Anmeldung bestätigen</h1>
+                <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
+                        Letzte Anmeldung:
+                        01.03.2017, 01:00 Uhr
+                </div>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = False
+        mock_confirm.return_value = True
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.assertEqual(self.dkb.login(), None)
+        self.assertTrue(mock_confirm.called)
+        self.assertFalse(mock_ctan.called)
+        self.assertTrue(mock_fs.called)
+        self.assertTrue(mock_pov.called)
+
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_010_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() method - no confirmation """
+        html = """
+                <h1>Anmeldung bestätigen</h1>
+                <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
+                        Letzte Anmeldung:
+                        01.03.2017, 01:00 Uhr
+                </div>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = False
+        mock_confirm.return_value = False
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.dkb.tan_insert = True
+        self.assertEqual(self.dkb.login(), None)
+        self.assertFalse(mock_confirm.called)
+        self.assertTrue(mock_ctan.called)
+        self.assertFalse(mock_fs.called)
+        self.assertFalse(mock_pov.called)
+
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_011_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() method - confirmation """
+        html = """
+                <h1>Anmeldung bestätigen</h1>
+                <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
+                        Letzte Anmeldung:
+                        01.03.2017, 01:00 Uhr
+                </div>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = True
+        mock_confirm.return_value = False
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.dkb.tan_insert = True
+        self.assertEqual(self.dkb.login(), None)
+        self.assertFalse(mock_confirm.called)
+        self.assertTrue(mock_ctan.called)
+        self.assertTrue(mock_fs.called)
+        self.assertTrue(mock_pov.called)
+
+    def test_012_parse_overview(self, _unused):
         """ test DKBRobo.parse_overview() method """
         html = read_file(self.dir_path + '/mocks/finanzstatus.html')
         e_result = {0: {'account': u'XY99 1111 1111 0000 1111 99',
@@ -161,7 +255,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         self.assertEqual(self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
 
-    def test_010_parse_overview_mbank(self, _unused):
+    def test_013_parse_overview_mbank(self, _unused):
         """ test DKBRobo.parse_overview() method for accounts from other banks"""
         html = read_file(self.dir_path + '/mocks/finanzstatus-mbank.html')
         e_result = {0: {'account': u'1111********1111',
@@ -208,7 +302,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'depot'}}
         self.assertEqual(self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
 
-    def test_011_get_document_links(self, mock_browser):
+    def test_014_get_document_links(self, mock_browser):
         """ test DKBRobo.get_document_links() method """
         html = read_file(self.dir_path + '/mocks/doclinks.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
@@ -217,7 +311,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(self.dkb.get_document_links('http://foo.bar/foo'), e_result)
 
     @patch('dkb_robo.DKBRobo.get_document_links')
-    def test_012_scan_postbox(self, mock_doclinks, mock_browser):
+    def test_015_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo.scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
@@ -237,23 +331,23 @@ class TestDKBRobo(unittest.TestCase):
                    }
         self.assertEqual(self.dkb.scan_postbox(), e_result)
 
-    def test_013_get_tr_invalid(self, _unused):
+    def test_016_get_tr_invalid(self, _unused):
         """ test DKBRobo.get_transactions() method with an invalid account type"""
         self.assertEqual(self.dkb.get_transactions('url', 'foo', '01.03.2017', '02.03.2017'), [])
 
     @patch('dkb_robo.DKBRobo.get_creditcard_transactions')
-    def test_014_get_tr_cc(self, mock_cc_tran, _unused):
+    def test_017_get_tr_cc(self, mock_cc_tran, _unused):
         """ test DKBRobo.get_transactions() method with an credit-card account"""
         mock_cc_tran.return_value = ['credit_card']
         self.assertEqual(self.dkb.get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
 
     @patch('dkb_robo.DKBRobo.get_account_transactions')
-    def test_015_get_tr_ac(self, mock_ca_tran, _unused):
+    def test_018_get_tr_ac(self, mock_ca_tran, _unused):
         """ test DKBRobo.get_transactions() method with an checking account"""
         mock_ca_tran.return_value = ['account']
         self.assertEqual(self.dkb.get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
 
-    def test_016_parse_account_tr(self, _mock_browser):
+    def test_019_parse_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
         self.assertEqual(self.dkb.parse_account_transactions(csv), [{'amount': 'AAAAA',
@@ -283,12 +377,12 @@ class TestDKBRobo(unittest.TestCase):
                                                                      'text': 'BBBBBBBBB BBBBBBBB BBBBBBB',
                                                                      'vdate': '02.03.2017'}])
 
-    def test_017_parse_no_account_tr(self, _mock_browser):
+    def test_020_parse_no_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_no_account_tr.csv')
         self.assertEqual(self.dkb.parse_account_transactions(csv), [])
 
-    def test_018_parse_dkb_cc_tr(self, _mock_browser):
+    def test_021_parse_dkb_cc_tr(self, _mock_browser):
         """ test DKBRobo.parse_cc_transactions """
         csv = read_file(self.dir_path + '/mocks/test_parse_dkb_cc_tr.csv')
         self.assertEqual(self.dkb.parse_cc_transactions(csv), [{'amount': '-100.00"',
@@ -310,10 +404,34 @@ class TestDKBRobo(unittest.TestCase):
                                                                 'text': 'CCC',
                                                                 'vdate': '03.03.2017'}])
 
-    def test_019_parse_no_cc_tr(self, _mock_browser):
+    def test_022_parse_no_cc_tr(self, _mock_browser):
         """ test DKBRobo.parse_cc_transactions """
         csv = read_file(self.dir_path + '/mocks/test_parse_no_cc_tr.csv')
         self.assertEqual(self.dkb.parse_cc_transactions(csv), [])
+
+    @patch('time.time')
+    def test_023_validate_dates(self, mock_time, mock_browser):
+        """ test validate dates with correct data """
+        date_from = '01.12.2021'
+        date_to = '10.12.2021'
+        mock_time.return_value = 1639232579
+        self.assertEqual(('01.12.2021', '10.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+
+    @patch('time.time')
+    def test_024_validate_dates(self, mock_time, mock_browser):
+        """ test validate dates date_from to be corrected """
+        date_from = '12.12.2021'
+        date_to = '11.12.2021'
+        mock_time.return_value = 1639232579
+        self.assertEqual(('11.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+
+    @patch('time.time')
+    def test_025_validate_dates(self, mock_time, mock_browser):
+        """ test validate dates date_from to be corrected """
+        date_from = '01.12.2021'
+        date_to = '12.12.2021'
+        mock_time.return_value = 1639232579
+        self.assertEqual(('01.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
 
 if __name__ == '__main__':
 
