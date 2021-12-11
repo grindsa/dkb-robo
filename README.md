@@ -5,6 +5,9 @@
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/master.svg?label=last%20commit%20into%20master)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/grindsa/dkb-robo/devel.svg?label=last%20commit%20into%20devel)
 
+[![Codecov main](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/master?label=test%20coverage%20master)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/master)
+[![Codecov devel](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/devel?label=test%20coverage%20devel)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/devel)
+
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch
 
 - account information and current balances
