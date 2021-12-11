@@ -106,5 +106,5 @@ ENV/
 /dkb_test.py
 /*.html
 *.json
-/*.txt
+# /*.txt
 foo/*
