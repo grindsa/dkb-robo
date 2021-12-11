@@ -40,6 +40,23 @@ def print_debug(debug, text):
         print('{0}: {1}'.format(datetime.now(), text))
 
 
+def validate_dates(debug, date_from, date_to):
+    """ correct dates if needed """
+    print_debug(debug, 'validate_dates()')
+    date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
+    date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
+    now_uts = int(time.time())
+
+    if date_from_uts > now_uts:
+        print_debug(debug, 'validate_dates(): adjust date_from to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+    if date_to_uts > now_uts:
+        print_debug(debug, 'validate_dates(): adjust date_to to {0}\n'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+
+    return (date_from, date_to)
+
+
 class DKBRobo(object):
     """ dkb_robo class """
 
@@ -182,6 +199,7 @@ class DKBRobo(object):
         returns:
             dictionary of the documents
         """
+        # pylint: disable=R0914
         print_debug(self.debug, 'DKBRobo.get_document_links({0})\n'.format(url))
         document_dic = {}
 
@@ -429,6 +447,9 @@ class DKBRobo(object):
             - text   - test
         """
         print_debug(self.debug, 'DKBRobo.get_account_transactions({0}/{1}: {2}/{3})\n'.format(transaction_url, atype, date_from, date_to))
+
+        (date_from, date_to) = validate_dates(self.debug, date_from, date_to)
+
         transaction_list = []
         if atype == 'account':
             transaction_list = self.get_account_transactions(transaction_url, date_from, date_to)
