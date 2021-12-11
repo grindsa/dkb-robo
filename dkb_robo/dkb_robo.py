@@ -11,21 +11,11 @@ import time
 from datetime import datetime
 import re
 from string import digits, ascii_letters
-try:
-    from urllib import parse
-except BaseException:
-    import urlparse as parse
+from urllib import parse
 import mechanicalsoup
-
-if sys.version_info > (3, 0):
-    import http.cookiejar as cookielib
-    import importlib
-    importlib.reload(sys)
-else:
-    import cookielib  # pylint: disable=E0401
-    # pylint: disable=E0602, E1101
-    reload(sys)
-    sys.setdefaultencoding('utf8')
+import http.cookiejar as cookielib
+# import importlib
+# importlib.reload(sys)
 
 
 def generate_random_string(length):

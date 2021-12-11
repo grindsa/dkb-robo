@@ -35,4 +35,4 @@ jobs:
       - name: Lint with pycodestyle
         run: |
           pip install pycodestyle
-          pycodestyle --max-line-length=220  dkb_robo/.
+          pycodestyle --max-line-length=380  dkb_robo/.
