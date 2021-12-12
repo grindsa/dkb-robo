@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """ dkb internet banking automation library """
-
 from __future__ import print_function
 import sys
 import os
@@ -15,8 +14,6 @@ from urllib import parse
 import mechanicalsoup
 import http.cookiejar as cookielib
 import logging
-#  import importlib
-# importlib.reload(sys)
 
 
 def generate_random_string(length):

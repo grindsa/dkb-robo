@@ -1,7 +1,6 @@
 from setuptools import setup
 from glob import glob
 from dkb_robo.version import __version__
-# exec(open('dkb_robo/version.py').read())
 setup(name='dkb_robo',
     version=__version__,
     description='library to access the internet banking area of "Deutsche Kreditbank" to get account information and transactions.',
@@ -25,6 +24,6 @@ setup(name='dkb_robo',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules'
-        ],    
+        ],
     zip_safe=False,
     test_suite="test")

@@ -4,7 +4,7 @@
 import sys
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
@@ -31,8 +31,10 @@ class TestDKBRobo(unittest.TestCase):
     def setUp(self):
         self.dkb = DKBRobo()
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.dkb_robo import validate_dates
+        from dkb_robo.dkb_robo import validate_dates, generate_random_string, logger_setup
         self.validate_dates = validate_dates
+        self.generate_random_string = generate_random_string
+        self.logger_setup = logger_setup
         self.logger = logging.getLogger('dkb_robo')
 
     def test_001_get_cc_limit(self, mock_browser):
@@ -310,6 +312,29 @@ class TestDKBRobo(unittest.TestCase):
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
         self.assertEqual(self.dkb.get_document_links('http://foo.bar/foo'), e_result)
 
+    @patch('dkb_robo.DKBRobo.update_downloadstate')
+    @patch('dkb_robo.DKBRobo.get_document')
+    def test_015_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo.get_document_links() method """
+        html = read_file(self.dir_path + '/mocks/doclinks-2.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_doc.return_value=(200, 'fname')
+        e_result = {'Kontoauszug Nr. 003_2017 zu Konto 12345678': {'rcode': 200, 'link': 'https://www.dkb.de/doc-1', 'fname': 'fname'}, 'Kontoauszug Nr. 003_2017 zu Konto 87654321': {'rcode': 200, 'link': 'https://www.dkb.de/doc-2', 'fname': 'fname'}}
+        self.assertEqual(e_result, self.dkb.get_document_links('http://foo.bar/foo', path='path'))
+        self.assertTrue(mock_updow.called)
+
+    @patch('dkb_robo.DKBRobo.update_downloadstate')
+    @patch('dkb_robo.DKBRobo.get_document')
+    def test_016_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo.get_document_links() method """
+        html = read_file(self.dir_path + '/mocks/doclinks-2.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_doc.return_value=(None, 'fname')
+        e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.dkb.de/doc-2',
+                    u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
+        self.assertEqual(e_result, self.dkb.get_document_links('http://foo.bar/foo', path='path'))
+        self.assertFalse(mock_updow.called)
+
     @patch('dkb_robo.DKBRobo.get_document_links')
     def test_015_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo.scan_postbox() method """
@@ -330,6 +355,27 @@ class TestDKBRobo(unittest.TestCase):
                          'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
                    }
         self.assertEqual(self.dkb.scan_postbox(), e_result)
+
+    @patch('dkb_robo.DKBRobo.get_document_links')
+    def test_016_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo.scan_postbox() method """
+        html = read_file(self.dir_path + '/mocks/postbox.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_doclinks.return_value = {}
+        e_result = {u'Kreditkartenabrechnungen':
+                        {'documents': {},
+                         'name': u'Kreditkartenabrechnungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Kreditkartenabrechnungen'},
+                    u'Mitteilungen':
+                        {'documents': {},
+                         'name': u'Mitteilungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Mitteilungen'},
+                    u'Vertragsinformationen':
+                        {'documents': {},
+                         'name': u'Vertragsinformationen',
+                         'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
+                   }
+        self.assertEqual(self.dkb.scan_postbox(path='path'), e_result)
 
     def test_016_get_tr_invalid(self, _unused):
         """ test DKBRobo.get_transactions() method with an invalid account type"""
@@ -432,6 +478,166 @@ class TestDKBRobo(unittest.TestCase):
         date_to = '12.12.2021'
         mock_time.return_value = 1639232579
         self.assertEqual(('01.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+
+    @patch('random.choice')
+    def test_026_generate_random_string(self, mock_rc, mock_browser):
+        mock_rc.return_value = '1a'
+        length = 5
+        self.assertEqual('1a1a1a1a1a', self.generate_random_string(length))
+
+    @patch('random.choice')
+    def test_027_generate_random_string(self, mock_rc, mock_browser):
+        mock_rc.return_value = '1a'
+        length = 10
+        self.assertEqual('1a1a1a1a1a1a1a1a1a1a', self.generate_random_string(length))
+
+    def test_028_get_financial_statement(self, mock_browser):
+        """ get financial statement """
+        html = '<html><head>header</head><body>body</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertEqual('<html><head></head><body>headerbody</body></html>', str(self.dkb.get_financial_statement()))
+
+    def test_029_get_financial_statement(self, mock_browser):
+        """ get financial statement with tan_insert """
+        html = '<html><head>header</head><body>body</body></html>'
+        self.dkb.tan_insert = True
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertEqual('<html><head></head><body>headerbody</body></html>', str(self.dkb.get_financial_statement()))
+
+    @patch('dkb_robo.DKBRobo.login')
+    def test_030__enter(self, mock_login, mock_browser):
+        """ test enter """
+        self.assertTrue(self.dkb.__enter__)
+        self.assertFalse(mock_login.called)
+
+    # @patch('dkb_robo.DKBRobo.login')
+    #def test_031__enter(self, mock_login, _unused):
+    #    """ test enter """
+    #    self.dkb.dkb_br = None
+    #    self.assertTrue(self.dkb.__enter__)
+    #    self.assertTrue(mock_login.called)
+
+    @patch('dkb_robo.DKBRobo.logout')
+    def test_032__exit(self, mock_logout, _ununsed):
+        """ test enter """
+        self.assertTrue(self.dkb.__exit__)
+        self.assertFalse(mock_logout.called)
+
+    @patch('dkb_robo.DKBRobo.parse_account_transactions')
+    def test_033_get_account_transactions(self, mock_parse, mock_browser):
+        """ test get_account_transactions """
+        mock_browser.get_current_page.return_value = 'mock_browser'
+        mock_parse.return_value = 'mock_parse'
+        self.assertEqual('mock_parse', self.dkb.get_account_transactions('url', 'date_from', 'date_to'))
+
+    @patch('dkb_robo.DKBRobo.parse_cc_transactions')
+    def test_034_get_account_transactions(self, mock_parse, mock_browser):
+        """ test get_account_transactions """
+        mock_browser.get_current_page.return_value = 'mock_browser'
+        mock_parse.return_value = 'mock_parse'
+        self.assertEqual('mock_parse', self.dkb.get_creditcard_transactions('url', 'date_from', 'date_to'))
+
+    def test_035_logout(self, _unused):
+        """ test logout """
+        self.assertFalse(self.dkb.logout())
+
+    @patch('logging.getLogger')
+    def test_036_logger_setup(self, mock_logging, _unused):
+        """ test logger setup with debug false """
+        mock_logging.return_value = 'logging'
+        self.assertEqual('logging', self.logger_setup(False))
+
+    @patch('logging.getLogger')
+    def test_037_logger_setup(self, mock_logging, _unused):
+        """ test logger setup with debug true """
+        mock_logging.return_value = 'logging'
+        self.assertEqual('logging', self.logger_setup(True))
+
+    def test_038_update_downloadstate(self, _unused):
+        """ test update downloadstats """
+        url = 'https://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row=1'
+        self.assertFalse(self.dkb.update_downloadstate(link_name='link_name', url=url))
+
+    def test_039_update_downloadstate(self, _unused):
+        """ test update downloadstats """
+        url = 'https://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row=1'
+        self.assertFalse(self.dkb.update_downloadstate(link_name='Kontoauszüge', url=url))
+
+    @patch('dkb_robo.dkb_robo.generate_random_string')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_040_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
+        """ test get_document create path """
+        mock_exists.return_value = False
+        mock_rand.return_value = 'mock_rand'
+        self.assertEqual((None, 'path/mock_rand.pdf'), self.dkb.get_document('path', 'url'))
+        self.assertTrue(mock_makedir.called)
+        self.assertTrue(mock_rand.called)
+
+    @patch('dkb_robo.dkb_robo.generate_random_string')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_041_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
+        """ test get_document create path """
+        mock_exists.return_value = True
+        mock_rand.return_value = 'mock_rand'
+        self.assertEqual((None, 'path/mock_rand.pdf'), self.dkb.get_document('path', 'url'))
+        self.assertFalse(mock_makedir.called)
+        self.assertTrue(mock_rand.called)
+
+    @patch("builtins.open", mock_open(read_data='test'), create=True)
+    @patch('re.findall')
+    @patch('dkb_robo.dkb_robo.generate_random_string')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_042_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
+        """ test get_document create path """
+        mock_exists.return_value = True
+        mock_rand.return_value = 'mock_rand'
+        mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
+        mock_browser.open.return_value.status_code = 200
+        mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
+        self.assertEqual((200, 'path/mock_re.pdf'), self.dkb.get_document('path', 'url'))
+        self.assertFalse(mock_makedir.called)
+
+    @patch('builtins.input')
+    def test_043_ctan_check(self, mock_input, mock_browser):
+        """ test ctan_check """
+        mock_input.return_value = 'tan'
+        html = '<html><head>header</head><body><ol><li>li</li></ol></body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertTrue(self.dkb.ctan_check('soup'))
+
+    @patch('builtins.input')
+    def test_044_ctan_check(self, mock_input, mock_browser):
+        """ test ctan_check """
+        mock_input.return_value = 'tan'
+        html = '<html><head>header</head><body>body</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertTrue(self.dkb.ctan_check('soup'))
+
+    @patch('sys.exit')
+    @patch('builtins.input')
+    def test_045_ctan_check(self, mock_input, mock_sexit, mock_browser):
+        """ test ctan_check """
+        mock_input.return_value = 'tan'
+        html = '<html><head>header</head><body><div class="clearfix module text errorMessage">div</div></body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        self.assertFalse(self.dkb.ctan_check('soup'))
+
+    @patch('sys.exit')
+    @patch('builtins.input')
+    def test_046_ctan_check(self, mock_input, mock_sexit, mock_browser):
+        """ test ctan_check """
+        mock_input.return_value = 'tan'
+        html = '<html><head>header</head><body>body</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_browser.select_form.side_effect =  [Exception('exc1'), Exception('exc2'), 'foo']
+        self.assertTrue(self.dkb.ctan_check('soup'))
+
+    def test_047_login_confirm(self, mock_browser):
+        mock_browser.open.return_value.json.return_value = {"guiState": "MAP_TO_EXIT"}
+        self.assertTrue(self.dkb.login_confirm())
 
 if __name__ == '__main__':
 
