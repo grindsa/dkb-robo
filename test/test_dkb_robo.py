@@ -636,7 +636,14 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb.ctan_check('soup'))
 
     def test_047_login_confirm(self, mock_browser):
+        """ test login confirmed """
         mock_browser.open.return_value.json.return_value = {"guiState": "MAP_TO_EXIT"}
+        self.assertTrue(self.dkb.login_confirm())
+
+    def test_048_login_confirm(self, mock_browser):
+        """ test login confirmed - exceptioption when getting the token """
+        mock_browser.open.return_value.json.return_value = {"guiState": "MAP_TO_EXIT"}
+        mock_browser.get_current_page.side_effect =  Exception('exc')
         self.assertTrue(self.dkb.login_confirm())
 
 if __name__ == '__main__':

@@ -55,6 +55,8 @@ def validate_dates(logger, date_from, date_to):
 
     return (date_from, date_to)
 
+class DKBRoboError(Exception):
+    ...
 
 class DKBRobo(object):
     """ dkb_robo class """
@@ -497,8 +499,7 @@ class DKBRobo(object):
 
             # catch login error
             if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
-                print('Login failed! Aborting...')
-                sys.exit(0)
+                raise DKBRoboError('Login failed')
 
             # catch generic notices
             if soup.find("form", attrs={'id': 'genericNoticeForm'}):
@@ -525,8 +526,8 @@ class DKBRobo(object):
                         # login got confirmed get overview and parse data
                         soup_new = self.get_financial_statement()
                         self.account_dic = self.parse_overview(soup_new)
-        except mechanicalsoup.utils.LinkNotFoundError:
-            print('login failed: LinkNotFoundError')
+        except mechanicalsoup.utils.LinkNotFoundError as err:
+            raise DKBRoboError('login failed: LinkNotFoundError') from err
 
     def ctan_check(self, _soup):
         """ input of chiptan during login """
@@ -570,8 +571,7 @@ class DKBRobo(object):
 
         # catch tan error
         if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
-            print('Login failed due to wrong tan! Aborting...')
-            sys.exit(0)
+            raise DKBRoboError('Login failed due to wrong TAN')
         else:
             self.logger.debug('TAN is correct...\n')
             login_confirm = True
@@ -597,16 +597,16 @@ class DKBRobo(object):
             xsrf_token = generate_random_string(25)
 
         # timestamp in miliseconds for py3 and py2
-        try:
-            poll_id = int(datetime.utcnow().timestamp() * 1e3)
-        except BaseException:
-            poll_id = int(round(time.time() * 1000))
+        #try:
+        poll_id = int(datetime.utcnow().timestamp() * 1e3)
+        #except BaseException:
+        #    poll_id = int(round(time.time() * 1000))
 
         # poll url
         poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
         login_confirmed = False
-        while not login_confirmed:
-            poll_id += 1
+        for poll_id in range(120):
+            # poll_id += 1
             # add id to pollurl
             url = poll_url + '?$event=pollingVerification&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
@@ -615,13 +615,14 @@ class DKBRobo(object):
                 if result['guiState'] == 'MAP_TO_EXIT':
                     self.logger.debug('session got confirmed...\n')
                     login_confirmed = True
+                    break
                 elif result['guiState'] == 'EXPIRED':
-                    print('Session got expired. Aborting...')
-                    sys.exit(0)
+                    raise DKBRoboError('Session expired')
             else:
-                print('Timeout during session confirmation. Aborting...')
-                sys.exit(0)
-            time.sleep(2)
+                raise DKBRoboError('Timeout during session confirmation')
+            time.sleep(1.5)
+        else:
+            raise DKBRoboError("No session confirmation after 120 polls")
 
         post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
         self.dkb_br.post(url=poll_url, data=post_data)
