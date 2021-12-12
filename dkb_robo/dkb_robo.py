@@ -184,9 +184,7 @@ class DKBRobo(object):
                             limit = limit.replace(',', '.')
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = limit
-                        except IndexError:
-                            pass
-                        except AttributeError:
+                        except BaseException:
                             pass
 
         return limit_dic

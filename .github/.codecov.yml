@@ -1,3 +1,5 @@
 ignore:
+  - "dkb-robo/__init__.py"
+  - "dkb-robo/version.py"  
   - "doc"
   - "test"       # wildcards accepted

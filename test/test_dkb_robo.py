@@ -49,6 +49,13 @@ class TestDKBRobo(unittest.TestCase):
                     u'DE02 1111 1111 1111 1111 12': u'2000.00'}
         self.assertEqual(self.dkb.get_credit_limits(), e_result)
 
+    def test_002_get_cc_limit(self, mock_browser):
+        """ test DKBRobo.get_credit_limits() triggers exceptions """
+        html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        e_result = {'DE01 1111 1111 1111 1111 11': '1000.00', 'DE02 1111 1111 1111 1111 12': '2000.00'}
+        self.assertEqual(self.dkb.get_credit_limits(), e_result)
+
     def test_002_get_exo_single(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order """
         html = read_file(self.dir_path + '/mocks/freistellungsauftrag.html')
@@ -261,6 +268,34 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_ctan.called)
         self.assertFalse(mock_fs.called)
         self.assertFalse(mock_pov.called)
+
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_014_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() method - notice form """
+        html = """
+                <h1>Anmeldung bestätigen</h1>
+                <form id="genericNoticeForm">foo</form>
+                <div id="lastLoginContainer" class="lastLogin deviceFloatRight ">
+                        Letzte Anmeldung:
+                        01.03.2017, 01:00 Uhr
+                </div>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = True
+        mock_confirm.return_value = False
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.dkb.tan_insert = True
+        self.assertEqual(self.dkb.login(), None)
+        self.assertFalse(mock_confirm.called)
+        self.assertTrue(mock_ctan.called)
+        self.assertTrue(mock_fs.called)
+        self.assertTrue(mock_pov.called)
 
     def test_012_parse_overview(self, _unused):
         """ test DKBRobo.parse_overview() method """
