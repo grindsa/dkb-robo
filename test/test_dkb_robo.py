@@ -6,6 +6,8 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
+from mechanicalsoup import LinkNotFoundError
+
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
 from dkb_robo import DKBRobo
@@ -77,6 +79,16 @@ class TestDKBRobo(unittest.TestCase):
                         'validity': u'02.01.2016 unbefristet'}
                    }
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
+
+    def test_005_get_exo_single(self, mock_browser):
+        """ test DKBRobo.get_exemption_order() method try throws exception """
+        html = read_file(self.dir_path + '/mocks/freistellungsauftrag-indexerror.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        e_result = {1:{}}
+        # with self.assertRaises(Exception) as err:
+        self.assertEqual(self.dkb.get_exemption_order(), e_result)
+        # print(err.exception)
+        # self.assertEqual("foo could not convert string to float: 'aaa'", str(err.exception))
 
     def test_005_new_instance(self, _unused):
         """ test DKBRobo.new_instance() method """
@@ -202,6 +214,53 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_ctan.called)
         self.assertTrue(mock_fs.called)
         self.assertTrue(mock_pov.called)
+
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_012_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() login failed """
+        html = """
+                <div id="lastLoginContainer" class="clearfix module text errorMessage">foo</div>
+               """
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_ctan.return_value = True
+        mock_confirm.return_value = False
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.dkb.tan_insert = True
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(self.dkb.login(), None)
+        self.assertEqual('Login failed', str(err.exception))
+        self.assertFalse(mock_confirm.called)
+        self.assertFalse(mock_ctan.called)
+        self.assertFalse(mock_fs.called)
+        self.assertFalse(mock_pov.called)
+
+    @patch('dkb_robo.DKBRobo.parse_overview')
+    @patch('dkb_robo.DKBRobo.get_financial_statement')
+    @patch('dkb_robo.DKBRobo.login_confirm')
+    @patch('dkb_robo.DKBRobo.ctan_check')
+    @patch('dkb_robo.DKBRobo.new_instance')
+    def test_013_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+        """ test DKBRobo.login() login failed """
+        mock_browser.select_form.side_effect = LinkNotFoundError
+        mock_ctan.return_value = True
+        mock_confirm.return_value = False
+        mock_instance.return_value = mock_browser
+        mock_pov.return_value = 'parse_overview'
+        mock_fs.return_value = 'mock_fs'
+        self.dkb.tan_insert = True
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(self.dkb.login(), None)
+        self.assertEqual('Login failed: LinkNotFoundError', str(err.exception))
+        self.assertFalse(mock_confirm.called)
+        self.assertFalse(mock_ctan.called)
+        self.assertFalse(mock_fs.called)
+        self.assertFalse(mock_pov.called)
 
     def test_012_parse_overview(self, _unused):
         """ test DKBRobo.parse_overview() method """
@@ -616,14 +675,15 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         self.assertTrue(self.dkb.ctan_check('soup'))
 
-    @patch('sys.exit')
     @patch('builtins.input')
-    def test_045_ctan_check(self, mock_input, mock_sexit, mock_browser):
-        """ test ctan_check """
+    def test_045_ctan_check(self, mock_input, mock_browser):
+        """ test ctan_check wrong tan """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body><div class="clearfix module text errorMessage">div</div></body></html>'
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
-        self.assertFalse(self.dkb.ctan_check('soup'))
+        with self.assertRaises(Exception) as err:
+             self.dkb.ctan_check('soup')
+        self.assertEqual('Login failed due to wrong TAN', str(err.exception))
 
     @patch('sys.exit')
     @patch('builtins.input')
@@ -641,10 +701,32 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb.login_confirm())
 
     def test_048_login_confirm(self, mock_browser):
-        """ test login confirmed - exceptioption when getting the token """
+        """ test login confirmed - exception when getting the token """
         mock_browser.open.return_value.json.return_value = {"guiState": "MAP_TO_EXIT"}
         mock_browser.get_current_page.side_effect =  Exception('exc')
         self.assertTrue(self.dkb.login_confirm())
+
+    def test_049_login_confirm(self, mock_browser):
+        """ test login confirmed - session expired """
+        mock_browser.open.return_value.json.return_value = {"guiState": "EXPIRED"}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb.login_confirm())
+        self.assertEqual('Session expired', str(err.exception))
+
+    def test_050_login_confirm(self, mock_browser):
+        """ test login confirmed - Timeout during session confirmation """
+        mock_browser.open.return_value.json.return_value = {"foo": "bar"}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb.login_confirm())
+        self.assertEqual('Timeout during session confirmation', str(err.exception))
+
+    @patch('time.sleep', return_value=None)
+    def test_051_login_confirm(self, mock_sleep, mock_browser):
+        """ test login confirmed  """
+        mock_browser.open.return_value.json.return_value = {"guiState": "bar"}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb.login_confirm())
+        self.assertEqual('No session confirmation after 120 polls', str(err.exception))
 
 if __name__ == '__main__':
 

@@ -12,7 +12,7 @@ import re
 from string import digits, ascii_letters
 from urllib import parse
 import mechanicalsoup
-import http.cookiejar as cookielib
+from http import cookiejar
 import logging
 
 
@@ -55,8 +55,10 @@ def validate_dates(logger, date_from, date_to):
 
     return (date_from, date_to)
 
+
 class DKBRoboError(Exception):
     ...
+
 
 class DKBRobo(object):
     """ dkb_robo class """
@@ -305,7 +307,6 @@ class DKBRobo(object):
             count = 0
             for row in table.findAll("tr"):
                 cols = row.findAll("td")
-
                 if cols:
                     try:
                         count += 1
@@ -328,9 +329,7 @@ class DKBRobo(object):
                         exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
-                    except IndexError:
-                        pass
-                    except AttributeError:
+                    except BaseException as err:
                         pass
 
         return exo_dic
@@ -527,7 +526,7 @@ class DKBRobo(object):
                         soup_new = self.get_financial_statement()
                         self.account_dic = self.parse_overview(soup_new)
         except mechanicalsoup.utils.LinkNotFoundError as err:
-            raise DKBRoboError('login failed: LinkNotFoundError') from err
+            raise DKBRoboError('Login failed: LinkNotFoundError') from err
 
     def ctan_check(self, _soup):
         """ input of chiptan during login """
@@ -597,9 +596,9 @@ class DKBRobo(object):
             xsrf_token = generate_random_string(25)
 
         # timestamp in miliseconds for py3 and py2
-        #try:
+        # try:
         poll_id = int(datetime.utcnow().timestamp() * 1e3)
-        #except BaseException:
+        # except BaseException:
         #    poll_id = int(round(time.time() * 1000))
 
         # poll url
@@ -654,7 +653,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.new_instance()\n')
         # create browser and cookiestore objects
         self.dkb_br = mechanicalsoup.StatefulBrowser()
-        dkb_cj = cookielib.LWPCookieJar()
+        dkb_cj = cookiejar.LWPCookieJar()
         self.dkb_br.set_cookiejar = dkb_cj
 
         # configure browser
@@ -665,11 +664,11 @@ class DKBRobo(object):
         self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
 
         # initialize some cookies to fool dkb
-        dkb_ck = cookielib.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookielib.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookielib.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
 
         return self.dkb_br
