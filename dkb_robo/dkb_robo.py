@@ -798,7 +798,7 @@ class DKBRobo(object):
             counter += 1
         return overview_dic
 
-    def scan_postbox(self, path=None, download_all=False):
+    def scan_postbox(self, path=None, download_all=False, archive=False):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
 
@@ -816,10 +816,16 @@ class DKBRobo(object):
                     - name of document -> document link
         """
         print_debug(self.debug, 'DKBRobo.scan_postbox()\n')
-        pb_url = self.base_url + '/banking/postfach'
+        if archive:
+            pb_url = self.base_url + '/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
+        else:
+            pb_url = self.base_url + '/banking/postfach'
         self.dkb_br.open(pb_url)
         soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'id':'welcomeMboTable'})
+        if archive:
+            table = soup.find('table', attrs={'id': re.compile('mbo-message-list*')})
+        else:
+            table = soup.find('table', attrs={'id':'welcomeMboTable'})
         tbody = table.find('tbody')
 
         pb_dic = {}
