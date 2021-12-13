@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """ dkb internet banking automation library """
 from __future__ import print_function
-import sys
 import os
 import csv
 import random
@@ -11,9 +10,9 @@ from datetime import datetime
 import re
 from string import digits, ascii_letters
 from urllib import parse
-import mechanicalsoup
 from http import cookiejar
 import logging
+import mechanicalsoup
 
 
 def generate_random_string(length):
@@ -57,6 +56,7 @@ def validate_dates(logger, date_from, date_to):
 
 
 class DKBRoboError(Exception):
+    """ dkb-robo exception class """
     ...
 
 
@@ -103,7 +103,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
-        self.logger.debug('DKBRobo.get_account_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
+        self.logger.debug('DKBRobo.get_account_transactions(%s: %s/%s)\n', transaction_url, date_from, date_to)
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1615473160_1')
 
@@ -125,7 +125,7 @@ class DKBRobo(object):
             date_from       - transactions starting form
             date_to         - end date
         """
-        self.logger.debug('DKBRobo.get_creditcard_transactions({0}: {1}/{2})\n'.format(transaction_url, date_from, date_to))
+        self.logger.debug('DKBRobo.get_creditcard_transactions(%s: %s/%s)\n', transaction_url, date_from, date_to)
         # get credit card transaction form yesterday
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
@@ -201,7 +201,7 @@ class DKBRobo(object):
             dictionary of the documents
         """
         # pylint: disable=R0914
-        self.logger.debug('DKBRobo.get_document_links({0})\n'.format(url))
+        self.logger.debug('DKBRobo.get_document_links(%s)\n', url)
         document_dic = {}
 
         # set download filter if there is a need to do so
@@ -251,11 +251,11 @@ class DKBRobo(object):
         returns:
             http response code
         """
-        self.logger.debug('DKBRobo.get_document({0})\n'.format(url))
+        self.logger.debug('DKBRobo.get_document(%s)\n', url)
 
         # create directory if not existing
         if not os.path.exists(path):
-            self.logger.debug('create directory {0}\n'.format(path))
+            self.logger.debug('create directory %s\n', path)
             os.makedirs(path)
 
         # fetch file
@@ -266,7 +266,7 @@ class DKBRobo(object):
         if "Content-Disposition" in response.headers.keys():
             fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
             # dump content to file
-            self.logger.debug('writing to {0}/{1}\n'.format(path, fname))
+            self.logger.debug('writing to %s/%s\n', path, fname)
             pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
             pdf_file.write(response.content)
             pdf_file.close()
@@ -327,7 +327,7 @@ class DKBRobo(object):
                         exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
-                    except BaseException as err:
+                    except BaseException:
                         pass
 
         return exo_dic
@@ -445,7 +445,7 @@ class DKBRobo(object):
             - amount - amount
             - text   - test
         """
-        self.logger.debug('DKBRobo.get_account_transactions({0}/{1}: {2}/{3})\n'.format(transaction_url, atype, date_from, date_to))
+        self.logger.debug('DKBRobo.get_account_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
 
@@ -567,13 +567,14 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
 
         # catch tan error
+        # pylint: disable=R1720
         if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
             raise DKBRoboError('Login failed due to wrong TAN')
         else:
             self.logger.debug('TAN is correct...\n')
             login_confirm = True
 
-        self.logger.debug('DKBRobo.ctan_check() ended with :{0}\n'.format(login_confirm))
+        self.logger.debug('DKBRobo.ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
     def login_confirm(self):
@@ -608,7 +609,8 @@ class DKBRobo(object):
             url = poll_url + '?$event=pollingVerification&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
             if 'guiState' in result:
-                self.logger.debug('poll(id: {0} status: {1}\n'.format(poll_id, result['guiState']))
+                self.logger.debug('poll(id: %s status: %s\n', poll_id, result['guiState'])
+                # pylint: disable=R1723
                 if result['guiState'] == 'MAP_TO_EXIT':
                     self.logger.debug('session got confirmed...\n')
                     login_confirmed = True
@@ -801,7 +803,7 @@ class DKBRobo(object):
             amount = cols[3 + ontop].text.strip().replace('.', '')
             try:
                 overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except ValueError:
+            except BaseException:
                 pass
 
             # get link for transactions
@@ -821,14 +823,14 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except (IndexError, TypeError):
+                except BaseException:
                     pass
 
             # get link for details
             try:
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except (IndexError, TypeError):
+            except BaseException:
                 pass
 
             # increase counter
@@ -881,7 +883,7 @@ class DKBRobo(object):
             link_name - link_name
             url - download url
         """
-        self.logger.debug('DKBRobo.update_downloadstate({0}, {1})\n'.format(link_name, url))
+        self.logger.debug('DKBRobo.update_downloadstate(%s, %s)\n', link_name, url)
 
         # get row number to be marked as read
         row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]

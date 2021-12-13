@@ -351,6 +351,165 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         self.assertEqual(self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
 
+    def test_013_parse_overview(self, _unused):
+        """ test DKBRobo.parse_overview() method """
+        html = read_file(self.dir_path + '/mocks/finanzstatus-error1.html')
+        e_result = {0: {'account': u'XY99 1111 1111 0000 1111 99',
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=0&group=0',
+                        'name': u'hauptkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=0',
+                        'type': 'account'},
+                    1: {'account': u'9999********1111',
+                        'amount': 9613.31,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=0',
+                        'name': u'first visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=0',
+                        'type': 'creditcard'},
+                    2: {'account': u'9999********8888',
+                        'amount': -260.42,
+                        'date': u'26.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=0',
+                        'name': u'MilesnMoreMaster',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=0',
+                        'type': 'creditcard'},
+                    3: {'account': u'9999********2222',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=0&group=1',
+                        'name': u'second visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=1',
+                        'type': 'creditcard'},
+                    4: {'account': u'XY99 1111 1111 2155 2788 99',
+                        'amount': 588.37,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=1',
+                        'name': u'zweitkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=1',
+                        'type': 'account'},
+                    5: {'account': u'9999********3333',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=1',
+                        'name': u'3rd visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=1',
+                        'type': 'creditcard'},
+                    6: {'account': u'XY99 3333 1111 0000 3333 99',
+                        'amount': -334.34,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=3&group=1',
+                        'name': u'3rd acc',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
+                        'type': 'account'}}
+        self.assertEqual(self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+
+    def test_014_parse_overview(self, _unused):
+        """ test DKBRobo.parse_overview() exception detail link"""
+        html = read_file(self.dir_path + '/mocks/finanzstatus-error2.html')
+        e_result = {0: {'account': u'XY99 1111 1111 0000 1111 99',
+                        'amount': 1367.82,
+                        'date': u'27.04.2018',
+                        'name': u'hauptkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=0',
+                        'type': 'account'},
+                    1: {'account': u'9999********1111',
+                        'amount': 9613.31,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=0',
+                        'name': u'first visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=0',
+                        'type': 'creditcard'},
+                    2: {'account': u'9999********8888',
+                        'amount': -260.42,
+                        'date': u'26.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=0',
+                        'name': u'MilesnMoreMaster',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=0',
+                        'type': 'creditcard'},
+                    3: {'account': u'9999********2222',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=0&group=1',
+                        'name': u'second visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=1',
+                        'type': 'creditcard'},
+                    4: {'account': u'XY99 1111 1111 2155 2788 99',
+                        'amount': 588.37,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=1',
+                        'name': u'zweitkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=1',
+                        'type': 'account'},
+                    5: {'account': u'9999********3333',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=1',
+                        'name': u'3rd visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=1',
+                        'type': 'creditcard'},
+                    6: {'account': u'XY99 3333 1111 0000 3333 99',
+                        'amount': -334.34,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=3&group=1',
+                        'name': u'3rd acc',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
+                        'type': 'account'}}
+        self.assertEqual(e_result, self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')))
+
+    def test_015_parse_overview(self, _unused):
+        """ test DKBRobo.parse_overview() exception depot """
+        html = read_file(self.dir_path + '/mocks/finanzstatus-error3.html')
+        e_result = {0: {'account': u'XY99 1111 1111 0000 1111 99',
+                        'amount': 1367.82,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=0&group=0',
+                        'name': u'hauptkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=0',
+                        'type': 'account'},
+                    1: {'account': u'9999********1111',
+                        'amount': 9613.31,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=0',
+                        'name': u'first visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=0',
+                        'type': 'creditcard'},
+                    2: {'account': u'9999********8888',
+                        'amount': -260.42,
+                        'date': u'26.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=0',
+                        'name': u'MilesnMoreMaster',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=0',
+                        'type': 'creditcard'},
+                    3: {'account': u'9999********2222',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=0&group=1',
+                        'name': u'second visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=0&group=1',
+                        'type': 'creditcard'},
+                    4: {'account': u'XY99 1111 1111 2155 2788 99',
+                        'amount': 588.37,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=1&group=1',
+                        'name': u'zweitkonto',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=1&group=1',
+                        'type': 'account'},
+                    5: {'account': u'9999********3333',
+                        'amount': 515.52,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=2&group=1',
+                        'name': u'3rd visa',
+                        'transactions': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=2&group=1',
+                        'type': 'creditcard'},
+                    6: {'account': u'XY99 3333 1111 0000 3333 99',
+                        'amount': -334.34,
+                        'date': u'27.04.2018',
+                        'details': u'https://www.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=3&group=1',
+                        'name': u'3rd acc',
+                        'type': 'depot'}}
+        self.assertEqual(e_result, self.dkb.parse_overview(BeautifulSoup(html, 'html5lib')))
+
     def test_013_parse_overview_mbank(self, _unused):
         """ test DKBRobo.parse_overview() method for accounts from other banks"""
         html = read_file(self.dir_path + '/mocks/finanzstatus-mbank.html')
@@ -417,15 +576,20 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(e_result, self.dkb.get_document_links('http://foo.bar/foo', path='path'))
         self.assertTrue(mock_updow.called)
 
+
     @patch('dkb_robo.DKBRobo.update_downloadstate')
     @patch('dkb_robo.DKBRobo.get_document')
     def test_016_get_document_links(self, mock_doc, mock_updow, mock_browser):
         """ test DKBRobo.get_document_links() method """
-        html = read_file(self.dir_path + '/mocks/doclinks-2.html')
-        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        html1 = read_file(self.dir_path + '/mocks/doclinks-3.html')
+        html2 = read_file(self.dir_path + '/mocks/doclinks-2.html')
+        mock_browser.get_current_page.side_effect = [BeautifulSoup(html1, 'html5lib'), BeautifulSoup(html2, 'html5lib')]
+        mock_browser.open.return_value = True
         mock_doc.return_value=(None, 'fname')
-        e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.dkb.de/doc-2',
-                    u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1'}
+        e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 23456789': 'https://www.dkb.de/doc-1',
+                    u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1',
+                    u'Kontoauszug Nr. 003_2017 zu Konto 87654321': 'https://www.dkb.de/doc-2',                    
+                    u'Kontoauszug Nr. 003_2017 zu Konto 98765432': 'https://www.dkb.de/doc-2'}
         self.assertEqual(e_result, self.dkb.get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
@@ -601,21 +765,21 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo.login')
     def test_030__enter(self, mock_login, mock_browser):
         """ test enter """
-        self.assertTrue(self.dkb.__enter__)
+        self.assertTrue(self.dkb.__enter__())
         self.assertFalse(mock_login.called)
 
-    # @patch('dkb_robo.DKBRobo.login')
-    #def test_031__enter(self, mock_login, _unused):
-    #    """ test enter """
-    #    self.dkb.dkb_br = None
-    #    self.assertTrue(self.dkb.__enter__)
-    #    self.assertTrue(mock_login.called)
+    @patch('dkb_robo.DKBRobo.login')
+    def test_031__enter(self, mock_login, _unused):
+        """ test enter """
+        self.dkb.dkb_br = None
+        self.assertTrue(self.dkb.__enter__())
+        self.assertTrue(mock_login.called)
 
     @patch('dkb_robo.DKBRobo.logout')
     def test_032__exit(self, mock_logout, _ununsed):
         """ test enter """
-        self.assertTrue(self.dkb.__exit__)
-        self.assertFalse(mock_logout.called)
+        self.assertFalse(self.dkb.__exit__())
+        self.assertTrue(mock_logout.called)
 
     @patch('dkb_robo.DKBRobo.parse_account_transactions')
     def test_033_get_account_transactions(self, mock_parse, mock_browser):
