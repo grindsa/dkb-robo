@@ -588,7 +588,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_doc.return_value=(None, 'fname')
         e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 23456789': 'https://www.dkb.de/doc-1',
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1',
-                    u'Kontoauszug Nr. 003_2017 zu Konto 87654321': 'https://www.dkb.de/doc-2',                    
+                    u'Kontoauszug Nr. 003_2017 zu Konto 87654321': 'https://www.dkb.de/doc-2',
                     u'Kontoauszug Nr. 003_2017 zu Konto 98765432': 'https://www.dkb.de/doc-2'}
         self.assertEqual(e_result, self.dkb.get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
@@ -634,6 +634,27 @@ class TestDKBRobo(unittest.TestCase):
                          'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
                    }
         self.assertEqual(self.dkb.scan_postbox(path='path'), e_result)
+
+    @patch('dkb_robo.DKBRobo.get_document_links')
+    def test_017_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo.scan_postbox() method """
+        html = read_file(self.dir_path + '/mocks/postbox-2.html')
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_doclinks.return_value = {}
+        e_result = {u'Kreditkartenabrechnungen':
+                        {'documents': {},
+                         'name': u'Kreditkartenabrechnungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Kreditkartenabrechnungen'},
+                    u'Mitteilungen':
+                        {'documents': {},
+                         'name': u'Mitteilungen',
+                         'details': u'https://www.dkb.de/banking/postfach/Mitteilungen'},
+                    u'Vertragsinformationen':
+                        {'documents': {},
+                         'name': u'Vertragsinformationen',
+                         'details': u'https://www.dkb.de/banking/postfach/Vertragsinformationen'}
+                   }
+        self.assertEqual(self.dkb.scan_postbox(archive=True), e_result)
 
     def test_016_get_tr_invalid(self, _unused):
         """ test DKBRobo.get_transactions() method with an invalid account type"""
