@@ -3,6 +3,23 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.11
+
+**Improvements**:
+
+- removed python2 support
+- improved error handling (raise Exceptions instead of sys.exit)
+- use of `logging` module for debug messages
+- [date_from/date_to validation](https://github.com/grindsa/dkb-robo/issues/22)
+- additional unittests
+- pep8 conformance validation
+- unittest coverage measurement via [codecov.io](codecov.io)
+
+**Bugfixes**:
+
+- ExemptionOrder Link corrected
+
+
 ## Changes in 0.10.7
 
 **Improvements**:
