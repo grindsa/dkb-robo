@@ -13,12 +13,11 @@ This is a high-level summary of the most important changes. For a full list of c
 - [date_from/date_to validation](https://github.com/grindsa/dkb-robo/issues/22)
 - additional unittests
 - pep8 conformance validation
-- unittest coverage measurement via [codecov.io](codecov.io)
+- unittest coverage measurement via [codecov.io](https://app.codecov.io/gh/grindsa/dkb-robo)
 
 **Bugfixes**:
 
 - ExemptionOrder Link corrected
-
 
 ## Changes in 0.10.7
 

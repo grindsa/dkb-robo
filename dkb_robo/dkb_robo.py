@@ -864,7 +864,7 @@ class DKBRobo(object):
         if archive:
             table = soup.find('table', attrs={'id': re.compile('mbo-message-list*')})
         else:
-            table = soup.find('table', attrs={'id':'welcomeMboTable'})
+            table = soup.find('table', attrs={'id': 'welcomeMboTable'})
         tbody = table.find('tbody')
 
         pb_dic = {}
