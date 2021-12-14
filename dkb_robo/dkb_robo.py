@@ -189,7 +189,7 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def get_document_links(self, url, path=None, link_name=None, download_all=False):
+    def get_document_links(self, url, path=None, link_name=None, select_all=False):
         """ create a dictionary of the documents stored in a pbost folder
 
         args:
@@ -205,7 +205,7 @@ class DKBRobo(object):
         document_dic = {}
 
         # set download filter if there is a need to do so
-        if path and not download_all:
+        if path and not select_all:
             class_filter = {'class': 'mbo-messageState-unread'}
         else:
             class_filter = {}
@@ -867,6 +867,11 @@ class DKBRobo(object):
             table = soup.find('table', attrs={'id': 'welcomeMboTable'})
         tbody = table.find('tbody')
 
+        if archive:
+            select_all = True
+        else:
+            select_all = download_all
+
         pb_dic = {}
         for row in tbody.findAll('tr'):
             link = row.find('a')
@@ -875,10 +880,9 @@ class DKBRobo(object):
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
             if path:
-                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path, link_name, download_all)
+                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path, link_name, select_all)
             else:
-                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'])
-
+                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], select_all=select_all)
         return pb_dic
 
     def update_downloadstate(self, link_name, url):
