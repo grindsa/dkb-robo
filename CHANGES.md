@@ -7,8 +7,9 @@ This is a high-level summary of the most important changes. For a full list of c
 
 **Improvements**:
 
+- scan_postbox() is able to scan and download the Archiv-Folder
 - removed python2 support
-- improved error handling (raise Exceptions instead of sys.exit)
+- better error handling (raise Exceptions instead of sys.exit)
 - use of `logging` module for debug messages
 - [date_from/date_to validation](https://github.com/grindsa/dkb-robo/issues/22)
 - additional unittests
