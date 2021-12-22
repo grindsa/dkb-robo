@@ -606,7 +606,7 @@ class DKBRobo(object):
         for poll_id in range(120):
             # poll_id += 1
             # add id to pollurl
-            url = poll_url + '?$event=pollingVerification&_=' + str(poll_id)
+            url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
             if 'guiState' in result:
                 self.logger.debug('poll(id: %s status: %s\n', poll_id, result['guiState'])
