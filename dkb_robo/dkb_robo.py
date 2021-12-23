@@ -336,10 +336,10 @@ class DKBRobo(object):
         """ get finanical statement """
         self.logger.debug('DKBRobo.get_financial_statement()\n')
 
-        if self.tan_insert:
-            statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
-        else:
-            statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
+        # if self.tan_insert:
+        statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        #else:
+        # statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
 
         self.dkb_br.open(statement_url)
         soup = self.dkb_br.get_current_page()
@@ -519,6 +519,7 @@ class DKBRobo(object):
                     else:
                         # app confirmation needed to continue
                         login_confirmed = self.login_confirm()
+                        print(login_confirmed)
                     if login_confirmed:
                         # login got confirmed get overview and parse data
                         soup_new = self.get_financial_statement()
@@ -593,23 +594,30 @@ class DKBRobo(object):
         except BaseException:
             # fallback
             xsrf_token = generate_random_string(25)
-
-        # timestamp in miliseconds for py3 and py2
-        # try:
-        poll_id = int(datetime.utcnow().timestamp() * 1e3)
-        # except BaseException:
-        #    poll_id = int(round(time.time() * 1000))
+            soup_none
 
         # poll url
-        poll_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
+        poll_id = int(datetime.utcnow().timestamp() * 1e3)
+        poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
+
         login_confirmed = False
         for poll_id in range(120):
-            # poll_id += 1
             # add id to pollurl
             url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
-            if 'guiState' in result:
-                self.logger.debug('poll(id: %s status: %s\n', poll_id, result['guiState'])
+
+            if 'state' in result:
+                # new dkb mfa app
+                self.logger.debug( 'mfa poll(id: {0} status: {1}\n'.format(poll_id, result['state']))
+                if result['state'] == 'PROCESSED':
+                    self.logger.debug( 'session got confirmed...\n')
+                    login_confirmed = True
+                    break
+                elif result['state'] == 'EXPIRED':
+                    raise DKBRoboError('Session expired')
+            elif 'guiState' in result:
+                # legacy dkb app
+                self.logger.debug('legacy poll(id: %s status: %s\n', poll_id, result['guiState'])
                 # pylint: disable=R1723
                 if result['guiState'] == 'MAP_TO_EXIT':
                     self.logger.debug('session got confirmed...\n')
