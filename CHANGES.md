@@ -3,6 +3,16 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.12
+
+**Features**:
+
+- support of the new [DKB-app](https://play.google.com/store/apps/details?id=de.dkb.portalapp&hl=de&gl=US)
+
+**Improvements**:
+
+- underscore-prefixed Class-local references
+
 ## Changes in 0.11
 
 **Improvements**:
