@@ -62,7 +62,7 @@ class DKBRoboError(Exception):
 
 class DKBRobo(object):
     """ dkb_robo class """
-
+    # pylint: disable=R0904
     base_url = 'https://www.dkb.de'
     dkb_user = None
     dkb_password = None
@@ -94,6 +94,40 @@ class DKBRobo(object):
         Close the connection at the end of the context
         """
         self.logout()
+
+    def check_confirmation(self, result, poll_id):
+        """ check if login has been confirmed via app
+            args:
+                result - result of polling request
+            returns:
+                login_confirmed - confirmation status True/False
+        """
+        self.logger.debug('DKBRobo.check_confirmation()\n')
+
+        login_confirmed = False
+        if 'state' in result:
+            # new dkb mfa app
+            self.logger.debug('mfa poll(id: %s status: %s)\n', poll_id, result['state'])
+            # pylint: disable=R1723
+            if result['state'] == 'PROCESSED':
+                self.logger.debug('Session got confirmed...\n')
+                login_confirmed = True
+            elif result['state'] == 'EXPIRED':
+                raise DKBRoboError('Session expired')
+        elif 'guiState' in result:
+            # legacy dkb app
+            self.logger.debug('legacy poll(id: %s status: %s)\n', poll_id, result['guiState'])
+            # pylint: disable=R1723
+            if result['guiState'] == 'MAP_TO_EXIT':
+                self.logger.debug('Session got confirmed...\n')
+                login_confirmed = True
+            elif result['guiState'] == 'EXPIRED':
+                raise DKBRoboError('Session expired')
+        else:
+            raise DKBRoboError('Timeout during session confirmation')
+
+        self.logger.debug('DKBRobo.check_confirmation() ended with %s\n', login_confirmed)
+        return login_confirmed
 
     def get_account_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
@@ -141,10 +175,8 @@ class DKBRobo(object):
 
     def get_credit_limits(self):
         """ create a dictionary of credit limits of the different accounts
-
         args:
             self.dkb_br - browser object
-
         returns:
             dictionary of the accounts and limits
         """
@@ -191,12 +223,10 @@ class DKBRobo(object):
 
     def get_document_links(self, url, path=None, link_name=None, select_all=False):
         """ create a dictionary of the documents stored in a pbost folder
-
         args:
             self.dkb_br - browser object
             url - folder url
             path - path for document download
-
         returns:
             dictionary of the documents
         """
@@ -243,7 +273,6 @@ class DKBRobo(object):
 
     def get_document(self, path, url):
         """ get download document from postbox
-
         args:
             self.dkb_br - browser object
             path - path to store the document
@@ -279,11 +308,9 @@ class DKBRobo(object):
 
     def get_exemption_order(self):
         """ returns a dictionary of the stored exemption orders
-
         args:
             self.dkb_br - browser object
             url - folder url
-
         returns:
             dictionary of exemption orders
         """
@@ -336,10 +363,7 @@ class DKBRobo(object):
         """ get finanical statement """
         self.logger.debug('DKBRobo.get_financial_statement()\n')
 
-        # if self.tan_insert:
         statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
-        #else:
-        # statement_url = self.base_url + '/DkbTransactionBanking/content/LoginWithBoundDevice/LoginWithBoundDeviceProcess/confirmLogin.xhtml'
 
         self.dkb_br.open(statement_url)
         soup = self.dkb_br.get_current_page()
@@ -347,10 +371,8 @@ class DKBRobo(object):
 
     def get_points(self):
         """ returns the DKB points
-
         args:
             self.dkb_br - browser object
-
         returns:
             points - dkb points
         """
@@ -390,7 +412,6 @@ class DKBRobo(object):
         """ get standing orders
         args:
             self.dkb_br          - browser object
-
         returns:
             so_dic = standing order dic
         """
@@ -438,7 +459,6 @@ class DKBRobo(object):
             atype           - account type (cash, creditcard, depot)
             date_from       - transactions starting form
             date_to         - end date
-
         returns:
             list of transactions; each transaction gets represented as a dictionary containing the following information
             - date   - booking date
@@ -459,11 +479,9 @@ class DKBRobo(object):
 
     def login(self):
         """ login into DKB banking area
-
         args:
             dkb_user = dkb username
             dkb_password  = dkb_password
-
         returns:
             self.dkb_br - handle to browser object for further processing
             last_login - last login date (German date format)
@@ -519,7 +537,6 @@ class DKBRobo(object):
                     else:
                         # app confirmation needed to continue
                         login_confirmed = self.login_confirm()
-                        print(login_confirmed)
                     if login_confirmed:
                         # login got confirmed get overview and parse data
                         soup_new = self.get_financial_statement()
@@ -580,7 +597,6 @@ class DKBRobo(object):
 
     def login_confirm(self):
         """ confirm login to dkb via app
-
         returns:
             true/false - depending if login has been confirmed
         """
@@ -594,7 +610,7 @@ class DKBRobo(object):
         except BaseException:
             # fallback
             xsrf_token = generate_random_string(25)
-            soup_none
+            soup = None
 
         # poll url
         poll_id = int(datetime.utcnow().timestamp() * 1e3)
@@ -605,28 +621,9 @@ class DKBRobo(object):
             # add id to pollurl
             url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
             result = self.dkb_br.open(url).json()
-
-            if 'state' in result:
-                # new dkb mfa app
-                self.logger.debug( 'mfa poll(id: {0} status: {1}\n'.format(poll_id, result['state']))
-                if result['state'] == 'PROCESSED':
-                    self.logger.debug( 'session got confirmed...\n')
-                    login_confirmed = True
-                    break
-                elif result['state'] == 'EXPIRED':
-                    raise DKBRoboError('Session expired')
-            elif 'guiState' in result:
-                # legacy dkb app
-                self.logger.debug('legacy poll(id: %s status: %s\n', poll_id, result['guiState'])
-                # pylint: disable=R1723
-                if result['guiState'] == 'MAP_TO_EXIT':
-                    self.logger.debug('session got confirmed...\n')
-                    login_confirmed = True
-                    break
-                elif result['guiState'] == 'EXPIRED':
-                    raise DKBRoboError('Session expired')
-            else:
-                raise DKBRoboError('Timeout during session confirmation')
+            login_confirmed = self.check_confirmation(result, poll_id)
+            if login_confirmed:
+                break
             time.sleep(1.5)
         else:
             raise DKBRoboError("No session confirmation after 120 polls")
@@ -638,10 +635,8 @@ class DKBRobo(object):
 
     def logout(self):
         """ logout from DKB banking area
-
         args:
             self.dkb_br = browser object
-
         returns:
             None
         """
@@ -651,10 +646,8 @@ class DKBRobo(object):
 
     def new_instance(self):
         """ creates a new browser instance
-
         args:
            None
-
         returns:
            self.dkb_br - instance
         """
@@ -683,10 +676,8 @@ class DKBRobo(object):
 
     def parse_account_transactions(self, transactions):
         """ parses html code and creates a list of transactions included
-
         args:
             transactions - html page including transactions
-
         returns:
             list of transactions captured. Each transaction gets represented by a hash containing the following values
             - date - booking date
@@ -733,10 +724,8 @@ class DKBRobo(object):
 
     def parse_cc_transactions(self, transactions):
         """ parses html code and creates a list of transactions included
-
         args:
             transactions - html page including transactions
-
         returns:
             list of transactions captured. Each transaction gets represented by a hash containing the following values
             - bdate - booking date
@@ -771,10 +760,8 @@ class DKBRobo(object):
 
     def parse_overview(self, soup):
         """ creates a dictionary including account information
-
         args:
             soup - BautifulSoup object
-
         returns:
             overview_dic - dictionary containing following account information
             - name
@@ -848,12 +835,10 @@ class DKBRobo(object):
     def scan_postbox(self, path=None, download_all=False, archive=False):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
-
         args:
             self.dkb_br = browser object
             path = directory to store the downloaded data
             download_all = download all documents instead just the new ones
-
         returns:
            dictionary in the following format
 
@@ -895,7 +880,6 @@ class DKBRobo(object):
 
     def update_downloadstate(self, link_name, url):
         """ mark document and read
-
             args:
             self.dkb_br - browser object
             link_name - link_name
