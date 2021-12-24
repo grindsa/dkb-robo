@@ -103,7 +103,6 @@ class DKBRobo(object):
                 login_confirmed - confirmation status True/False
         """
         self.logger.debug('DKBRobo.check_confirmation()\n')
-
         login_confirmed = False
         if 'state' in result:
             # new dkb mfa app
@@ -124,7 +123,7 @@ class DKBRobo(object):
             elif result['guiState'] == 'EXPIRED':
                 raise DKBRoboError('Session expired')
         else:
-            raise DKBRoboError('Timeout during session confirmation')
+            raise DKBRoboError('Error during session confirmation')
 
         self.logger.debug('DKBRobo.check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
@@ -612,24 +611,27 @@ class DKBRobo(object):
             xsrf_token = generate_random_string(25)
             soup = None
 
-        # poll url
-        poll_id = int(datetime.utcnow().timestamp() * 1e3)
-        poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
+        if soup:
+            # poll url
+            poll_id = int(datetime.utcnow().timestamp() * 1e3)
+            poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
 
-        login_confirmed = False
-        for poll_id in range(120):
-            # add id to pollurl
-            url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
-            result = self.dkb_br.open(url).json()
-            login_confirmed = self.check_confirmation(result, poll_id)
-            if login_confirmed:
-                break
-            time.sleep(1.5)
+            login_confirmed = False
+            for poll_id in range(120):
+                # add id to pollurl
+                url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
+                result = self.dkb_br.open(url).json()
+                login_confirmed = self.check_confirmation(result, poll_id)
+                if login_confirmed:
+                    break
+                time.sleep(1.5)
+            else:
+                raise DKBRoboError("No session confirmation after 120 polls")
+
+            post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
+            self.dkb_br.post(url=poll_url, data=post_data)
         else:
-            raise DKBRoboError("No session confirmation after 120 polls")
-
-        post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
-        self.dkb_br.post(url=poll_url, data=post_data)
+            raise DKBRoboError("Error while getting the confirmation page")
 
         return login_confirmed
 
