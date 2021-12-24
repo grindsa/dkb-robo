@@ -86,23 +86,23 @@ class DKBRobo(object):
             print (dkb.lastlogin)
         """
         if not self.dkb_br:
-            self.login()
+            self._login()
         return self
 
     def __exit__(self, *args):
         """
         Close the connection at the end of the context
         """
-        self.logout()
+        self._logout()
 
-    def check_confirmation(self, result, poll_id):
+    def _check_confirmation(self, result, poll_id):
         """ check if login has been confirmed via app
             args:
                 result - result of polling request
             returns:
                 login_confirmed - confirmation status True/False
         """
-        self.logger.debug('DKBRobo.check_confirmation()\n')
+        self.logger.debug('DKBRobo._check_confirmation()\n')
         login_confirmed = False
         if 'state' in result:
             # new dkb mfa app
@@ -125,8 +125,482 @@ class DKBRobo(object):
         else:
             raise DKBRoboError('Error during session confirmation')
 
-        self.logger.debug('DKBRobo.check_confirmation() ended with %s\n', login_confirmed)
+        self.logger.debug('DKBRobo._check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
+
+    def _ctan_check(self, _soup):
+        """ input of chiptan during login """
+        self.logger.debug('DKBRobo._ctan_check()\n')
+
+        try:
+            self.dkb_br.select_form('form[name="confirmForm"]')
+            self.dkb_br["$event"] = 'tanVerification'
+        except BaseException as _err:
+            self.logger.debug('confirmForm not found\n')
+
+        try:
+            self.dkb_br.select_form('form[name="next"]')
+            self.dkb_br["$event"] = 'next'
+        except BaseException:
+            self.logger.debug('nextForm not found\n')
+
+        # open page to insert tan
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
+
+        login_confirm = False
+
+        # select tan form
+        self.dkb_br.select_form('#next')
+        # print steps to be done
+        olist = soup.find("ol")
+        if olist:
+            for li_ in olist.findAll('li'):
+                print(li_.text.strip())
+        else:
+            print('Please open the TAN2GO app to get a TAN to be inserted below.')
+
+        # ask for TAN
+        self.dkb_br["tan"] = input("TAN: ")
+        self.dkb_br["$event"] = 'next'
+
+        # submit form and check response
+        self.dkb_br.submit_selected()
+        soup = self.dkb_br.get_current_page()
+
+        # catch tan error
+        # pylint: disable=R1720
+        if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
+            raise DKBRoboError('Login failed due to wrong TAN')
+        else:
+            self.logger.debug('TAN is correct...\n')
+            login_confirm = True
+
+        self.logger.debug('DKBRobo._ctan_check() ended with :%s\n', login_confirm)
+        return login_confirm
+
+    def _get_document_links(self, url, path=None, link_name=None, select_all=False):
+        """ create a dictionary of the documents stored in a pbost folder
+        args:
+            self.dkb_br - browser object
+            url - folder url
+            path - path for document download
+        returns:
+            dictionary of the documents
+        """
+        # pylint: disable=R0914
+        self.logger.debug('DKBRobo._get_document_links(%s)\n', url)
+        document_dic = {}
+
+        # set download filter if there is a need to do so
+        if path and not select_all:
+            class_filter = {'class': 'mbo-messageState-unread'}
+        else:
+            class_filter = {}
+
+        self.dkb_br.open(url)
+        while True:
+            soup = self.dkb_br.get_current_page()
+            table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
+            if table:
+                tbody = table.find('tbody')
+                for row in tbody.findAll('tr', class_filter):
+                    link = row.find('a')
+                    # download file
+                    if path:
+                        fname = '{0}/{1}'.format(path, link_name)
+                        rcode, fname = self._get_document(fname, self.base_url + link['href'])
+                        if rcode == 200:
+                            # mark url as read
+                            self._update_downloadstate(link_name, self.base_url + link['href'])
+                        if rcode:
+                            document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
+                        else:
+                            document_dic[link.contents[0]] = self.base_url + link['href']
+                    else:
+                        document_dic[link.contents[0]] = self.base_url + link['href']
+
+            next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
+            if next_site:
+                next_url = self.base_url + next_site.find('a')['href']
+                self.dkb_br.open(next_url)
+            else:
+                break
+
+        return document_dic
+
+    def _get_document(self, path, url):
+        """ get download document from postbox
+        args:
+            self.dkb_br - browser object
+            path - path to store the document
+            url - download url
+        returns:
+            http response code
+        """
+        self.logger.debug('DKBRobo._get_document(%s)\n', url)
+
+        # create directory if not existing
+        if not os.path.exists(path):
+            self.logger.debug('create directory %s\n', path)
+            os.makedirs(path)
+
+        # fetch file
+        response = self.dkb_br.open(url)
+
+        # gt filename from response header
+        fname = ''
+        if "Content-Disposition" in response.headers.keys():
+            fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+            # dump content to file
+            self.logger.debug('writing to %s/%s\n', path, fname)
+            pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
+            pdf_file.write(response.content)
+            pdf_file.close()
+            result = response.status_code
+        else:
+            fname = '{0}.pdf'.format(generate_random_string(20))
+            result = None
+
+        return result, '{0}/{1}'.format(path, fname)
+
+    def _get_financial_statement(self):
+        """ get finanical statement """
+        self.logger.debug('DKBRobo._get_financial_statement()\n')
+
+        statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+
+        self.dkb_br.open(statement_url)
+        soup = self.dkb_br.get_current_page()
+        return soup
+
+    def _login(self):
+        """ login into DKB banking area
+        args:
+            dkb_user = dkb username
+            dkb_password  = dkb_password
+        returns:
+            self.dkb_br - handle to browser object for further processing
+            last_login - last login date (German date format)
+            account_dic - dictionary containing account information
+            - name
+            - account number
+            - type (account, creditcard, depot)
+            - account balance
+            - date of balance
+            - link to details
+            - link to transactions
+        """
+        self.logger.debug('DKBRobo._login()\n')
+
+        # login url
+        login_url = self.base_url + '/' + 'banking'
+
+        # create browser and login
+        self.dkb_br = self._new_instance()
+
+        self.dkb_br.open(login_url)
+        try:
+            self.dkb_br.select_form('#login')
+            self.dkb_br["j_username"] = str(self.dkb_user)
+            self.dkb_br["j_password"] = str(self.dkb_password)
+
+            # submit form and check response
+            self.dkb_br.submit_selected()
+            soup = self.dkb_br.get_current_page()
+
+            # catch login error
+            if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
+                raise DKBRoboError('Login failed')
+
+            # catch generic notices
+            if soup.find("form", attrs={'id': 'genericNoticeForm'}):
+                self.dkb_br.open(login_url)
+                soup = self.dkb_br.get_current_page()
+
+            # filter last login date
+            if soup.find("div", attrs={'id': 'lastLoginContainer'}):
+                last_login = soup.find("div", attrs={'id': 'lastLoginContainer'}).text.strip()
+                # remove crlf
+                last_login = last_login.replace('\n', '')
+                # format string in a way we need it
+                last_login = last_login.replace('  ', '')
+                last_login = last_login.replace('Letzte Anmeldung:', '')
+                self.last_login = last_login
+                if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
+                    if self.tan_insert:
+                        # chiptan input
+                        login_confirmed = self._ctan_check(soup)
+                    else:
+                        # app confirmation needed to continue
+                        login_confirmed = self._login_confirm()
+                    if login_confirmed:
+                        # login got confirmed get overview and parse data
+                        soup_new = self._get_financial_statement()
+                        self.account_dic = self._parse_overview(soup_new)
+        except mechanicalsoup.utils.LinkNotFoundError as err:
+            raise DKBRoboError('Login failed: LinkNotFoundError') from err
+
+    def _login_confirm(self):
+        """ confirm login to dkb via app
+        returns:
+            true/false - depending if login has been confirmed
+        """
+        self.logger.debug('DKBRobo._login_confirm()\n')
+        print('check your banking app and confirm login...')
+
+        try:
+            # get xsrf token
+            soup = self.dkb_br.get_current_page()
+            xsrf_token = soup.find('input', attrs={'name': 'XSRFPreventionToken'}).get('value')
+        except BaseException:
+            # fallback
+            xsrf_token = generate_random_string(25)
+            soup = None
+
+        if soup:
+            # poll url
+            poll_id = int(datetime.utcnow().timestamp() * 1e3)
+            poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
+
+            login_confirmed = False
+            for poll_id in range(120):
+                # add id to pollurl
+                url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
+                result = self.dkb_br.open(url).json()
+                login_confirmed = self._check_confirmation(result, poll_id)
+                if login_confirmed:
+                    break
+                time.sleep(1.5)
+            else:
+                raise DKBRoboError("No session confirmation after 120 polls")
+
+            post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
+            self.dkb_br.post(url=poll_url, data=post_data)
+        else:
+            raise DKBRoboError("Error while getting the confirmation page")
+
+        return login_confirmed
+
+    def _logout(self):
+        """ logout from DKB banking area
+        args:
+            self.dkb_br = browser object
+        returns:
+            None
+        """
+        self.logger.debug('DKBRobo._logout()\n')
+        logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
+        self.dkb_br.open(logout_url)
+
+    def _new_instance(self):
+        """ creates a new browser instance
+        args:
+           None
+        returns:
+           self.dkb_br - instance
+        """
+        self.logger.debug('DKBRobo._new_instance()\n')
+        # create browser and cookiestore objects
+        self.dkb_br = mechanicalsoup.StatefulBrowser()
+        dkb_cj = cookiejar.LWPCookieJar()
+        self.dkb_br.set_cookiejar = dkb_cj
+
+        # configure browser
+        self.dkb_br.set_handle_equiv = True
+        self.dkb_br.set_handle_redirect = True
+        self.dkb_br.set_handle_referer = True
+        self.dkb_br.set_handle_robots = False
+        self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
+
+        # initialize some cookies to fool dkb
+        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+
+        return self.dkb_br
+
+    def _parse_account_transactions(self, transactions):
+        """ parses html code and creates a list of transactions included
+        args:
+            transactions - html page including transactions
+        returns:
+            list of transactions captured. Each transaction gets represented by a hash containing the following values
+            - date - booking date
+            - amount - amount
+            - text - text
+        """
+        self.logger.debug('DKBRobo._parse_account_transactions()\n')
+        # create empty list
+        transaction_list = []
+
+        # parse CSV
+        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
+            if len(row) == 12:
+                # skip first line
+                if row[0] != 'Buchungstag':
+                    tmp_dic = {}
+
+                    # data from CSV
+                    tmp_dic['bdate'] = row[0]
+                    tmp_dic['vdate'] = row[1]
+                    # remove double spaces
+                    tmp_dic['postingtext'] = ' '.join(row[2].split())
+                    tmp_dic['peer'] = ' '.join(row[3].split())
+                    tmp_dic['reasonforpayment'] = ' '.join(row[4].split())
+                    tmp_dic['mandatereference'] = ' '.join(row[9].split())
+                    tmp_dic['customerreferenz'] = ' '.join(row[10].split())
+
+                    tmp_dic['peeraccount'] = row[5]
+                    tmp_dic['peerbic'] = row[6]
+                    tmp_dic['peerid'] = row[8]
+
+                    # reformat amount
+                    amount = row[7]
+                    amount = amount.replace('.', '')
+                    tmp_dic['amount'] = amount.replace(',', '.')
+
+                    #  date is only for backwards compatibility
+                    tmp_dic['date'] = row[0]
+                    tmp_dic['text'] = '{0} {1} {2}'.format(tmp_dic['postingtext'], tmp_dic['peer'], tmp_dic['reasonforpayment'])
+
+                    # append dic to list
+                    transaction_list.append(tmp_dic)
+        return transaction_list
+
+    def _parse_cc_transactions(self, transactions):
+        """ parses html code and creates a list of transactions included
+        args:
+            transactions - html page including transactions
+        returns:
+            list of transactions captured. Each transaction gets represented by a hash containing the following values
+            - bdate - booking date
+            - vdate - valuta date
+            - amount - amount
+            - text - text
+        """
+        self.logger.debug('DKBRobo._parse_cc_transactions()\n')
+        # parse the lines to get all account infos
+        # soup = BeautifulSoup(transactions, "html5lib")
+
+        # create empty list
+        transaction_list = []
+
+        # parse CSV
+        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
+            if len(row) == 7:
+                # skip first line
+                if row[1] != 'Wertstellung':
+                    tmp_dic = {}
+                    tmp_dic['vdate'] = row[1]
+                    tmp_dic['show_date'] = row[1]
+                    tmp_dic['bdate'] = row[2]
+                    tmp_dic['store_date'] = row[2]
+                    tmp_dic['text'] = row[3]
+                    amount = row[4].replace('.', '')
+                    tmp_dic['amount'] = amount.replace(',', '.')
+
+                    # append dic to list
+                    transaction_list.append(tmp_dic)
+        return transaction_list
+
+    def _parse_overview(self, soup):
+        """ creates a dictionary including account information
+        args:
+            soup - BautifulSoup object
+        returns:
+            overview_dic - dictionary containing following account information
+            - name
+            - account number
+            - type (account, credit-card, depot)
+            - account balance
+            - date of balance
+            - link to details
+            - link to transactions
+        """
+        self.logger.debug('DKBRobo._parse_overview()\n')
+        # get account information
+        overview_dic = {}
+        # to_remove = 0
+        counter = 0
+        ontop = 0
+        for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
+            overview_dic[counter] = {}
+            cols = row.findAll("td")
+
+            # check if we have accounts from other banks in overview
+            # in this case we need to shift columns by one
+            if cols[0].find("img"):
+                ontop = 1
+
+            # account name
+            overview_dic[counter]['name'] = cols[0 + ontop].find('div').text.strip()
+
+            # account number
+            overview_dic[counter]['account'] = cols[1 + ontop].text.strip()
+            # date
+            overview_dic[counter]['date'] = cols[2 + ontop].text.strip()
+            # amount (to be reformated)
+            amount = cols[3 + ontop].text.strip().replace('.', '')
+            try:
+                overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
+            except BaseException:
+                pass
+
+            # get link for transactions
+            link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
+            if link:
+                # thats a cash account or a credit card
+                if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
+                    # this is a cash account
+                    overview_dic[counter]['type'] = 'account'
+                else:
+                    # this is a credit card
+                    overview_dic[counter]['type'] = 'creditcard'
+                overview_dic[counter]['transactions'] = self.base_url + link['href']
+            else:
+                try:
+                    # thats a depot
+                    overview_dic[counter]['type'] = 'depot'
+                    link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
+                    overview_dic[counter]['transactions'] = self.base_url + link['href']
+                except BaseException:
+                    pass
+
+            # get link for details
+            try:
+                link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
+                overview_dic[counter]['details'] = self.base_url + link['href']
+            except BaseException:
+                pass
+
+            # increase counter
+            counter += 1
+        return overview_dic
+
+    def _update_downloadstate(self, link_name, url):
+        """ mark document and read
+            args:
+            self.dkb_br - browser object
+            link_name - link_name
+            url - download url
+        """
+        self.logger.debug('DKBRobo._update_downloadstate(%s, %s)\n', link_name, url)
+
+        # get row number to be marked as read
+        row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]
+        # construct url
+        if link_name == 'Kontoauszüge':
+            mark_link = 'kontoauszuege'
+        else:
+            mark_link = link_name.lower()
+        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
+        # fetch file
+        _response = self.dkb_br.open(mark_url)
+        # return response.status_code
 
     def get_account_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
@@ -148,7 +622,7 @@ class DKBRobo(object):
         self.dkb_br.submit_selected()
         self.dkb_br.get_current_page()
         response = self.dkb_br.follow_link('csvExport')
-        return self.parse_account_transactions(response.content)
+        return self._parse_account_transactions(response.content)
 
     def get_creditcard_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
@@ -170,7 +644,7 @@ class DKBRobo(object):
         self.dkb_br.submit_selected()
 
         response = self.dkb_br.follow_link('csvExport')
-        return self.parse_cc_transactions(response.content)
+        return self._parse_cc_transactions(response.content)
 
     def get_credit_limits(self):
         """ create a dictionary of credit limits of the different accounts
@@ -219,91 +693,6 @@ class DKBRobo(object):
                             pass
 
         return limit_dic
-
-    def get_document_links(self, url, path=None, link_name=None, select_all=False):
-        """ create a dictionary of the documents stored in a pbost folder
-        args:
-            self.dkb_br - browser object
-            url - folder url
-            path - path for document download
-        returns:
-            dictionary of the documents
-        """
-        # pylint: disable=R0914
-        self.logger.debug('DKBRobo.get_document_links(%s)\n', url)
-        document_dic = {}
-
-        # set download filter if there is a need to do so
-        if path and not select_all:
-            class_filter = {'class': 'mbo-messageState-unread'}
-        else:
-            class_filter = {}
-
-        self.dkb_br.open(url)
-        while True:
-            soup = self.dkb_br.get_current_page()
-            table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
-            if table:
-                tbody = table.find('tbody')
-                for row in tbody.findAll('tr', class_filter):
-                    link = row.find('a')
-                    # download file
-                    if path:
-                        fname = '{0}/{1}'.format(path, link_name)
-                        rcode, fname = self.get_document(fname, self.base_url + link['href'])
-                        if rcode == 200:
-                            # mark url as read
-                            self.update_downloadstate(link_name, self.base_url + link['href'])
-                        if rcode:
-                            document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
-                        else:
-                            document_dic[link.contents[0]] = self.base_url + link['href']
-                    else:
-                        document_dic[link.contents[0]] = self.base_url + link['href']
-
-            next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
-            if next_site:
-                next_url = self.base_url + next_site.find('a')['href']
-                self.dkb_br.open(next_url)
-            else:
-                break
-
-        return document_dic
-
-    def get_document(self, path, url):
-        """ get download document from postbox
-        args:
-            self.dkb_br - browser object
-            path - path to store the document
-            url - download url
-        returns:
-            http response code
-        """
-        self.logger.debug('DKBRobo.get_document(%s)\n', url)
-
-        # create directory if not existing
-        if not os.path.exists(path):
-            self.logger.debug('create directory %s\n', path)
-            os.makedirs(path)
-
-        # fetch file
-        response = self.dkb_br.open(url)
-
-        # gt filename from response header
-        fname = ''
-        if "Content-Disposition" in response.headers.keys():
-            fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
-            # dump content to file
-            self.logger.debug('writing to %s/%s\n', path, fname)
-            pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
-            pdf_file.write(response.content)
-            pdf_file.close()
-            result = response.status_code
-        else:
-            fname = '{0}.pdf'.format(generate_random_string(20))
-            result = None
-
-        return result, '{0}/{1}'.format(path, fname)
 
     def get_exemption_order(self):
         """ returns a dictionary of the stored exemption orders
@@ -357,16 +746,6 @@ class DKBRobo(object):
                         pass
 
         return exo_dic
-
-    def get_financial_statement(self):
-        """ get finanical statement """
-        self.logger.debug('DKBRobo.get_financial_statement()\n')
-
-        statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
-
-        self.dkb_br.open(statement_url)
-        soup = self.dkb_br.get_current_page()
-        return soup
 
     def get_points(self):
         """ returns the DKB points
@@ -476,364 +855,6 @@ class DKBRobo(object):
 
         return transaction_list
 
-    def login(self):
-        """ login into DKB banking area
-        args:
-            dkb_user = dkb username
-            dkb_password  = dkb_password
-        returns:
-            self.dkb_br - handle to browser object for further processing
-            last_login - last login date (German date format)
-            account_dic - dictionary containing account information
-            - name
-            - account number
-            - type (account, creditcard, depot)
-            - account balance
-            - date of balance
-            - link to details
-            - link to transactions
-        """
-        self.logger.debug('DKBRobo.login()\n')
-
-        # login url
-        login_url = self.base_url + '/' + 'banking'
-
-        # create browser and login
-        self.dkb_br = self.new_instance()
-
-        self.dkb_br.open(login_url)
-        try:
-            self.dkb_br.select_form('#login')
-            self.dkb_br["j_username"] = str(self.dkb_user)
-            self.dkb_br["j_password"] = str(self.dkb_password)
-
-            # submit form and check response
-            self.dkb_br.submit_selected()
-            soup = self.dkb_br.get_current_page()
-
-            # catch login error
-            if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
-                raise DKBRoboError('Login failed')
-
-            # catch generic notices
-            if soup.find("form", attrs={'id': 'genericNoticeForm'}):
-                self.dkb_br.open(login_url)
-                soup = self.dkb_br.get_current_page()
-
-            # filter last login date
-            if soup.find("div", attrs={'id': 'lastLoginContainer'}):
-                last_login = soup.find("div", attrs={'id': 'lastLoginContainer'}).text.strip()
-                # remove crlf
-                last_login = last_login.replace('\n', '')
-                # format string in a way we need it
-                last_login = last_login.replace('  ', '')
-                last_login = last_login.replace('Letzte Anmeldung:', '')
-                self.last_login = last_login
-                if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
-                    if self.tan_insert:
-                        # chiptan input
-                        login_confirmed = self.ctan_check(soup)
-                    else:
-                        # app confirmation needed to continue
-                        login_confirmed = self.login_confirm()
-                    if login_confirmed:
-                        # login got confirmed get overview and parse data
-                        soup_new = self.get_financial_statement()
-                        self.account_dic = self.parse_overview(soup_new)
-        except mechanicalsoup.utils.LinkNotFoundError as err:
-            raise DKBRoboError('Login failed: LinkNotFoundError') from err
-
-    def ctan_check(self, _soup):
-        """ input of chiptan during login """
-        self.logger.debug('DKBRobo.ctan_check()\n')
-
-        try:
-            self.dkb_br.select_form('form[name="confirmForm"]')
-            self.dkb_br["$event"] = 'tanVerification'
-        except BaseException as _err:
-            self.logger.debug('confirmForm not found\n')
-
-        try:
-            self.dkb_br.select_form('form[name="next"]')
-            self.dkb_br["$event"] = 'next'
-        except BaseException:
-            self.logger.debug('nextForm not found\n')
-
-        # open page to insert tan
-        self.dkb_br.submit_selected()
-        soup = self.dkb_br.get_current_page()
-
-        login_confirm = False
-
-        # select tan form
-        self.dkb_br.select_form('#next')
-        # print steps to be done
-        olist = soup.find("ol")
-        if olist:
-            for li_ in olist.findAll('li'):
-                print(li_.text.strip())
-        else:
-            print('Please open the TAN2GO app to get a TAN to be inserted below.')
-
-        # ask for TAN
-        self.dkb_br["tan"] = input("TAN: ")
-        self.dkb_br["$event"] = 'next'
-
-        # submit form and check response
-        self.dkb_br.submit_selected()
-        soup = self.dkb_br.get_current_page()
-
-        # catch tan error
-        # pylint: disable=R1720
-        if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
-            raise DKBRoboError('Login failed due to wrong TAN')
-        else:
-            self.logger.debug('TAN is correct...\n')
-            login_confirm = True
-
-        self.logger.debug('DKBRobo.ctan_check() ended with :%s\n', login_confirm)
-        return login_confirm
-
-    def login_confirm(self):
-        """ confirm login to dkb via app
-        returns:
-            true/false - depending if login has been confirmed
-        """
-        self.logger.debug('DKBRobo.login_confirm()\n')
-        print('check your banking app and confirm login...')
-
-        try:
-            # get xsrf token
-            soup = self.dkb_br.get_current_page()
-            xsrf_token = soup.find('input', attrs={'name': 'XSRFPreventionToken'}).get('value')
-        except BaseException:
-            # fallback
-            xsrf_token = generate_random_string(25)
-            soup = None
-
-        if soup:
-            # poll url
-            poll_id = int(datetime.utcnow().timestamp() * 1e3)
-            poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
-
-            login_confirmed = False
-            for poll_id in range(120):
-                # add id to pollurl
-                url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
-                result = self.dkb_br.open(url).json()
-                login_confirmed = self.check_confirmation(result, poll_id)
-                if login_confirmed:
-                    break
-                time.sleep(1.5)
-            else:
-                raise DKBRoboError("No session confirmation after 120 polls")
-
-            post_data = {'$event': 'next', 'XSRFPreventionToken': xsrf_token}
-            self.dkb_br.post(url=poll_url, data=post_data)
-        else:
-            raise DKBRoboError("Error while getting the confirmation page")
-
-        return login_confirmed
-
-    def logout(self):
-        """ logout from DKB banking area
-        args:
-            self.dkb_br = browser object
-        returns:
-            None
-        """
-        self.logger.debug('DKBRobo.logout()\n')
-        logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
-        self.dkb_br.open(logout_url)
-
-    def new_instance(self):
-        """ creates a new browser instance
-        args:
-           None
-        returns:
-           self.dkb_br - instance
-        """
-        self.logger.debug('DKBRobo.new_instance()\n')
-        # create browser and cookiestore objects
-        self.dkb_br = mechanicalsoup.StatefulBrowser()
-        dkb_cj = cookiejar.LWPCookieJar()
-        self.dkb_br.set_cookiejar = dkb_cj
-
-        # configure browser
-        self.dkb_br.set_handle_equiv = True
-        self.dkb_br.set_handle_redirect = True
-        self.dkb_br.set_handle_referer = True
-        self.dkb_br.set_handle_robots = False
-        self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
-
-        # initialize some cookies to fool dkb
-        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-        dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-        dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-        dkb_cj.set_cookie(dkb_ck)
-
-        return self.dkb_br
-
-    def parse_account_transactions(self, transactions):
-        """ parses html code and creates a list of transactions included
-        args:
-            transactions - html page including transactions
-        returns:
-            list of transactions captured. Each transaction gets represented by a hash containing the following values
-            - date - booking date
-            - amount - amount
-            - text - text
-        """
-        self.logger.debug('DKBRobo.parse_account_transactions()\n')
-        # create empty list
-        transaction_list = []
-
-        # parse CSV
-        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
-            if len(row) == 12:
-                # skip first line
-                if row[0] != 'Buchungstag':
-                    tmp_dic = {}
-
-                    # data from CSV
-                    tmp_dic['bdate'] = row[0]
-                    tmp_dic['vdate'] = row[1]
-                    # remove double spaces
-                    tmp_dic['postingtext'] = ' '.join(row[2].split())
-                    tmp_dic['peer'] = ' '.join(row[3].split())
-                    tmp_dic['reasonforpayment'] = ' '.join(row[4].split())
-                    tmp_dic['mandatereference'] = ' '.join(row[9].split())
-                    tmp_dic['customerreferenz'] = ' '.join(row[10].split())
-
-                    tmp_dic['peeraccount'] = row[5]
-                    tmp_dic['peerbic'] = row[6]
-                    tmp_dic['peerid'] = row[8]
-
-                    # reformat amount
-                    amount = row[7]
-                    amount = amount.replace('.', '')
-                    tmp_dic['amount'] = amount.replace(',', '.')
-
-                    #  date is only for backwards compatibility
-                    tmp_dic['date'] = row[0]
-                    tmp_dic['text'] = '{0} {1} {2}'.format(tmp_dic['postingtext'], tmp_dic['peer'], tmp_dic['reasonforpayment'])
-
-                    # append dic to list
-                    transaction_list.append(tmp_dic)
-        return transaction_list
-
-    def parse_cc_transactions(self, transactions):
-        """ parses html code and creates a list of transactions included
-        args:
-            transactions - html page including transactions
-        returns:
-            list of transactions captured. Each transaction gets represented by a hash containing the following values
-            - bdate - booking date
-            - vdate - valuta date
-            - amount - amount
-            - text - text
-        """
-        self.logger.debug('DKBRobo.parse_cc_transactions()\n')
-        # parse the lines to get all account infos
-        # soup = BeautifulSoup(transactions, "html5lib")
-
-        # create empty list
-        transaction_list = []
-
-        # parse CSV
-        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
-            if len(row) == 7:
-                # skip first line
-                if row[1] != 'Wertstellung':
-                    tmp_dic = {}
-                    tmp_dic['vdate'] = row[1]
-                    tmp_dic['show_date'] = row[1]
-                    tmp_dic['bdate'] = row[2]
-                    tmp_dic['store_date'] = row[2]
-                    tmp_dic['text'] = row[3]
-                    amount = row[4].replace('.', '')
-                    tmp_dic['amount'] = amount.replace(',', '.')
-
-                    # append dic to list
-                    transaction_list.append(tmp_dic)
-        return transaction_list
-
-    def parse_overview(self, soup):
-        """ creates a dictionary including account information
-        args:
-            soup - BautifulSoup object
-        returns:
-            overview_dic - dictionary containing following account information
-            - name
-            - account number
-            - type (account, credit-card, depot)
-            - account balance
-            - date of balance
-            - link to details
-            - link to transactions
-        """
-        self.logger.debug('DKBRobo.parse_overview()\n')
-        # get account information
-        overview_dic = {}
-        # to_remove = 0
-        counter = 0
-        ontop = 0
-        for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
-            overview_dic[counter] = {}
-            cols = row.findAll("td")
-
-            # check if we have accounts from other banks in overview
-            # in this case we need to shift columns by one
-            if cols[0].find("img"):
-                ontop = 1
-
-            # account name
-            overview_dic[counter]['name'] = cols[0 + ontop].find('div').text.strip()
-
-            # account number
-            overview_dic[counter]['account'] = cols[1 + ontop].text.strip()
-            # date
-            overview_dic[counter]['date'] = cols[2 + ontop].text.strip()
-            # amount (to be reformated)
-            amount = cols[3 + ontop].text.strip().replace('.', '')
-            try:
-                overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except BaseException:
-                pass
-
-            # get link for transactions
-            link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
-            if link:
-                # thats a cash account or a credit card
-                if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
-                    # this is a cash account
-                    overview_dic[counter]['type'] = 'account'
-                else:
-                    # this is a credit card
-                    overview_dic[counter]['type'] = 'creditcard'
-                overview_dic[counter]['transactions'] = self.base_url + link['href']
-            else:
-                try:
-                    # thats a depot
-                    overview_dic[counter]['type'] = 'depot'
-                    link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
-                    overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except BaseException:
-                    pass
-
-            # get link for details
-            try:
-                link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
-                overview_dic[counter]['details'] = self.base_url + link['href']
-            except BaseException:
-                pass
-
-            # increase counter
-            counter += 1
-        return overview_dic
-
     def scan_postbox(self, path=None, download_all=False, archive=False):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
@@ -875,28 +896,7 @@ class DKBRobo(object):
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
             if path:
-                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], path, link_name, select_all)
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all)
             else:
-                pb_dic[link_name]['documents'] = self.get_document_links(pb_dic[link_name]['details'], select_all=select_all)
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all)
         return pb_dic
-
-    def update_downloadstate(self, link_name, url):
-        """ mark document and read
-            args:
-            self.dkb_br - browser object
-            link_name - link_name
-            url - download url
-        """
-        self.logger.debug('DKBRobo.update_downloadstate(%s, %s)\n', link_name, url)
-
-        # get row number to be marked as read
-        row_num = parse.parse_qs(parse.urlparse(url).query)['row'][0]
-        # construct url
-        if link_name == 'Kontoauszüge':
-            mark_link = 'kontoauszuege'
-        else:
-            mark_link = link_name.lower()
-        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
-        # fetch file
-        _response = self.dkb_br.open(mark_url)
-        # return response.status_code
