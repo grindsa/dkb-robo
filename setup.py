@@ -1,5 +1,4 @@
 from setuptools import setup
-from glob import glob
 from dkb_robo.version import __version__
 setup(name='dkb_robo',
     version=__version__,

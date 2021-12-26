@@ -355,17 +355,18 @@ class DKBRobo(object):
             xsrf_token = soup.find('input', attrs={'name': 'XSRFPreventionToken'}).get('value')
         except BaseException:
             # fallback
-            xsrf_token = generate_random_string(25)
             soup = None
+
+        # not confirmed by default
+        login_confirmed = False
 
         if soup:
             # poll url
             poll_id = int(datetime.utcnow().timestamp() * 1e3)
             poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
-
-            login_confirmed = False
-            for poll_id in range(120):
+            for _cnt in range(120):
                 # add id to pollurl
+                poll_id += 1
                 url = poll_url + '?$event=pollingVerification&$ignore.request=true&_=' + str(poll_id)
                 result = self.dkb_br.open(url).json()
                 login_confirmed = self._check_confirmation(result, poll_id)
@@ -598,9 +599,8 @@ class DKBRobo(object):
         else:
             mark_link = link_name.lower()
         mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
-        # fetch file
-        _response = self.dkb_br.open(mark_url)
-        # return response.status_code
+        # mark document by fetch url
+        _response = self.dkb_br.open(mark_url)  # lgtm [py/unused-local-variable]
 
     def get_account_transactions(self, transaction_url, date_from, date_to):
         """ get transactions from an regular account for a certain amount of time
@@ -689,7 +689,7 @@ class DKBRobo(object):
                             limit = limit.replace(',', '.')
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = limit
-                        except BaseException:
+                        except BaseException:  # lgtm [py/catch-base-exception]
                             pass
 
         return limit_dic
@@ -742,7 +742,7 @@ class DKBRobo(object):
                         exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
                         exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
-                    except BaseException:
+                    except BaseException:  # lgtm [py/catch-base-exception]
                         pass
 
         return exo_dic

@@ -947,7 +947,6 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.get_current_page.side_effect =  Exception('exc')
         with self.assertRaises(Exception) as err:
             self.assertTrue(self.dkb._login_confirm())
-        self.assertTrue(mock_rand.called)
         self.assertEqual('Error while getting the confirmation page', str(err.exception))
 
     def test_063_check_confirmation(self, _unused):
