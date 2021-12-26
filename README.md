@@ -140,14 +140,17 @@ this method returns a list of transactions in the below format
 > from pprint import pprint
 > pprint(tlist)
 [{'amount': u'0.16',
+  'amount_original': u'',
   'date': u'13.03.2017',
   'text': u'Umbuchung DEUTSCHE KREDITBANK AGERSTATTUNG AUSLANDSEINSATZENTGELT'},
  {'amount': u'-12.50',
-  'date': u'12.03.2017',
+  'amount_original': u'',
+  'date': u'12.03.2017',  
   'text': u'Lastschrift PREBIFIX GmbH K111631 Anz 10'},
- {'amount': u'-7.97',
-  'date': u'11.03.2017',
-  'text': u'some text'}]
+ {'amount': u'-18,82',
+  'amount_original': u'-27,34 CAD',
+  'date': u'12.03.2017',  
+  'text': u'SENS HOUSEOTTAWA'}]
 ```
 
 to get the credit limits per account or credit-card the method get_credit_limits() must be used

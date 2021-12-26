@@ -500,9 +500,8 @@ class DKBRobo(object):
                     tmp_dic['bdate'] = row[2]
                     tmp_dic['store_date'] = row[2]
                     tmp_dic['text'] = row[3]
-                    amount = row[4].replace('.', '')
-                    tmp_dic['amount'] = amount.replace(',', '.')
-
+                    tmp_dic['amount'] = row[4].replace('.', '').replace(',', '.')
+                    tmp_dic['amount_original'] = row[5].replace('.', '').replace(',', '.')
                     # append dic to list
                     transaction_list.append(tmp_dic)
         return transaction_list
