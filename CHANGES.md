@@ -3,6 +3,17 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.13
+
+**Features**:
+
+- add amount `amount_original` ("ursprünglicher Betrag") field to creditcard transaction list
+
+**Improvements**:
+
+- adding code-review badge from [lgtm.com](https://lgtm.com/projects/g/grindsa/dkb-robo/?mode=list)
+- some smaller fixes to address [lgtm code-review comments](https://lgtm.com/projects/g/grindsa/dkb-robo/alerts/?mode=list)  
+
 ## Changes in 0.12
 
 **Features**:

@@ -7,6 +7,7 @@
 
 [![Codecov main](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/master?label=test%20coverage%20master)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/master)
 [![Codecov devel](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/devel?label=test%20coverage%20devel)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/devel)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/grindsa/dkb-robo.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/grindsa/dkb-robo/context:python)
 
 dkb-robo is a python library to access the internet banking area of  "Deutsche Kreditbank" to fetch
 
