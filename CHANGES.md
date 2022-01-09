@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.13.1
+
+**Improvements**:
+
+- [date_from/date_to validation against minimal date](https://github.com/grindsa/dkb-robo/issues/25)
+
 ## Changes in 0.13
 
 **Features**:
