@@ -751,15 +751,19 @@ class TestDKBRobo(unittest.TestCase):
         date_from = '12.12.2021'
         date_to = '11.12.2021'
         mock_time.return_value = 1639232579
-        self.assertEqual(('11.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('11.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 11.12.2021', lcm.output)
 
     @patch('time.time')
     def test_037_validate_dates(self, mock_time, mock_browser):
-        """ test validate dates date_from to be corrected """
+        """ test validate dates date_to to be corrected """
         date_from = '01.12.2021'
         date_to = '12.12.2021'
         mock_time.return_value = 1639232579
-        self.assertEqual(('01.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('01.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 11.12.2021', lcm.output)
 
     @patch('time.time')
     def test_038_validate_dates(self, mock_time, mock_browser):

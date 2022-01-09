@@ -56,10 +56,10 @@ def validate_dates(logger, date_from, date_to):
         date_to = datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.debug('validate_dates(): adjust date_from to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_from to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
         date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts:
-        logger.debug('validate_dates(): adjust date_to to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_to to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
         date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
     return (date_from, date_to)
