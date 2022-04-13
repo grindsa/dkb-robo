@@ -233,6 +233,8 @@ To scan the DKB postbox for documents  the below method can be used
 
 The method will return a dictionary containing the different postbox folders and links to download the corresponding documents
 
+Check the scripts [dkb_example.py](doc/dkb_example.py) and [dkb_docdownload.py](doc/dkb_docdownload.py) for further examples.
+
 ## Further documentation
 
 please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documentation and an example scripts of all dkb-robo methods there.
