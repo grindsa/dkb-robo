@@ -611,19 +611,22 @@ class DKBRobo(object):
         # mark document by fetch url
         _response = self.dkb_br.open(mark_url)  # lgtm [py/unused-local-variable]
 
-    def get_account_transactions(self, transaction_url, date_from, date_to):
+    def get_account_transactions(self, transaction_url, date_from, date_to, transaction_type):
         """ get transactions from an regular account for a certain amount of time
         args:
             self.dkb_br          - browser object
             transaction_url - link to collect the transactions
             date_from       - transactions starting form
-            date_to         - end date
+            date_to         - end date            
+            transaction_type- booked or reserved
         """
-        self.logger.debug('DKBRobo.get_account_transactions(%s: %s/%s)\n', transaction_url, date_from, date_to)
+        self.logger.debug('DKBRobo.get_account_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to, transaction_type)
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1615473160_1')
-
-        self.dkb_br["slTransactionStatus"] = 0
+        if transaction_type == 'booked':
+            self.dkb_br["slTransactionStatus"] = 0
+        elif transaction_type == 'reserved':
+            self.dkb_br["slTransactionStatus"] = 1 
         self.dkb_br["searchPeriodRadio"] = 1
         self.dkb_br["slSearchPeriod"] = 1
         self.dkb_br["transactionDate"] = str(date_from)
@@ -633,19 +636,23 @@ class DKBRobo(object):
         response = self.dkb_br.follow_link('csvExport')
         return self._parse_account_transactions(response.content)
 
-    def get_creditcard_transactions(self, transaction_url, date_from, date_to):
+    def get_creditcard_transactions(self, transaction_url, date_from, date_to, transaction_type):
         """ get transactions from an regular account for a certain amount of time
         args:
             self.dkb_br          - browser object
             transaction_url - link to collect the transactions
             date_from       - transactions starting form
             date_to         - end date
+            transaction_type- booked or reserved
         """
-        self.logger.debug('DKBRobo.get_creditcard_transactions(%s: %s/%s)\n', transaction_url, date_from, date_to)
+        self.logger.debug('DKBRobo.get_creditcard_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to, transaction_type)
         # get credit card transaction form yesterday
         self.dkb_br.open(transaction_url)
         self.dkb_br.select_form('#form1579108072_1')
-
+        if transaction_type == 'booked':
+            self.dkb_br["slTransactionStatus"] = 0
+        elif transaction_type == 'reserved':
+            self.dkb_br["slTransactionStatus"] = 1  
         self.dkb_br["slSearchPeriod"] = 0
         self.dkb_br["filterType"] = 'DATE_RANGE'
         self.dkb_br["postingDate"] = str(date_from)
@@ -838,7 +845,7 @@ class DKBRobo(object):
 
         return so_list
 
-    def get_transactions(self, transaction_url, atype, date_from, date_to):
+    def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
         """ get transactions for a certain amount of time
         args:
             self.dkb_br          - browser object
@@ -846,21 +853,22 @@ class DKBRobo(object):
             atype           - account type (cash, creditcard, depot)
             date_from       - transactions starting form
             date_to         - end date
+            transaction_type- booked or reserved
         returns:
             list of transactions; each transaction gets represented as a dictionary containing the following information
             - date   - booking date
             - amount - amount
             - text   - test
         """
-        self.logger.debug('DKBRobo.get_account_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
+        self.logger.debug('DKBRobo.get_account_transactions(%s/%s: %s/%s, %s)\n', transaction_url, atype, date_from, date_to, transaction_type)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
 
         transaction_list = []
         if atype == 'account':
-            transaction_list = self.get_account_transactions(transaction_url, date_from, date_to)
+            transaction_list = self.get_account_transactions(transaction_url, date_from, date_to, transaction_type)
         elif atype == 'creditcard':
-            transaction_list = self.get_creditcard_transactions(transaction_url, date_from, date_to)
+            transaction_list = self.get_creditcard_transactions(transaction_url, date_from, date_to, transaction_type)
 
         return transaction_list
 
@@ -909,3 +917,4 @@ class DKBRobo(object):
             else:
                 pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all)
         return pb_dic
+        
