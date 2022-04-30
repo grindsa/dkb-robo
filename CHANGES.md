@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.14
+
+**Features**:
+
+- [reserved transactions ("vorgemerke Buchungen") support](https://github.com/grindsa/dkb-robo/pull/26/files)
+
 ## Changes in 0.13.1
 
 **Improvements**:
