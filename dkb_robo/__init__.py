@@ -1,5 +1,5 @@
 """ init """
-from .dkb_robo import DKBRobo
+from .version import __version__ as our_version
 
-__version__ = '0.10.2'
+__version__ = our_version
 __author__ = 'GrindSa'
