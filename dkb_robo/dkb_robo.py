@@ -517,6 +517,43 @@ class DKBRobo(object):
                     transaction_list.append(tmp_dic)
         return transaction_list
 
+    def _parse_depot_status(self, transactions):
+        """ parses html code and creates a list of stocks included
+        args:
+            transactions - html page including transactions
+        returns:
+            list of stocks in the depot. Each transaction gets represented by a hash containing the following values
+
+        """
+        self.logger.debug('DKBRobo._parse_depot_status()\n')
+
+        # create empty list
+        stocks_list = []
+
+        # parse CSV
+        entry_row_length = 13
+        for row in csv.reader(transactions.decode('latin-1').splitlines(), delimiter=';'):
+            if len(row) == entry_row_length:
+                # skip header line
+                if row[0] != 'Bestand':
+                    tmp_dic = {}
+                    tmp_dic['shares'] = row[0]
+                    tmp_dic['shares_unit'] = row[1]
+                    tmp_dic['isin_wkn'] = row[2]
+                    tmp_dic['text'] = row[3]
+                    tmp_dic['price'] = row[4]
+                    tmp_dic['win_loss'] = row[5]
+                    tmp_dic['win_loss_currency'] = row[6]
+                    tmp_dic['aquisition_cost'] = row[7]
+                    tmp_dic['aquisition_cost_currency'] = row[8]
+                    tmp_dic['dev_price'] = row[9]
+                    tmp_dic['price_euro'] = row[10]
+                    tmp_dic['availability'] = row[11]
+
+                    # append dic to list
+                    stocks_list.append(tmp_dic)
+        return stocks_list
+
     def _parse_overview(self, soup):
         """ creates a dictionary including account information
         args:
@@ -661,6 +698,14 @@ class DKBRobo(object):
 
         response = self.dkb_br.follow_link('csvExport')
         return self._parse_cc_transactions(response.content)
+
+    def get_depot_status(self, transaction_url, date_from, date_to, transaction_type="booked"):
+        self.logger.debug('DKBRobo.get_depot_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to,
+                          transaction_type)
+
+        self.dkb_br.open(transaction_url)
+        response = self.dkb_br.follow_link('csvExport')
+        return self._parse_depot_status(response.content)
 
     def get_credit_limits(self):
         """ create a dictionary of credit limits of the different accounts
@@ -869,6 +914,8 @@ class DKBRobo(object):
             transaction_list = self.get_account_transactions(transaction_url, date_from, date_to, transaction_type)
         elif atype == 'creditcard':
             transaction_list = self.get_creditcard_transactions(transaction_url, date_from, date_to, transaction_type)
+        elif atype == 'depot':
+            transaction_list = self.get_depot_status(transaction_url, date_from, date_to, transaction_type)
 
         return transaction_list
 
@@ -917,3 +964,6 @@ class DKBRobo(object):
             else:
                 pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all)
         return pb_dic
+
+
+
