@@ -472,7 +472,7 @@ class DKBRobo(object):
                     # reformat amount
                     amount = row[7]
                     amount = amount.replace('.', '')
-                    tmp_dic['amount'] = amount.replace(',', '.')
+                    tmp_dic['amount'] = float(amount.replace(',', '.'))
 
                     #  date is only for backwards compatibility
                     tmp_dic['date'] = row[0]
@@ -494,8 +494,6 @@ class DKBRobo(object):
             - text - text
         """
         self.logger.debug('DKBRobo._parse_cc_transactions()\n')
-        # parse the lines to get all account infos
-        # soup = BeautifulSoup(transactions, "html5lib")
 
         # create empty list
         transaction_list = []
@@ -511,7 +509,7 @@ class DKBRobo(object):
                     tmp_dic['bdate'] = row[2]
                     tmp_dic['store_date'] = row[2]
                     tmp_dic['text'] = row[3]
-                    tmp_dic['amount'] = row[4].replace('.', '').replace(',', '.')
+                    tmp_dic['amount'] = float(row[4].replace('.', '').replace(',', '.'))
                     tmp_dic['amount_original'] = row[5].replace('.', '').replace(',', '.')
                     # append dic to list
                     transaction_list.append(tmp_dic)
@@ -734,7 +732,7 @@ class DKBRobo(object):
                         limit = limit.replace('.', '')
                         limit = limit.replace(',', '.')
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                        limit_dic[account] = limit
+                        limit_dic[account] = float(limit)
 
             # credit card  limits
             table = form.find('table', attrs={'class': 'multiColumn'})
@@ -749,7 +747,7 @@ class DKBRobo(object):
                             limit = limit.replace('.', '')
                             limit = limit.replace(',', '.')
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                            limit_dic[account] = limit
+                            limit_dic[account] = float(limit)
                         except BaseException:  # lgtm [py/catch-base-exception]
                             pass
 
@@ -964,6 +962,3 @@ class DKBRobo(object):
             else:
                 pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all)
         return pb_dic
-
-
-

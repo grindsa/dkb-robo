@@ -141,17 +141,17 @@ this method returns a list of transactions in the below format
 ```python
 > from pprint import pprint
 > pprint(tlist)
-[{'amount': u'0.16',
+[{'amount': 0.16,
   'amount_original': u'',
   'date': u'13.03.2017',
   'text': u'Umbuchung DEUTSCHE KREDITBANK AGERSTATTUNG AUSLANDSEINSATZENTGELT'},
- {'amount': u'-12.50',
+ {'amount': -12.50,
   'amount_original': u'',
-  'date': u'12.03.2017',  
+  'date': u'12.03.2017',
   'text': u'Lastschrift PREBIFIX GmbH K111631 Anz 10'},
- {'amount': u'-18,82',
+ {'amount': -18,82,
   'amount_original': u'-27,34 CAD',
-  'date': u'12.03.2017',  
+  'date': u'12.03.2017',
   'text': u'SENS HOUSEOTTAWA'}]
 ```
 
@@ -164,11 +164,11 @@ to get the credit limits per account or credit-card the method get_credit_limits
 This method returns a dictionary of all identified accounts including the credit limit per account
 
 ```python
-{u'XXXX********XXXX': u'100.00',
- u'4748********XXXX': u'10000.00',
- u'XXXX********XXXX': u'10000.00',
- u'DEXX XXXX XXXX XXXX XXXX XX': u'200.00',
- u'DEXX XXXX XXXX XXXX XXXX XX': u'2000.00'}
+{u'XXXX********XXXX': 100.00,
+ u'4748********XXXX': 10000.00,
+ u'XXXX********XXXX': 10000.00,
+ u'DEXX XXXX XXXX XXXX XXXX XX': 200.00,
+ u'DEXX XXXX XXXX XXXX XXXX XX': 2000.00}
 ```
 
 A list of standing orders (Daueraufträge) can be obtained by calling get_standing_orders() method
