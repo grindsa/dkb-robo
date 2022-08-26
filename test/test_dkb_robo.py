@@ -43,18 +43,18 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo.get_credit_limits() method """
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
-        e_result = {u'1111********1111': u'100.00',
-                    u'1111********1112': u'2000.00',
-                    u'DE01 1111 1111 1111 1111 11': u'1000.00',
-                    u'DE02 1111 1111 1111 1111 12': u'2000.00'}
-        self.assertEqual(self.dkb.get_credit_limits(), e_result)
+        e_result = {u'1111********1111': 100.00,
+                    u'1111********1112': 2000.00,
+                    u'DE01 1111 1111 1111 1111 11': 1000.00,
+                    u'DE02 1111 1111 1111 1111 12': 2000.00}
+        self.assertEqual(e_result, self.dkb.get_credit_limits())
 
     def test_002_get_cc_limit(self, mock_browser):
         """ test DKBRobo.get_credit_limits() triggers exceptions """
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
-        e_result = {'DE01 1111 1111 1111 1111 11': '1000.00', 'DE02 1111 1111 1111 1111 12': '2000.00'}
-        self.assertEqual(self.dkb.get_credit_limits(), e_result)
+        e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
+        self.assertEqual(e_result, self.dkb.get_credit_limits())
 
     def test_003_get_exo_single(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order """
@@ -675,32 +675,10 @@ class TestDKBRobo(unittest.TestCase):
     def test_031_parse_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
-        self.assertEqual(self.dkb._parse_account_transactions(csv), [{'amount': 'AAAAA',
-                                                                     'bdate': '01.03.2017',
-                                                                     'customerreferenz': 'AA',
-                                                                     'date': '01.03.2017',
-                                                                     'mandatereference': 'AAA',
-                                                                     'peer': 'AAAAAAAA',
-                                                                     'peeraccount': '-100,00',
-                                                                     'peerbic': 'AAAAAA',
-                                                                     'peerid': 'AAAA',
-                                                                     'postingtext': 'AAAAAAAAA',
-                                                                     'reasonforpayment': 'AAAAAAA',
-                                                                     'text': 'AAAAAAAAA AAAAAAAA AAAAAAA',
-                                                                     'vdate': '01.03.2017'},
-                                                                    {'amount': 'BBBBB',
-                                                                     'bdate': '02.03.2017',
-                                                                     'customerreferenz': 'BB',
-                                                                     'date': '02.03.2017',
-                                                                     'mandatereference': 'BBB',
-                                                                     'peer': 'BBBBBBBB',
-                                                                     'peeraccount': '-200,00',
-                                                                     'peerbic': 'BBBBBB',
-                                                                     'peerid': 'BBBB',
-                                                                     'postingtext': 'BBBBBBBBB',
-                                                                     'reasonforpayment': 'BBBBBBB',
-                                                                     'text': 'BBBBBBBBB BBBBBBBB BBBBBBB',
-                                                                     'vdate': '02.03.2017'}])
+        result = [
+            {'amount':  100.0, 'bdate': '01.03.2017', 'customerreferenz': 'Kundenreferenz1', 'date': '01.03.2017', 'mandatereference': 'Mandatsreferenz1', 'peer': 'Auftraggeber1', 'peeraccount': 'Kontonummer1', 'peerbic': 'BLZ1', 'peerid': 'GID1', 'postingtext': 'Buchungstext1', 'reasonforpayment': 'Verwendungszweck1', 'text': 'Buchungstext1 Auftraggeber1 Verwendungszweck1', 'vdate': '01.03.2017'},
+            {'amount': -200.0, 'bdate': '02.03.2017', 'customerreferenz': 'Kundenreferenz2', 'date': '02.03.2017', 'mandatereference': 'Mandatsreferenz2', 'peer': 'Auftraggeber2', 'peeraccount': 'Kontonummer2', 'peerbic': 'BLZ2', 'peerid': 'GID2', 'postingtext': 'Buchungstext2', 'reasonforpayment': 'Verwendungszweck2', 'text': 'Buchungstext2 Auftraggeber2 Verwendungszweck2', 'vdate': '02.03.2017'}]
+        self.assertEqual(result, self.dkb._parse_account_transactions(csv))
 
     def test_032_parse_no_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
@@ -710,21 +688,21 @@ class TestDKBRobo(unittest.TestCase):
     def test_033_parse_dkb_cc_tr(self, _mock_browser):
         """ test DKBRobo._parse_cc_transactions """
         csv = read_file(self.dir_path + '/mocks/test_parse_dkb_cc_tr.csv')
-        self.assertEqual(self.dkb._parse_cc_transactions(csv), [{'amount': '-100.00"',
+        self.assertEqual(self.dkb._parse_cc_transactions(csv), [{'amount': -100.00,
                                                                 'amount_original': '-110',
                                                                 'bdate': '01.03.2017',
                                                                 'show_date': '01.03.2017',
                                                                 'store_date': '01.03.2017',
                                                                 'text': 'AAA',
                                                                 'vdate': '01.03.2017'},
-                                                               {'amount': '-200.00"',
+                                                               {'amount': -200.00,
                                                                 'amount_original': '-210',
                                                                 'bdate': '02.03.2017',
                                                                 'show_date': '02.03.2017',
                                                                 'store_date': '02.03.2017',
                                                                 'text': 'BBB',
                                                                 'vdate': '02.03.2017'},
-                                                               {'amount': '-300.00"',
+                                                               {'amount': -300.00,
                                                                 'amount_original': '-310',
                                                                 'bdate': '03.03.2017',
                                                                 'show_date': '03.03.2017',

@@ -5,6 +5,6 @@
 "Kontostand vom 03.03.2017:";"9.999,99 EUR";
 
 "Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz";
-"01.03.2017";"01.03.2017";"AAAAAAAAA";"AAAAAAAA";"AAAAAAA";"-100,00";"AAAAAA";"AAAAA";"AAAA";"AAA";"AA";"A"
-"02.03.2017";"02.03.2017";"BBBBBBBBB";"BBBBBBBB";"BBBBBBB";"-200,00";"BBBBBB";"BBBBB";"BBBB";"BBB";"BB";"B"
-"03.03.2017";"03.03.2017";"CCCCCC";"CCCCC";"CCCC";"-300,00";"CCC";CC";"C"
+"01.03.2017";"01.03.2017";"Buchungstext1";"Auftraggeber1";"Verwendungszweck1";"Kontonummer1";"BLZ1";"100,00";"GID1";"Mandatsreferenz1";"Kundenreferenz1";"AA"
+"02.03.2017";"02.03.2017";"Buchungstext2";"Auftraggeber2";"Verwendungszweck2";"Kontonummer2";"BLZ2";"-200,00";"GID2";"Mandatsreferenz2";"Kundenreferenz2";"BB"
+"03.03.2017";"03.03.2017";"CCCCCCCCC";"CCCCCCCC";"CCCCCCC";"CCCCCCC";"CCCCCC";"-300,00";CC"
