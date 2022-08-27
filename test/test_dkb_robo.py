@@ -33,8 +33,9 @@ class TestDKBRobo(unittest.TestCase):
     def setUp(self):
         self.dkb = DKBRobo()
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.dkb_robo import validate_dates, generate_random_string, logger_setup
+        from dkb_robo.dkb_robo import validate_dates, generate_random_string, logger_setup, string2float
         self.validate_dates = validate_dates
+        self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
         self.logger = logging.getLogger('dkb_robo')
@@ -677,7 +678,11 @@ class TestDKBRobo(unittest.TestCase):
         csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
         result = [
             {'amount':  100.0, 'bdate': '01.03.2017', 'customerreferenz': 'Kundenreferenz1', 'date': '01.03.2017', 'mandatereference': 'Mandatsreferenz1', 'peer': 'Auftraggeber1', 'peeraccount': 'Kontonummer1', 'peerbic': 'BLZ1', 'peerid': 'GID1', 'postingtext': 'Buchungstext1', 'reasonforpayment': 'Verwendungszweck1', 'text': 'Buchungstext1 Auftraggeber1 Verwendungszweck1', 'vdate': '01.03.2017'},
-            {'amount': -200.0, 'bdate': '02.03.2017', 'customerreferenz': 'Kundenreferenz2', 'date': '02.03.2017', 'mandatereference': 'Mandatsreferenz2', 'peer': 'Auftraggeber2', 'peeraccount': 'Kontonummer2', 'peerbic': 'BLZ2', 'peerid': 'GID2', 'postingtext': 'Buchungstext2', 'reasonforpayment': 'Verwendungszweck2', 'text': 'Buchungstext2 Auftraggeber2 Verwendungszweck2', 'vdate': '02.03.2017'}]
+            {'amount': -200.0, 'bdate': '02.03.2017', 'customerreferenz': 'Kundenreferenz2', 'date': '02.03.2017', 'mandatereference': 'Mandatsreferenz2', 'peer': 'Auftraggeber2', 'peeraccount': 'Kontonummer2', 'peerbic': 'BLZ2', 'peerid': 'GID2', 'postingtext': 'Buchungstext2', 'reasonforpayment': 'Verwendungszweck2', 'text': 'Buchungstext2 Auftraggeber2 Verwendungszweck2', 'vdate': '02.03.2017'},
+            {'amount': 3000.0, 'bdate': '03.03.2017', 'customerreferenz': 'Kundenreferenz3', 'date': '03.03.2017', 'mandatereference': 'Mandatsreferenz3', 'peer': 'Auftraggeber3', 'peeraccount': 'Kontonummer3', 'peerbic': 'BLZ3', 'peerid': 'GID3', 'postingtext': 'Buchungstext3', 'reasonforpayment': 'Verwendungszweck3', 'text': 'Buchungstext3 Auftraggeber3 Verwendungszweck3', 'vdate': '03.03.2017'},
+             {'amount': -4000.0, 'bdate': '04.03.2017', 'customerreferenz': 'Kundenreferenz4', 'date': '04.03.2017', 'mandatereference': 'Mandatsreferenz4', 'peer': 'Auftraggeber4', 'peeraccount': 'Kontonummer4', 'peerbic': 'BLZ4', 'peerid': 'GID4', 'postingtext': 'Buchungstext4', 'reasonforpayment': 'Verwendungszweck4', 'text': 'Buchungstext4 Auftraggeber4 Verwendungszweck4', 'vdate': '04.03.2017'}
+            ]
+
         self.assertEqual(result, self.dkb._parse_account_transactions(csv))
 
     def test_032_parse_no_account_tr(self, _mock_browser):
@@ -995,6 +1000,72 @@ class TestDKBRobo(unittest.TestCase):
         """ test confirmation guiState unknown """
         result = {'guiState': 'UNK'}
         self.assertFalse(self.dkb._check_confirmation(result, 1))
+
+    def test_072_parse_depot_status_tr(self, _mock_browser):
+        """ test DKBRobo._parse_cc_transactions """
+        csv = read_file(self.dir_path + '/mocks/test_parse_depot.csv')
+        result = [{'shares': 10.0, 'shares_unit': 'cnt1', 'isin_wkn': 'WKN1', 'text': 'Bezeichnung1', 'price': 11.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 1110.1, 'availability': 'Frei'}, {'shares': 20.0, 'shares_unit': 'cnt2', 'isin_wkn': 'WKN2', 'text': 'Bezeichnung2', 'price': 12.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 2220.2, 'availability': 'Frei'}]
+        self.assertEqual(result, self.dkb._parse_depot_status(csv))
+
+    def test_073_string2float(self, _unused):
+        """ test string2float """
+        value = 1000
+        self.assertEqual(1000.0, self.string2float(value))
+
+    def test_074_string2float(self, _unused):
+        """ test string2float """
+        value = 1000.0
+        self.assertEqual(1000.0, self.string2float(value))
+
+    def test_075_string2float(self, _unused):
+        """ test string2float """
+        value = '1.000,00'
+        self.assertEqual(1000.0, self.string2float(value))
+
+    def test_076_string2float(self, _unused):
+        """ test string2float """
+        value = '1000,00'
+        self.assertEqual(1000.0, self.string2float(value))
+
+    def test_078_string2float(self, _unused):
+        """ test string2float """
+        value = '1.000'
+        self.assertEqual(1000.0, self.string2float(value))
+
+    def test_079_string2float(self, _unused):
+        """ test string2float """
+        value = '1.000,23'
+        self.assertEqual(1000.23, self.string2float(value))
+
+    def test_080_string2float(self, _unused):
+        """ test string2float """
+        value = '1000,23'
+        self.assertEqual(1000.23, self.string2float(value))
+
+    def test_081_string2float(self, _unused):
+        """ test string2float """
+        value = 1000.23
+        self.assertEqual(1000.23, self.string2float(value))
+
+    def test_082_string2float(self, _unused):
+        """ test string2float """
+        value = '-1.000'
+        self.assertEqual(-1000.0, self.string2float(value))
+
+    def test_084_string2float(self, _unused):
+        """ test string2float """
+        value = '-1.000,23'
+        self.assertEqual(-1000.23, self.string2float(value))
+
+    def test_085_string2float(self, _unused):
+        """ test string2float """
+        value = '-1000,23'
+        self.assertEqual(-1000.23, self.string2float(value))
+
+    def test_086_string2float(self, _unused):
+        """ test string2float """
+        value = -1000.23
+        self.assertEqual(-1000.23, self.string2float(value))
 
 if __name__ == '__main__':
 

@@ -7,4 +7,5 @@
 "Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz";
 "01.03.2017";"01.03.2017";"Buchungstext1";"Auftraggeber1";"Verwendungszweck1";"Kontonummer1";"BLZ1";"100,00";"GID1";"Mandatsreferenz1";"Kundenreferenz1";"AA"
 "02.03.2017";"02.03.2017";"Buchungstext2";"Auftraggeber2";"Verwendungszweck2";"Kontonummer2";"BLZ2";"-200,00";"GID2";"Mandatsreferenz2";"Kundenreferenz2";"BB"
-"03.03.2017";"03.03.2017";"CCCCCCCCC";"CCCCCCCC";"CCCCCCC";"CCCCCCC";"CCCCCC";"-300,00";CC"
+"03.03.2017";"03.03.2017";"Buchungstext3";"Auftraggeber3";"Verwendungszweck3";"Kontonummer3";"BLZ3";"3.000,00";"GID3";"Mandatsreferenz3";"Kundenreferenz3";"CC"
+"04.03.2017";"04.03.2017";"Buchungstext4";"Auftraggeber4";"Verwendungszweck4";"Kontonummer4";"BLZ4";"-4.000,00";"GID4";"Mandatsreferenz4";"Kundenreferenz4";"CC"

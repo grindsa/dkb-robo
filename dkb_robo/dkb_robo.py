@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable=c0209, r0913
 """ dkb internet banking automation library """
 from __future__ import print_function
 import os
@@ -19,6 +20,16 @@ def generate_random_string(length):
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
     return ''.join(random.choice(char_set) for _ in range(length))
+
+
+def string2float(value):
+    """ convert string to float """
+    try:
+        result = float(value.replace('.', '').replace(',', '.'))
+    except Exception:
+        result = value
+
+    return result
 
 
 def logger_setup(debug):
@@ -49,17 +60,17 @@ def validate_dates(logger, date_from, date_to):
     minimal_date_uts = now_uts - 3 * 365 * 86400
 
     if date_from_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_from to {0}'.format(datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
         date_from = datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
     if date_to_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_to to {0}'.format(datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
         date_to = datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.info('validate_dates(): adjust date_from to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts:
-        logger.info('validate_dates(): adjust date_to to {0}'.format(datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')))
+        logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
     return (date_from, date_to)
@@ -264,9 +275,8 @@ class DKBRobo(object):
             fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
             # dump content to file
             self.logger.debug('writing to %s/%s\n', path, fname)
-            pdf_file = open('{0}/{1}'.format(path, fname), 'wb')
-            pdf_file.write(response.content)
-            pdf_file.close()
+            with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
+                pdf_file.write(response.content)
             result = response.status_code
         else:
             fname = '{0}.pdf'.format(generate_random_string(20))
@@ -470,9 +480,7 @@ class DKBRobo(object):
                     tmp_dic['peerid'] = row[8]
 
                     # reformat amount
-                    amount = row[7]
-                    amount = amount.replace('.', '')
-                    tmp_dic['amount'] = float(amount.replace(',', '.'))
+                    tmp_dic['amount'] = string2float(row[7])
 
                     #  date is only for backwards compatibility
                     tmp_dic['date'] = row[0]
@@ -509,7 +517,7 @@ class DKBRobo(object):
                     tmp_dic['bdate'] = row[2]
                     tmp_dic['store_date'] = row[2]
                     tmp_dic['text'] = row[3]
-                    tmp_dic['amount'] = float(row[4].replace('.', '').replace(',', '.'))
+                    tmp_dic['amount'] = string2float(row[4])
                     tmp_dic['amount_original'] = row[5].replace('.', '').replace(',', '.')
                     # append dic to list
                     transaction_list.append(tmp_dic)
@@ -535,17 +543,17 @@ class DKBRobo(object):
                 # skip header line
                 if row[0] != 'Bestand':
                     tmp_dic = {}
-                    tmp_dic['shares'] = row[0]
+                    tmp_dic['shares'] = string2float(row[0])
                     tmp_dic['shares_unit'] = row[1]
                     tmp_dic['isin_wkn'] = row[2]
                     tmp_dic['text'] = row[3]
-                    tmp_dic['price'] = row[4]
+                    tmp_dic['price'] = string2float(row[4])
                     tmp_dic['win_loss'] = row[5]
                     tmp_dic['win_loss_currency'] = row[6]
                     tmp_dic['aquisition_cost'] = row[7]
                     tmp_dic['aquisition_cost_currency'] = row[8]
                     tmp_dic['dev_price'] = row[9]
-                    tmp_dic['price_euro'] = row[10]
+                    tmp_dic['price_euro'] = string2float(row[10])
                     tmp_dic['availability'] = row[11]
 
                     # append dic to list
@@ -698,6 +706,7 @@ class DKBRobo(object):
         return self._parse_cc_transactions(response.content)
 
     def get_depot_status(self, transaction_url, date_from, date_to, transaction_type="booked"):
+        """ get depoot status """
         self.logger.debug('DKBRobo.get_depot_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to,
                           transaction_type)
 
@@ -729,10 +738,8 @@ class DKBRobo(object):
                     tmp = row.find("th")
                     if cols:
                         limit = tmp.find('span').text.strip()
-                        limit = limit.replace('.', '')
-                        limit = limit.replace(',', '.')
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                        limit_dic[account] = float(limit)
+                        limit_dic[account] = string2float(limit)
 
             # credit card  limits
             table = form.find('table', attrs={'class': 'multiColumn'})
@@ -744,10 +751,8 @@ class DKBRobo(object):
                     if cols:
                         try:
                             limit = tmp.find('span').text.strip()
-                            limit = limit.replace('.', '')
-                            limit = limit.replace(',', '.')
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                            limit_dic[account] = float(limit)
+                            limit_dic[account] = string2float(limit)
                         except BaseException:  # lgtm [py/catch-base-exception]
                             pass
 
@@ -798,9 +803,9 @@ class DKBRobo(object):
                         exo_dic[count]['validity'] = validity
 
                         # exo_dic[count]['validity'] = cols[2].text.strip()
-                        exo_dic[count]['amount'] = float(cols[3].text.strip().replace('.', '').replace('EUR', ''))
-                        exo_dic[count]['used'] = float(cols[4].text.strip().replace('.', '').replace('EUR', ''))
-                        exo_dic[count]['available'] = float(cols[5].text.strip().replace('.', '').replace('EUR', ''))
+                        exo_dic[count]['amount'] = string2float(cols[3].text.strip().replace('EUR', ''))
+                        exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
+                        exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
                     except BaseException:  # lgtm [py/catch-base-exception]
                         pass
 
@@ -868,9 +873,7 @@ class DKBRobo(object):
                 tmp_dic['recipient'] = cols[0].text.strip()
                 amount = cols[1].text.strip()
                 amount = amount.replace('\n', '')
-                amount = amount.replace('.', '')
-                amount = amount.replace(',', '.')
-                amount = float(amount.replace('EUR', ''))
+                amount = string2float(amount.replace('EUR', ''))
                 tmp_dic['amount'] = amount
 
                 interval = cols[2]
