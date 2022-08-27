@@ -3,6 +3,16 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.16
+
+**Features**:
+
+- #29 - add method to retrieve depot status
+
+**Improvements**:
+
+- convert numbers to float wherever possible
+
 ## Changes in 0.15
 
 - obsolete version.py to address [#28](https://github.com/grindsa/dkb-robo/pull/28)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=c0209, r0913
+# pylint: disable=c0209, r0913, w2301
 """ dkb internet banking automation library """
 from __future__ import print_function
 import os
