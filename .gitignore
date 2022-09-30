@@ -108,3 +108,4 @@ ENV/
 *.json
 # /*.txt
 foo/*
+coverage.lcov
