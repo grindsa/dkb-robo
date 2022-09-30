@@ -220,6 +220,8 @@ class DKBRobo(object):
             class_filter = {}
 
         self.dkb_br.open(url)
+        # create a list of documents to avoid overrides
+        document_name_list = []
         while True:
             soup = self.dkb_br.get_current_page()
             if soup:
@@ -231,7 +233,7 @@ class DKBRobo(object):
                         # download file
                         if path:
                             fname = '{0}/{1}'.format(path, link_name)
-                            rcode, fname = self._get_document(fname, self.base_url + link['href'])
+                            rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
                             if rcode == 200:
                                 # mark url as read
                                 self._update_downloadstate(link_name, self.base_url + link['href'])
@@ -252,7 +254,7 @@ class DKBRobo(object):
                 break
         return document_dic
 
-    def _get_document(self, path, url):
+    def _get_document(self, path, url, document_name_list=[]):
         """ get download document from postbox
         args:
             self.dkb_br - browser object
@@ -275,16 +277,22 @@ class DKBRobo(object):
         fname = ''
         if "Content-Disposition" in response.headers.keys():
             fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+            if fname in document_name_list:
+                # rename to avoid overrides
+                now = datetime.now()
+                fname = '{0}-{1}'.format(now.strftime("%Y-%m-%d-%H-%M-%S"), fname)
+
             # dump content to file
             self.logger.debug('writing to %s/%s\n', path, fname)
             with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
                 pdf_file.write(response.content)
             result = response.status_code
+            document_name_list.append(fname)
         else:
             fname = '{0}.pdf'.format(generate_random_string(20))
             result = None
 
-        return result, '{0}/{1}'.format(path, fname)
+        return result, '{0}/{1}'.format(path, fname), document_name_list
 
     def _get_financial_statement(self):
         """ get finanical statement """
