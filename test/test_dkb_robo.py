@@ -908,7 +908,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_makedir.called)
 
     @patch('builtins.input')
-    def test_057_ctan_check(self, mock_input, mock_browser):
+    def test_058_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body><ol><li>li</li></ol></body></html>'
@@ -916,7 +916,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('builtins.input')
-    def test_058_ctan_check(self, mock_input, mock_browser):
+    def test_059_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body>body</body></html>'
@@ -924,7 +924,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('builtins.input')
-    def test_059_ctan_check(self, mock_input, mock_browser):
+    def test_060_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check wrong tan """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body><div class="clearfix module text errorMessage">div</div></body></html>'
@@ -935,7 +935,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('sys.exit')
     @patch('builtins.input')
-    def test_060_ctan_check(self, mock_input, mock_sexit, mock_browser):
+    def test_061_ctan_check(self, mock_input, mock_sexit, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body>body</body></html>'
@@ -944,7 +944,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_061_login_confirm(self, mock_confirm, mock_browser, ):
+    def test_062_login_confirm(self, mock_confirm, mock_browser, ):
         """ test login confirmed check_cofirmation returns true """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.return_value = True
@@ -952,7 +952,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('time.sleep', return_value=None)
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_062_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
+    def test_063_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
         """ test login confirmed check_cofirmation returns multiple false but then true """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.side_effect = [False, False, False, True]
@@ -960,7 +960,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('time.sleep', return_value=None)
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_063_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
+    def test_064_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
         """ test login confirmed  """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.return_value = False
@@ -969,7 +969,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('No session confirmation after 120 polls', str(err.exception))
 
     @patch('dkb_robo.dkb_robo.generate_random_string')
-    def test_064_login_confirm(self, mock_rand, mock_browser):
+    def test_065_login_confirm(self, mock_rand, mock_browser):
         """ test login confirmed - exception when getting the token """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_browser.get_current_page.side_effect =  Exception('exc')
@@ -977,69 +977,69 @@ class TestDKBRobo(unittest.TestCase):
             self.assertTrue(self.dkb._login_confirm())
         self.assertEqual('Error while getting the confirmation page', str(err.exception))
 
-    def test_065_check_confirmation(self, _unused):
+    def test_066_check_confirmation(self, _unused):
         """ test confirmation """
         result = {'foo': 'bar'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Error during session confirmation', str(err.exception))
 
-    def test_066_check_confirmation(self, _unused):
+    def test_067_check_confirmation(self, _unused):
         """ test confirmation state expired"""
         result = {'state': 'EXPIRED'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Session expired', str(err.exception))
 
-    def test_067_check_confirmation(self, _unused):
+    def test_068_check_confirmation(self, _unused):
         """ test confirmation state processed"""
         result = {'state': 'PROCESSED'}
         self.assertTrue(self.dkb._check_confirmation(result, 1))
 
-    def test_068_check_confirmation(self, _unused):
+    def test_069_check_confirmation(self, _unused):
         """ test confirmation state unknown """
         result = {'state': 'UNK'}
         self.assertFalse(self.dkb._check_confirmation(result, 1))
 
-    def test_069_check_confirmation(self, _unused):
+    def test_070_check_confirmation(self, _unused):
         """ test confirmation guiState expired"""
         result = {'guiState': 'EXPIRED'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Session expired', str(err.exception))
 
-    def test_070_check_confirmation(self, _unused):
+    def test_071_check_confirmation(self, _unused):
         """ test confirmation guiState MAP_TO_EXIT"""
         result = {'guiState': 'MAP_TO_EXIT'}
         self.assertTrue(self.dkb._check_confirmation(result, 1))
 
-    def test_071_check_confirmation(self, _unused):
+    def test_072_check_confirmation(self, _unused):
         """ test confirmation guiState unknown """
         result = {'guiState': 'UNK'}
         self.assertFalse(self.dkb._check_confirmation(result, 1))
 
-    def test_072_parse_depot_status_tr(self, _mock_browser):
+    def test_073_parse_depot_status_tr(self, _mock_browser):
         """ test DKBRobo._parse_cc_transactions """
         csv = read_file(self.dir_path + '/mocks/test_parse_depot.csv')
         result = [{'shares': 10.0, 'shares_unit': 'cnt1', 'isin_wkn': 'WKN1', 'text': 'Bezeichnung1', 'price': 11.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 1110.1, 'availability': 'Frei'}, {'shares': 20.0, 'shares_unit': 'cnt2', 'isin_wkn': 'WKN2', 'text': 'Bezeichnung2', 'price': 12.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 2220.2, 'availability': 'Frei'}]
         self.assertEqual(result, self.dkb._parse_depot_status(csv))
 
-    def test_073_string2float(self, _unused):
+    def test_074_string2float(self, _unused):
         """ test string2float """
         value = 1000
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_074_string2float(self, _unused):
+    def test_075_string2float(self, _unused):
         """ test string2float """
         value = 1000.0
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_075_string2float(self, _unused):
+    def test_076_string2float(self, _unused):
         """ test string2float """
         value = '1.000,00'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_076_string2float(self, _unused):
+    def test_077_string2float(self, _unused):
         """ test string2float """
         value = '1000,00'
         self.assertEqual(1000.0, self.string2float(value))
@@ -1069,17 +1069,17 @@ class TestDKBRobo(unittest.TestCase):
         value = '-1.000'
         self.assertEqual(-1000.0, self.string2float(value))
 
-    def test_084_string2float(self, _unused):
+    def test_083_string2float(self, _unused):
         """ test string2float """
         value = '-1.000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_085_string2float(self, _unused):
+    def test_084_string2float(self, _unused):
         """ test string2float """
         value = '-1000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_086_string2float(self, _unused):
+    def test_085_string2float(self, _unused):
         """ test string2float """
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
