@@ -595,6 +595,17 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
+    @patch('dkb_robo.DKBRobo._update_downloadstate')
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_025_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._get_document_links() method """
+        mock_browser.get_current_page.return_value = None
+        mock_browser.open.return_value = True
+        mock_doc.return_value=(None, 'fname', ['foo'])
+        e_result = {}
+        self.assertFalse(self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertFalse(mock_updow.called)
+
     @patch('dkb_robo.DKBRobo._get_document_links')
     def test_025_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo.scan_postbox() method """
@@ -667,12 +678,21 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo.get_transactions() method with an credit-card account"""
         mock_cc_tran.return_value = ['credit_card']
         self.assertEqual(self.dkb.get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
+        self.assertTrue(mock_cc_tran.called)
 
     @patch('dkb_robo.DKBRobo.get_account_transactions')
     def test_030_get_tr_ac(self, mock_ca_tran, _unused):
         """ test DKBRobo.get_transactions() method with an checking account"""
         mock_ca_tran.return_value = ['account']
         self.assertEqual(self.dkb.get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
+        self.assertTrue(mock_ca_tran.called)
+
+    @patch('dkb_robo.DKBRobo.get_depot_status')
+    def test_031_get_tr_ac(self, mock_dep_tran, _unused):
+        """ test DKBRobo.get_transactions() method for a deptot """
+        mock_dep_tran.return_value = ['dep']
+        self.assertEqual(self.dkb.get_transactions('url', 'depot', '01.03.2017', '02.03.2017'), ['dep'])
+        self.assertTrue(mock_dep_tran.called)
 
     def test_031_parse_account_tr(self, _mock_browser):
         """ test DKBRobo.get_account_transactions for one page only """
@@ -821,12 +841,26 @@ class TestDKBRobo(unittest.TestCase):
         mock_parse.return_value = 'mock_parse'
         self.assertEqual('mock_parse', self.dkb.get_account_transactions('url', 'date_from', 'date_to'))
 
-    @patch('dkb_robo.DKBRobo._parse_cc_transactions')
+    @patch('dkb_robo.DKBRobo._parse_account_transactions')
     def test_048_get_account_transactions(self, mock_parse, mock_browser):
         """ test get_account_transactions """
         mock_browser.get_current_page.return_value = 'mock_browser'
         mock_parse.return_value = 'mock_parse'
+        self.assertEqual('mock_parse', self.dkb.get_account_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
+
+    @patch('dkb_robo.DKBRobo._parse_cc_transactions')
+    def test_048_get_cc_transactions(self, mock_parse, mock_browser):
+        """ test get_account_transactions """
+        mock_browser.get_current_page.return_value = 'mock_browser'
+        mock_parse.return_value = 'mock_parse'
         self.assertEqual('mock_parse', self.dkb.get_creditcard_transactions('url', 'date_from', 'date_to'))
+
+    @patch('dkb_robo.DKBRobo._parse_cc_transactions')
+    def test_049_get_cc_transactions(self, mock_parse, mock_browser):
+        """ test get_account_transactions """
+        mock_browser.get_current_page.return_value = 'mock_browser'
+        mock_parse.return_value = 'mock_parse'
+        self.assertEqual('mock_parse', self.dkb.get_creditcard_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
 
     def test_049_logout(self, _unused):
         """ test logout """
@@ -861,7 +895,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = False
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url'))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', []))
         self.assertTrue(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -872,7 +906,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url'))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', []))
         self.assertFalse(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -888,7 +922,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('path', 'url'))
+        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('path', 'url', []))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
@@ -904,7 +938,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/2022-09-30-00-00-00-mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00-mock_re.pdf']), self.dkb._get_document('path', 'url'), ['mock_re.pdf'])
+        self.assertEqual((200, 'path/2022-09-30-00-00-00-mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00-mock_re.pdf']), self.dkb._get_document('path', 'url', ['mock_re.pdf']))
         self.assertFalse(mock_makedir.called)
 
     @patch('builtins.input')
@@ -1083,6 +1117,12 @@ class TestDKBRobo(unittest.TestCase):
         """ test string2float """
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
+
+    @patch('dkb_robo.DKBRobo._parse_depot_status')
+    def test_086_get_depot_status(self, mock_pds, _unused):
+        """ test get depot status """
+        mock_pds.return_value = 'mock_pds'
+        self.assertEqual('mock_pds', self.dkb.get_depot_status('url', 'fdate', 'tdate', 'booked'))
 
 if __name__ == '__main__':
 

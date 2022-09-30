@@ -254,7 +254,7 @@ class DKBRobo(object):
                 break
         return document_dic
 
-    def _get_document(self, path, url, document_name_list=[]):
+    def _get_document(self, path, url, document_name_list):
         """ get download document from postbox
         args:
             self.dkb_br - browser object
