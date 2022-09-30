@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
 from mechanicalsoup import LinkNotFoundError
+from datetime import date
 
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
@@ -572,7 +573,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo._get_document_links() method """
         html = read_file(self.dir_path + '/mocks/doclinks-2.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
-        mock_doc.return_value=(200, 'fname')
+        mock_doc.return_value=(200, 'fname', ['foo'])
         e_result = {'Kontoauszug Nr. 003_2017 zu Konto 12345678': {'rcode': 200, 'link': 'https://www.dkb.de/doc-1', 'fname': 'fname'}, 'Kontoauszug Nr. 003_2017 zu Konto 87654321': {'rcode': 200, 'link': 'https://www.dkb.de/doc-2', 'fname': 'fname'}}
         self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertTrue(mock_updow.called)
@@ -586,7 +587,7 @@ class TestDKBRobo(unittest.TestCase):
         html2 = read_file(self.dir_path + '/mocks/doclinks-2.html')
         mock_browser.get_current_page.side_effect = [BeautifulSoup(html1, 'html5lib'), BeautifulSoup(html2, 'html5lib')]
         mock_browser.open.return_value = True
-        mock_doc.return_value=(None, 'fname')
+        mock_doc.return_value=(None, 'fname', ['foo'])
         e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 23456789': 'https://www.dkb.de/doc-1',
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.dkb.de/doc-1',
                     u'Kontoauszug Nr. 003_2017 zu Konto 87654321': 'https://www.dkb.de/doc-2',
@@ -860,7 +861,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = False
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf'), self.dkb._get_document('path', 'url'))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url'))
         self.assertTrue(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -871,7 +872,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf'), self.dkb._get_document('path', 'url'))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url'))
         self.assertFalse(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -887,7 +888,23 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/mock_re.pdf'), self.dkb._get_document('path', 'url'))
+        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('path', 'url'))
+        self.assertFalse(mock_makedir.called)
+
+    @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch("builtins.open", mock_open(read_data='test'), create=True)
+    @patch('re.findall')
+    @patch('dkb_robo.dkb_robo.generate_random_string')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_057_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
+        """ test get_document override """
+        mock_exists.return_value = True
+        mock_rand.return_value = 'mock_rand'
+        mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
+        mock_browser.open.return_value.status_code = 200
+        mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
+        self.assertEqual((200, 'path/2022-09-30-00-00-00-mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00-mock_re.pdf']), self.dkb._get_document('path', 'url'), ['mock_re.pdf'])
         self.assertFalse(mock_makedir.called)
 
     @patch('builtins.input')
