@@ -156,13 +156,13 @@ class DKBRobo(object):
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
             self.dkb_br["$event"] = 'tanVerification'
-        except BaseException as _err:
+        except Exception as _err:
             self.logger.debug('confirmForm not found\n')
 
         try:
             self.dkb_br.select_form('form[name="next"]')
             self.dkb_br["$event"] = 'next'
-        except BaseException:
+        except Exception:
             self.logger.debug('nextForm not found\n')
 
         # open page to insert tan
@@ -383,7 +383,7 @@ class DKBRobo(object):
             # get xsrf token
             soup = self.dkb_br.get_current_page()
             xsrf_token = soup.find('input', attrs={'name': 'XSRFPreventionToken'}).get('value')
-        except BaseException:
+        except Exception:
             # fallback
             soup = None
 
@@ -610,7 +610,7 @@ class DKBRobo(object):
             amount = cols[3 + ontop].text.strip().replace('.', '')
             try:
                 overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except BaseException:
+            except Exception:
                 pass
 
             # get link for transactions
@@ -630,14 +630,14 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except BaseException:
+                except Exception:
                     pass
 
             # get link for details
             try:
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except BaseException:
+            except Exception:
                 pass
 
             # increase counter
@@ -763,7 +763,7 @@ class DKBRobo(object):
                             limit = tmp.find('span').text.strip()
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = string2float(limit)
-                        except BaseException:  # lgtm [py/catch-base-exception]
+                        except Exception:
                             pass
 
         return limit_dic
@@ -816,7 +816,7 @@ class DKBRobo(object):
                         exo_dic[count]['amount'] = string2float(cols[3].text.strip().replace('EUR', ''))
                         exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
                         exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
-                    except BaseException:  # lgtm [py/catch-base-exception]
+                    except Exception:
                         pass
 
         return exo_dic
