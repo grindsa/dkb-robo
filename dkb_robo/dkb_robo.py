@@ -284,11 +284,14 @@ class DKBRobo(object):
                 self.logger.debug('DKBRobo._get_document(): error during filename conversion: %s\n', _err)
                 fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
 
-            self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
             if fname in document_name_list:
                 # rename to avoid overrides
+                self.logger.debug('DKBRobo._get_document(): adding datetime to avoid overrides.\n')
                 now = datetime.now()
                 fname = '{0}-{1}'.format(now.strftime("%Y-%m-%d-%H-%M-%S"), fname)
+
+            # log filename
+            self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
 
             # dump content to file
             self.logger.debug('writing to %s/%s\n', path, fname)
