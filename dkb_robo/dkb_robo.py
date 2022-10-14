@@ -13,6 +13,7 @@ from string import digits, ascii_letters
 from urllib import parse
 from http import cookiejar
 import logging
+import urllib
 import mechanicalsoup
 
 
@@ -276,7 +277,14 @@ class DKBRobo(object):
         # gt filename from response header
         fname = ''
         if "Content-Disposition" in response.headers.keys():
-            fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+            # unquote filename to cover german umlaut including a fallback
+            try:
+                fname = urllib.parse.unquote(re.findall("filename=(.+)", response.headers["Content-Disposition"])[0])
+            except Exception as _err:
+                self.logger.debug('DKBRobo._get_document(): error during filename conversion: %s\n', _err)
+                fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+
+            self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
             if fname in document_name_list:
                 # rename to avoid overrides
                 now = datetime.now()
