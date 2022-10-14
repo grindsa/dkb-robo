@@ -277,6 +277,8 @@ class DKBRobo(object):
         # gt filename from response header
         fname = ''
         if "Content-Disposition" in response.headers.keys():
+
+            self.logger.debug('DKBRobo._get_document(): response.header: %s\n', response.headers)
             # unquote filename to cover german umlaut including a fallback
             try:
                 fname = urllib.parse.unquote(re.findall("filename=(.+)", response.headers["Content-Disposition"])[0])
@@ -294,6 +296,7 @@ class DKBRobo(object):
             self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
 
             # dump content to file
+            self.logger.debug('DKBRobo._get_document() content-length: %s\n', len(response.content))
             self.logger.debug('writing to %s/%s\n', path, fname)
             with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
                 pdf_file.write(response.content)
