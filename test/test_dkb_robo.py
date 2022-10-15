@@ -987,6 +987,19 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/2022-09-30-00-00-00-foo.pdf', ['foo.pdf', '2022-09-30-00-00-00-foo.pdf']), self.dkb._get_document('path', 'url', ['foo.pdf']))
         self.assertFalse(mock_makedir.called)
 
+    @patch("builtins.open", mock_open(read_data='test'), create=True)
+    @patch('urllib.parse.unquote')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_066_get_document(self, mock_exists, mock_makedir, mock_parse, mock_browser):
+        """ test get_document create path """
+        mock_exists.return_value = True
+        mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
+        mock_browser.open.return_value.status_code = 200
+        mock_parse.side_effect = [Exception('exc1')]
+        self.assertEqual((200, 'path/Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf', ['Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', []))
+        self.assertFalse(mock_makedir.called)
+
     @patch('builtins.input')
     def test_066_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check """
