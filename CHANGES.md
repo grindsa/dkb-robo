@@ -3,6 +3,10 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.18.1
+
+- linting and sonarqube analysis
+
 ## Changes in 0.18
 
 **BUGfixes**:
