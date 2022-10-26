@@ -3,9 +3,16 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.18.1
+
+**Bugfixes**:
+
+- [sonarcloud.io](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo) badges in Readme.md
+- addressing code smells reported by sonarcube
+
 ## Changes in 0.18
 
-**BUGfixes**:
+**Bugfixes**:
 
 - [#32](https://github.com/grindsa/dkb-robo/issues/32) German Umlaut in filename
 
