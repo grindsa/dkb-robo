@@ -23,7 +23,7 @@ def generate_random_string(length):
 
 
 def string2float(value):
-    """ convert string to float """
+    """ convert string to float value """
     try:
         result = float(value.replace('.', '').replace(',', '.'))
     except Exception:
