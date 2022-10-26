@@ -622,8 +622,8 @@ class DKBRobo(object):
             amount = cols[3 + ontop].text.strip().replace('.', '')
             try:
                 overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except Exception:
-                pass
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
 
             # get link for transactions
             link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
