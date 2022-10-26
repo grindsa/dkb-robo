@@ -7,7 +7,11 @@
 
 [![Codecov main](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/master?label=test%20coverage%20master)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/master)
 [![Codecov devel](https://img.shields.io/codecov/c/gh/grindsa/dkb-robo/branch/devel?label=test%20coverage%20devel)](https://app.codecov.io/gh/grindsa/dkb-robo/branch/devel)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/grindsa/dkb-robo.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/grindsa/dkb-robo/context:python)
+
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=grindsa_dkb-robo)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=grindsa_dkb-robo)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=grindsa_dkb-robo)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=grindsa_dkb-robo)
 
 dkb-robo is a python library to access the internet banking area of ["Deutsche Kreditbank"](https://banking.dbkb.de) to fetch
 
