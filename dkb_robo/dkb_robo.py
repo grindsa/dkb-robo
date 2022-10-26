@@ -23,7 +23,7 @@ def generate_random_string(length):
 
 
 def string2float(value):
-    """ convert string to float """
+    """ convert string to float value """
     try:
         result = float(value.replace('.', '').replace(',', '.'))
     except Exception:
@@ -153,15 +153,17 @@ class DKBRobo(object):
         """ input of chiptan during login """
         self.logger.debug('DKBRobo._ctan_check()\n')
 
+        event_field = '$event'
+
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
-            self.dkb_br["$event"] = 'tanVerification'
+            self.dkb_br[event_field] = 'tanVerification'
         except Exception as _err:
             self.logger.debug('confirmForm not found\n')
 
         try:
             self.dkb_br.select_form('form[name="next"]')
-            self.dkb_br["$event"] = 'next'
+            self.dkb_br[event_field] = 'next'
         except Exception:
             self.logger.debug('nextForm not found\n')
 
@@ -183,7 +185,7 @@ class DKBRobo(object):
 
         # ask for TAN
         self.dkb_br["tan"] = input("TAN: ")
-        self.dkb_br["$event"] = 'next'
+        self.dkb_br[event_field] = 'next'
 
         # submit form and check response
         self.dkb_br.submit_selected()
@@ -457,11 +459,11 @@ class DKBRobo(object):
         self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
 
         # initialize some cookies to fool dkb
-        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
-        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain='www.dkb.de', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
 
         return self.dkb_br
@@ -597,9 +599,7 @@ class DKBRobo(object):
             - link to transactions
         """
         self.logger.debug('DKBRobo._parse_overview()\n')
-        # get account information
         overview_dic = {}
-        # to_remove = 0
         counter = 0
         ontop = 0
         for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
@@ -622,8 +622,8 @@ class DKBRobo(object):
             amount = cols[3 + ontop].text.strip().replace('.', '')
             try:
                 overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except Exception:
-                pass
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
 
             # get link for transactions
             link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
@@ -642,15 +642,15 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except Exception:
-                    pass
+                except Exception as _err:
+                    self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
 
             # get link for details
             try:
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except Exception:
-                pass
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
 
             # increase counter
             counter += 1
@@ -763,7 +763,7 @@ class DKBRobo(object):
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                         limit_dic[account] = string2float(limit)
 
-            # credit card  limits
+            # credit card limits
             table = form.find('table', attrs={'class': 'multiColumn'})
             if table:
                 rows = table.findAll("tr")
@@ -775,8 +775,8 @@ class DKBRobo(object):
                             limit = tmp.find('span').text.strip()
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = string2float(limit)
-                        except Exception:
-                            pass
+                        except Exception as _err:
+                            self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
 
         return limit_dic
 
@@ -823,13 +823,11 @@ class DKBRobo(object):
                         validity = validity.replace('\r', '')
                         validity = validity.replace('  ', ' ')
                         exo_dic[count]['validity'] = validity
-
-                        # exo_dic[count]['validity'] = cols[2].text.strip()
                         exo_dic[count]['amount'] = string2float(cols[3].text.strip().replace('EUR', ''))
                         exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
                         exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
-                    except Exception:
-                        pass
+                    except Exception as _err:
+                        self.logger.error('DKBRobo.get_exemption_order(): {0}\n'.format(_err))
 
         return exo_dic
 
@@ -902,7 +900,7 @@ class DKBRobo(object):
                 for brt in interval.findAll('br'):
                     brt.unwrap()
 
-                interval = re.sub('\t', ' ', interval.text.strip())
+                interval = re.sub('\t+', ' ', interval.text.strip())
                 interval = interval.replace('\n', '')
                 interval = re.sub(' +', ' ', interval)
                 tmp_dic['interval'] = interval
