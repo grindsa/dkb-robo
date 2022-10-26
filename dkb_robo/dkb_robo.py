@@ -600,7 +600,6 @@ class DKBRobo(object):
         """
         self.logger.debug('DKBRobo._parse_overview()\n')
         overview_dic = {}
-        # to_remove = 0
         counter = 0
         ontop = 0
         for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
