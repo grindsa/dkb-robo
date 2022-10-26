@@ -153,15 +153,17 @@ class DKBRobo(object):
         """ input of chiptan during login """
         self.logger.debug('DKBRobo._ctan_check()\n')
 
+        event_field = '$event'
+
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
-            self.dkb_br["$event"] = 'tanVerification'
+            self.dkb_br[event_field] = 'tanVerification'
         except Exception as _err:
             self.logger.debug('confirmForm not found\n')
 
         try:
             self.dkb_br.select_form('form[name="next"]')
-            self.dkb_br["$event"] = 'next'
+            self.dkb_br[event_field] = 'next'
         except Exception:
             self.logger.debug('nextForm not found\n')
 
@@ -183,7 +185,7 @@ class DKBRobo(object):
 
         # ask for TAN
         self.dkb_br["tan"] = input("TAN: ")
-        self.dkb_br["$event"] = 'next'
+        self.dkb_br[event_field] = 'next'
 
         # submit form and check response
         self.dkb_br.submit_selected()
