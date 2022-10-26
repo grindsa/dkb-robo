@@ -642,15 +642,15 @@ class DKBRobo(object):
                     overview_dic[counter]['type'] = 'depot'
                     link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                     overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except Exception:
-                    pass
+                except Exception as _err:
+                    self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
 
             # get link for details
             try:
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
                 overview_dic[counter]['details'] = self.base_url + link['href']
-            except Exception:
-                pass
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
 
             # increase counter
             counter += 1
@@ -763,7 +763,7 @@ class DKBRobo(object):
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                         limit_dic[account] = string2float(limit)
 
-            # credit card  limits
+            # credit card limits
             table = form.find('table', attrs={'class': 'multiColumn'})
             if table:
                 rows = table.findAll("tr")
@@ -775,8 +775,8 @@ class DKBRobo(object):
                             limit = tmp.find('span').text.strip()
                             account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                             limit_dic[account] = string2float(limit)
-                        except Exception:
-                            pass
+                        except Exception as _err:
+                            self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
 
         return limit_dic
 
@@ -828,8 +828,8 @@ class DKBRobo(object):
                         exo_dic[count]['amount'] = string2float(cols[3].text.strip().replace('EUR', ''))
                         exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
                         exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
-                    except Exception:
-                        pass
+                    except Exception as _err:
+                        self.logger.error('DKBRobo.get_exemption_order(): {0}\n'.format(_err))
 
         return exo_dic
 
