@@ -901,7 +901,7 @@ class DKBRobo(object):
                 for brt in interval.findAll('br'):
                     brt.unwrap()
 
-                interval = re.sub('\t', ' ', interval.text.strip())
+                interval = re.sub('\t+', ' ', interval.text.strip())
                 interval = interval.replace('\n', '')
                 interval = re.sub(' +', ' ', interval)
                 tmp_dic['interval'] = interval
