@@ -13,7 +13,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=reliability_rating)](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=grindsa_dkb-robo&metric=alert_status)](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo)
 
-dkb-robo is a python library to access the internet banking area of ["Deutsche Kreditbank"](https://banking.dbkb.de) to fetch
+dkb-robo is a python library to access the internet banking area of ["Deutsche Kreditbank"](https://banking.dkb.de) to fetch
 
 - account information and current balances
 - transactions from creditcards and checking accounts (Girokonten)
