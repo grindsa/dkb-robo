@@ -3,12 +3,18 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.18.2
+
+**Bugfixes**:
+
+- addressing code smells reported by [sonarcloud.io](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo)
+
 ## Changes in 0.18.1
 
 **Bugfixes**:
 
 - [sonarcloud.io](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo) badges in Readme.md
-- addressing code smells reported by sonarcube
+- security issues reported by sonarcube
 
 ## Changes in 0.18
 

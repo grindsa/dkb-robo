@@ -202,6 +202,44 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
+    def _get_cc_limits(self, form):
+        """ get credit card limits """
+        self.logger.debug('DKBRobo._get_cc_limits()\n')
+
+        limit_dic = {}
+        table = form.find('table', attrs={'class': 'multiColumn'})
+        if table:
+            rows = table.findAll("tr")
+            for row in rows:
+                cols = row.findAll("td")
+                tmp = row.find("th")
+                if cols:
+                    try:
+                        limit = tmp.find('span').text.strip()
+                        account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
+                        limit_dic[account] = string2float(limit)
+                    except Exception as _err:
+                        self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
+
+        return limit_dic
+
+    def _get_checking_account_limit(self, form):
+        """ get checking account limits """
+        self.logger.debug('DKBRobo._get_checking_account_limit()\n')
+
+        limit_dic = {}
+        table = form.find('table', attrs={'class': 'dropdownAnchor'})
+        if table:
+            for row in table.findAll("tr"):
+                cols = row.findAll("td")
+                tmp = row.find("th")
+                if cols:
+                    limit = tmp.find('span').text.strip()
+                    account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
+                    limit_dic[account] = string2float(limit)
+
+        return limit_dic
+
     def _get_document_links(self, url, path=None, link_name=None, select_all=False):
         """ create a dictionary of the documents stored in a pbost folder
         args:
@@ -224,27 +262,15 @@ class DKBRobo(object):
         self.dkb_br.open(url)
         # create a list of documents to avoid overrides
         document_name_list = []
+
         while True:
             soup = self.dkb_br.get_current_page()
             if soup:
                 table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
                 if table:
-                    tbody = table.find('tbody')
-                    for row in tbody.findAll('tr', class_filter):
-                        link = row.find('a')
-                        # download file
-                        if path:
-                            fname = '{0}/{1}'.format(path, link_name)
-                            rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
-                            if rcode == 200:
-                                # mark url as read
-                                self._update_downloadstate(link_name, self.base_url + link['href'])
-                            if rcode:
-                                document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
-                            else:
-                                document_dic[link.contents[0]] = self.base_url + link['href']
-                        else:
-                            document_dic[link.contents[0]] = self.base_url + link['href']
+                    (tmp_dic, tmp_list, ) = self._download_document(path, class_filter, link_name, table)
+                    document_name_list.extend(tmp_list)
+                    document_dic.update(tmp_dic)
 
                 next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
                 if next_site:
@@ -255,6 +281,31 @@ class DKBRobo(object):
             else:
                 break
         return document_dic
+
+    def _download_document(self, path, class_filter, link_name, table):
+        """ document download """
+        self.logger.debug('_download_document()\n')
+        document_dic = {}
+        document_name_list = []
+
+        tbody = table.find('tbody')
+        for row in tbody.findAll('tr', class_filter):
+            link = row.find('a')
+            # download file
+            if path:
+                fname = '{0}/{1}'.format(path, link_name)
+                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
+                if rcode == 200:
+                    # mark url as read
+                    self._update_downloadstate(link_name, self.base_url + link['href'])
+                if rcode:
+                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
+                else:
+                    document_dic[link.contents[0]] = self.base_url + link['href']
+            else:
+                document_dic[link.contents[0]] = self.base_url + link['href']
+
+        return (document_dic, document_name_list)
 
     def _get_document(self, path, url, document_name_list):
         """ get download document from postbox
@@ -618,43 +669,81 @@ class DKBRobo(object):
             overview_dic[counter]['account'] = cols[1 + ontop].text.strip()
             # date
             overview_dic[counter]['date'] = cols[2 + ontop].text.strip()
-            # amount (to be reformated)
-            amount = cols[3 + ontop].text.strip().replace('.', '')
-            try:
-                overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
+
+            # amount
+            amount = self._get_amount(cols, ontop)
+            if amount:
+                overview_dic[counter]['amount'] = amount
 
             # get link for transactions
-            link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
-            if link:
-                # thats a cash account or a credit card
-                if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
-                    # this is a cash account
-                    overview_dic[counter]['type'] = 'account'
-                else:
-                    # this is a credit card
-                    overview_dic[counter]['type'] = 'creditcard'
-                overview_dic[counter]['transactions'] = self.base_url + link['href']
-            else:
-                try:
-                    # thats a depot
-                    overview_dic[counter]['type'] = 'depot'
-                    link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
-                    overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except Exception as _err:
-                    self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
+            (account_type, transaction_link) = self._get_transaction_link(cols, ontop, overview_dic[counter]['account'])
+            if account_type:
+                overview_dic[counter]['type'] = account_type
+            if transaction_link:
+                overview_dic[counter]['transactions'] = transaction_link
 
             # get link for details
-            try:
-                link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
-                overview_dic[counter]['details'] = self.base_url + link['href']
-            except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
+            details_link = self._get_evtdetails_link(cols, ontop)
+            if details_link:
+                overview_dic[counter]['details'] = details_link
 
             # increase counter
             counter += 1
         return overview_dic
+
+    def _get_amount(self, cols, ontop):
+        """ get link for transactions """
+        self.logger.debug('_get_amount()')
+
+        amount = cols[3 + ontop].text.strip().replace('.', '')
+        try:
+            result = float(amount.replace(',', '.'))
+        except Exception as _err:
+            self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
+            result = None
+
+        return result
+
+    def _get_transaction_link(self, cols, ontop, account_number):
+        """ get link for transactions """
+        self.logger.debug('_get_transaction_link()')
+
+        account_type = None
+        transaction_link = None
+
+        link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
+        if link:
+            # thats a cash account or a credit card
+            if 'cash' in cols[4 + ontop].text.strip().lower() or account_number.startswith('DE'):
+                # this is a cash account
+                account_type = 'account'
+            else:
+                # this is a credit card
+                account_type = 'creditcard'
+            transaction_link = self.base_url + link['href']
+        else:
+            try:
+                # thats a depot
+                account_type = 'depot'
+                link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
+                transaction_link = self.base_url + link['href']
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
+
+        return (account_type, transaction_link)
+
+    def _get_evtdetails_link(self, cols, ontop):
+        """ get link for details """
+        self.logger.debug('get_evt_details()')
+
+        try:
+            link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
+            details_link = self.base_url + link['href']
+        except Exception as _err:
+            self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
+            details_link = None
+
+        return details_link
 
     def _update_downloadstate(self, link_name, url):
         """ mark document and read
@@ -750,33 +839,14 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         form = soup.find('form', attrs={'id': 'form597962073_1'})
 
-        limit_dic = {}
         if form:
-            # checking account limits
-            table = form.find('table', attrs={'class': 'dropdownAnchor'})
-            if table:
-                for row in table.findAll("tr"):
-                    cols = row.findAll("td")
-                    tmp = row.find("th")
-                    if cols:
-                        limit = tmp.find('span').text.strip()
-                        account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                        limit_dic[account] = string2float(limit)
+            # get checking account limits
+            limit_dic = self._get_checking_account_limit(form)
 
-            # credit card limits
-            table = form.find('table', attrs={'class': 'multiColumn'})
-            if table:
-                rows = table.findAll("tr")
-                for row in rows:
-                    cols = row.findAll("td")
-                    tmp = row.find("th")
-                    if cols:
-                        try:
-                            limit = tmp.find('span').text.strip()
-                            account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                            limit_dic[account] = string2float(limit)
-                        except Exception as _err:
-                            self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
+            # get credit cards limits
+            limit_dic.update(self._get_cc_limits(form))
+        else:
+            limit_dic = {}
 
         return limit_dic
 
