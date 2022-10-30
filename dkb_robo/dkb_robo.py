@@ -202,6 +202,44 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
+    def _get_cc_limits(self, form):
+        """ get credit card limits """
+        self.logger.debug('DKBRobo._get_cc_limits()\n')
+
+        limit_dic = {}
+        table = form.find('table', attrs={'class': 'multiColumn'})
+        if table:
+            rows = table.findAll("tr")
+            for row in rows:
+                cols = row.findAll("td")
+                tmp = row.find("th")
+                if cols:
+                    try:
+                        limit = tmp.find('span').text.strip()
+                        account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
+                        limit_dic[account] = string2float(limit)
+                    except Exception as _err:
+                        self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
+
+        return limit_dic
+
+    def _get_checking_account_limit(self, form):
+        """ get checking account limits """
+        self.logger.debug('DKBRobo._get_checking_account_limit()\n')
+
+        limit_dic = {}
+        table = form.find('table', attrs={'class': 'dropdownAnchor'})
+        if table:
+            for row in table.findAll("tr"):
+                cols = row.findAll("td")
+                tmp = row.find("th")
+                if cols:
+                    limit = tmp.find('span').text.strip()
+                    account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
+                    limit_dic[account] = string2float(limit)
+
+        return limit_dic
+
     def _get_document_links(self, url, path=None, link_name=None, select_all=False):
         """ create a dictionary of the documents stored in a pbost folder
         args:
@@ -788,33 +826,14 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         form = soup.find('form', attrs={'id': 'form597962073_1'})
 
-        limit_dic = {}
         if form:
-            # checking account limits
-            table = form.find('table', attrs={'class': 'dropdownAnchor'})
-            if table:
-                for row in table.findAll("tr"):
-                    cols = row.findAll("td")
-                    tmp = row.find("th")
-                    if cols:
-                        limit = tmp.find('span').text.strip()
-                        account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                        limit_dic[account] = string2float(limit)
+            # get checking account limits
+            limit_dic = self._get_checking_account_limit(form)
 
-            # credit card limits
-            table = form.find('table', attrs={'class': 'multiColumn'})
-            if table:
-                rows = table.findAll("tr")
-                for row in rows:
-                    cols = row.findAll("td")
-                    tmp = row.find("th")
-                    if cols:
-                        try:
-                            limit = tmp.find('span').text.strip()
-                            account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
-                            limit_dic[account] = string2float(limit)
-                        except Exception as _err:
-                            self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
+            # get credit cards limits
+            limit_dic.update(self._get_cc_limits(form))
+        else:
+            limit_dic = {}
 
         return limit_dic
 
