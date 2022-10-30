@@ -646,15 +646,24 @@ class DKBRobo(object):
                     self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
 
             # get link for details
-            try:
-                link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
-                overview_dic[counter]['details'] = self.base_url + link['href']
-            except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
+            overview_dic[counter]['details'] = self._get_evtdetails_link(cols, ontop)
 
             # increase counter
             counter += 1
         return overview_dic
+
+    def _get_evtdetails_link(self, cols, ontop):
+        """ get link for details """
+        self.logger.debug('get_evt_details()')
+
+        try:
+            link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
+            details_link = self.base_url + link['href']
+        except Exception as _err:
+            self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
+            details_link = None
+
+        return details_link
 
     def _update_downloadstate(self, link_name, url):
         """ mark document and read
