@@ -247,7 +247,7 @@ class DKBRobo(object):
             url - folder url
             path - path for document download
         returns:
-            dictionary of the documents
+            dictionary of documents
         """
         # pylint: disable=R0914
         self.logger.debug('DKBRobo._get_document_links(%s)\n', url)
