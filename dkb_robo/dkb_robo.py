@@ -262,27 +262,15 @@ class DKBRobo(object):
         self.dkb_br.open(url)
         # create a list of documents to avoid overrides
         document_name_list = []
+
         while True:
             soup = self.dkb_br.get_current_page()
             if soup:
                 table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
                 if table:
-                    tbody = table.find('tbody')
-                    for row in tbody.findAll('tr', class_filter):
-                        link = row.find('a')
-                        # download file
-                        if path:
-                            fname = '{0}/{1}'.format(path, link_name)
-                            rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
-                            if rcode == 200:
-                                # mark url as read
-                                self._update_downloadstate(link_name, self.base_url + link['href'])
-                            if rcode:
-                                document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
-                            else:
-                                document_dic[link.contents[0]] = self.base_url + link['href']
-                        else:
-                            document_dic[link.contents[0]] = self.base_url + link['href']
+                    (tmp_dic, tmp_list, ) = self._download_document(path, class_filter, link_name, table)
+                    document_name_list.extend(tmp_list)
+                    document_dic.update(tmp_dic)
 
                 next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
                 if next_site:
@@ -293,6 +281,31 @@ class DKBRobo(object):
             else:
                 break
         return document_dic
+
+    def _download_document(self, path, class_filter, link_name, table):
+        """ document download """
+        self.logger.debug('_download_document()\n')
+        document_dic = {}
+        document_name_list = []
+
+        tbody = table.find('tbody')
+        for row in tbody.findAll('tr', class_filter):
+            link = row.find('a')
+            # download file
+            if path:
+                fname = '{0}/{1}'.format(path, link_name)
+                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
+                if rcode == 200:
+                    # mark url as read
+                    self._update_downloadstate(link_name, self.base_url + link['href'])
+                if rcode:
+                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
+                else:
+                    document_dic[link.contents[0]] = self.base_url + link['href']
+            else:
+                document_dic[link.contents[0]] = self.base_url + link['href']
+
+        return (document_dic, document_name_list)
 
     def _get_document(self, path, url, document_name_list):
         """ get download document from postbox
