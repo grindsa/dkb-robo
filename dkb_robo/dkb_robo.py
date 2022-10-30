@@ -618,39 +618,68 @@ class DKBRobo(object):
             overview_dic[counter]['account'] = cols[1 + ontop].text.strip()
             # date
             overview_dic[counter]['date'] = cols[2 + ontop].text.strip()
-            # amount (to be reformated)
-            amount = cols[3 + ontop].text.strip().replace('.', '')
-            try:
-                overview_dic[counter]['amount'] = float(amount.replace(',', '.'))
-            except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
+
+            # amount
+            amount = self._get_amount(cols, ontop)
+            if amount:
+                overview_dic[counter]['amount'] = amount
 
             # get link for transactions
-            link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
-            if link:
-                # thats a cash account or a credit card
-                if 'cash' in cols[4 + ontop].text.strip().lower() or overview_dic[counter]['account'].startswith('DE'):
-                    # this is a cash account
-                    overview_dic[counter]['type'] = 'account'
-                else:
-                    # this is a credit card
-                    overview_dic[counter]['type'] = 'creditcard'
-                overview_dic[counter]['transactions'] = self.base_url + link['href']
-            else:
-                try:
-                    # thats a depot
-                    overview_dic[counter]['type'] = 'depot'
-                    link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
-                    overview_dic[counter]['transactions'] = self.base_url + link['href']
-                except Exception as _err:
-                    self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
+            (account_type, transaction_link) = self._get_transaction_link(cols, ontop, overview_dic[counter]['account'])
+            if account_type:
+                overview_dic[counter]['type'] = account_type
+            if transaction_link:
+                overview_dic[counter]['transactions'] = transaction_link
 
             # get link for details
-            overview_dic[counter]['details'] = self._get_evtdetails_link(cols, ontop)
+            details_link = self._get_evtdetails_link(cols, ontop)
+            if details_link:
+                overview_dic[counter]['details'] = details_link
 
             # increase counter
             counter += 1
         return overview_dic
+
+    def _get_amount(self, cols, ontop):
+        """ get link for transactions """
+        self.logger.debug('_get_amount()')
+
+        amount = cols[3 + ontop].text.strip().replace('.', '')
+        try:
+            result = float(amount.replace(',', '.'))
+        except Exception as _err:
+            self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
+            result = None
+
+        return result
+
+    def _get_transaction_link(self, cols, ontop, account_number):
+        """ get link for transactions """
+        self.logger.debug('_get_transaction_link()')
+
+        account_type = None
+        transaction_link = None
+
+        link = cols[4 + ontop].find('a', attrs={'class': 'evt-paymentTransaction'})
+        if link:
+            # thats a cash account or a credit card
+            if 'cash' in cols[4 + ontop].text.strip().lower() or account_number.startswith('DE'):
+                # this is a cash account
+                account_type = 'account'
+            else:
+                # this is a credit card
+                account_type = 'creditcard'
+            transaction_link = self.base_url + link['href']
+        else:
+            try:
+                # thats a depot
+                account_type = 'depot'
+                link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
+                transaction_link = self.base_url + link['href']
+            except Exception as _err:
+                self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
+
+        return (account_type, transaction_link)
 
     def _get_evtdetails_link(self, cols, ontop):
         """ get link for details """
