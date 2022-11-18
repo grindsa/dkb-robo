@@ -17,4 +17,4 @@ Please report security vulnerabilities directly to grindelsack@gmail.com and pro
 - Steps to replicate the problem (if they there are any)
 - Debug logs from dkb-robo
 
-Preferred-Languages: en, de.
+Preferred-Languages: en, de
