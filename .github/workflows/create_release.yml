@@ -39,7 +39,7 @@ jobs:
         if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           release_name: ${{ env.APP_NAME }} ${{ env.TAG_NAME }}
@@ -74,7 +74,6 @@ jobs:
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
-
           pip install -r requirements.txt
           pip freeze > /tmp/requirements_freeze.txt
           cat /tmp/requirements_freeze.txt
@@ -86,9 +85,8 @@ jobs:
           mkdir -p /tmp/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/dkb-robo/dkb-robo_sbom.txt
           pip install cyclonedx-bom
-          python3 -m cyclonedx_py --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.xml
-          python3 -m cyclonedx_py --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.json
-          ls -la /tmp/
+          python3 -m cyclonedx_py -F --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.xml
+          python3 -m cyclonedx_py -F --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.json
 
       - name: "[ BUILD ] Upload SBOM"
         # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
