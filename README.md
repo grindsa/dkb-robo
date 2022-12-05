@@ -67,7 +67,7 @@ Please make sure python and all the above modules had been installed successfull
 
 #### SBOM
 
-[A bill of material](https://www.linuxfoundation.org/blog/blog/what-is-an-sbom) of the packages coming along wiht `dkb-robo` will be automatically created during build process and stored in a [dedicated respository](https://github.com/grindsa/sbom/tree/main/dkb-robo)
+[A bill of material](https://www.linuxfoundation.org/blog/blog/what-is-an-sbom) of the packages coming along wiht `dkb-robo` will be automatically created during build process and stored in [my SBOM respository](https://github.com/grindsa/sbom/tree/main/dkb-robo)
 
 ### Usage
 
