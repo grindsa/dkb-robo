@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: [3.x, 3.8]
+        python_version: [3.x, 3.11, '3.10', 3.9, 3.8, 3.7]
     name: Pylint test (${{ matrix.python_version }})
     steps:
       - uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
         run: |
-          sudo apt-get install libxml2-dev libxslt-dev python-dev
+          sudo apt-get install libxml2-dev libxslt-dev python-dev-is-python3
           python -m pip install --upgrade pip
           pip install pylint pylint-exit mechanicalsoup
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
