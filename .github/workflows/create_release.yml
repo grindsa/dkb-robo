@@ -82,11 +82,11 @@ jobs:
       - name: "[ BUILD ] create SBOM"
         # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
-          mkdir -p /tmp/sbom/dkb-robo
+          mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/dkb-robo/dkb-robo_sbom.txt
           pip install cyclonedx-bom
-          python3 -m cyclonedx_py -F --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.xml
-          python3 -m cyclonedx_py -F --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/dkb-robo/dkb-robo_sbom.json
+          python3 -m cyclonedx_py -F --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml
+          python3 -m cyclonedx_py -F --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json
 
       - name: "[ BUILD ] Upload SBOM"
         # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
@@ -94,6 +94,6 @@ jobs:
           cd /tmp/sbom
           git config --global user.email "grindelsack@gmail.com"
           git config --global user.name "SBOM Generator"
-          git add dkb-robo/
+          git add sbom/dkb-robo/
           git commit -a -m "SBOM update"
           git push
