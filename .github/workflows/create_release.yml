@@ -13,7 +13,7 @@ jobs:
 
       - name: "[ PREPARE ] install packages"
         run: |
-          sudo apt-get update && sudo apt-get install -y curl twine python3 python3-mechanicalsoup
+          sudo apt-get update && sudo apt-get install -y curl twine python3 python3-mechanicalsoup python3-venv
 
       - name: "[ PREPARE ] Get current version"
         uses: oprypin/find-latest-tag@v1
@@ -39,7 +39,7 @@ jobs:
         if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TAG_NAME }}
           release_name: ${{ env.APP_NAME }} ${{ env.TAG_NAME }}
@@ -60,3 +60,40 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
+
+      - name: "[ PREPARE ] Retrieve SBOM repo"
+        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        run: |
+          git clone https://$GH_SBOM_USER:$GH_SBOM_TOKEN@github.com/$GH_SBOM_USER/sbom /tmp/sbom
+        env:
+          GH_SBOM_USER: ${{ secrets.GH_SBOM_USER }}
+          GH_SBOM_TOKEN: ${{ secrets.GH_SBOM_TOKEN }}
+
+      - name: "[ BUILD ] virtual environment"
+        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        run: |
+          python3 -m venv /tmp/dkbroboenv
+          source /tmp/dkbroboenv/bin/activate
+          pip install -r requirements.txt
+          pip freeze > /tmp/requirements_freeze.txt
+          cat /tmp/requirements_freeze.txt
+          deactivate
+
+      - name: "[ BUILD ] create SBOM"
+        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        run: |
+          mkdir -p /tmp/sbom/sbom/dkb-robo
+          cp /tmp/requirements_freeze.txt /tmp/sbom/dkb-robo/dkb-robo_sbom.txt
+          pip install cyclonedx-bom
+          python3 -m cyclonedx_py -F --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml
+          python3 -m cyclonedx_py -F --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json
+
+      - name: "[ BUILD ] Upload SBOM"
+        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        run: |
+          cd /tmp/sbom
+          git config --global user.email "grindelsack@gmail.com"
+          git config --global user.name "SBOM Generator"
+          git add sbom/dkb-robo/
+          git commit -a -m "SBOM update"
+          git push

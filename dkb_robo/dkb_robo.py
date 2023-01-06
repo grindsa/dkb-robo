@@ -291,10 +291,17 @@ class DKBRobo(object):
         tbody = table.find('tbody')
         for row in tbody.findAll('tr', class_filter):
             link = row.find('a')
+            formatted_date = ""
+            try:
+                creation_date = row.find('td', attrs={'class': 'abaxx-aspect-messageWithState-mailboxMessage-created'}).text
+                creation_date_components = creation_date.split(".")
+                formatted_date = '{0}-{1}-{2}_'.format(creation_date_components[2], creation_date_components[1], creation_date_components[0])
+            except Exception:
+                self.logger.debug("Can't parse date, this could i.e. be for archived documents.")
             # download file
             if path:
                 fname = '{0}/{1}'.format(path, link_name)
-                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
+                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list, formatted_date)
                 if rcode == 200:
                     # mark url as read
                     self._update_downloadstate(link_name, self.base_url + link['href'])
@@ -307,7 +314,7 @@ class DKBRobo(object):
 
         return (document_dic, document_name_list)
 
-    def _get_document(self, path, url, document_name_list):
+    def _get_document(self, path, url, document_name_list, formatted_date):
         """ get download document from postbox
         args:
             self.dkb_br - browser object
@@ -349,7 +356,7 @@ class DKBRobo(object):
             # dump content to file
             self.logger.debug('DKBRobo._get_document() content-length: %s\n', len(response.content))
             self.logger.debug('writing to %s/%s\n', path, fname)
-            with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
+            with open('{0}/{1}{2}'.format(path, formatted_date, fname), 'wb') as pdf_file:
                 pdf_file.write(response.content)
             result = response.status_code
             document_name_list.append(fname)
