@@ -83,7 +83,7 @@ jobs:
         # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
-          cp /tmp/requirements_freeze.txt /tmp/sbom/dkb-robo/dkb-robo_sbom.txt
+          cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
           pip install cyclonedx-bom
           python3 -m cyclonedx_py -F --format xml -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml
           python3 -m cyclonedx_py -F --format json -r -i /tmp/requirements_freeze.txt -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json
