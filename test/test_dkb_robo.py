@@ -1230,6 +1230,18 @@ class TestDKBRobo(unittest.TestCase):
         result = (doc_dic, ['2022-01-04_'])
         self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, True))
 
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_100_download_document(self, mock_get_doc, _ununsed):
+        """ test download document prepend date """
+        html = read_file(self.dir_path + '/mocks/document_list-2.html')
+        table = BeautifulSoup(html, 'html5lib')
+        mock_get_doc.side_effect = my_side_effect
+        class_filter = {}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
+        result = (doc_dic, [''])
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, True))
+        self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
 if __name__ == '__main__':
 
