@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# pylint: disable=c0209, r0913, w2301
+# pylint: disable=c0209, c0302, r0913, w2301
 """ dkb internet banking automation library """
-from __future__ import print_function
+# -*- coding: utf-8 -*-
 import os
 import csv
 import random
@@ -240,7 +238,7 @@ class DKBRobo(object):
 
         return limit_dic
 
-    def _get_document_links(self, url, path=None, link_name=None, select_all=False):
+    def _get_document_links(self, url, path=None, link_name=None, select_all=False, prepend_date=False):
         """ create a dictionary of the documents stored in a pbost folder
         args:
             self.dkb_br - browser object
@@ -268,7 +266,7 @@ class DKBRobo(object):
             if soup:
                 table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
                 if table:
-                    (tmp_dic, tmp_list, ) = self._download_document(path, class_filter, link_name, table)
+                    (tmp_dic, tmp_list, ) = self._download_document(path, class_filter, link_name, table, prepend_date)
                     document_name_list.extend(tmp_list)
                     document_dic.update(tmp_dic)
 
@@ -282,19 +280,29 @@ class DKBRobo(object):
                 break
         return document_dic
 
-    def _download_document(self, path, class_filter, link_name, table):
+    def _download_document(self, path, class_filter, link_name, table, prepend_date):
         """ document download """
         self.logger.debug('_download_document()\n')
         document_dic = {}
         document_name_list = []
 
         tbody = table.find('tbody')
+
         for row in tbody.findAll('tr', class_filter):
             link = row.find('a')
+            formatted_date = ""
+            if prepend_date:
+                try:
+                    creation_date = row.find('td', attrs={'class': 'abaxx-aspect-messageWithState-mailboxMessage-created'}).text
+                    creation_date_components = creation_date.split(".")
+                    formatted_date = '{0}-{1}-{2}_'.format(creation_date_components[2], creation_date_components[1], creation_date_components[0])
+                except Exception:
+                    self.logger.error("Can't parse date, this could i.e. be for archived documents.")
+
             # download file
             if path:
                 fname = '{0}/{1}'.format(path, link_name)
-                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list)
+                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list, formatted_date)
                 if rcode == 200:
                     # mark url as read
                     self._update_downloadstate(link_name, self.base_url + link['href'])
@@ -307,7 +315,7 @@ class DKBRobo(object):
 
         return (document_dic, document_name_list)
 
-    def _get_document(self, path, url, document_name_list):
+    def _get_document(self, path, url, document_name_list, formatted_date):
         """ get download document from postbox
         args:
             self.dkb_br - browser object
@@ -341,14 +349,16 @@ class DKBRobo(object):
                 # rename to avoid overrides
                 self.logger.debug('DKBRobo._get_document(): adding datetime to avoid overrides.\n')
                 now = datetime.now()
-                fname = '{0}-{1}'.format(now.strftime("%Y-%m-%d-%H-%M-%S"), fname)
+                fname = '{0}_{1}'.format(now.strftime("%Y-%m-%d-%H-%M-%S"), fname)
+
+            if formatted_date:
+                fname = '{0}{1}'.format(formatted_date, fname)
 
             # log filename
             self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
 
             # dump content to file
             self.logger.debug('DKBRobo._get_document() content-length: %s\n', len(response.content))
-            self.logger.debug('writing to %s/%s\n', path, fname)
             with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
                 pdf_file.write(response.content)
             result = response.status_code
@@ -1010,7 +1020,7 @@ class DKBRobo(object):
 
         return transaction_list
 
-    def scan_postbox(self, path=None, download_all=False, archive=False):
+    def scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
         """ scans the DKB postbox and creates a dictionary out of the
             different documents
         args:
@@ -1025,7 +1035,7 @@ class DKBRobo(object):
                 - documents
                     - name of document -> document link
         """
-        self.logger.debug('DKBRobo.scan_postbox()\n')
+        self.logger.debug('DKBRobo.scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
         if archive:
             pb_url = self.base_url + '/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
         else:
@@ -1051,7 +1061,7 @@ class DKBRobo(object):
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
             if path:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all)
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all, prepend_date)
             else:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all)
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all, prepend_date=prepend_date)
         return pb_dic

@@ -25,6 +25,9 @@ def cnt_list(value):
     """ customized function return just the number if entries in input list """
     return len(value)
 
+def my_side_effect(*args, **kwargs):
+    return (200, args[0], [args[3]])
+
 @patch('dkb_robo.DKBRobo.dkb_br')
 class TestDKBRobo(unittest.TestCase):
     """ test class """
@@ -56,6 +59,14 @@ class TestDKBRobo(unittest.TestCase):
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
+        self.assertEqual(e_result, self.dkb.get_credit_limits())
+
+    def test_003_get_cc_limit(self, mock_browser):
+        """ test DKBRobo.get_credit_limits() no limits """
+        # html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
+        html = '<html><body>fooo</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        e_result = {}
         self.assertEqual(e_result, self.dkb.get_credit_limits())
 
     def test_003_get_exo_single(self, mock_browser):
@@ -578,7 +589,6 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertTrue(mock_updow.called)
 
-
     @patch('dkb_robo.DKBRobo._update_downloadstate')
     @patch('dkb_robo.DKBRobo._get_document')
     def test_024_get_document_links(self, mock_doc, mock_updow, mock_browser):
@@ -598,12 +608,25 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._update_downloadstate')
     @patch('dkb_robo.DKBRobo._get_document')
     def test_025_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method """
+        """ test DKBRobo._get_document_links() method no html return """
         mock_browser.get_current_page.return_value = None
         mock_browser.open.return_value = True
         mock_doc.return_value=(None, 'fname', ['foo'])
         e_result = {}
-        self.assertFalse(self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertFalse(mock_updow.called)
+
+
+    @patch('dkb_robo.DKBRobo._update_downloadstate')
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_026_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._get_document_links() method  wrong html return """
+        html = '<html><body>fooo</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_browser.open.return_value = True
+        mock_doc.return_value=(None, 'fname', ['foo'])
+        e_result = {}
+        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
     @patch('dkb_robo.DKBRobo._get_document_links')
@@ -895,7 +918,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = False
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', [], False))
         self.assertTrue(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -906,7 +929,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -922,7 +945,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
@@ -938,7 +961,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/2022-09-30-00-00-00-mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00-mock_re.pdf']), self.dkb._get_document('path', 'url', ['mock_re.pdf']))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00_mock_re.pdf']), self.dkb._get_document('path', 'url', ['mock_re.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
@@ -949,7 +972,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
@@ -961,7 +984,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/2022-09-30-00-00-00-Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', '2022-09-30-00-00-00-Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', '2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
@@ -972,7 +995,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.dkb._get_document('path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
@@ -984,7 +1007,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/2022-09-30-00-00-00-foo.pdf', ['foo.pdf', '2022-09-30-00-00-00-foo.pdf']), self.dkb._get_document('path', 'url', ['foo.pdf']))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_foo.pdf', ['foo.pdf', '2022-09-30-00-00-00_foo.pdf']), self.dkb._get_document('path', 'url', ['foo.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
@@ -997,11 +1020,33 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
         mock_parse.side_effect = [Exception('exc1')]
-        self.assertEqual((200, 'path/Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf', ['Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', []))
+        self.assertEqual((200, 'path/Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf', ['Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', [], False))
+        self.assertFalse(mock_makedir.called)
+
+    @patch("builtins.open", mock_open(read_data='test'), create=True)
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_067_get_document(self, mock_exists, mock_makedir, mock_browser):
+        """ test get_document prepend string """
+        mock_exists.return_value = True
+        mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
+        mock_browser.open.return_value.status_code = 200
+        self.assertEqual((200, 'path/prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('path', 'url', [], 'prepend_'))
+        self.assertFalse(mock_makedir.called)
+
+    @patch("builtins.open", mock_open(read_data='test'), create=True)
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_068_get_document(self, mock_exists, mock_makedir, mock_browser):
+        """ test get_document create path """
+        mock_exists.return_value = True
+        mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
+        mock_browser.open.return_value.status_code = 200
+        self.assertEqual((200, 'path/prepend_foo.pdf', ['prepend_foo.pdf']), self.dkb._get_document('path', 'url', [], 'prepend_'))
         self.assertFalse(mock_makedir.called)
 
     @patch('builtins.input')
-    def test_066_ctan_check(self, mock_input, mock_browser):
+    def test_069_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body><ol><li>li</li></ol></body></html>'
@@ -1009,7 +1054,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('builtins.input')
-    def test_067_ctan_check(self, mock_input, mock_browser):
+    def test_070_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body>body</body></html>'
@@ -1017,7 +1062,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('builtins.input')
-    def test_068_ctan_check(self, mock_input, mock_browser):
+    def test_071_ctan_check(self, mock_input, mock_browser):
         """ test ctan_check wrong tan """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body><div class="clearfix module text errorMessage">div</div></body></html>'
@@ -1028,7 +1073,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('sys.exit')
     @patch('builtins.input')
-    def test_069_ctan_check(self, mock_input, mock_sexit, mock_browser):
+    def test_072_ctan_check(self, mock_input, mock_sexit, mock_browser):
         """ test ctan_check """
         mock_input.return_value = 'tan'
         html = '<html><head>header</head><body>body</body></html>'
@@ -1037,7 +1082,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb._ctan_check('soup'))
 
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_070_login_confirm(self, mock_confirm, mock_browser, ):
+    def test_073_login_confirm(self, mock_confirm, mock_browser, ):
         """ test login confirmed check_cofirmation returns true """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.return_value = True
@@ -1045,7 +1090,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('time.sleep', return_value=None)
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_071_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
+    def test_074_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
         """ test login confirmed check_cofirmation returns multiple false but then true """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.side_effect = [False, False, False, True]
@@ -1053,7 +1098,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('time.sleep', return_value=None)
     @patch('dkb_robo.DKBRobo._check_confirmation')
-    def test_072_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
+    def test_075_login_confirm(self, mock_confirm, mock_sleep, mock_browser):
         """ test login confirmed  """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_confirm.return_value = False
@@ -1062,7 +1107,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('No session confirmation after 120 polls', str(err.exception))
 
     @patch('dkb_robo.dkb_robo.generate_random_string')
-    def test_073_login_confirm(self, mock_rand, mock_browser):
+    def test_076_login_confirm(self, mock_rand, mock_browser):
         """ test login confirmed - exception when getting the token """
         mock_browser.open.return_value.json.return_value = {"foo": "bar"}
         mock_browser.get_current_page.side_effect =  Exception('exc')
@@ -1070,118 +1115,153 @@ class TestDKBRobo(unittest.TestCase):
             self.assertTrue(self.dkb._login_confirm())
         self.assertEqual('Error while getting the confirmation page', str(err.exception))
 
-    def test_074_check_confirmation(self, _unused):
+    def test_077_check_confirmation(self, _unused):
         """ test confirmation """
         result = {'foo': 'bar'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Error during session confirmation', str(err.exception))
 
-    def test_075_check_confirmation(self, _unused):
+    def test_078_check_confirmation(self, _unused):
         """ test confirmation state expired"""
         result = {'state': 'EXPIRED'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Session expired', str(err.exception))
 
-    def test_076_check_confirmation(self, _unused):
+    def test_079_check_confirmation(self, _unused):
         """ test confirmation state processed"""
         result = {'state': 'PROCESSED'}
         self.assertTrue(self.dkb._check_confirmation(result, 1))
 
-    def test_077_check_confirmation(self, _unused):
+    def test_080_check_confirmation(self, _unused):
         """ test confirmation state unknown """
         result = {'state': 'UNK'}
         self.assertFalse(self.dkb._check_confirmation(result, 1))
 
-    def test_078_check_confirmation(self, _unused):
+    def test_081_check_confirmation(self, _unused):
         """ test confirmation guiState expired"""
         result = {'guiState': 'EXPIRED'}
         with self.assertRaises(Exception) as err:
             self.dkb._check_confirmation(result, 1)
         self.assertEqual('Session expired', str(err.exception))
 
-    def test_079_check_confirmation(self, _unused):
+    def test_082_check_confirmation(self, _unused):
         """ test confirmation guiState MAP_TO_EXIT"""
         result = {'guiState': 'MAP_TO_EXIT'}
         self.assertTrue(self.dkb._check_confirmation(result, 1))
 
-    def test_080_check_confirmation(self, _unused):
+    def test_083_check_confirmation(self, _unused):
         """ test confirmation guiState unknown """
         result = {'guiState': 'UNK'}
         self.assertFalse(self.dkb._check_confirmation(result, 1))
 
-    def test_081_parse_depot_status_tr(self, _mock_browser):
+    def test_084_parse_depot_status_tr(self, _mock_browser):
         """ test DKBRobo._parse_cc_transactions """
         csv = read_file(self.dir_path + '/mocks/test_parse_depot.csv')
         result = [{'shares': 10.0, 'shares_unit': 'cnt1', 'isin_wkn': 'WKN1', 'text': 'Bezeichnung1', 'price': 11.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 1110.1, 'availability': 'Frei'}, {'shares': 20.0, 'shares_unit': 'cnt2', 'isin_wkn': 'WKN2', 'text': 'Bezeichnung2', 'price': 12.0, 'win_loss': '', 'win_loss_currency': '', 'aquisition_cost': '', 'aquisition_cost_currency': '', 'dev_price': '', 'price_euro': 2220.2, 'availability': 'Frei'}]
         self.assertEqual(result, self.dkb._parse_depot_status(csv))
 
-    def test_082_string2float(self, _unused):
+    def test_085_string2float(self, _unused):
         """ test string2float """
         value = 1000
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_083_string2float(self, _unused):
+    def test_086_string2float(self, _unused):
         """ test string2float """
         value = 1000.0
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_084_string2float(self, _unused):
+    def test_087_string2float(self, _unused):
         """ test string2float """
         value = '1.000,00'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_085_string2float(self, _unused):
+    def test_088_string2float(self, _unused):
         """ test string2float """
         value = '1000,00'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_086_string2float(self, _unused):
+    def test_089_string2float(self, _unused):
         """ test string2float """
         value = '1.000'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_087_string2float(self, _unused):
+    def test_090_string2float(self, _unused):
         """ test string2float """
         value = '1.000,23'
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_088_string2float(self, _unused):
+    def test_091_string2float(self, _unused):
         """ test string2float """
         value = '1000,23'
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_089_string2float(self, _unused):
+    def test_092_string2float(self, _unused):
         """ test string2float """
         value = 1000.23
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_090_string2float(self, _unused):
+    def test_093_string2float(self, _unused):
         """ test string2float """
         value = '-1.000'
         self.assertEqual(-1000.0, self.string2float(value))
 
-    def test_091_string2float(self, _unused):
+    def test_094_string2float(self, _unused):
         """ test string2float """
         value = '-1.000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_092_string2float(self, _unused):
+    def test_095_string2float(self, _unused):
         """ test string2float """
         value = '-1000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_093_string2float(self, _unused):
+    def test_096_string2float(self, _unused):
         """ test string2float """
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
 
     @patch('dkb_robo.DKBRobo._parse_depot_status')
-    def test_094_get_depot_status(self, mock_pds, _unused):
+    def test_097_get_depot_status(self, mock_pds, _unused):
         """ test get depot status """
         mock_pds.return_value = 'mock_pds'
         self.assertEqual('mock_pds', self.dkb.get_depot_status('url', 'fdate', 'tdate', 'booked'))
+
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_098_download_document(self, mock_get_doc, _ununsed):
+        """ test download document """
+        html = read_file(self.dir_path + '/mocks/document_list.html')
+        table = BeautifulSoup(html, 'html5lib')
+        mock_get_doc.side_effect = my_side_effect
+        class_filter = {}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
+        result = (doc_dic, [''])
+        self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, False))
+
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_099_download_document(self, mock_get_doc, _ununsed):
+        """ test download document prepend date """
+        html = read_file(self.dir_path + '/mocks/document_list.html')
+        table = BeautifulSoup(html, 'html5lib')
+        mock_get_doc.side_effect = my_side_effect
+        class_filter = {}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
+        result = (doc_dic, ['2022-01-04_'])
+        self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, True))
+
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_100_download_document(self, mock_get_doc, _ununsed):
+        """ test download document prepend date """
+        html = read_file(self.dir_path + '/mocks/document_list-2.html')
+        table = BeautifulSoup(html, 'html5lib')
+        mock_get_doc.side_effect = my_side_effect
+        class_filter = {}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
+        result = (doc_dic, [''])
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, True))
+        self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
 if __name__ == '__main__':
 

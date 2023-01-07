@@ -233,12 +233,13 @@ A dictionary similar to the below will be returned
 To scan the DKB postbox for documents  the below method can be used
 
 ```python
-> document_dic = dkb.scan_postbox(path, download_all, archive)
+> document_dic = dkb.scan_postbox(path, download_all, archive, prepend_date)
 ```
 
 - path - optional argument. If specified, documents will be downloaded and stored
 - dowload_all (True/**False**) - optional argument. By default only unread documents from DKB postbox will get downloaded and marked as "read". By setting this parameter all documents will be downloaded
 - archive (True/**False**) - optional argument. When set to `True` the "Archiv" folder in the Postbox will be scanned and documents will be downloaded if a `path` variable is specificed. *Handle this parameter with care as the amount of documents to be downloaded can be huge*.
+- prepend_date (True/**False**) - optional argument. Prepend document date in `YYYY-MM-DD_` format to each document to allow easy sorting of downloaded files
 
 The method will return a dictionary containing the different postbox folders and links to download the corresponding documents
 
