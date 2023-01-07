@@ -280,6 +280,20 @@ class DKBRobo(object):
                 break
         return document_dic
 
+    def _get_formatted_date(self, prepend_date, row):
+        """ get document date for prepending """
+        self.logger.debug('_download_document()\n')
+        formatted_date = ""
+        if prepend_date:
+            try:
+                creation_date = row.find('td', attrs={'class': 'abaxx-aspect-messageWithState-mailboxMessage-created'}).text
+                creation_date_components = creation_date.split(".")
+                formatted_date = '{0}-{1}-{2}_'.format(creation_date_components[2], creation_date_components[1], creation_date_components[0])
+            except Exception:
+                self.logger.error("Can't parse date, this could i.e. be for archived documents.")
+
+        return formatted_date
+
     def _download_document(self, path, class_filter, link_name, table, prepend_date):
         """ document download """
         self.logger.debug('_download_document()\n')
@@ -290,14 +304,9 @@ class DKBRobo(object):
 
         for row in tbody.findAll('tr', class_filter):
             link = row.find('a')
-            formatted_date = ""
-            if prepend_date:
-                try:
-                    creation_date = row.find('td', attrs={'class': 'abaxx-aspect-messageWithState-mailboxMessage-created'}).text
-                    creation_date_components = creation_date.split(".")
-                    formatted_date = '{0}-{1}-{2}_'.format(creation_date_components[2], creation_date_components[1], creation_date_components[0])
-                except Exception:
-                    self.logger.error("Can't parse date, this could i.e. be for archived documents.")
+
+            # get formatted date
+            formatted_date = self._get_formatted_date(prepend_date, row)
 
             # download file
             if path:
