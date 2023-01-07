@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.19.1
+
+**Bugfixes**:
+
+- addressing code smells reported by [sonarcloud.io](https://sonarcloud.io/summary/overall?id=grindsa_dkb-robo)
+
 ## Changes in 0.19
 
 **Features**:
