@@ -1215,7 +1215,7 @@ class TestDKBRobo(unittest.TestCase):
         table = BeautifulSoup(html, 'html5lib')
         mock_get_doc.side_effect = my_side_effect
         class_filter = {}
-        doc_dic = {'Mitteilung über steigende Sollzinssätze ab 01.10.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Mitteilung+%C3%BCber+steigende+Sollzinss%C3%A4tze+ab+01.10.2022&row=0', 'fname': 'path/link_name'}}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
         result = (doc_dic, [''])
         self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, False))
 
@@ -1226,7 +1226,7 @@ class TestDKBRobo(unittest.TestCase):
         table = BeautifulSoup(html, 'html5lib')
         mock_get_doc.side_effect = my_side_effect
         class_filter = {}
-        doc_dic = {'Mitteilung über steigende Sollzinssätze ab 01.10.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Mitteilung+%C3%BCber+steigende+Sollzinss%C3%A4tze+ab+01.10.2022&row=0', 'fname': 'path/link_name'}}
+        doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
         result = (doc_dic, ['2022-01-04_'])
         self.assertEqual(result, self.dkb._download_document('path',  class_filter, 'link_name', table, True))
 
