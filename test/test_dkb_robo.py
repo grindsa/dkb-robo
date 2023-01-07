@@ -61,6 +61,14 @@ class TestDKBRobo(unittest.TestCase):
         e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
         self.assertEqual(e_result, self.dkb.get_credit_limits())
 
+    def test_003_get_cc_limit(self, mock_browser):
+        """ test DKBRobo.get_credit_limits() no limits """
+        # html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
+        html = '<html><body>fooo</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        e_result = {}
+        self.assertEqual(e_result, self.dkb.get_credit_limits())
+
     def test_003_get_exo_single(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order """
         html = read_file(self.dir_path + '/mocks/freistellungsauftrag.html')
@@ -581,7 +589,6 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertTrue(mock_updow.called)
 
-
     @patch('dkb_robo.DKBRobo._update_downloadstate')
     @patch('dkb_robo.DKBRobo._get_document')
     def test_024_get_document_links(self, mock_doc, mock_updow, mock_browser):
@@ -601,12 +608,25 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._update_downloadstate')
     @patch('dkb_robo.DKBRobo._get_document')
     def test_025_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method """
+        """ test DKBRobo._get_document_links() method no html return """
         mock_browser.get_current_page.return_value = None
         mock_browser.open.return_value = True
         mock_doc.return_value=(None, 'fname', ['foo'])
         e_result = {}
-        self.assertFalse(self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertFalse(mock_updow.called)
+
+
+    @patch('dkb_robo.DKBRobo._update_downloadstate')
+    @patch('dkb_robo.DKBRobo._get_document')
+    def test_026_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._get_document_links() method  wrong html return """
+        html = '<html><body>fooo</body></html>'
+        mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
+        mock_browser.open.return_value = True
+        mock_doc.return_value=(None, 'fname', ['foo'])
+        e_result = {}
+        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
     @patch('dkb_robo.DKBRobo._get_document_links')
