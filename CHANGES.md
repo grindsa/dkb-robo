@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+## Changes in 0.19
+
+**Features**:
+
+- [#34](https://github.com/grindsa/dkb-robo/pull/34) Add date into filename when scanning postbox
+
 ## Changes in 0.18.2
 
 **Bugfixes**:
