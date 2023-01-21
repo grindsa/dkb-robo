@@ -107,5 +107,5 @@ ENV/
 /*.html
 *.json
 # /*.txt
-foo/*
+foo*/*
 coverage.lcov

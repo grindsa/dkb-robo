@@ -261,12 +261,14 @@ class DKBRobo(object):
         # create a list of documents to avoid overrides
         document_name_list = []
 
+        next_url = url
+
         while True:
             soup = self.dkb_br.get_current_page()
             if soup:
                 table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
                 if table:
-                    (tmp_dic, tmp_list, ) = self._download_document(path, class_filter, link_name, table, prepend_date)
+                    (tmp_dic, tmp_list, ) = self._download_document(next_url, path, class_filter, link_name, table, prepend_date)
                     document_name_list.extend(tmp_list)
                     document_dic.update(tmp_dic)
 
@@ -278,11 +280,12 @@ class DKBRobo(object):
                     break
             else:
                 break
+
         return document_dic
 
     def _get_formatted_date(self, prepend_date, row):
         """ get document date for prepending """
-        self.logger.debug('_download_document()\n')
+        self.logger.debug('_get_formatted_date()\n')
         formatted_date = ""
         if prepend_date:
             try:
@@ -294,14 +297,13 @@ class DKBRobo(object):
 
         return formatted_date
 
-    def _download_document(self, path, class_filter, link_name, table, prepend_date):
+    def _download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
         """ document download """
         self.logger.debug('_download_document()\n')
         document_dic = {}
         document_name_list = []
 
         tbody = table.find('tbody')
-
         for row in tbody.findAll('tr', class_filter):
             link = row.find('a')
 
@@ -310,21 +312,20 @@ class DKBRobo(object):
 
             # download file
             if path:
-                fname = '{0}/{1}'.format(path, link_name)
-                rcode, fname, document_name_list = self._get_document(fname, self.base_url + link['href'], document_name_list, formatted_date)
+                folder_path = '{0}/{1}'.format(path, folder)
+                rcode, fname, document_name_list = self._get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
                 if rcode == 200:
                     # mark url as read
-                    self._update_downloadstate(link_name, self.base_url + link['href'])
+                    self._update_downloadstate(folder, self.base_url + link['href'])
                 if rcode:
                     document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
                 else:
                     document_dic[link.contents[0]] = self.base_url + link['href']
             else:
                 document_dic[link.contents[0]] = self.base_url + link['href']
-
         return (document_dic, document_name_list)
 
-    def _get_document(self, path, url, document_name_list, formatted_date):
+    def _get_document(self, folder_url, path, url, document_name_list, formatted_date):
         """ get download document from postbox
         args:
             self.dkb_br - browser object
@@ -341,6 +342,7 @@ class DKBRobo(object):
             os.makedirs(path)
 
         # fetch file
+        response = self.dkb_br.open(folder_url)
         response = self.dkb_br.open(url)
 
         # gt filename from response header
