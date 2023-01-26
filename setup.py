@@ -15,6 +15,12 @@ setup(name='dkb_robo',
         'html5lib',
         'six'
     ],
+    entry_points={
+        "console_scripts": ["dkb=dkb_robo.cli:main"],
+    },
+    extras_require={
+        "cli": ["click", "tabulate"],
+    },
     classifiers = [
         'Programming Language :: Python',
         'Development Status :: 4 - Beta',
