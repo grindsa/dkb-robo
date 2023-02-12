@@ -13,7 +13,9 @@ setup(name='dkb_robo',
         'mechanicalsoup',
         'bs4',
         'html5lib',
-        'six'
+        'six',
+        'tabulate',
+        'click'
     ],
     entry_points={
         "console_scripts": ["dkb=dkb_robo.cli:main"],

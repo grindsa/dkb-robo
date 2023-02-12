@@ -1,9 +1,16 @@
-import click
-from . import dkb_robo
+# pylint: disable=c3001, e1101, r0913, w0108, w0622
+""" dkb_robo cli """
 from datetime import date
+from pprint import pprint
+import sys
+import csv
+import json
+import tabulate
+import click
+import dkb_robo
+
 
 DATE_FORMAT = "%d.%m.%Y"
-
 
 @click.group()
 @click.option(
@@ -48,6 +55,7 @@ DATE_FORMAT = "%d.%m.%Y"
 )
 @click.pass_context
 def main(ctx, debug, use_tan, username, password, format):
+    """ main fuunction """
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
     ctx.obj["USE_TAN"] = use_tan
@@ -59,15 +67,16 @@ def main(ctx, debug, use_tan, username, password, format):
 @main.command()
 @click.pass_context
 def accounts(ctx):
+    """ get list of account """
     try:
         with _login(ctx) as dkb:
-            accounts = dkb.account_dic
-            for _, value in accounts.items():
+            accounts_dict = dkb.account_dic
+            for _, value in accounts_dict.items():
                 del value["details"]
                 del value["transactions"]
-            ctx.obj["FORMAT"](accounts.values())
-    except dkb_robo.DKBRoboError as e:
-        click.echo(e.args[0], err=True)
+            ctx.obj["FORMAT"](list(accounts_dict.values()))
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
 
 
 @main.command()
@@ -105,6 +114,8 @@ def accounts(ctx):
     default=date.today().strftime(DATE_FORMAT),
 )
 def transactions(ctx, name, account, transaction_type, date_from, date_to):
+    """ get list of transactions """
+
     if name is not None and account is None:
         account_filter = lambda acct: acct["name"] == name
     elif account is not None and name is None:
@@ -114,74 +125,73 @@ def transactions(ctx, name, account, transaction_type, date_from, date_to):
 
     try:
         with _login(ctx) as dkb:
-            accounts = dkb.account_dic
+            accounts_dict = dkb.account_dic
             filtered_accounts = [
-                acct for acct in accounts.values() if account_filter(acct)
+                acct for acct in accounts_dict.values() if account_filter(acct)
             ]
             if len(filtered_accounts) == 0:
                 click.echo(f"No account found matching '{name or account}'", err=True)
                 return
             the_account = filtered_accounts[0]
-            transactions = dkb.get_transactions(
+            transactions_list = dkb.get_transactions(
                 the_account["transactions"],
                 the_account["type"],
                 date_from.strftime(DATE_FORMAT),
                 date_to.strftime(DATE_FORMAT),
                 transaction_type=transaction_type,
             )
-            ctx.obj["FORMAT"](transactions)
+            ctx.obj["FORMAT"](transactions_list)
 
-    except dkb_robo.DKBRoboError as e:
-        click.echo(e.args[0], err=True)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
 
 
 @main.command()
 @click.pass_context
 def last_login(ctx):
+    """ get last login """
     try:
         with _login(ctx) as dkb:
             ctx.obj["FORMAT"]([{"last_login": dkb.last_login}])
-    except dkb_robo.DKBRoboError as e:
-        click.echo(e.args[0], err=True)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
 
 
 @main.command()
 @click.pass_context
 def credit_limits(ctx):
+    """ get limits """
     try:
         with _login(ctx) as dkb:
             limits = dkb.get_credit_limits()
             limits = [{"account": k, "limit": v} for k, v in limits.items()]
             ctx.obj["FORMAT"](limits)
-    except dkb_robo.DKBRoboError as e:
-        click.echo(e.args[0], err=True)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
 
 
 @main.command()
 @click.pass_context
 def standing_orders(ctx):
+    """ get standing orders """
     try:
         with _login(ctx) as dkb:
             ctx.obj["FORMAT"](dkb.get_standing_orders())
-    except dkb_robo.DKBRoboError as e:
-        click.echo(e.args[0], err=True)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
 
 
-def _load_format(format):
-    if format == "pprint":
-        from pprint import pprint
-
+def _load_format(output_format):
+    """ select output format based on cli option """
+    if output_format == "pprint":
         return lambda data: pprint(data)
-    elif format == "table":
-        import tabulate
 
+    if output_format == "table":
         return lambda data: click.echo(
             tabulate.tabulate(data, headers="keys", tablefmt="grid")
         )
-    elif format == "csv":
-        import sys
-        import csv
 
+    if output_format == "csv":
         def formatter(data):
             if len(data) == 0:
                 return
@@ -190,13 +200,12 @@ def _load_format(format):
             writer.writerows(data)
 
         return formatter
-    elif format == "json":
-        import json
+
+    if output_format == "json":
 
         return lambda data: click.echo(json.dumps(data, indent=2))
 
-    else:
-        raise Exception(f"Unknown format: {format}")
+    raise Exception(f"Unknown format: {output_format}")
 
 
 def _login(ctx):
