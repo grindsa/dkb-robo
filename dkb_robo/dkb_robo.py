@@ -277,9 +277,9 @@ class DKBRobo(object):
                     next_url = self.base_url + next_site.find('a')['href']
                     self.dkb_br.open(next_url)
                 else:
-                    break
+                    break  # pragma: no cover
             else:
-                break
+                break  # pragma: no cover
 
         return document_dic
 
