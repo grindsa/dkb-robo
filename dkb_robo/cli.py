@@ -118,9 +118,11 @@ def transactions(ctx, name, account, transaction_type, date_from, date_to):  # p
     """ get list of transactions """
 
     if name is not None and account is None:
-        def account_filter(acct): return acct["name"] == name  # nopep8
+        def account_filter(acct):
+            return acct["name"] == name  # nopep8
     elif account is not None and name is None:
-        def account_filter(acct): return acct["account"] == account
+        def account_filter(acct):
+            return acct["account"] == account
     else:
         raise click.UsageError("One of --name or --account must be provided.", ctx)
 
