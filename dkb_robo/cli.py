@@ -208,7 +208,7 @@ def _load_format(output_format):
 
         return lambda data: click.echo(json.dumps(data, indent=2))
 
-    raise Exception(f"Unknown format: {output_format}")
+    raise ValueError(f"Unknown format: {output_format}")
 
 
 def _login(ctx):
