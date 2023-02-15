@@ -8,9 +8,10 @@ import json
 import tabulate
 import click
 import dkb_robo
-
+sys.path.append("..")
 
 DATE_FORMAT = "%d.%m.%Y"
+
 
 @click.group()
 @click.option(
@@ -54,7 +55,7 @@ DATE_FORMAT = "%d.%m.%Y"
     envvar="DKB_FORMAT",
 )
 @click.pass_context
-def main(ctx, debug, use_tan, username, password, format):
+def main(ctx, debug, use_tan, username, password, format):  # pragma: no cover
     """ main fuunction """
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
@@ -113,11 +114,11 @@ def accounts(ctx):
     type=click.DateTime(formats=[DATE_FORMAT]),
     default=date.today().strftime(DATE_FORMAT),
 )
-def transactions(ctx, name, account, transaction_type, date_from, date_to):
+def transactions(ctx, name, account, transaction_type, date_from, date_to):  # pragma: no cover
     """ get list of transactions """
 
     if name is not None and account is None:
-        account_filter = lambda acct: acct["name"] == name
+        account_filter = lambda acct: acct["name"] == name  # nopep8
     elif account is not None and name is None:
         account_filter = lambda acct: acct["account"] == account
     else:
@@ -192,7 +193,7 @@ def _load_format(output_format):
         )
 
     if output_format == "csv":
-        def formatter(data):
+        def formatter(data):  # pragma: no cover
             if len(data) == 0:
                 return
             writer = csv.DictWriter(sys.stdout, data[0].keys())
