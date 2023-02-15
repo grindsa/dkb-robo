@@ -6,7 +6,6 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
-from undecorated import undecorated
 from mechanicalsoup import LinkNotFoundError
 from datetime import date
 import click
