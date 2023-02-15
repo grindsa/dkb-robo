@@ -272,7 +272,7 @@ Commands:
   transactions
 ```
 
-### Example to fetch account list
+### Example command to fetch account list
 
 ```bash
 > py dkb -u <user> -p <password> accounts
