@@ -247,7 +247,7 @@ Check the scripts [dkb_example.py](doc/dkb_example.py) and [dkb_docdownload.py](
 
 ## dkb_robo command line interface (CLI)
 
-Since v.20 dkb_robo comes with a CLI tool
+Starting with v0.20 dkb_robo comes with a CLI tool
 
 ```bash
 $ dkb --help
