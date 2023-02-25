@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.20.1
+
+**Bugfixes**:
+
+- #38 `long_description` field in PyPI
+
 ## Changes in 0.20
 
 **Features**:

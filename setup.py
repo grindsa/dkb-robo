@@ -6,7 +6,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / 'README.md').read_text()
 
 setup(name='dkb_robo',
-    version='0.20',
+    version='0.20.1',
     description='library to access the internet banking area of "Deutsche Kreditbank" to get account information and transactions.',
     long_description=long_description,
     url='https://github.com/grindsa/dkb-robo',
