@@ -7,11 +7,13 @@ import random
 import time
 from datetime import datetime
 import re
+import json
 from string import digits, ascii_letters
 from urllib import parse
 from http import cookiejar
 import logging
 import mechanicalsoup
+import requests
 
 
 def generate_random_string(length):
@@ -83,9 +85,14 @@ class DKBRobo(object):
     """ dkb_robo class """
     # pylint: disable=R0904
     base_url = 'https://www.dkb.de'
+    banking_url = 'https://banking.beta.dkb.de'
     dkb_user = None
     dkb_password = None
     dkb_br = None
+    client = None
+    api_prefix = '/api'
+    mfa_method = 'seal_one'
+    token_dic = None
     last_login = None
     account_dic = {}
     tan_insert = False
@@ -390,6 +397,103 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         return soup
 
+    def _get_token(self):
+        """ get access token """
+        self.logger.debug('DKBRobo._get_token()\n')
+
+        # login via API
+        data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
+        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
+        if response.status_code == 200:
+            self.token_dic = response.json()
+        else:
+            raise DKBRoboError('Login failed: 1st factor authentication failed. RC: {0}'.format(response.status_code))
+
+    def _update_token(self):
+        """ update token information with 2fa iformation """
+        self.logger.debug('DKBRobo._update_token()\n')
+
+        data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
+        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
+        if response.status_code == 200:
+            self.token_dic = response.json()
+        else:
+            raise DKBRoboError('Login failed: token update failed. RC: {0}'.format(response.status_code))
+
+    def _get_mfa_methods(self):
+        """ get mfa methods """
+        self.logger.debug('DKBRobo._get_mfa_methods()\n')
+        mfa_dic = {}
+
+        # check for access_token and get mfa_methods
+        if 'access_token' in self.token_dic:
+            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/methods?filter%5BmethodType%5D={0}'.format(self.mfa_method))
+            if response.status_code == 200:
+                mfa_dic = response.json()
+            else:
+                raise DKBRoboError('Login failed: getting mfa_methods failed. RC: {0}'.format(response.status_code))
+        else:
+            raise DKBRoboError('Login failed: no 1fa access token.')
+
+        return mfa_dic
+
+    def _get_mfa_challenge_id(self, mfa_dic):
+        """ get challenge dict with information on the 2nd factor """
+        self.logger.debug('DKBRobo._get_mfa_challenge_id()\n')
+
+        challenge_id = None
+        if 'id' in mfa_dic['data'][0]:
+            # additional headers needed as this call requires it
+            self.client.headers['Content-Type'] = 'application/vnd.api+json'
+            self.client.headers["Accept"] = "application/vnd.api+json"
+
+            # we are expecting the first method from mfa_dic to be used
+            data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': 'seal_one'}}}
+            response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
+            if response.status_code in (200, 201):
+                challenge_dic = response.json()
+                if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
+                    if challenge_dic['data']['type'] == 'mfa-challenge':
+                        challenge_id = challenge_dic['data']['id']
+                    else:
+                        raise DKBRoboError('Login failed:: wrong challenge type: {0}\n'.format(challenge_dic))
+
+                else:
+                    raise DKBRoboError('Login failed: challenge response format is other than expected: {0}\n'.format(challenge_dic))
+            else:
+                raise DKBRoboError('Login failed: post request to get the mfa challenges failed. RC: {0}'.format(response.status_code))
+
+            # we rmove the headers we added earlier
+            self.client.headers.pop('Content-Type')
+            self.client.headers.pop('Accept')
+
+        return challenge_id
+
+    def _complete_2fa(self, challenge_id):
+        """ wait for confirmation for the 2nd factor """
+
+        self.logger.debug('DKBRobo._complete_2fa()\n')
+        cnt = 0
+        mfa_completed = False
+        # we give us 50 seconds to press a button on your phone
+        while cnt <= 10:
+            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/challenges/{0}'.format(challenge_id))
+            cnt += 1
+            if response.status_code == 200:
+                polling_dic = response.json()
+                if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
+                    self.logger.debug('DKBRobo._login: cnt {0} got {1} flag'.format(cnt, polling_dic['data']['attributes']['verificationStatus']))
+                    if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
+                        mfa_completed = True
+                        break
+                else:
+                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: {0}\n'.format(polling_dic))
+            else:
+                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: {0} parsing challenges: {0}\n'.format(response.status_code))
+            time.sleep(5)
+
+        return mfa_completed
+
     def _login(self):
         """ login into DKB banking area
         args:
@@ -409,53 +513,45 @@ class DKBRobo(object):
         """
         self.logger.debug('DKBRobo._login()\n')
 
-        # login url
-        login_url = self.base_url + '/' + 'banking'
+        mfa_dic = {}
 
-        # create browser and login
-        self.dkb_br = self._new_instance()
+        # create new session
+        self.client = self._new_session()
 
-        self.dkb_br.open(login_url)
-        try:
-            self.dkb_br.select_form('#login')
-            self.dkb_br["j_username"] = str(self.dkb_user)
-            self.dkb_br["j_password"] = str(self.dkb_password)
+        # get token for 1fa
+        self._get_token()
 
-            # submit form and check response
-            self.dkb_br.submit_selected()
-            soup = self.dkb_br.get_current_page()
+        # get mfa methods
+        mfa_dic = self._get_mfa_methods()
 
-            # catch login error
-            if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
-                raise DKBRoboError('Login failed')
+        # we need a challege-id for polling so lets try to get it
+        mfa_challenge_id = None
+        if 'mfa_id' in self.token_dic and 'data' in mfa_dic:
+            mfa_challenge_id = self._get_mfa_challenge_id(mfa_dic)
+        else:
+            raise DKBRoboError('Login failed: no 1fa access token.')
 
-            # catch generic notices
-            if soup.find("form", attrs={'id': 'genericNoticeForm'}):
-                self.dkb_br.open(login_url)
-                soup = self.dkb_br.get_current_page()
+        # lets complete 2fa
+        mfa_completed = False
+        if mfa_challenge_id:
+            mfa_completed = self._complete_2fa(mfa_challenge_id)
+        else:
+            raise DKBRoboError('Login failed: No challenge id.')
 
-            # filter last login date
-            if soup.find("div", attrs={'id': 'lastLoginContainer'}):
-                last_login = soup.find("div", attrs={'id': 'lastLoginContainer'}).text.strip()
-                # remove crlf
-                last_login = last_login.replace('\n', '')
-                # format string in a way we need it
-                last_login = last_login.replace('  ', '')
-                last_login = last_login.replace('Letzte Anmeldung:', '')
-                self.last_login = last_login
-                if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
-                    if self.tan_insert:
-                        # chiptan input
-                        login_confirmed = self._ctan_check(soup)
-                    else:
-                        # app confirmation needed to continue
-                        login_confirmed = self._login_confirm()
-                    if login_confirmed:
-                        # login got confirmed get overview and parse data
-                        soup_new = self._get_financial_statement()
-                        self.account_dic = self._parse_overview(soup_new)
-        except mechanicalsoup.utils.LinkNotFoundError as err:
-            raise DKBRoboError('Login failed: LinkNotFoundError') from err
+        # update token dictionary
+        if mfa_completed and 'access_token' in self.token_dic:
+            self._update_token()
+        else:
+            raise DKBRoboError('Login failed: mfa did not complete')
+
+        if 'token_factor_type' in self.token_dic and self.token_dic['token_factor_type'] != '2fa':
+
+            raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
+
+        # response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
+        # response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+        # if response.status_code == 200:
+        #     productdisplaysettings_dic = response.json()
 
     def _login_confirm(self):
         """ confirm login to dkb via app
@@ -539,6 +635,34 @@ class DKBRobo(object):
         dkb_cj.set_cookie(dkb_ck)
 
         return self.dkb_br
+
+    def _new_session(self):
+        """ new request session for the api calls """
+        self.logger.debug('DKBRobo._new_session()\n')
+
+        headers = {
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'DNT': '1',
+            'Pragma': 'no-cache',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0'}
+        client = requests.session()
+        client.headers = headers
+
+        # get cookies
+        client.get(self.banking_url + '/login')
+
+        # add csrf token
+        if '__Host-xsrf' in client.cookies:
+            headers['x-xsrf-token'] = client.cookies['__Host-xsrf']
+            client.headers = headers
+
+        return client
 
     def _parse_account_transactions(self, transactions):
         """ parses html code and creates a list of transactions included
