@@ -448,7 +448,7 @@ class DKBRobo(object):
             self.client.headers["Accept"] = "application/vnd.api+json"
 
             # we are expecting the first method from mfa_dic to be used
-            data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': 'seal_one'}}}
+            data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': self.mfa_method}}}
             response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
             if response.status_code in (200, 201):
                 challenge_dic = response.json()
@@ -548,10 +548,83 @@ class DKBRobo(object):
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
-        # response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
-        # response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
-        # if response.status_code == 200:
-        #     productdisplaysettings_dic = response.json()
+    def _get_cards(self):
+        """ get cards via API """
+        self.logger.debug('DKBRobo._get_cards()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/credit-card/cards?filter%5Btype%5D=creditCard&filter%5Bportfolio%5D=dkb&filter%5Btype%5D=debitCard')
+        if response.status_code == 200:
+            card_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_cards(): RC is not 200 but {0}'.format(response.status_code))
+            card_dic = {}
+
+        return card_dic
+
+    def _get_accounts(self):
+        """ get accounts via API """
+        self.logger.debug('DKBRobo._get_accounts()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/accounts/accounts')
+        if response.status_code == 200:
+            account_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            account_dic = {}
+
+        return account_dic
+
+    def _get_brokerage_accounts(self):
+        """ get brokerage_accounts via API """
+        self.logger.debug('DKBRobo._get_brokerage_accounts()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/broker/brokerage-accounts')
+        if response.status_code == 200:
+            account_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_brokerage_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            account_dic = {}
+
+        return account_dic
+
+    def _get_loans(self):
+        """ get loands via API """
+        self.logger.debug('DKBRobo._get_loans()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
+        if response.status_code == 200:
+            loans_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            loans_dic = {}
+
+        return loans_dic
+
+    def _get_transactions(self):
+        """ get transactions via API """
+        self.logger.debug('DKBRobo._get_transactions()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
+        if response.status_code == 200:
+            loans_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            loans_dic = {}
+
+        return loans_dic
+
+    def get_portfolio(self):
+        """ get portfolio via api """
+        self.logger.debug('DKBRobo.get_portfolio()\n')
+
+        # we calm the IDS system of DKB with two calls without sense
+        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
+        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+
+        portfolio_dic ={}
+        if response.status_code == 200:
+            _productdisplaysettings_dic = response.json()
+            portfolio_dic['accounts'] = self._get_accounts()
+            portfolio_dic['cards'] = self._get_cards()
+            portfolio_dic['brokerage_accoutns'] = self._get_brokerage_accounts()
+            portfolio_dic['loands']  = self._get_loans()
+
+        return portfolio_dic
 
     def _login_confirm(self):
         """ confirm login to dkb via app
@@ -604,7 +677,8 @@ class DKBRobo(object):
         """
         self.logger.debug('DKBRobo._logout()\n')
         logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
-        self.dkb_br.open(logout_url)
+        if self.dkb_br:
+            self.dkb_br.open(logout_url)
 
     def _new_instance(self):
         """ creates a new browser instance
