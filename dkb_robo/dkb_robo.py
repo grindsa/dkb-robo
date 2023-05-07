@@ -1,4 +1,4 @@
-# pylint: disable=c0209, c0302, r0913, w2301
+# pylint: disable=c0302, r0913, w2301
 """ dkb internet banking automation library """
 # -*- coding: utf-8 -*-
 import os
@@ -117,7 +117,7 @@ class DKBRobo(object):
         """
         if self.legacy_login and not self.dkb_br:
             self._legacy_login()
-        elif not self.client:
+        elif not self.legacy_login and not self.client:
             self._login()
         return self
 
@@ -168,19 +168,19 @@ class DKBRobo(object):
         mfa_completed = False
         # we give us 50 seconds to press a button on your phone
         while cnt <= 10:
-            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/challenges/{0}'.format(challenge_id))
+            response = self.client.get(self.banking_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}")
             cnt += 1
             if response.status_code == 200:
                 polling_dic = response.json()
                 if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
-                    self.logger.debug('DKBRobo._login: cnt {0} got {1} flag'.format(cnt, polling_dic['data']['attributes']['verificationStatus']))
+                    self.logger.debug('DKBRobo._login: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
                     if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
                         mfa_completed = True
                         break
                 else:
-                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: {0}\n'.format(polling_dic))
+                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: %s\n', polling_dic)
             else:
-                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: {0} parsing challenges: {0}\n'.format(response.status_code))
+                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: %s\n', response.status_code)
             time.sleep(5)
 
         return mfa_completed
@@ -250,7 +250,7 @@ class DKBRobo(object):
         response = self.client.post(self.banking_url + self.api_prefix + '/sso-redirect', data=json.dumps(data_dic))
 
         if response.status_code != 200 or response.text != 'OK':
-            self.logger.error('SSO redirect failed. RC: {0}'.format(response.status_code))
+            self.logger.error('SSO redirect failed. RC: %s', response.status_code)
 
         clientcookies = self.client.cookies
         self.dkb_br = self._new_instance(clientcookies)
@@ -270,7 +270,7 @@ class DKBRobo(object):
 
             # download file
             if path:
-                folder_path = '{0}/{1}'.format(path, folder)
+                folder_path = f'{path}/{folder}'
                 rcode, fname, document_name_list = self._get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
                 if rcode == 200:
                     # mark url as read
@@ -290,7 +290,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             account_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_accounts(): RC is not 200 but %s', response.status_code)
             account_dic = {}
 
         return account_dic
@@ -302,7 +302,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             account_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_brokerage_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_brokerage_accounts(): RC is not 200 but %s', response.status_code)
             account_dic = {}
 
         return account_dic
@@ -314,7 +314,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             card_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_cards(): RC is not 200 but {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_cards(): RC is not 200 but %s', response.status_code)
             card_dic = {}
 
         return card_dic
@@ -336,7 +336,7 @@ class DKBRobo(object):
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                         limit_dic[account] = string2float(limit)
                     except Exception as _err:
-                        self.logger.error('DKBRobo.get_credit_limits() get credit card limits: {0}\n'.format(_err))
+                        self.logger.error('DKBRobo.get_credit_limits() get credit card limits: %s\n', _err)
 
         return limit_dic
 
@@ -410,7 +410,7 @@ class DKBRobo(object):
             try:
                 creation_date = row.find('td', attrs={'class': 'abaxx-aspect-messageWithState-mailboxMessage-created'}).text
                 creation_date_components = creation_date.split(".")
-                formatted_date = '{0}-{1}-{2}_'.format(creation_date_components[2], creation_date_components[1], creation_date_components[0])
+                formatted_date = f'{creation_date_components[2]}-{creation_date_components[1]}-{creation_date_components[0]}_'
             except Exception:
                 self.logger.error("Can't parse date, this could i.e. be for archived documents.")
 
@@ -451,25 +451,25 @@ class DKBRobo(object):
                 # rename to avoid overrides
                 self.logger.debug('DKBRobo._get_document(): adding datetime to avoid overrides.\n')
                 now = datetime.now()
-                fname = '{0}_{1}'.format(now.strftime("%Y-%m-%d-%H-%M-%S"), fname)
+                fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
 
             if formatted_date:
-                fname = '{0}{1}'.format(formatted_date, fname)
+                fname = f'{formatted_date}{fname}'
 
             # log filename
             self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
 
             # dump content to file
             self.logger.debug('DKBRobo._get_document() content-length: %s\n', len(response.content))
-            with open('{0}/{1}'.format(path, fname), 'wb') as pdf_file:
+            with open(f'{path}/{fname}', 'wb') as pdf_file:
                 pdf_file.write(response.content)
             result = response.status_code
             document_name_list.append(fname)
         else:
-            fname = '{0}.pdf'.format(generate_random_string(20))
+            fname = f'{generate_random_string(20)}.pdf'
             result = None
 
-        return result, '{0}/{1}'.format(path, fname), document_name_list
+        return result, f'{path}/{fname}', document_name_list
 
     def _get_financial_statement(self):
         """ get finanical statement """
@@ -488,7 +488,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             loans_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but %s', response.status_code)
             loans_dic = {}
 
         return loans_dic
@@ -512,12 +512,12 @@ class DKBRobo(object):
                     if challenge_dic['data']['type'] == 'mfa-challenge':
                         challenge_id = challenge_dic['data']['id']
                     else:
-                        raise DKBRoboError('Login failed:: wrong challenge type: {0}\n'.format(challenge_dic))
+                        raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}\n')
 
                 else:
-                    raise DKBRoboError('Login failed: challenge response format is other than expected: {0}\n'.format(challenge_dic))
+                    raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}\n')
             else:
-                raise DKBRoboError('Login failed: post request to get the mfa challenges failed. RC: {0}'.format(response.status_code))
+                raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
 
             # we rmove the headers we added earlier
             self.client.headers.pop('Content-Type')
@@ -532,33 +532,15 @@ class DKBRobo(object):
 
         # check for access_token and get mfa_methods
         if 'access_token' in self.token_dic:
-            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/methods?filter%5BmethodType%5D={0}'.format(self.mfa_method))
+            response = self.client.get(self.banking_url + self.api_prefix + f'/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}')
             if response.status_code == 200:
                 mfa_dic = response.json()
             else:
-                raise DKBRoboError('Login failed: getting mfa_methods failed. RC: {0}'.format(response.status_code))
+                raise DKBRoboError(f'Login failed: getting mfa_methods failed. RC: {response.status_code}')
         else:
             raise DKBRoboError('Login failed: no 1fa access token.')
 
         return mfa_dic
-
-    def get_portfolio(self):
-        """ get portfolio via api """
-        self.logger.debug('DKBRobo.get_portfolio()\n')
-
-        # we calm the IDS system of DKB with two calls without sense
-        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
-        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
-
-        portfolio_dic = {}
-        if response.status_code == 200:
-            _productdisplaysettings_dic = response.json()
-            portfolio_dic['accounts'] = self._get_accounts()
-            portfolio_dic['cards'] = self._get_cards()
-            portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
-            portfolio_dic['loands'] = self._get_loans()
-
-        return portfolio_dic
 
     def _get_transactions(self):
         """ get transactions via API """
@@ -567,7 +549,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             loans_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but %s', response.status_code)
             loans_dic = {}
 
         return loans_dic
@@ -582,7 +564,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            raise DKBRoboError('Login failed: 1st factor authentication failed. RC: {0}'.format(response.status_code))
+            raise DKBRoboError(f'Login failed: 1st factor authentication failed. RC: {response.status_code}')
 
     def _legacy_login(self):
         """ login into DKB banking area
@@ -876,7 +858,7 @@ class DKBRobo(object):
 
                     #  date is only for backwards compatibility
                     tmp_dic['date'] = row[0]
-                    tmp_dic['text'] = '{0} {1} {2}'.format(tmp_dic['postingtext'], tmp_dic['peer'], tmp_dic['reasonforpayment'])
+                    tmp_dic['text'] = f"{tmp_dic['postingtext']} {tmp_dic['peer']} {tmp_dic['reasonforpayment']}"
 
                     # append dic to list
                     transaction_list.append(tmp_dic)
@@ -1017,7 +999,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            raise DKBRoboError('Login failed: token update failed. RC: {0}'.format(response.status_code))
+            raise DKBRoboError(f'Login failed: token update failed. RC: {response.status_code}')
 
     def _get_amount(self, cols, ontop):
         """ get link for transactions """
@@ -1027,7 +1009,7 @@ class DKBRobo(object):
         try:
             result = float(amount.replace(',', '.'))
         except Exception as _err:
-            self.logger.error('DKBRobo._parse_overview() convert amount: {0}\n'.format(_err))
+            self.logger.error('DKBRobo._parse_overview() convert amount: %s\n', _err)
             result = None
 
         return result
@@ -1056,7 +1038,7 @@ class DKBRobo(object):
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                 transaction_link = self.base_url + link['href']
             except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() parse depot: {0}\n'.format(_err))
+                self.logger.error('DKBRobo._parse_overview() parse depot: %s\n', _err)
 
         return (account_type, transaction_link)
 
@@ -1068,7 +1050,7 @@ class DKBRobo(object):
             link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
             details_link = self.base_url + link['href']
         except Exception as _err:
-            self.logger.error('DKBRobo._parse_overview() get link: {0}\n'.format(_err))
+            self.logger.error('DKBRobo._parse_overview() get link: %s\n', _err)
             details_link = None
 
         return details_link
@@ -1089,7 +1071,7 @@ class DKBRobo(object):
             mark_link = 'kontoauszuege'
         else:
             mark_link = link_name.lower()
-        mark_url = '{0}/DkbTransactionBanking/content/mailbox/MessageList/%24{1}.xhtml?$event=updateDownloadState&row={2}'.format(self.base_url, mark_link, row_num)
+        mark_url = f'{self.base_url}/DkbTransactionBanking/content/mailbox/MessageList/%24{mark_link}.xhtml?$event=updateDownloadState&row={row_num}'
         # mark document by fetch url
         _response = self.dkb_br.open(mark_url)  # lgtm [py/unused-local-variable]
 
@@ -1225,7 +1207,7 @@ class DKBRobo(object):
                         exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
                         exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
                     except Exception as _err:
-                        self.logger.error('DKBRobo.get_exemption_order(): {0}\n'.format(_err))
+                        self.logger.error('DKBRobo.get_exemption_order(): %s\n', _err)
 
         return exo_dic
 
@@ -1267,6 +1249,24 @@ class DKBRobo(object):
             p_dic[etext] = pointsex
 
         return p_dic
+
+    def get_portfolio(self):
+        """ get portfolio via api """
+        self.logger.debug('DKBRobo.get_portfolio()\n')
+
+        # we calm the IDS system of DKB with two calls without sense
+        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
+        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+
+        portfolio_dic = {}
+        if response.status_code == 200:
+            _productdisplaysettings_dic = response.json()
+            portfolio_dic['accounts'] = self._get_accounts()
+            portfolio_dic['cards'] = self._get_cards()
+            portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
+            portfolio_dic['loands'] = self._get_loans()
+
+        return portfolio_dic
 
     def get_standing_orders(self):
         """ get standing orders

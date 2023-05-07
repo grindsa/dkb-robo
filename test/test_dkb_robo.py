@@ -134,7 +134,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_011_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_011_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() method - no confirmation """
         html = """
                 <h1>Anmeldung bestätigen</h1>
@@ -149,7 +149,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_instance.return_value = mock_browser
         mock_pov.return_value = '_parse_overview'
         mock_fs.return_value = 'mock_fs'
-        self.assertEqual(self.dkb._login(), None)
+        self.assertEqual(self.dkb._legacy_login(), None)
         self.assertTrue(mock_confirm.called)
         self.assertFalse(mock_ctan.called)
         self.assertFalse(mock_fs.called)
@@ -160,7 +160,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_012_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_012_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo.login() method - confirmation """
         html = """
                 <h1>Anmeldung bestätigen</h1>
@@ -175,7 +175,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_instance.return_value = mock_browser
         mock_pov.return_value = '_parse_overview'
         mock_fs.return_value = 'mock_fs'
-        self.assertEqual(self.dkb._login(), None)
+        self.assertEqual(self.dkb._legacy_login(), None)
         self.assertTrue(mock_confirm.called)
         self.assertFalse(mock_ctan.called)
         self.assertTrue(mock_fs.called)
@@ -186,7 +186,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_013_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_013_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() method - no confirmation """
         html = """
                 <h1>Anmeldung bestätigen</h1>
@@ -202,7 +202,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_pov.return_value = '_parse_overview'
         mock_fs.return_value = 'mock_fs'
         self.dkb.tan_insert = True
-        self.assertEqual(self.dkb._login(), None)
+        self.assertEqual(self.dkb._legacy_login(), None)
         self.assertFalse(mock_confirm.called)
         self.assertTrue(mock_ctan.called)
         self.assertFalse(mock_fs.called)
@@ -213,7 +213,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_014_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_014_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() method - confirmation """
         html = """
                 <h1>Anmeldung bestätigen</h1>
@@ -229,7 +229,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_pov.return_value = '_parse_overview'
         mock_fs.return_value = 'mock_fs'
         self.dkb.tan_insert = True
-        self.assertEqual(self.dkb._login(), None)
+        self.assertEqual(self.dkb._legacy_login(), None)
         self.assertFalse(mock_confirm.called)
         self.assertTrue(mock_ctan.called)
         self.assertTrue(mock_fs.called)
@@ -240,7 +240,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_015_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_015_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() login failed """
         html = """
                 <div id="lastLoginContainer" class="clearfix module text errorMessage">foo</div>
@@ -253,7 +253,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_fs.return_value = 'mock_fs'
         self.dkb.tan_insert = True
         with self.assertRaises(Exception) as err:
-            self.assertEqual(self.dkb._login(), None)
+            self.assertEqual(self.dkb._legacy_login(), None)
         self.assertEqual('Login failed', str(err.exception))
         self.assertFalse(mock_confirm.called)
         self.assertFalse(mock_ctan.called)
@@ -265,7 +265,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_016_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_016_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() login failed """
         mock_browser.select_form.side_effect = LinkNotFoundError
         mock_ctan.return_value = True
@@ -275,7 +275,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_fs.return_value = 'mock_fs'
         self.dkb.tan_insert = True
         with self.assertRaises(Exception) as err:
-            self.assertEqual(self.dkb._login(), None)
+            self.assertEqual(self.dkb._legacy_login(), None)
         self.assertEqual('Login failed: LinkNotFoundError', str(err.exception))
         self.assertFalse(mock_confirm.called)
         self.assertFalse(mock_ctan.called)
@@ -287,7 +287,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._login_confirm')
     @patch('dkb_robo.DKBRobo._ctan_check')
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_017_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
+    def test_017_legacy_login(self, mock_instance, mock_ctan, mock_confirm, mock_fs, mock_pov, mock_browser):
         """ test DKBRobo._login() method - notice form """
         html = """
                 <h1>Anmeldung bestätigen</h1>
@@ -304,7 +304,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_pov.return_value = '_parse_overview'
         mock_fs.return_value = 'mock_fs'
         self.dkb.tan_insert = True
-        self.assertEqual(self.dkb._login(), None)
+        self.assertEqual(self.dkb._legacy_login(), None)
         self.assertFalse(mock_confirm.called)
         self.assertTrue(mock_ctan.called)
         self.assertTrue(mock_fs.called)
@@ -838,18 +838,42 @@ class TestDKBRobo(unittest.TestCase):
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         self.assertEqual('<html><head></head><body>headerbody</body></html>', str(self.dkb._get_financial_statement()))
 
+    @patch('dkb_robo.DKBRobo._legacy_login')
     @patch('dkb_robo.DKBRobo._login')
-    def test_048__enter(self, mock_login, mock_browser):
+    def test_048__enter(self, mock_login, mock_legacy_login, mock_browser):
         """ test enter """
+        self.dkb.legacy_login = True
         self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy_login.called)
         self.assertFalse(mock_login.called)
 
+    @patch('dkb_robo.DKBRobo._legacy_login')
     @patch('dkb_robo.DKBRobo._login')
-    def test_049__enter(self, mock_login, _unused):
+    def test_049__enter(self, mock_login, mock_legacy_login, _unused):
         """ test enter """
         self.dkb.dkb_br = None
+        self.dkb.legacy_login = True
         self.assertTrue(self.dkb.__enter__())
+        self.assertTrue(mock_legacy_login.called)
+        self.assertFalse(mock_login.called)
+
+    @patch('dkb_robo.DKBRobo._legacy_login')
+    @patch('dkb_robo.DKBRobo._login')
+    def test_050__enter(self, mock_login, mock_legacy_login, _unused):
+        """ test enter """
+        self.dkb.client = None
+        self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy_login.called)
         self.assertTrue(mock_login.called)
+
+    @patch('dkb_robo.DKBRobo._legacy_login')
+    @patch('dkb_robo.DKBRobo._login')
+    def test_051__enter(self, mock_login, mock_legacy_login, _unused):
+        """ test enter """
+        self.dkb.client = 'foo'
+        self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy_login.called)
+        self.assertFalse(mock_login.called)
 
     @patch('dkb_robo.DKBRobo._logout')
     def test_050__exit(self, mock_logout, _ununsed):
