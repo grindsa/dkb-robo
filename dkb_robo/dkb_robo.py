@@ -86,23 +86,26 @@ class DKBRobo(object):
     # pylint: disable=R0904
     base_url = 'https://www.dkb.de'
     banking_url = 'https://banking.beta.dkb.de'
+    api_prefix = '/api'
+    mfa_method = 'seal_one'
+    legacy_login = False
+    # proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
+    proxies = {}
     dkb_user = None
     dkb_password = None
     dkb_br = None
     client = None
-    api_prefix = '/api'
-    mfa_method = 'seal_one'
     token_dic = None
     last_login = None
     account_dic = {}
     tan_insert = False
     logger = None
-    proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, debug=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, debug=False, legacy_login=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.tan_insert = tan_insert
+        self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
 
     def __enter__(self):
@@ -112,7 +115,9 @@ class DKBRobo(object):
         with DKBRobo("user","pwd") as dkb:
             print (dkb.lastlogin)
         """
-        if not self.dkb_br:
+        if self.legacy_login and not self.dkb_br:
+            self._legacy_login()
+        elif not self.client:
             self._login()
         return self
 
@@ -154,6 +159,31 @@ class DKBRobo(object):
 
         self.logger.debug('DKBRobo._check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
+
+    def _complete_2fa(self, challenge_id):
+        """ wait for confirmation for the 2nd factor """
+
+        self.logger.debug('DKBRobo._complete_2fa()\n')
+        cnt = 0
+        mfa_completed = False
+        # we give us 50 seconds to press a button on your phone
+        while cnt <= 10:
+            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/challenges/{0}'.format(challenge_id))
+            cnt += 1
+            if response.status_code == 200:
+                polling_dic = response.json()
+                if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
+                    self.logger.debug('DKBRobo._login: cnt {0} got {1} flag'.format(cnt, polling_dic['data']['attributes']['verificationStatus']))
+                    if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
+                        mfa_completed = True
+                        break
+                else:
+                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: {0}\n'.format(polling_dic))
+            else:
+                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: {0} parsing challenges: {0}\n'.format(response.status_code))
+            time.sleep(5)
+
+        return mfa_completed
 
     def _ctan_check(self, _soup):
         """ input of chiptan during login """
@@ -207,6 +237,87 @@ class DKBRobo(object):
 
         self.logger.debug('DKBRobo._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
+
+    def _do_sso_redirect(self):
+        """  redirect to access legacy page """
+        self.logger.debug('DKBRobo._do_sso_redirect()\n')
+        data_dic = {'data': {'cookieDomain': '.dkb.de'}}
+        self.client.headers['Content-Type'] = 'application/json'
+        self.client.headers['Sec-Fetch-Dest'] = 'empty'
+        self.client.headers['Sec-Fetch-Mode'] = 'cors'
+        self.client.headers['Sec-Fetch-Site'] = 'same-origin'
+
+        response = self.client.post(self.banking_url + self.api_prefix + '/sso-redirect', data=json.dumps(data_dic))
+
+        if response.status_code != 200 or response.text != 'OK':
+            self.logger.error('SSO redirect failed. RC: {0}'.format(response.status_code))
+
+        clientcookies = self.client.cookies
+        self.dkb_br = self._new_instance(clientcookies)
+
+    def _download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
+        """ document download """
+        self.logger.debug('_download_document()\n')
+        document_dic = {}
+        document_name_list = []
+
+        tbody = table.find('tbody')
+        for row in tbody.findAll('tr', class_filter):
+            link = row.find('a')
+
+            # get formatted date
+            formatted_date = self._get_formatted_date(prepend_date, row)
+
+            # download file
+            if path:
+                folder_path = '{0}/{1}'.format(path, folder)
+                rcode, fname, document_name_list = self._get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
+                if rcode == 200:
+                    # mark url as read
+                    self._update_downloadstate(folder, self.base_url + link['href'])
+                if rcode:
+                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
+                else:
+                    document_dic[link.contents[0]] = self.base_url + link['href']
+            else:
+                document_dic[link.contents[0]] = self.base_url + link['href']
+        return (document_dic, document_name_list)
+
+    def _get_accounts(self):
+        """ get accounts via API """
+        self.logger.debug('DKBRobo._get_accounts()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/accounts/accounts')
+        if response.status_code == 200:
+            account_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            account_dic = {}
+
+        return account_dic
+
+    def _get_brokerage_accounts(self):
+        """ get brokerage_accounts via API """
+        self.logger.debug('DKBRobo._get_brokerage_accounts()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/broker/brokerage-accounts')
+        if response.status_code == 200:
+            account_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_brokerage_accounts(): RC is not 200 but {0}'.format(response.status_code))
+            account_dic = {}
+
+        return account_dic
+
+    def _get_cards(self):
+        """ get cards via API """
+        self.logger.debug('DKBRobo._get_cards()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/credit-card/cards?filter%5Btype%5D=creditCard&filter%5Bportfolio%5D=dkb&filter%5Btype%5D=debitCard')
+        if response.status_code == 200:
+            card_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_cards(): RC is not 200 but {0}'.format(response.status_code))
+            card_dic = {}
+
+        return card_dic
 
     def _get_cc_limits(self, form):
         """ get credit card limits """
@@ -305,34 +416,6 @@ class DKBRobo(object):
 
         return formatted_date
 
-    def _download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
-        """ document download """
-        self.logger.debug('_download_document()\n')
-        document_dic = {}
-        document_name_list = []
-
-        tbody = table.find('tbody')
-        for row in tbody.findAll('tr', class_filter):
-            link = row.find('a')
-
-            # get formatted date
-            formatted_date = self._get_formatted_date(prepend_date, row)
-
-            # download file
-            if path:
-                folder_path = '{0}/{1}'.format(path, folder)
-                rcode, fname, document_name_list = self._get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
-                if rcode == 200:
-                    # mark url as read
-                    self._update_downloadstate(folder, self.base_url + link['href'])
-                if rcode:
-                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
-                else:
-                    document_dic[link.contents[0]] = self.base_url + link['href']
-            else:
-                document_dic[link.contents[0]] = self.base_url + link['href']
-        return (document_dic, document_name_list)
-
     def _get_document(self, folder_url, path, url, document_name_list, formatted_date):
         """ get download document from postbox
         args:
@@ -398,45 +481,17 @@ class DKBRobo(object):
         soup = self.dkb_br.get_current_page()
         return soup
 
-    def _get_token(self):
-        """ get access token """
-        self.logger.debug('DKBRobo._get_token()\n')
-
-        # login via API
-        data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
-        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
+    def _get_loans(self):
+        """ get loands via API """
+        self.logger.debug('DKBRobo._get_loans()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
         if response.status_code == 200:
-            self.token_dic = response.json()
+            loans_dic = response.json()
         else:
-            raise DKBRoboError('Login failed: 1st factor authentication failed. RC: {0}'.format(response.status_code))
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            loans_dic = {}
 
-    def _update_token(self):
-        """ update token information with 2fa iformation """
-        self.logger.debug('DKBRobo._update_token()\n')
-
-        data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
-        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
-        if response.status_code == 200:
-            self.token_dic = response.json()
-        else:
-            raise DKBRoboError('Login failed: token update failed. RC: {0}'.format(response.status_code))
-
-    def _get_mfa_methods(self):
-        """ get mfa methods """
-        self.logger.debug('DKBRobo._get_mfa_methods()\n')
-        mfa_dic = {}
-
-        # check for access_token and get mfa_methods
-        if 'access_token' in self.token_dic:
-            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/methods?filter%5BmethodType%5D={0}'.format(self.mfa_method))
-            if response.status_code == 200:
-                mfa_dic = response.json()
-            else:
-                raise DKBRoboError('Login failed: getting mfa_methods failed. RC: {0}'.format(response.status_code))
-        else:
-            raise DKBRoboError('Login failed: no 1fa access token.')
-
-        return mfa_dic
+        return loans_dic
 
     def _get_mfa_challenge_id(self, mfa_dic):
         """ get challenge dict with information on the 2nd factor """
@@ -470,30 +525,131 @@ class DKBRobo(object):
 
         return challenge_id
 
-    def _complete_2fa(self, challenge_id):
-        """ wait for confirmation for the 2nd factor """
+    def _get_mfa_methods(self):
+        """ get mfa methods """
+        self.logger.debug('DKBRobo._get_mfa_methods()\n')
+        mfa_dic = {}
 
-        self.logger.debug('DKBRobo._complete_2fa()\n')
-        cnt = 0
-        mfa_completed = False
-        # we give us 50 seconds to press a button on your phone
-        while cnt <= 10:
-            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/challenges/{0}'.format(challenge_id))
-            cnt += 1
+        # check for access_token and get mfa_methods
+        if 'access_token' in self.token_dic:
+            response = self.client.get(self.banking_url + self.api_prefix + '/mfa/mfa/methods?filter%5BmethodType%5D={0}'.format(self.mfa_method))
             if response.status_code == 200:
-                polling_dic = response.json()
-                if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
-                    self.logger.debug('DKBRobo._login: cnt {0} got {1} flag'.format(cnt, polling_dic['data']['attributes']['verificationStatus']))
-                    if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
-                        mfa_completed = True
-                        break
-                else:
-                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: {0}\n'.format(polling_dic))
+                mfa_dic = response.json()
             else:
-                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: {0} parsing challenges: {0}\n'.format(response.status_code))
-            time.sleep(5)
+                raise DKBRoboError('Login failed: getting mfa_methods failed. RC: {0}'.format(response.status_code))
+        else:
+            raise DKBRoboError('Login failed: no 1fa access token.')
 
-        return mfa_completed
+        return mfa_dic
+
+    def get_portfolio(self):
+        """ get portfolio via api """
+        self.logger.debug('DKBRobo.get_portfolio()\n')
+
+        # we calm the IDS system of DKB with two calls without sense
+        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
+        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+
+        portfolio_dic = {}
+        if response.status_code == 200:
+            _productdisplaysettings_dic = response.json()
+            portfolio_dic['accounts'] = self._get_accounts()
+            portfolio_dic['cards'] = self._get_cards()
+            portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
+            portfolio_dic['loands'] = self._get_loans()
+
+        return portfolio_dic
+
+    def _get_transactions(self):
+        """ get transactions via API """
+        self.logger.debug('DKBRobo._get_transactions()\n')
+        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
+        if response.status_code == 200:
+            loans_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
+            loans_dic = {}
+
+        return loans_dic
+
+    def _get_token(self):
+        """ get access token """
+        self.logger.debug('DKBRobo._get_token()\n')
+
+        # login via API
+        data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
+        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
+        if response.status_code == 200:
+            self.token_dic = response.json()
+        else:
+            raise DKBRoboError('Login failed: 1st factor authentication failed. RC: {0}'.format(response.status_code))
+
+    def _legacy_login(self):
+        """ login into DKB banking area
+        args:
+            dkb_user = dkb username
+            dkb_password  = dkb_password
+        returns:
+            self.dkb_br - handle to browser object for further processing
+            last_login - last login date (German date format)
+            account_dic - dictionary containing account information
+            - name
+            - account number
+            - type (account, creditcard, depot)
+            - account balance
+            - date of balance
+            - link to details
+            - link to transactions
+        """
+        self.logger.debug('DKBRobo._login()\n')
+
+        # login url
+        login_url = self.base_url + '/' + 'banking'
+
+        # create browser and login
+        self.dkb_br = self._new_instance()
+
+        self.dkb_br.open(login_url)
+        try:
+            self.dkb_br.select_form('#login')
+            self.dkb_br["j_username"] = str(self.dkb_user)
+            self.dkb_br["j_password"] = str(self.dkb_password)
+
+            # submit form and check response
+            self.dkb_br.submit_selected()
+            soup = self.dkb_br.get_current_page()
+
+            # catch login error
+            if soup.find("div", attrs={'class': 'clearfix module text errorMessage'}):
+                raise DKBRoboError('Login failed')
+
+            # catch generic notices
+            if soup.find("form", attrs={'id': 'genericNoticeForm'}):
+                self.dkb_br.open(login_url)
+                soup = self.dkb_br.get_current_page()
+
+            # filter last login date
+            if soup.find("div", attrs={'id': 'lastLoginContainer'}):
+                last_login = soup.find("div", attrs={'id': 'lastLoginContainer'}).text.strip()
+                # remove crlf
+                last_login = last_login.replace('\n', '')
+                # format string in a way we need it
+                last_login = last_login.replace('  ', '')
+                last_login = last_login.replace('Letzte Anmeldung:', '')
+                self.last_login = last_login
+                if soup.find('h1').text.strip() == 'Anmeldung bestätigen':
+                    if self.tan_insert:
+                        # chiptan input
+                        login_confirmed = self._ctan_check(soup)
+                    else:
+                        # app confirmation needed to continue
+                        login_confirmed = self._login_confirm()
+                    if login_confirmed:
+                        # login got confirmed get overview and parse data
+                        soup_new = self._get_financial_statement()
+                        self.account_dic = self._parse_overview(soup_new)
+        except mechanicalsoup.utils.LinkNotFoundError as err:
+            raise DKBRoboError('Login failed: LinkNotFoundError') from err
 
     def _login(self):
         """ login into DKB banking area
@@ -549,103 +705,11 @@ class DKBRobo(object):
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
+        # redirect to legacy page
         self._do_sso_redirect()
-
-
-    def _do_sso_redirect(self):
-        """  redirect to access legacy page """
-        self.logger.debug('DKBRobo._do_sso_redirect()\n')
-        data_dic = {'data': {'cookieDomain': '.dkb.de'}}
-        self.client.headers['Content-Type'] = 'application/json'
-        self.client.headers['Sec-Fetch-Dest'] = 'empty'
-        self.client.headers['Sec-Fetch-Mode'] = 'cors'
-        self.client.headers['Sec-Fetch-Site'] = 'same-origin'
-
-        response = self.client.post(self.banking_url + self.api_prefix + '/sso-redirect', data=json.dumps(data_dic))
-
-        if response.status_code != 200 or response.text != 'OK':
-             self.logger.error('SSO redirect failed. RC: {0}'.format(response.status_code))
-
-        clientcookies = self.client.cookies
-        bump = self._new_instance(clientcookies)
-
-    def _get_cards(self):
-        """ get cards via API """
-        self.logger.debug('DKBRobo._get_cards()\n')
-        response = self.client.get(self.banking_url + self.api_prefix + '/credit-card/cards?filter%5Btype%5D=creditCard&filter%5Bportfolio%5D=dkb&filter%5Btype%5D=debitCard')
-        if response.status_code == 200:
-            card_dic = response.json()
-        else:
-            self.logger.error('DKBRobo._get_cards(): RC is not 200 but {0}'.format(response.status_code))
-            card_dic = {}
-
-        return card_dic
-
-    def _get_accounts(self):
-        """ get accounts via API """
-        self.logger.debug('DKBRobo._get_accounts()\n')
-        response = self.client.get(self.banking_url + self.api_prefix + '/accounts/accounts')
-        if response.status_code == 200:
-            account_dic = response.json()
-        else:
-            self.logger.error('DKBRobo._get_accounts(): RC is not 200 but {0}'.format(response.status_code))
-            account_dic = {}
-
-        return account_dic
-
-    def _get_brokerage_accounts(self):
-        """ get brokerage_accounts via API """
-        self.logger.debug('DKBRobo._get_brokerage_accounts()\n')
-        response = self.client.get(self.banking_url + self.api_prefix + '/broker/brokerage-accounts')
-        if response.status_code == 200:
-            account_dic = response.json()
-        else:
-            self.logger.error('DKBRobo._get_brokerage_accounts(): RC is not 200 but {0}'.format(response.status_code))
-            account_dic = {}
-
-        return account_dic
-
-    def _get_loans(self):
-        """ get loands via API """
-        self.logger.debug('DKBRobo._get_loans()\n')
-        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
-        if response.status_code == 200:
-            loans_dic = response.json()
-        else:
-            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
-            loans_dic = {}
-
-        return loans_dic
-
-    def _get_transactions(self):
-        """ get transactions via API """
-        self.logger.debug('DKBRobo._get_transactions()\n')
-        response = self.client.get(self.banking_url + self.api_prefix + '/loans/loans')
-        if response.status_code == 200:
-            loans_dic = response.json()
-        else:
-            self.logger.error('DKBRobo._get_loans(): RC is not 200 but {0}'.format(response.status_code))
-            loans_dic = {}
-
-        return loans_dic
-
-    def get_portfolio(self):
-        """ get portfolio via api """
-        self.logger.debug('DKBRobo.get_portfolio()\n')
-
-        # we calm the IDS system of DKB with two calls without sense
-        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
-        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
-
-        portfolio_dic = {}
-        if response.status_code == 200:
-            _productdisplaysettings_dic = response.json()
-            portfolio_dic['accounts'] = self._get_accounts()
-            portfolio_dic['cards'] = self._get_cards()
-            portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
-            portfolio_dic['loands'] = self._get_loans()
-
-        return portfolio_dic
+        # get account overview to ensure backwards compability
+        soup_new = self._get_financial_statement()
+        self.account_dic = self._parse_overview(soup_new)
 
     def _login_confirm(self):
         """ confirm login to dkb via app
@@ -943,6 +1007,17 @@ class DKBRobo(object):
             # increase counter
             counter += 1
         return overview_dic
+
+    def _update_token(self):
+        """ update token information with 2fa iformation """
+        self.logger.debug('DKBRobo._update_token()\n')
+
+        data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
+        response = self.client.post(self.banking_url + self.api_prefix + '/token', data=data_dic)
+        if response.status_code == 200:
+            self.token_dic = response.json()
+        else:
+            raise DKBRoboError('Login failed: token update failed. RC: {0}'.format(response.status_code))
 
     def _get_amount(self, cols, ontop):
         """ get link for transactions """
