@@ -97,6 +97,7 @@ class DKBRobo(object):
     account_dic = {}
     tan_insert = False
     logger = None
+    proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
 
     def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, debug=False):
         self.dkb_user = dkb_user
@@ -548,6 +549,26 @@ class DKBRobo(object):
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
+        self._do_sso_redirect()
+
+
+    def _do_sso_redirect(self):
+        """  redirect to access legacy page """
+        self.logger.debug('DKBRobo._do_sso_redirect()\n')
+        data_dic = {'data': {'cookieDomain': '.dkb.de'}}
+        self.client.headers['Content-Type'] = 'application/json'
+        self.client.headers['Sec-Fetch-Dest'] = 'empty'
+        self.client.headers['Sec-Fetch-Mode'] = 'cors'
+        self.client.headers['Sec-Fetch-Site'] = 'same-origin'
+
+        response = self.client.post(self.banking_url + self.api_prefix + '/sso-redirect', data=json.dumps(data_dic))
+
+        if response.status_code != 200 or response.text != 'OK':
+             self.logger.error('SSO redirect failed. RC: {0}'.format(response.status_code))
+
+        clientcookies = self.client.cookies
+        bump = self._new_instance(clientcookies)
+
     def _get_cards(self):
         """ get cards via API """
         self.logger.debug('DKBRobo._get_cards()\n')
@@ -616,13 +637,13 @@ class DKBRobo(object):
         response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
         response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
 
-        portfolio_dic ={}
+        portfolio_dic = {}
         if response.status_code == 200:
             _productdisplaysettings_dic = response.json()
             portfolio_dic['accounts'] = self._get_accounts()
             portfolio_dic['cards'] = self._get_cards()
-            portfolio_dic['brokerage_accoutns'] = self._get_brokerage_accounts()
-            portfolio_dic['loands']  = self._get_loans()
+            portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
+            portfolio_dic['loands'] = self._get_loans()
 
         return portfolio_dic
 
@@ -680,7 +701,7 @@ class DKBRobo(object):
         if self.dkb_br:
             self.dkb_br.open(logout_url)
 
-    def _new_instance(self):
+    def _new_instance(self, clientcookies=None):
         """ creates a new browser instance
         args:
            None
@@ -690,6 +711,12 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._new_instance()\n')
         # create browser and cookiestore objects
         self.dkb_br = mechanicalsoup.StatefulBrowser()
+
+        # set proxies
+        if self.proxies:
+            self.dkb_br.session.proxies = self.proxies
+            self.dkb_br.session.verify = False
+
         dkb_cj = cookiejar.LWPCookieJar()
         self.dkb_br.set_cookiejar = dkb_cj
 
@@ -708,6 +735,10 @@ class DKBRobo(object):
         dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
         dkb_cj.set_cookie(dkb_ck)
 
+        if clientcookies:
+            self.logger.debug('_new_instance(): adding clientcookies.')
+            for cookie in clientcookies:
+                self.dkb_br.session.cookies.set_cookie(cookie)
         return self.dkb_br
 
     def _new_session(self):
@@ -727,6 +758,9 @@ class DKBRobo(object):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0'}
         client = requests.session()
         client.headers = headers
+        if self.proxies:
+            client.proxies = self.proxies
+            client.verify = False
 
         # get cookies
         client.get(self.banking_url + '/login')
