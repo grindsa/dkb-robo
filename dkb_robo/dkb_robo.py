@@ -164,6 +164,9 @@ class DKBRobo(object):
         """ wait for confirmation for the 2nd factor """
 
         self.logger.debug('DKBRobo._complete_2fa()\n')
+
+        print('check your banking app and confirm login...')
+
         cnt = 0
         mfa_completed = False
         # we give us 50 seconds to press a button on your phone
@@ -549,7 +552,7 @@ class DKBRobo(object):
         if response.status_code == 200:
             loans_dic = response.json()
         else:
-            self.logger.error('DKBRobo._get_loans(): RC is not 200 but %s', response.status_code)
+            self.logger.error('DKBRobo._get_transactions(): RC is not 200 but %s', response.status_code)
             loans_dic = {}
 
         return loans_dic
@@ -1265,7 +1268,6 @@ class DKBRobo(object):
             portfolio_dic['cards'] = self._get_cards()
             portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
             portfolio_dic['loands'] = self._get_loans()
-
         return portfolio_dic
 
     def get_standing_orders(self):
