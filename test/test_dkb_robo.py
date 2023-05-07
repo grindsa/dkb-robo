@@ -1307,6 +1307,167 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual('', self.dkb._get_formatted_date(True, table))
         self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
+    def test_106_get_accounts(self, _unused):
+        """ test _get_accounts() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb._get_accounts())
+
+    def test_107_get_accounts(self, _unused):
+        """ test _get_accounts() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_accounts())
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_accounts(): RC is not 200 but 400', lcm.output)
+
+    def test_108_get_brokerage_accounts(self, _unused):
+        """ test _get_brokerage_accounts() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb._get_brokerage_accounts())
+
+    def test_109_get_brokerage_accounts(self, _unused):
+        """ test _get_brokerage_accounts() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_brokerage_accounts())
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_brokerage_accounts(): RC is not 200 but 400', lcm.output)
+
+    def test_110_get_cards(self, _unused):
+        """ test _get_loans() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb._get_cards())
+
+    def test_111_get_cards(self, _unused):
+        """ test _get_loans() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_cards())
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_cards(): RC is not 200 but 400', lcm.output)
+
+    def test_112_get_loans(self, _unused):
+        """ test _get_loans() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb._get_loans())
+
+    def test_113_get_loans(self, _unused):
+        """ test _get_loans() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_loans())
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_loans(): RC is not 200 but 400', lcm.output)
+
+    def test_114_get_transactions(self, _unused):
+        """ test _get_transactions() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb._get_transactions())
+
+    def test_115_get_transactions(self, _unused):
+        """ test _get_transactions() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_transactions())
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_transactions(): RC is not 200 but 400', lcm.output)
+
+    @patch('dkb_robo.DKBRobo._get_loans')
+    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
+    @patch('dkb_robo.DKBRobo._get_cards')
+    @patch('dkb_robo.DKBRobo._get_accounts')
+    def test_116_get_portfolio(self, mock_acc, mock_card, mock_bra, mock_loan,_unused):
+        """ test _get_transactions() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        mock_acc.return_value = 'accounts'
+        mock_card.return_value = 'cards'
+        mock_bra.return_value = 'bra'
+        mock_loan.return_value = 'loan'
+        result = {'accounts': 'accounts', 'cards': 'cards', 'brokerage_accounts': 'bra', 'loands': 'loan'}
+        self.assertEqual(result, self.dkb.get_portfolio())
+        self.assertTrue(mock_acc.called)
+        self.assertTrue(mock_card.called)
+        self.assertTrue(mock_bra.called)
+        self.assertTrue(mock_loan.called)
+
+    @patch('dkb_robo.DKBRobo._get_loans')
+    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
+    @patch('dkb_robo.DKBRobo._get_cards')
+    @patch('dkb_robo.DKBRobo._get_accounts')
+    def test_117_get_portfolio(self, mock_acc, mock_card, mock_bra, mock_loan,_unused):
+        """ test _get_transactions() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        mock_acc.return_value = 'accounts'
+        mock_card.return_value = 'cards'
+        mock_bra.return_value = 'bra'
+        mock_loan.return_value = 'loan'
+        self.assertFalse(self.dkb.get_portfolio())
+        self.assertFalse(mock_acc.called)
+        self.assertFalse(mock_card.called)
+        self.assertFalse(mock_bra.called)
+        self.assertFalse(mock_loan.called)
+
+    def test_118_update_token(self, _unused):
+        """ test _update_token() ok """
+        self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
+        self.dkb.client = Mock()
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
+        self.dkb._update_token()
+        self.assertEqual({'foo': 'bar'}, self.dkb.token_dic)
+
+    def test_119_update_token(self, _unused):
+        """ test _update_token() nok """
+        self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
+        self.dkb.client = Mock()
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertRaises(Exception) as err:
+            self.dkb._update_token()
+        self.assertEqual('Login failed: token update failed. RC: 400', str(err.exception))
+        self.assertEqual({'mfa_id': 'mfa_id', 'access_token': 'access_token'}, self.dkb.token_dic)
+
+    def test_120_get_token(self, _unused):
+        """ test _get_token() ok """
+        self.dkb.dkb_user = 'dkb_user'
+        self.dkb.dkb_password = 'dkb_password'
+        self.dkb.client = Mock()
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
+        self.dkb._get_token()
+        self.assertEqual({'foo': 'bar'}, self.dkb.token_dic)
+
+    def test_121_get_token(self, _unused):
+        """ test _get_token() ok """
+        self.dkb.dkb_user = 'dkb_user'
+        self.dkb.dkb_password = 'dkb_password'
+        self.dkb.client = Mock()
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
+        with self.assertRaises(Exception) as err:
+            self.dkb._get_token()
+        self.assertEqual('Login failed: 1st factor authentication failed. RC: 400', str(err.exception))
+        self.assertFalse(self.dkb.token_dic)
+
 if __name__ == '__main__':
 
     unittest.main()
