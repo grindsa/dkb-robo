@@ -253,7 +253,7 @@ class DKBRobo(object):
         response = self.client.post(self.banking_url + self.api_prefix + '/sso-redirect', data=json.dumps(data_dic))
 
         if response.status_code != 200 or response.text != 'OK':
-            self.logger.error('SSO redirect failed. RC: %s', response.status_code)
+            self.logger.error('SSO redirect failed. RC: %s text: %s', response.status_code, response.text)
 
         clientcookies = self.client.cookies
         self.dkb_br = self._new_instance(clientcookies)

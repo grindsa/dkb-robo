@@ -114,6 +114,12 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo._new_instance() method """
         self.assertIn('mechanicalsoup.stateful_browser.StatefulBrowser object at', str(self.dkb._new_instance()))
 
+    def test_009_new_instance(self, _unused):
+        """ test DKBRobo._new_instance() method with proxies """
+        self.dkb.proxies = 'proxies'
+        self.assertIn('mechanicalsoup.stateful_browser.StatefulBrowser object at', str(self.dkb._new_instance()))
+        self.assertEqual('proxies', self.dkb.dkb_br.session.proxies)
+
     def test_009_get_points(self, mock_browser):
         """ test DKBRobo.get_points() method """
         html = read_file(self.dir_path + '/mocks/dkb_punkte.html')
@@ -1467,6 +1473,41 @@ class TestDKBRobo(unittest.TestCase):
             self.dkb._get_token()
         self.assertEqual('Login failed: 1st factor authentication failed. RC: 400', str(err.exception))
         self.assertFalse(self.dkb.token_dic)
+
+    @patch('dkb_robo.DKBRobo._new_instance')
+    def test_122_do_sso_redirect(self, mock_instance, _unused):
+        """ test _do_sso_redirect() ok """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.text = 'OK'
+        self.dkb._do_sso_redirect()
+        self.assertTrue(mock_instance.called)
+
+    @patch('dkb_robo.DKBRobo._new_instance')
+    def test_123_do_sso_redirect(self, mock_instance, _unused):
+        """ test _do_sso_redirect() nok """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.text = 'NOK'
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb._do_sso_redirect()
+        self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 200 text: NOK', lcm.output)
+        self.assertTrue(mock_instance.called)
+
+    @patch('dkb_robo.DKBRobo._new_instance')
+    def test_124_do_sso_redirect(self, mock_instance, _unused):
+        """ test _do_sso_redirect() nok """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.text = 'OK'
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb._do_sso_redirect()
+        self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 400 text: OK', lcm.output)
+        self.assertTrue(mock_instance.called)
+
 
 if __name__ == '__main__':
 
