@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
 from mechanicalsoup import LinkNotFoundError
 from datetime import date
+import io
 
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
@@ -119,6 +120,13 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.proxies = 'proxies'
         self.assertIn('mechanicalsoup.stateful_browser.StatefulBrowser object at', str(self.dkb._new_instance()))
         self.assertEqual('proxies', self.dkb.dkb_br.session.proxies)
+
+    def test_010_new_instance(self, _unused):
+        """ test DKBRobo._new_instance() method with clientcookies """
+        cookieobj = Mock()
+        cookieobj.value = 'value'
+        cookieobj.name = 'name'
+        self.assertIn('mechanicalsoup.stateful_browser.StatefulBrowser object at', str(self.dkb._new_instance([cookieobj])))
 
     def test_009_get_points(self, mock_browser):
         """ test DKBRobo.get_points() method """
@@ -1507,6 +1515,106 @@ class TestDKBRobo(unittest.TestCase):
             self.dkb._do_sso_redirect()
         self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 400 text: OK', lcm.output)
         self.assertTrue(mock_instance.called)
+
+    def test_125_get_mfa_methods(self, _unused):
+        """ test _get_mfa_methods() """
+        self.dkb.token_dic = {'foo': 'bar'}
+        with self.assertRaises(Exception) as err:
+            self.dkb._get_mfa_methods()
+        self.assertEqual('Login failed: no 1fa access token.', str(err.exception))
+
+    def test_126_get_mfa_methods(self, _unused):
+        """ test _get_mfa_methods() """
+        self.dkb.token_dic = {'access_token': 'bar'}
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        with self.assertRaises(Exception) as err:
+            self.dkb._get_mfa_methods()
+        self.assertEqual('Login failed: getting mfa_methods failed. RC: 400', str(err.exception))
+
+    def test_127_get_mfa_methods(self, _unused):
+        """ test _get_mfa_methods() """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo1': 'bar1'}
+        self.dkb.token_dic = {'access_token': 'bar'}
+        self.assertEqual({'foo1': 'bar1'}, self.dkb._get_mfa_methods())
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('time.sleep', return_value=None)
+    def test_128__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 400
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._complete_2fa('challengeid', 'devicename'))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._complete_2fa(): polling request failed. RC: 400', lcm.output)
+        self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('time.sleep', return_value=None)
+    def test_129__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 400
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._complete_2fa('challengeid', None))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._complete_2fa(): polling request failed. RC: 400', lcm.output)
+        self.assertIn('check your banking app and confirm login...', mock_stdout.getvalue())
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('time.sleep', return_value=None)
+    def test_130__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo1': 'bar1'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._complete_2fa('challengeid', 'devicename'))
+        self.assertIn("ERROR:dkb_robo:DKBRobo._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
+        self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('time.sleep', return_value=None)
+    def test_130__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'processed'}}}]
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertTrue(self.dkb._complete_2fa('challengeid', 'devicename'))
+        self.assertIn("ERROR:dkb_robo:DKBRobo._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
+        self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
+
+    @patch('requests.session')
+    def test_131_new_instance_new_session(self, mock_session, _unused):
+        """ test _new_session() """
+        mock_session.headers = {}
+        client = self.dkb._new_session()
+        exp_headers = {'Accept-Language': 'en-US,en;q=0.5', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'DNT': '1', 'Pragma': 'no-cache', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0'}
+        self.assertEqual(exp_headers, client.headers)
+
+    @patch('requests.session')
+    def test_132_new_instance_new_session(self, mock_session, _unused):
+        """ test _new_session() """
+        mock_session.headers = {}
+        self.dkb.proxies = 'proxies'
+        client = self.dkb._new_session()
+        self.assertEqual('proxies', client.proxies)
+
+    @patch('requests.session')
+    def test_133_new_instance_new_session(self, mock_session, _unused):
+        """ test _new_session() """
+        mock_session.headers = {}
+        mock_session.get.return_value.status_code = 200
+        mock_session.return_value.cookies = {'__Host-xsrf': 'foo'}
+        client = self.dkb._new_session()
+        exp_headers = {'Accept-Language': 'en-US,en;q=0.5', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'DNT': '1', 'Pragma': 'no-cache', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0', 'x-xsrf-token': 'foo'}
+        self.assertEqual(exp_headers, client.headers)
 
 
 if __name__ == '__main__':

@@ -184,9 +184,9 @@ class DKBRobo(object):
                         mfa_completed = True
                         break
                 else:
-                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: %s\n', polling_dic)
+                    self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: %s', polling_dic)
             else:
-                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: %s\n', response.status_code)
+                self.logger.error('DKBRobo._complete_2fa(): polling request failed. RC: %s', response.status_code)
             time.sleep(5)
 
         return mfa_completed
@@ -518,7 +518,6 @@ class DKBRobo(object):
 
             # we are expecting the first method from mfa_dic to be used
             data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': self.mfa_method}}}
-            print(data_dic)
             response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
             if response.status_code in (200, 201):
                 challenge_dic = response.json()
