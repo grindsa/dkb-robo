@@ -160,12 +160,15 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
 
-    def _complete_2fa(self, challenge_id):
+    def _complete_2fa(self, challenge_id, devicename):
         """ wait for confirmation for the 2nd factor """
 
         self.logger.debug('DKBRobo._complete_2fa()\n')
 
-        print('check your banking app and confirm login...')
+        if devicename:
+            print(f'check your banking app on "{devicename}" and confirm login...')
+        else:
+            print('check your banking app and confirm login...')
 
         cnt = 0
         mfa_completed = False
@@ -502,12 +505,20 @@ class DKBRobo(object):
 
         challenge_id = None
         if 'id' in mfa_dic['data'][0]:
+            try:
+                device_name = mfa_dic['data'][0]['attributes']['deviceName']
+                self.logger.debug('DKBRobo._get_mfa_challenge_id(): devicename: %s\n', device_name)
+            except Exception as _err:
+                self.logger.error('DKBRobo._get_mfa_challenge_id(): unable to get deviceName')
+                device_name = None
+
             # additional headers needed as this call requires it
             self.client.headers['Content-Type'] = 'application/vnd.api+json'
             self.client.headers["Accept"] = "application/vnd.api+json"
 
             # we are expecting the first method from mfa_dic to be used
             data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': self.mfa_method}}}
+            print(data_dic)
             response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
             if response.status_code in (200, 201):
                 challenge_dic = response.json()
@@ -526,7 +537,7 @@ class DKBRobo(object):
             self.client.headers.pop('Content-Type')
             self.client.headers.pop('Accept')
 
-        return challenge_id
+        return challenge_id, device_name
 
     def _get_mfa_methods(self):
         """ get mfa methods """
@@ -669,14 +680,14 @@ class DKBRobo(object):
         # we need a challege-id for polling so lets try to get it
         mfa_challenge_id = None
         if 'mfa_id' in self.token_dic and 'data' in mfa_dic:
-            mfa_challenge_id = self._get_mfa_challenge_id(mfa_dic)
+            mfa_challenge_id, device_name = self._get_mfa_challenge_id(mfa_dic)
         else:
             raise DKBRoboError('Login failed: no 1fa access token.')
 
         # lets complete 2fa
         mfa_completed = False
         if mfa_challenge_id:
-            mfa_completed = self._complete_2fa(mfa_challenge_id)
+            mfa_completed = self._complete_2fa(mfa_challenge_id, device_name)
         else:
             raise DKBRoboError('Login failed: No challenge id.')
 
