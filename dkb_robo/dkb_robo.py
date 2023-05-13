@@ -504,7 +504,8 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._get_mfa_challenge_id()\n')
 
         challenge_id = None
-        if 'id' in mfa_dic['data'][0]:
+        device_name = None
+        if 'data' in mfa_dic and 'id' in mfa_dic['data'][0]:
             try:
                 device_name = mfa_dic['data'][0]['attributes']['deviceName']
                 self.logger.debug('DKBRobo._get_mfa_challenge_id(): devicename: %s\n', device_name)
@@ -525,16 +526,19 @@ class DKBRobo(object):
                     if challenge_dic['data']['type'] == 'mfa-challenge':
                         challenge_id = challenge_dic['data']['id']
                     else:
-                        raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}\n')
+                        raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}')
 
                 else:
-                    raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}\n')
+                    raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
             else:
                 raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
 
             # we rmove the headers we added earlier
             self.client.headers.pop('Content-Type')
             self.client.headers.pop('Accept')
+
+        else:
+            self.logger.error('DKBRobo._get_mfa_challenge_id(): mfa_dic has an unexpected data structure')
 
         return challenge_id, device_name
 

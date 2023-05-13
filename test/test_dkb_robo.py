@@ -1616,6 +1616,84 @@ class TestDKBRobo(unittest.TestCase):
         exp_headers = {'Accept-Language': 'en-US,en;q=0.5', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'DNT': '1', 'Pragma': 'no-cache', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0', 'x-xsrf-token': 'foo'}
         self.assertEqual(exp_headers, client.headers)
 
+    @patch('requests.session')
+    def test_134_get_mfa_challenge_id(self, mock_session, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual((None, None), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
+
+    @patch('requests.session')
+    def test_135_get_mfa_challenge_id(self, mock_session, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'foo': 'bar'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual((None, None), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
+
+    def test_136_get_mfa_challenge_id(self, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.mfa_method = 'mfa_method'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
+
+    def test_137_get_mfa_challenge_id(self, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'data': [{'id': 'id', 'attributes': {'foo': 'bar'}}]}
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.mfa_method = 'mfa_method'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('id', None), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): unable to get deviceName', lcm.output)
+
+    def test_138_get_mfa_challenge_id(self, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.mfa_method = 'mfa_method'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertEqual('Login failed: post request to get the mfa challenges failed. RC: 400', str(err.exception))
+
+    def test_139_get_mfa_challenge_id(self, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'unknown', 'id': 'id'}}
+        self.dkb.mfa_method = 'mfa_method'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertEqual("Login failed:: wrong challenge type: {'data': {'type': 'unknown', 'id': 'id'}}", str(err.exception))
+
+    def test_140_get_mfa_challenge_id(self, _unused):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
+        self.dkb.mfa_method = 'mfa_method'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
+        self.assertEqual("Login failed: challenge response format is other than expected: {'foo': 'bar'}", str(err.exception))
 
 if __name__ == '__main__':
 
