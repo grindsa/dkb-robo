@@ -700,6 +700,9 @@ class DKBRobo(object):
         else:
             raise DKBRoboError('Login failed: mfa did not complete')
 
+        if 'token_factor_type' not in self.token_dic:
+            raise DKBRoboError('Login failed: token_factor_type is missing')
+
         if 'token_factor_type' in self.token_dic and self.token_dic['token_factor_type'] != '2fa':
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
