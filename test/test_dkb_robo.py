@@ -878,7 +878,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client = None
         self.assertTrue(self.dkb.__enter__())
         self.assertFalse(mock_legacy_login.called)
-        self.assertTrue(mock_login.called)
+        self.assertFalse(mock_login.called)
 
     @patch('dkb_robo.DKBRobo._legacy_login')
     @patch('dkb_robo.DKBRobo._login')
