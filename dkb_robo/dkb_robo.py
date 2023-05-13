@@ -89,7 +89,6 @@ class DKBRobo(object):
     api_prefix = '/api'
     mfa_method = 'seal_one'
     legacy_login = False
-    # proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
     proxies = {}
     dkb_user = None
     dkb_password = None
@@ -1275,8 +1274,8 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_portfolio()\n')
 
         # we calm the IDS system of DKB with two calls without sense
-        response = self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
-        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+        self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
+        self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
 
         portfolio_dic = {}
         if response.status_code == 200:
