@@ -498,6 +498,25 @@ class DKBRobo(object):
 
         return loans_dic
 
+    def _process_challenge_response(self, response):
+        """ get challenge dict with information on the 2nd factor """
+        self.logger.debug('DKBRobo._process_challenge_response()\n')
+        challenge_id = None
+        if response.status_code in (200, 201):
+            challenge_dic = response.json()
+            if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
+                if challenge_dic['data']['type'] == 'mfa-challenge':
+                    challenge_id = challenge_dic['data']['id']
+                else:
+                    raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}')
+
+            else:
+                raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
+        else:
+            raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
+
+        return challenge_id
+
     def _get_mfa_challenge_id(self, mfa_dic):
         """ get challenge dict with information on the 2nd factor """
         self.logger.debug('DKBRobo._get_mfa_challenge_id()\n')
@@ -519,18 +538,9 @@ class DKBRobo(object):
             # we are expecting the first method from mfa_dic to be used
             data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': self.mfa_method}}}
             response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
-            if response.status_code in (200, 201):
-                challenge_dic = response.json()
-                if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
-                    if challenge_dic['data']['type'] == 'mfa-challenge':
-                        challenge_id = challenge_dic['data']['id']
-                    else:
-                        raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}')
 
-                else:
-                    raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
-            else:
-                raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
+            # process response
+            challenge_id = self._process_challenge_response(response)
 
             # we rmove the headers we added earlier
             self.client.headers.pop('Content-Type')
