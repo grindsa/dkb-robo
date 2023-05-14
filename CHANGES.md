@@ -9,7 +9,7 @@ This is a high-level summary of the most important changes. For a full list of c
 
 - suppport for the new DKB frontend (experimental). To use the new frontent create dkb context manager as shown below.
 
-```
+```python
 with DKBRobo(DKB_USER, DKB_PASSWORD, TAN, legacy_login=False) as dkb:
   ...
 ```
