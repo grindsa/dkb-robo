@@ -1285,7 +1285,7 @@ class DKBRobo(object):
 
         # we calm the IDS system of DKB with two calls without sense
         self.client.get(self.banking_url + self.api_prefix + '/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
-        self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
+        response = self.client.get(self.banking_url + self.api_prefix + '/config/users/me/product-display-settings')
 
         portfolio_dic = {}
         if response.status_code == 200:
