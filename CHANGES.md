@@ -3,6 +3,17 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.21 - beta
+
+**Improvements**:
+
+- suppport for the new DKB frontend (experimental). To use the new frontent create dkb context manager as shown below.
+
+```python
+with DKBRobo(DKB_USER, DKB_PASSWORD, TAN, legacy_login=False) as dkb:
+  ...
+```
+
 # Changes in 0.20.1
 
 **Bugfixes**:
