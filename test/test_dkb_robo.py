@@ -1698,7 +1698,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_141_login(self, mock_sess, mock_tok, mock_meth,_ununsed):
+    def test_140_login(self, mock_sess, mock_tok, mock_meth,_ununsed):
         """ test login() """
         self.dkb.token_dic = {'foo': 'bar'}
         mock_meth.return_value = {'foo': 'bar'}
@@ -1709,29 +1709,35 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_tok.called)
         self.assertTrue(mock_meth.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_142_login(self, mock_sess, mock_tok, mock_meth,_ununsed):
+    def test_141_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'foo': 'bar'}
+        mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb._login()
         self.assertEqual('Login failed: no 1fa access token.', str(err.exception))
         self.assertTrue(mock_sess.called)
         self.assertTrue(mock_tok.called)
         self.assertTrue(mock_meth.called)
+        self.assertTrue(mock_mfa.called)
 
+
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._get_mfa_challenge_id')
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_142_login(self, mock_sess, mock_tok, mock_meth, mock_chall, _ununsed):
+    def test_142_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = (None, None)
+        mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb._login()
         self.assertEqual('Login failed: No challenge id.', str(err.exception))
@@ -1739,18 +1745,21 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_tok.called)
         self.assertTrue(mock_meth.called)
         self.assertTrue(mock_chall.called)
+        self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._complete_2fa')
     @patch('dkb_robo.DKBRobo._get_mfa_challenge_id')
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_143_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, _ununsed):
+    def test_143_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = False
+        mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb._login()
         self.assertEqual('Login failed: mfa did not complete', str(err.exception))
@@ -1759,7 +1768,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_meth.called)
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
+        self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._parse_overview')
     @patch('dkb_robo.DKBRobo._get_financial_statement')
     @patch('dkb_robo.DKBRobo._do_sso_redirect')
@@ -1769,12 +1780,13 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_144_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, _ununsed):
+    def test_144_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = True
+        mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb._login()
         self.assertEqual('Login failed: mfa did not complete', str(err.exception))
@@ -1786,7 +1798,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_redir.called)
         self.assertFalse(mock_gf.called)
         self.assertFalse(mock_po.called)
+        self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._parse_overview')
     @patch('dkb_robo.DKBRobo._get_financial_statement')
     @patch('dkb_robo.DKBRobo._do_sso_redirect')
@@ -1796,12 +1810,13 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_145_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, _ununsed):
+    def test_145_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = True
+        mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb._login()
         self.assertEqual('Login failed: token_factor_type is missing', str(err.exception))
@@ -1814,7 +1829,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_redir.called)
         self.assertFalse(mock_gf.called)
         self.assertFalse(mock_po.called)
+        self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._parse_overview')
     @patch('dkb_robo.DKBRobo._get_financial_statement')
     @patch('dkb_robo.DKBRobo._do_sso_redirect')
@@ -1824,11 +1841,12 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_146_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, _ununsed):
+    def test_146_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': 'token_factor_type'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
+        mock_mfa.return_value = 0
         mock_2fa.return_value = True
         with self.assertRaises(Exception) as err:
             self.dkb._login()
@@ -1842,7 +1860,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_redir.called)
         self.assertFalse(mock_gf.called)
         self.assertFalse(mock_po.called)
+        self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._select_mfa_device')
     @patch('dkb_robo.DKBRobo._parse_overview')
     @patch('dkb_robo.DKBRobo._get_financial_statement')
     @patch('dkb_robo.DKBRobo._do_sso_redirect')
@@ -1852,11 +1872,12 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_147_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, _ununsed):
+    def test_147_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': '2fa'}
         mock_meth.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
+        mock_mfa.return_value = 0
         mock_2fa.return_value = True
         self.dkb._login()
         self.assertTrue(mock_sess.called)
@@ -1868,6 +1889,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_redir.called)
         self.assertTrue(mock_gf.called)
         self.assertTrue(mock_po.called)
+        self.assertTrue(mock_mfa.called)
 
 if __name__ == '__main__':
 
