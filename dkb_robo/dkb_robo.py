@@ -517,15 +517,16 @@ class DKBRobo(object):
 
         return challenge_id
 
-    def _get_mfa_challenge_id(self, mfa_dic):
+    def _get_mfa_challenge_id(self, mfa_dic, device_num=0):
         """ get challenge dict with information on the 2nd factor """
-        self.logger.debug('DKBRobo._get_mfa_challenge_id()\n')
+        self.logger.debug('DKBRobo._get_mfa_challenge_id() login with device_num: %s\n', device_num)
 
         challenge_id = None
         device_name = None
-        if 'data' in mfa_dic and 'id' in mfa_dic['data'][0]:
+
+        if 'data' in mfa_dic and 'id' in mfa_dic['data'][device_num]:
             try:
-                device_name = mfa_dic['data'][0]['attributes']['deviceName']
+                device_name = mfa_dic['data'][device_num]['attributes']['deviceName']
                 self.logger.debug('DKBRobo._get_mfa_challenge_id(): devicename: %s\n', device_name)
             except Exception as _err:
                 self.logger.error('DKBRobo._get_mfa_challenge_id(): unable to get deviceName')
@@ -536,7 +537,7 @@ class DKBRobo(object):
             self.client.headers["Accept"] = "application/vnd.api+json"
 
             # we are expecting the first method from mfa_dic to be used
-            data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][0]['id'], 'methodType': self.mfa_method}}}
+            data_dic = {'data': {'type': 'mfa-challenge', 'attributes': {'mfaId': self.token_dic['mfa_id'], 'methodId': mfa_dic['data'][device_num]['id'], 'methodType': self.mfa_method}}}
             response = self.client.post(self.banking_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
 
             # process response
@@ -689,10 +690,13 @@ class DKBRobo(object):
         # get mfa methods
         mfa_dic = self._get_mfa_methods()
 
+        # pick mfa device from list
+        device_number = self._select_mfa_device(mfa_dic)
+
         # we need a challege-id for polling so lets try to get it
         mfa_challenge_id = None
         if 'mfa_id' in self.token_dic and 'data' in mfa_dic:
-            mfa_challenge_id, device_name = self._get_mfa_challenge_id(mfa_dic)
+            mfa_challenge_id, device_name = self._get_mfa_challenge_id(mfa_dic, device_number)
         else:
             raise DKBRoboError('Login failed: no 1fa access token.')
 
@@ -1083,6 +1087,35 @@ class DKBRobo(object):
             details_link = None
 
         return details_link
+
+    def _select_mfa_device(self, mfa_dic):
+        """ pick mfa_device from dictionary """
+        self.logger.debug('_select_mfa_device()')
+        device_num = 0
+
+        if 'data' in mfa_dic and len(mfa_dic['data']) > 1:
+            device_list = []
+            deviceselection_completed = False
+            while not deviceselection_completed:
+                print('\nPick a device from the below list:')
+                # we have multiple devices to select
+                for idx, device_dic in enumerate(mfa_dic['data']):
+                    device_list.append(idx)
+                    if 'attributes' in device_dic and 'deviceName' in device_dic['attributes']:
+                        print(f"[{idx}] - {device_dic['attributes']['deviceName']}")
+                _tmp_device_num = input(':')
+
+                try:
+                    if int(_tmp_device_num) in device_list:
+                        deviceselection_completed = True
+                        device_num = int(_tmp_device_num)
+                    else:
+                        print('\nWrong input!')
+                except Exception:
+                    print('\nWrong input!')
+
+        self.logger.debug('_select_mfa_device() ended with: %s', device_num)
+        return device_num
 
     def _update_downloadstate(self, link_name, url):
         """ mark document and read
