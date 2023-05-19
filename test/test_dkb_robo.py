@@ -1903,7 +1903,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_input.return_value=0
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
-        self.assertIn("\nPick a device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
+        self.assertIn("\nPick an authentication device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
@@ -1912,7 +1912,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_input.return_value=1
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
         self.assertEqual(1, self.dkb._select_mfa_device(mfa_dic))
-        self.assertIn("\nPick a device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
+        self.assertIn("\nPick an authentication device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
@@ -1921,7 +1921,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_input.side_effect = [3, 0]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
-        self.assertIn("\nPick a device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
+        self.assertIn("\nPick an authentication device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
         self.assertIn('Wrong input!', mock_stdout.getvalue())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
@@ -1931,7 +1931,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_input.side_effect = ['a', 3, 0]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
-        self.assertIn("\nPick a device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
+        self.assertIn("\nPick an authentication device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
         self.assertIn('Invalid input!', mock_stdout.getvalue())
         self.assertIn('Wrong input!', mock_stdout.getvalue())
 

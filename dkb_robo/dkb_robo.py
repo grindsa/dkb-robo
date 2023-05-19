@@ -1097,7 +1097,7 @@ class DKBRobo(object):
             device_list = []
             deviceselection_completed = False
             while not deviceselection_completed:
-                print('\nPick a device from the below list:')
+                print('\nPick an authentication device from the below list:')
                 # we have multiple devices to select
                 for idx, device_dic in enumerate(mfa_dic['data']):
                     device_list.append(idx)
