@@ -1112,7 +1112,7 @@ class DKBRobo(object):
                     else:
                         print('\nWrong input!')
                 except Exception:
-                    print('\nWrong input!')
+                    print('\Invalid input!')
 
         self.logger.debug('_select_mfa_device() ended with: %s', device_num)
         return device_num
