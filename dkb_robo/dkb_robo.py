@@ -1105,17 +1105,23 @@ class DKBRobo(object):
                         print(f"[{idx}] - {device_dic['attributes']['deviceName']}")
                 _tmp_device_num = input(':')
 
-                try:
-                    if int(_tmp_device_num) in device_list:
-                        deviceselection_completed = True
-                        device_num = int(_tmp_device_num)
-                    else:
-                        print('\nWrong input!')
-                except Exception:
-                    print('\Invalid input!')
+                device_num, deviceselection_completed = self._process_userinput(device_num, device_list, _tmp_device_num, deviceselection_completed)
 
         self.logger.debug('_select_mfa_device() ended with: %s', device_num)
         return device_num
+
+    def _process_userinput(self, device_num, device_list, _tmp_device_num, deviceselection_completed):
+        self.logger.debug('DKBRobo._process_userinput(%s)', _tmp_device_num)
+        try:
+            if int(_tmp_device_num) in device_list:
+                deviceselection_completed = True
+                device_num = int(_tmp_device_num)
+            else:
+                print('\nWrong input!')
+        except Exception:
+            print('\nInvalid input!')
+
+        return device_num, deviceselection_completed
 
     def _update_downloadstate(self, link_name, url):
         """ mark document and read
