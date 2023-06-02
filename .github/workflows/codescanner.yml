@@ -65,6 +65,7 @@ jobs:
           pytest
           coverage run -m pytest
           coverage xml
+          sudo cp ./coverage.xml ../
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
