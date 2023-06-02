@@ -1,0 +1,16 @@
+[tox]
+envlist = py39
+skipsdist = True
+
+[testenv]
+deps =
+    pytest
+    coverage
+commands =
+    coverage run -m pytest
+    coverage xml
+
+[coverage:run]
+relative_files = True
+source = my_project/
+branch = True
