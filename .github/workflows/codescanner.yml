@@ -61,6 +61,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run coverage
         run: |
+          cd dkb_robo
           pytest
           coverage run -m pytest
           coverage xml
