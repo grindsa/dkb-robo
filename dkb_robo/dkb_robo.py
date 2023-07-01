@@ -100,7 +100,7 @@ class DKBRobo(object):
     tan_insert = False
     logger = None
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=True, debug=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.tan_insert = tan_insert
