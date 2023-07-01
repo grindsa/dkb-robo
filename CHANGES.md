@@ -14,6 +14,12 @@ with DKBRobo(DKB_USER, DKB_PASSWORD, TAN, legacy_login=False) as dkb:
   ...
 ```
 
+# Chagens in 0.21
+
+**Features**:
+
+- [[#39](https://github.com/grindsa/dkb-robo/issues/39) support new DKB frontend]
+
 # Changes in 0.20.1
 
 **Bugfixes**:
