@@ -84,8 +84,8 @@ class DKBRoboError(Exception):
 class DKBRobo(object):
     """ dkb_robo class """
     # pylint: disable=R0904
-    base_url = 'https://www.dkb.de'
-    banking_url = 'https://banking.beta.dkb.de'
+    base_url = 'https://www.ib.dkb.de'
+    banking_url = 'https://banking.dkb.de'
     api_prefix = '/api'
     mfa_method = 'seal_one'
     legacy_login = False
