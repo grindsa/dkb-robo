@@ -733,7 +733,6 @@ class DKBRobo(object):
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
-
         self._get_overview()
         # self.account_dic = self._build_account_dic()
         # redirect to legacy page
@@ -1336,22 +1335,22 @@ class DKBRobo(object):
 
         return p_dic
 
-    def _get_account_details(self, id, accounts_dic, group_name, product_settings_dic):
+    def _get_account_details(self, aid, accounts_dic, group_name, product_settings_dic):
         """ get credit account details from cc json """
-        self.logger.debug('DKBRobo._get_account_details(%s)\n', id)
+        self.logger.debug('DKBRobo._get_account_details(%s)\n', aid)
         output_dic = {}
 
         if 'data' in accounts_dic:
             for account in accounts_dic['data']:
-                if account['id'] == id:
+                if account['id'] == aid:
                     if 'attributes' in account:
                         output_dic['type'] = 'account'
-                        output_dic['id'] = id
+                        output_dic['id'] = aid
                         output_dic['productgroup'] = group_name
                         output_dic['iban'] = account['attributes']['iban']
                         # overwrite display name set in ui
                         if 'accounts' in product_settings_dic:
-                            output_dic['name'] = self._display_name_lookup(id, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
+                            output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
                         else:
                             output_dic['name'] = account['attributes']['product']['displayName']
                         output_dic['account'] = account['attributes']['iban']
@@ -1363,16 +1362,16 @@ class DKBRobo(object):
 
         return output_dic
 
-    def _get_card_details(self, id, cards_dic, group_name, product_settings_dic):
+    def _get_card_details(self, cid, cards_dic, group_name, product_settings_dic):
         """ get credit card details from cc json """
-        self.logger.debug('DKBRobo._get_cc_details(%s)\n', id)
+        self.logger.debug('DKBRobo._get_cc_details(%s)\n', cid)
         output_dic = {}
         if 'data' in cards_dic:
-            for card  in cards_dic['data']:
-                if card['id'] == id:
+            for card in cards_dic['data']:
+                if card['id'] == cid:
                     if 'attributes' in card:
                         output_dic['type'] = 'creditcard'
-                        output_dic['id'] = id
+                        output_dic['id'] = cid
                         output_dic['productgroup'] = group_name
                         output_dic['maskedpan'] = card['attributes']['maskedPan']
                         output_dic['account'] = card['attributes']['maskedPan']
@@ -1381,28 +1380,28 @@ class DKBRobo(object):
                         output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
                         output_dic['date'] = convert_date_format(card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
                         output_dic['limit'] = card['attributes']['limit']['value']
-                        output_dic['holdername'] = '{0} {1}'.format(card['attributes']['holder']['person']['firstName'], card['attributes']['holder']['person']['lastName'])
+                        output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
                         # set display name
                         if 'creditCards' in product_settings_dic:
-                            output_dic['name'] = self._display_name_lookup(id, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
+                            output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
                         else:
                             output_dic['name'] = card['attributes']['product']['displayName']
 
         return output_dic
 
-    def _get_brokerage_details(self, id, brokerage_dic, group_name, product_settings_dic):
+    def _get_brokerage_details(self, bid, brokerage_dic, group_name, product_settings_dic):
         """ get depod details from brokerage json """
-        self.logger.debug('DKBRobo._get_brokerage_details(%s)\n', id)
+        self.logger.debug('DKBRobo._get_brokerage_details(%s)\n', bid)
         output_dic = {}
         if 'data' in brokerage_dic:
-            for depot  in brokerage_dic['data']:
-                if depot['id'] == id and 'attributes' in depot:
+            for depot in brokerage_dic['data']:
+                if depot['id'] == bid and 'attributes' in depot:
                     output_dic['type'] = 'depot'
-                    output_dic['id'] = id
+                    output_dic['id'] = bid
                     output_dic['productgroup'] = group_name
                     # set display name
                     if 'brokerageAccounts' in product_settings_dic:
-                        output_dic['name'] = self._display_name_lookup(id, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
+                        output_dic['name'] = self._display_name_lookup(bid, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
                     else:
                         output_dic['name'] = depot['attributes']['holderName']
                     output_dic['holdername'] = depot['attributes']['holderName']
@@ -1411,11 +1410,11 @@ class DKBRobo(object):
                     output_dic['account'] = depot['attributes']['depositAccountId']
         return output_dic
 
-    def _display_name_lookup(self, id, display_settings, product_name):
+    def _display_name_lookup(self, oid, display_settings, product_name):
         """ replace product name with name displayed in UI """
         self.logger.debug('DKBRobo._diplay_name_lookup(%s)\n', product_name)
-        if id in display_settings and 'name' in display_settings[id]:
-            product_name = display_settings[id]['name']
+        if oid in display_settings and 'name' in display_settings[oid]:
+            product_name = display_settings[oid]['name']
 
         return product_name
 
@@ -1424,13 +1423,13 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._sort_product_group()\n')
         product_dic = {}
         for product, data_dic in product_group['products'].items():
-            for id, _product_data in sorted(data_dic.items(), key= lambda x: x[1]['index']):
+            for pid, _product_data in sorted(data_dic.items(), key=lambda x: x[1]['index']):
                 if product == 'accounts':
-                    product_dic[account_cnt] = self._get_account_details(id, accounts_dic, group_name, product_settings_dic)
+                    product_dic[account_cnt] = self._get_account_details(pid, accounts_dic, group_name, product_settings_dic)
                 elif product == 'creditCards':
-                    product_dic[account_cnt] =  self._get_card_details(id, cards_dic, group_name, product_settings_dic)
+                    product_dic[account_cnt] = self._get_card_details(pid, cards_dic, group_name, product_settings_dic)
                 elif product == 'brokerageAccounts':
-                    product_dic[account_cnt] = self._get_brokerage_details(id, brokerage_dic, group_name, product_settings_dic)
+                    product_dic[account_cnt] = self._get_brokerage_details(pid, brokerage_dic, group_name, product_settings_dic)
                 else:
                     self.logger.error('DKBRobo._sort_product_group(): product %s not implemented yet.', product)
                 account_cnt += 1
@@ -1445,7 +1444,7 @@ class DKBRobo(object):
         account_cnt = 0
         if 'data' in portfolio_dic['product_display']:
             for data_ele in portfolio_dic['product_display']['data']:
-                if  'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
+                if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
                     product_settings_dic = data_ele['attributes']['productSettings']
                 else:
                     product_settings_dic = {}
@@ -1453,7 +1452,7 @@ class DKBRobo(object):
                 if 'attributes' in data_ele and 'productGroups' in data_ele['attributes']:
 
                     # sorting should be similar to frontend
-                    for product_group in sorted(data_ele['attributes']['productGroups'].values(), key = lambda x: x['index']):
+                    for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
                         product_group_name = product_group['name']
                         product_group_dic, account_cnt = self._sort_product_group(account_cnt, product_settings_dic, product_group_name, product_group, portfolio_dic['accounts'], portfolio_dic['cards'], portfolio_dic['brokerage_accounts'])
                         account_dic = {**account_dic, **product_group_dic}
