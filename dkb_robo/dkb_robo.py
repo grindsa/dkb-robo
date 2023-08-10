@@ -16,6 +16,19 @@ import mechanicalsoup
 import requests
 
 
+def convert_date_format(input_date, input_format, output_format):
+    """ convert date to a specified output format """
+    try:
+        parsed_date = datetime.strptime(input_date, input_format)
+        # convert date
+        output_date = parsed_date.strftime(output_format)
+    except Exception:
+        # something went wrong. we return the date we got as input
+        output_date = input_date
+
+    return output_date
+
+
 def generate_random_string(length):
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
@@ -1345,7 +1358,7 @@ class DKBRobo(object):
                         output_dic['holderName'] = account['attributes']['holderName']
                         output_dic['amount'] = account['attributes']['balance']['value']
                         output_dic['currencycode'] = account['attributes']['balance']['currencyCode']
-                        output_dic['date'] = account['attributes']['updatedAt']
+                        output_dic['date'] = convert_date_format(account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
                         output_dic['limit'] = account['attributes']['overdraftLimit']
 
         return output_dic
@@ -1366,7 +1379,7 @@ class DKBRobo(object):
                         # DKB show it in a weired way
                         output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
                         output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
-                        output_dic['date'] = card['attributes']['balance']['date']
+                        output_dic['date'] = convert_date_format(card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
                         output_dic['limit'] = card['attributes']['limit']['value']
                         output_dic['holdername'] = '{0} {1}'.format(card['attributes']['holder']['person']['firstName'], card['attributes']['holder']['person']['lastName'])
                         # set display name
