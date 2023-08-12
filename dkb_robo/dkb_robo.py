@@ -16,13 +16,15 @@ import mechanicalsoup
 import requests
 
 
-def convert_date_format(input_date, input_format, output_format):
+def convert_date_format(logger, input_date, input_format, output_format):
     """ convert date to a specified output format """
+    logger.debug('convert_date_format()')
     try:
         parsed_date = datetime.strptime(input_date, input_format)
         # convert date
         output_date = parsed_date.strftime(output_format)
     except Exception:
+        logger.error('convert_date_format(): cannot convert date: %s', input_date)
         # something went wrong. we return the date we got as input
         output_date = input_date
 
@@ -733,15 +735,11 @@ class DKBRobo(object):
 
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
+        # get account overview
         self._get_overview()
-        # self.account_dic = self._build_account_dic()
-        # redirect to legacy page
-        # self._do_sso_redirect()
-        # get account overview to ensure backwards compability
-        # soup_new = self._get_financial_statement()
-        # legacy_account_dic = self._parse_overview(soup_new)
 
-        # _foo = self.get_portfolio()
+        # redirect to legacy page
+        self._do_sso_redirect()
 
     def _login_confirm(self):
         """ confirm login to dkb via app
@@ -1347,18 +1345,26 @@ class DKBRobo(object):
                         output_dic['type'] = 'account'
                         output_dic['id'] = aid
                         output_dic['productgroup'] = group_name
-                        output_dic['iban'] = account['attributes']['iban']
+
+                        mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
+                        for my_field, dkb_field in mapping_dic.items():
+                            if dkb_field in account['attributes']:
+                                output_dic[my_field] = account['attributes'][dkb_field]
+
                         # overwrite display name set in ui
                         if 'accounts' in product_settings_dic:
                             output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
                         else:
                             output_dic['name'] = account['attributes']['product']['displayName']
-                        output_dic['account'] = account['attributes']['iban']
-                        output_dic['holderName'] = account['attributes']['holderName']
-                        output_dic['amount'] = account['attributes']['balance']['value']
-                        output_dic['currencycode'] = account['attributes']['balance']['currencyCode']
-                        output_dic['date'] = convert_date_format(account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
-                        output_dic['limit'] = account['attributes']['overdraftLimit']
+
+                        if 'balance' in account['attributes']:
+                            mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
+                            for my_field, dkb_field in mapping_dic.items():
+                                if dkb_field in account['attributes']['balance']:
+                                    output_dic[my_field] = account['attributes']['balance'][dkb_field]
+
+                        if 'updatedAt' in account['attributes']:
+                            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
 
         return output_dic
 
@@ -1373,14 +1379,17 @@ class DKBRobo(object):
                         output_dic['type'] = 'creditcard'
                         output_dic['id'] = cid
                         output_dic['productgroup'] = group_name
-                        output_dic['maskedpan'] = card['attributes']['maskedPan']
-                        output_dic['account'] = card['attributes']['maskedPan']
-                        # DKB show it in a weired way
-                        output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
-                        output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
-                        output_dic['date'] = convert_date_format(card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
-                        output_dic['limit'] = card['attributes']['limit']['value']
-                        output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
+                        if 'maskedPan' in card['attributes']:
+                            output_dic['maskedpan'] = card['attributes']['maskedPan']
+                            output_dic['account'] = card['attributes']['maskedPan']
+                        if 'balance' in card['attributes']:
+                            # DKB show it in a weired way
+                            output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
+                            output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
+                            output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
+                            output_dic['limit'] = card['attributes']['limit']['value']
+                        if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
+                            output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
                         # set display name
                         if 'creditCards' in product_settings_dic:
                             output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])

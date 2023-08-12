@@ -38,11 +38,12 @@ class TestDKBRobo(unittest.TestCase):
     def setUp(self):
         self.dkb = DKBRobo()
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.dkb_robo import validate_dates, generate_random_string, logger_setup, string2float
+        from dkb_robo.dkb_robo import validate_dates, generate_random_string, logger_setup, string2float, convert_date_format
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
+        self.convert_date_format = convert_date_format
         self.logger = logging.getLogger('dkb_robo')
 
     def test_001_get_cc_limit(self, mock_browser):
@@ -1401,46 +1402,7 @@ class TestDKBRobo(unittest.TestCase):
             self.assertFalse(self.dkb._get_transactions())
         self.assertIn('ERROR:dkb_robo:DKBRobo._get_transactions(): RC is not 200 but 400', lcm.output)
 
-    @patch('dkb_robo.DKBRobo._get_loans')
-    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
-    @patch('dkb_robo.DKBRobo._get_cards')
-    @patch('dkb_robo.DKBRobo._get_accounts')
-    def test_120_get_portfolio(self, mock_acc, mock_card, mock_bra, mock_loan,_unused):
-        """ test _get_transactions() ok """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        mock_acc.return_value = 'accounts'
-        mock_card.return_value = 'cards'
-        mock_bra.return_value = 'bra'
-        mock_loan.return_value = 'loan'
-        result = {'accounts': 'accounts', 'cards': 'cards', 'brokerage_accounts': 'bra', 'loands': 'loan'}
-        self.assertEqual(result, self.dkb.get_portfolio())
-        self.assertTrue(mock_acc.called)
-        self.assertTrue(mock_card.called)
-        self.assertTrue(mock_bra.called)
-        self.assertTrue(mock_loan.called)
-
-    @patch('dkb_robo.DKBRobo._get_loans')
-    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
-    @patch('dkb_robo.DKBRobo._get_cards')
-    @patch('dkb_robo.DKBRobo._get_accounts')
-    def test_121_get_portfolio(self, mock_acc, mock_card, mock_bra, mock_loan,_unused):
-        """ test _get_transactions() ok """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 400
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        mock_acc.return_value = 'accounts'
-        mock_card.return_value = 'cards'
-        mock_bra.return_value = 'bra'
-        mock_loan.return_value = 'loan'
-        self.assertFalse(self.dkb.get_portfolio())
-        self.assertFalse(mock_acc.called)
-        self.assertFalse(mock_card.called)
-        self.assertFalse(mock_bra.called)
-        self.assertFalse(mock_loan.called)
-
-    def test_122_update_token(self, _unused):
+    def test_120_update_token(self, _unused):
         """ test _update_token() ok """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         self.dkb.client = Mock()
@@ -1449,7 +1411,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb._update_token()
         self.assertEqual({'foo': 'bar'}, self.dkb.token_dic)
 
-    def test_123_update_token(self, _unused):
+    def test_121_update_token(self, _unused):
         """ test _update_token() nok """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         self.dkb.client = Mock()
@@ -1460,7 +1422,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('Login failed: token update failed. RC: 400', str(err.exception))
         self.assertEqual({'mfa_id': 'mfa_id', 'access_token': 'access_token'}, self.dkb.token_dic)
 
-    def test_124_get_token(self, _unused):
+    def test_122_get_token(self, _unused):
         """ test _get_token() ok """
         self.dkb.dkb_user = 'dkb_user'
         self.dkb.dkb_password = 'dkb_password'
@@ -1470,7 +1432,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb._get_token()
         self.assertEqual({'foo': 'bar'}, self.dkb.token_dic)
 
-    def test_125_get_token(self, _unused):
+    def test_123_get_token(self, _unused):
         """ test _get_token() ok """
         self.dkb.dkb_user = 'dkb_user'
         self.dkb.dkb_password = 'dkb_password'
@@ -1483,7 +1445,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb.token_dic)
 
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_126_do_sso_redirect(self, mock_instance, _unused):
+    def test_124_do_sso_redirect(self, mock_instance, _unused):
         """ test _do_sso_redirect() ok """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1493,7 +1455,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_instance.called)
 
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_127_do_sso_redirect(self, mock_instance, _unused):
+    def test_125_do_sso_redirect(self, mock_instance, _unused):
         """ test _do_sso_redirect() nok """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1505,7 +1467,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_instance.called)
 
     @patch('dkb_robo.DKBRobo._new_instance')
-    def test_128_do_sso_redirect(self, mock_instance, _unused):
+    def test_126_do_sso_redirect(self, mock_instance, _unused):
         """ test _do_sso_redirect() nok """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1516,14 +1478,14 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 400 text: OK', lcm.output)
         self.assertTrue(mock_instance.called)
 
-    def test_129_get_mfa_methods(self, _unused):
+    def test_127_get_mfa_methods(self, _unused):
         """ test _get_mfa_methods() """
         self.dkb.token_dic = {'foo': 'bar'}
         with self.assertRaises(Exception) as err:
             self.dkb._get_mfa_methods()
         self.assertEqual('Login failed: no 1fa access token.', str(err.exception))
 
-    def test_130_get_mfa_methods(self, _unused):
+    def test_128_get_mfa_methods(self, _unused):
         """ test _get_mfa_methods() """
         self.dkb.token_dic = {'access_token': 'bar'}
         self.dkb.client = Mock()
@@ -1532,7 +1494,7 @@ class TestDKBRobo(unittest.TestCase):
             self.dkb._get_mfa_methods()
         self.assertEqual('Login failed: getting mfa_methods failed. RC: 400', str(err.exception))
 
-    def test_131_get_mfa_methods(self, _unused):
+    def test_129_get_mfa_methods(self, _unused):
         """ test _get_mfa_methods() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
@@ -1542,7 +1504,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('time.sleep', return_value=None)
-    def test_132__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+    def test_130__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
         """ test _complete_2fa() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1554,7 +1516,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('time.sleep', return_value=None)
-    def test_133__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+    def test_131__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
         """ test _complete_2fa() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1566,7 +1528,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('time.sleep', return_value=None)
-    def test_134__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+    def test_132__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
         """ test _complete_2fa() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1579,7 +1541,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('time.sleep', return_value=None)
-    def test_135__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
+    def test_133__complete_2fa(self, _mock_sleep, mock_stdout, _unused):
         """ test _complete_2fa() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -1591,7 +1553,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
 
     @patch('requests.session')
-    def test_136_new_instance_new_session(self, mock_session, _unused):
+    def test_134_new_instance_new_session(self, mock_session, _unused):
         """ test _new_session() """
         mock_session.headers = {}
         client = self.dkb._new_session()
@@ -1599,7 +1561,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(exp_headers, client.headers)
 
     @patch('requests.session')
-    def test_137_new_instance_new_session(self, mock_session, _unused):
+    def test_135_new_instance_new_session(self, mock_session, _unused):
         """ test _new_session() """
         mock_session.headers = {}
         self.dkb.proxies = 'proxies'
@@ -1607,7 +1569,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('proxies', client.proxies)
 
     @patch('requests.session')
-    def test_138_new_instance_new_session(self, mock_session, _unused):
+    def test_136_new_instance_new_session(self, mock_session, _unused):
         """ test _new_session() """
         mock_session.headers = {}
         mock_session.get.return_value.status_code = 200
@@ -1617,7 +1579,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(exp_headers, client.headers)
 
     @patch('requests.session')
-    def test_139_get_mfa_challenge_id(self, mock_session, _unused):
+    def test_137_get_mfa_challenge_id(self, mock_session, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
@@ -1625,14 +1587,14 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
 
     @patch('requests.session')
-    def test_140_get_mfa_challenge_id(self, mock_session, _unused):
+    def test_138_get_mfa_challenge_id(self, mock_session, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'foo': 'bar'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual((None, None), self.dkb._get_mfa_challenge_id(mfa_dic))
         self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
 
-    def test_141_get_mfa_challenge_id(self, _unused):
+    def test_139_get_mfa_challenge_id(self, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
         self.dkb.client = Mock()
@@ -1643,7 +1605,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
 
-    def test_142_get_mfa_challenge_id(self, _unused):
+    def test_140_get_mfa_challenge_id(self, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'data': [{'id': 'id', 'attributes': {'foo': 'bar'}}]}
         self.dkb.client = Mock()
@@ -1656,7 +1618,7 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(('id', None), self.dkb._get_mfa_challenge_id(mfa_dic))
         self.assertIn('ERROR:dkb_robo:DKBRobo._get_mfa_challenge_id(): unable to get deviceName', lcm.output)
 
-    def test_143_get_mfa_challenge_id(self, _unused):
+    def test_141_get_mfa_challenge_id(self, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
         self.dkb.client = Mock()
@@ -1669,7 +1631,7 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
         self.assertEqual('Login failed: post request to get the mfa challenges failed. RC: 400', str(err.exception))
 
-    def test_144_get_mfa_challenge_id(self, _unused):
+    def test_142_get_mfa_challenge_id(self, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
         self.dkb.client = Mock()
@@ -1682,7 +1644,7 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
         self.assertEqual("Login failed:: wrong challenge type: {'data': {'type': 'unknown', 'id': 'id'}}", str(err.exception))
 
-    def test_145_get_mfa_challenge_id(self, _unused):
+    def test_143_get_mfa_challenge_id(self, _unused):
         """ test _get_mfa_challenge_id() """
         mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
         self.dkb.client = Mock()
@@ -1698,7 +1660,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_146_login(self, mock_sess, mock_tok, mock_meth,_ununsed):
+    def test_144_login(self, mock_sess, mock_tok, mock_meth,_ununsed):
         """ test login() """
         self.dkb.token_dic = {'foo': 'bar'}
         mock_meth.return_value = {'foo': 'bar'}
@@ -1713,7 +1675,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_147_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, _ununsed):
+    def test_145_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'foo': 'bar'}
@@ -1732,7 +1694,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_148_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, _ununsed):
+    def test_146_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1753,7 +1715,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_149_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, _ununsed):
+    def test_147_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1780,7 +1742,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_150_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
+    def test_148_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1810,7 +1772,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_151_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
+    def test_149_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1841,7 +1803,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_152_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
+    def test_150_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': 'token_factor_type'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1862,9 +1824,8 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_po.called)
         self.assertTrue(mock_mfa.called)
 
+    @patch('dkb_robo.DKBRobo._get_overview')
     @patch('dkb_robo.DKBRobo._select_mfa_device')
-    @patch('dkb_robo.DKBRobo._parse_overview')
-    @patch('dkb_robo.DKBRobo._get_financial_statement')
     @patch('dkb_robo.DKBRobo._do_sso_redirect')
     @patch('dkb_robo.DKBRobo._update_token')
     @patch('dkb_robo.DKBRobo._complete_2fa')
@@ -1872,7 +1833,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_mfa_methods')
     @patch('dkb_robo.DKBRobo._get_token')
     @patch('dkb_robo.DKBRobo._new_session')
-    def test_153_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_gf, mock_po, mock_mfa, _ununsed):
+    def test_151_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_overview, _ununsed):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': '2fa'}
         mock_meth.return_value = {'data': 'bar'}
@@ -1887,18 +1848,17 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_2fa.called)
         self.assertTrue(mock_upd.called)
         self.assertTrue(mock_redir.called)
-        self.assertTrue(mock_gf.called)
-        self.assertTrue(mock_po.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_overview.called)
 
-    def test_154__select_mfa_device(self, _unused):
+    def test_152__select_mfa_device(self, _unused):
         """ test _select_mfa_device() """
         mfa_dic = {'foo': 'bar'}
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_155__select_mfa_device(self, mock_input, mock_stdout, _unused):
+    def test_153__select_mfa_device(self, mock_input, mock_stdout, _unused):
         """ test _select_mfa_device() """
         mock_input.return_value=0
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -1907,7 +1867,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_156__select_mfa_device(self, mock_input, mock_stdout, _unused):
+    def test_154__select_mfa_device(self, mock_input, mock_stdout, _unused):
         """ test _select_mfa_device() """
         mock_input.return_value=1
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -1916,7 +1876,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_157__select_mfa_device(self, mock_input, mock_stdout, _unused):
+    def test_155__select_mfa_device(self, mock_input, mock_stdout, _unused):
         """ test _select_mfa_device() """
         mock_input.side_effect = [3, 0]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -1926,7 +1886,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_158__select_mfa_device(self, mock_input, mock_stdout, _unused):
+    def test_156__select_mfa_device(self, mock_input, mock_stdout, _unused):
         """ test _select_mfa_device() """
         mock_input.side_effect = ['a', 3, 0]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -1934,6 +1894,175 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn("\nPick an authentication device from the below list:\n[0] - device-1\n[1] - device-2\n", mock_stdout.getvalue())
         self.assertIn('Invalid input!', mock_stdout.getvalue())
         self.assertIn('Wrong input!', mock_stdout.getvalue())
+
+    def test_157_convert_date_format(self, _unused):
+        """ test convert_date_format() """
+        self.assertEqual('01.01.2023', self.convert_date_format(self.logger, '2023/01/01', '%Y/%m/%d', '%d.%m.%Y'))
+
+    def test_158_convert_date_format(self, _unused):
+        """ test convert_date_format() """
+
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', '%Y/%m/%d', '%d.%m.%Y'))
+        self.assertIn('ERROR:dkb_robo:convert_date_format(): cannot convert date: wrong date', lcm.output)
+
+    def test_159__display_name_lookup(self, _ununsed):
+        """ test _display_name_lookup() """
+        display_settings = {}
+        product_name = 'product_name'
+        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
+
+    def test_160__display_name_lookup(self, _ununsed):
+        """ test _display_name_lookup() """
+        display_settings = {'oid': {'foo': 'bar'}}
+        product_name = 'product_name'
+        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
+
+    def test_161__display_name_lookup(self, _ununsed):
+        """ test _display_name_lookup() """
+        display_settings = {'oid': {'name': 'name'}}
+        product_name = 'name'
+        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
+
+    @patch('dkb_robo.DKBRobo._build_account_dic')
+    @patch('dkb_robo.DKBRobo._get_loans')
+    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
+    @patch('dkb_robo.DKBRobo._get_cards')
+    @patch('dkb_robo.DKBRobo._get_accounts')
+    def test_162_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
+        """ test _get_overview() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.dkb._get_overview()
+        self.assertTrue(mock_acc.called)
+        self.assertTrue(mock_cards.called)
+        self.assertTrue(mock_br.called)
+        self.assertTrue(mock_loans.called)
+        self.assertTrue(mock_bac.called)
+
+    @patch('dkb_robo.DKBRobo._build_account_dic')
+    @patch('dkb_robo.DKBRobo._get_loans')
+    @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
+    @patch('dkb_robo.DKBRobo._get_cards')
+    @patch('dkb_robo.DKBRobo._get_accounts')
+    def test_163_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
+        """ test _get_overview() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.dkb._get_overview()
+        self.assertFalse(mock_acc.called)
+        self.assertFalse(mock_cards.called)
+        self.assertFalse(mock_br.called)
+        self.assertFalse(mock_loans.called)
+        self.assertTrue(mock_bac.called)
+
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_164__get_account_details(self, mock_dnl, _unused):
+        """ test _get_account_details() """
+        account_dic = {}
+        product_settings_dic = {}
+        mock_dnl.return_value = 'mock_dnl'
+        self.assertFalse(self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_165__get_account_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_account_details() """
+        account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
+        product_settings_dic = {}
+        mock_dnl.return_value = 'mock_dnl'
+        mock_date.return_value = 'mock_date'
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+        self.assertTrue(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_166__get_account_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_account_details() """
+        account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
+        product_settings_dic = {'accounts': {'foo': 'bar'}}
+        mock_dnl.return_value = 'mock_dnl'
+        mock_date.return_value = 'mock_date'
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
+        self.assertTrue(mock_dnl.called)
+        self.assertTrue(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_167__get_account_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_account_details() """
+        account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
+        product_settings_dic = {'accounts': {'foo': 'bar'}}
+        mock_dnl.return_value = 'mock_dnl'
+        mock_date.return_value = 'mock_date'
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'mock_date', 'limit': 'overdraftLimit2'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
+        self.assertTrue(mock_dnl.called)
+        self.assertTrue(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_168__get_card_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_card_details() """
+        card_dic = {}
+        product_settings_dic = {}
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+        self.assertFalse(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_169__get_card_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_card_details() """
+        card_dic = {}
+        product_settings_dic = {'data': [{'foo': 'bar'}]}
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+        self.assertFalse(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_170__get_card_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_card_details() """
+        card_dic = {'data': [{'id': 'cid'}]}
+        product_settings_dic = {}
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+        self.assertFalse(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_171__get_card_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_card_details() """
+        card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
+        product_settings_dic = {}
+        mock_dnl.return_value = 'mock_dnl'
+        mock_date.return_value = 'mock_date'
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname'}
+        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
+        self.assertFalse(mock_dnl.called)
+        self.assertTrue(mock_date.called)
+
+    @patch('dkb_robo.dkb_robo.convert_date_format')
+    @patch('dkb_robo.DKBRobo._display_name_lookup')
+    def test_172__get_card_details(self, mock_dnl, mock_date, _unused):
+        """ test _get_card_details() """
+        card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
+        product_settings_dic = {'creditCards': {'foo': 'bar'}}
+        mock_dnl.return_value = 'mock_dnl'
+        mock_date.return_value = 'mock_date'
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl'}
+        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
+        self.assertTrue(mock_dnl.called)
+        self.assertTrue(mock_date.called)
 
 if __name__ == '__main__':
 
