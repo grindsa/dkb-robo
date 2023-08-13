@@ -197,6 +197,8 @@ class DKBRobo(object):
                     if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
                         mfa_completed = True
                         break
+                    if (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
+                        raise DKBRoboError('2fa chanceled by user')
                 else:
                     self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: %s', polling_dic)
             else:
@@ -1413,10 +1415,17 @@ class DKBRobo(object):
                         output_dic['name'] = self._display_name_lookup(bid, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
                     else:
                         output_dic['name'] = depot['attributes']['holderName']
-                    output_dic['holdername'] = depot['attributes']['holderName']
-                    output_dic['currencycode'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['currencyCode']
-                    output_dic['amount'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['value']
-                    output_dic['account'] = depot['attributes']['depositAccountId']
+                    if 'holderName' in depot['attributes']:
+                        output_dic['holdername'] = depot['attributes']['holderName']
+                    if 'depositAccountId' in depot['attributes']:
+                        output_dic['account'] = depot['attributes']['depositAccountId']
+                    if 'brokerageAccountPerformance' in depot['attributes']:
+                        if 'currentValue' in depot['attributes']['brokerageAccountPerformance']:
+                            if 'currencyCode' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
+                                output_dic['currencycode'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['currencyCode']
+                            if 'value' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
+                                output_dic['amount'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['value']
+
         return output_dic
 
     def _display_name_lookup(self, oid, display_settings, product_name):
@@ -1431,17 +1440,18 @@ class DKBRobo(object):
         """ sort products and productsgroup as shown in ui and get details """
         self.logger.debug('DKBRobo._sort_product_group()\n')
         product_dic = {}
-        for product, data_dic in product_group['products'].items():
-            for pid, _product_data in sorted(data_dic.items(), key=lambda x: x[1]['index']):
-                if product == 'accounts':
-                    product_dic[account_cnt] = self._get_account_details(pid, accounts_dic, group_name, product_settings_dic)
-                elif product == 'creditCards':
-                    product_dic[account_cnt] = self._get_card_details(pid, cards_dic, group_name, product_settings_dic)
-                elif product == 'brokerageAccounts':
-                    product_dic[account_cnt] = self._get_brokerage_details(pid, brokerage_dic, group_name, product_settings_dic)
-                else:
-                    self.logger.error('DKBRobo._sort_product_group(): product %s not implemented yet.', product)
-                account_cnt += 1
+        if 'products' in product_group:
+            for product, data_dic in product_group['products'].items():
+                for pid, _product_data in sorted(data_dic.items(), key=lambda x: x[1]['index']):
+                    if product == 'accounts':
+                        product_dic[account_cnt] = self._get_account_details(pid, accounts_dic, group_name, product_settings_dic)
+                    elif product == 'creditCards':
+                        product_dic[account_cnt] = self._get_card_details(pid, cards_dic, group_name, product_settings_dic)
+                    elif product == 'brokerageAccounts':
+                        product_dic[account_cnt] = self._get_brokerage_details(pid, brokerage_dic, group_name, product_settings_dic)
+                    else:
+                        self.logger.error('DKBRobo._sort_product_group(): product %s not implemented yet.', product)
+                    account_cnt += 1
 
         return product_dic, account_cnt
 
@@ -1451,7 +1461,7 @@ class DKBRobo(object):
 
         account_dic = {}
         account_cnt = 0
-        if 'data' in portfolio_dic['product_display']:
+        if 'product_display' in portfolio_dic and 'data' in portfolio_dic['product_display']:
             for data_ele in portfolio_dic['product_display']['data']:
                 if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
                     product_settings_dic = data_ele['attributes']['productSettings']
@@ -1459,7 +1469,6 @@ class DKBRobo(object):
                     product_settings_dic = {}
 
                 if 'attributes' in data_ele and 'productGroups' in data_ele['attributes']:
-
                     # sorting should be similar to frontend
                     for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
                         product_group_name = product_group['name']
