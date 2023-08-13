@@ -1394,6 +1394,7 @@ class DKBRobo(object):
         output_dic['type'] = 'account'
         output_dic['id'] = aid
         output_dic['productgroup'] = group_name
+        output_dic['transactions'] = self.banking_url + self.api_prefix + f"/api/accounts/accounts/{aid}/transactions"
         if 'updatedAt' in account['attributes']:
             output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
 
@@ -1470,6 +1471,7 @@ class DKBRobo(object):
         output_dic['type'] = 'creditcard'
         output_dic['id'] = cid
         output_dic['productgroup'] = group_name
+        output_dic['transactions'] = self.banking_url + self.api_prefix + f"/api/credit-card/cards/{cid}/transactions"
         if 'maskedPan' in card['attributes']:
             output_dic['maskedpan'] = card['attributes']['maskedPan']
             output_dic['account'] = card['attributes']['maskedPan']

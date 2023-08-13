@@ -1989,7 +1989,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertFalse(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2002,7 +2002,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'accounts': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2015,7 +2015,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'accounts': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'mock_date', 'limit': 'overdraftLimit2'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'mock_date', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2058,7 +2058,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname'}
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname', 'transactions': 'https://banking.dkb.de/api/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
         self.assertFalse(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2071,7 +2071,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'creditCards': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl'}
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl', 'transactions': 'https://banking.dkb.de/api/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
