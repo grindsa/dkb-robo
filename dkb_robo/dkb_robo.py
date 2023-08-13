@@ -1348,6 +1348,53 @@ class DKBRobo(object):
 
         return p_dic
 
+    def _add_account_balance(self, account):
+        """ add balance to dictionary """
+        self.logger.debug('DKBRobo._add_account_balance()\n')
+        output_dic = {}
+        if 'balance' in account['attributes']:
+            mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
+            for my_field, dkb_field in mapping_dic.items():
+                if dkb_field in account['attributes']['balance']:
+                    output_dic[my_field] = account['attributes']['balance'][dkb_field]
+
+        return output_dic
+
+    def _add_accountname(self, account, product_settings_dic, aid):
+        """ add card name """
+        self.logger.debug('DKBRobo._add_accountname()\n')
+        output_dic = {}
+        # overwrite display name set in ui
+        if 'accounts' in product_settings_dic:
+            output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
+        else:
+            output_dic['name'] = account['attributes']['product']['displayName']
+
+        return output_dic
+
+    def _add_accountdetails(self, account):
+        """ add several details to dictionaries """
+        self.logger.debug('DKBRobo._add_accountdetails()\n')
+        output_dic = {}
+        mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
+        for my_field, dkb_field in mapping_dic.items():
+            if dkb_field in account['attributes']:
+                output_dic[my_field] = account['attributes'][dkb_field]
+
+        return output_dic
+
+    def _add_accountinformation(self, account, aid, group_name):
+        """ add general account information """
+        self.logger.debug('DKBRobo._add_accountinformation()\n')
+        output_dic = {}
+        output_dic['type'] = 'account'
+        output_dic['id'] = aid
+        output_dic['productgroup'] = group_name
+        if 'updatedAt' in account['attributes']:
+            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
+
+        return output_dic
+
     def _get_account_details(self, aid, accounts_dic, group_name, product_settings_dic):
         """ get credit account details from cc json """
         self.logger.debug('DKBRobo._get_account_details(%s)\n', aid)
@@ -1356,29 +1403,9 @@ class DKBRobo(object):
         if 'data' in accounts_dic:
             for account in accounts_dic['data']:
                 if account['id'] == aid and 'attributes' in account:
-                    output_dic['type'] = 'account'
-                    output_dic['id'] = aid
-                    output_dic['productgroup'] = group_name
-
-                    mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
-                    for my_field, dkb_field in mapping_dic.items():
-                        if dkb_field in account['attributes']:
-                            output_dic[my_field] = account['attributes'][dkb_field]
-
-                    # overwrite display name set in ui
-                    if 'accounts' in product_settings_dic:
-                        output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
-                    else:
-                        output_dic['name'] = account['attributes']['product']['displayName']
-
-                    if 'balance' in account['attributes']:
-                        mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
-                        for my_field, dkb_field in mapping_dic.items():
-                            if dkb_field in account['attributes']['balance']:
-                                output_dic[my_field] = account['attributes']['balance'][dkb_field]
-
-                    if 'updatedAt' in account['attributes']:
-                        output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
+                    # build dictionary with account information
+                    output_dic = {**self._add_accountinformation(account, aid, group_name), **self._add_accountdetails(account), **self._add_account_balance(account), **self._add_accountname(account, product_settings_dic, aid)}
+                    break
 
         return output_dic
 
@@ -1451,8 +1478,9 @@ class DKBRobo(object):
         if 'data' in cards_dic:
             for card in cards_dic['data']:
                 if card['id'] == cid and 'attributes' in card:
-                    # build directory with card information
+                    # build dictionary with card information
                     output_dic = {**self._add_cardinformation(card, cid, group_name), **self._add_cardholder(card), **self._add_cardlimit(card), **self._add_cardbalance(card), **self._add_cardname(card, product_settings_dic, cid)}
+                    break
 
         return output_dic
 
