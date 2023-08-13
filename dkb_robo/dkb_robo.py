@@ -1382,32 +1382,77 @@ class DKBRobo(object):
 
         return output_dic
 
+    def _add_cardname(self, card, product_settings_dic, cid):
+        """ add card name """
+        self.logger.debug('DKBRobo._add_cardname()\n')
+        output_dic = {}
+        if 'creditCards' in product_settings_dic:
+            output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
+        else:
+            output_dic['name'] = card['attributes']['product']['displayName']
+
+        return output_dic
+
+    def _add_cardbalance(self, card):
+        """ add card balance to dictionary """
+        self.logger.debug('DKBRobo._add_cardbalance()\n')
+
+        output_dic = {}
+        if 'balance' in card['attributes']:
+
+            # DKB show it in a weired way
+            if 'value' in card['attributes']['balance']:
+                output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
+            if 'currencyCode' in card['attributes']['balance']:
+                output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
+            if 'date' in card['attributes']['balance']:
+                output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
+
+        return output_dic
+
+    def _add_cardlimit(self, card):
+        """ add cardlimit """
+        self.logger.debug('DKBRobo._add_cardlimit()\n')
+        output_dic = {}
+        if 'limit' in card['attributes'] and 'value' in card['attributes']['limit']:
+            output_dic['limit'] = card['attributes']['limit']['value']
+
+        return output_dic
+
+    def _add_cardholder(self, card):
+        """ add card holder information """
+        self.logger.debug('DKBRobo._add_cardholder()\n')
+        output_dic = {}
+
+        if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
+            if 'firstName' in card['attributes']['holder']['person'] and 'lastName' in card['attributes']['holder']['person']:
+                output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
+        return output_dic
+
+    def _add_cardinformation(self, card, cid, group_name):
+        """ add general information of card """
+        self.logger.debug('DKBRobo._add_cardinformation()\n')
+
+        output_dic = {}
+        output_dic['type'] = 'creditcard'
+        output_dic['id'] = cid
+        output_dic['productgroup'] = group_name
+        if 'maskedPan' in card['attributes']:
+            output_dic['maskedpan'] = card['attributes']['maskedPan']
+            output_dic['account'] = card['attributes']['maskedPan']
+
+        return output_dic
+
     def _get_card_details(self, cid, cards_dic, group_name, product_settings_dic):
         """ get credit card details from cc json """
         self.logger.debug('DKBRobo._get_cc_details(%s)\n', cid)
+
         output_dic = {}
         if 'data' in cards_dic:
             for card in cards_dic['data']:
                 if card['id'] == cid and 'attributes' in card:
-                    output_dic['type'] = 'creditcard'
-                    output_dic['id'] = cid
-                    output_dic['productgroup'] = group_name
-                    if 'maskedPan' in card['attributes']:
-                        output_dic['maskedpan'] = card['attributes']['maskedPan']
-                        output_dic['account'] = card['attributes']['maskedPan']
-                    if 'balance' in card['attributes']:
-                        # DKB show it in a weired way
-                        output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
-                        output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
-                        output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
-                        output_dic['limit'] = card['attributes']['limit']['value']
-                    if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
-                        output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
-                    # set display name
-                    if 'creditCards' in product_settings_dic:
-                        output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
-                    else:
-                        output_dic['name'] = card['attributes']['product']['displayName']
+                    # build directory with card information
+                    output_dic = {**self._add_cardinformation(card, cid, group_name), **self._add_cardholder(card), **self._add_cardlimit(card), **self._add_cardbalance(card), **self._add_cardname(card, product_settings_dic, cid)}
 
         return output_dic
 
