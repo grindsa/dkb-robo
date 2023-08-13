@@ -1342,31 +1342,30 @@ class DKBRobo(object):
 
         if 'data' in accounts_dic:
             for account in accounts_dic['data']:
-                if account['id'] == aid:
-                    if 'attributes' in account:
-                        output_dic['type'] = 'account'
-                        output_dic['id'] = aid
-                        output_dic['productgroup'] = group_name
+                if account['id'] == aid and 'attributes' in account:
+                    output_dic['type'] = 'account'
+                    output_dic['id'] = aid
+                    output_dic['productgroup'] = group_name
 
-                        mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
+                    mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
+                    for my_field, dkb_field in mapping_dic.items():
+                        if dkb_field in account['attributes']:
+                            output_dic[my_field] = account['attributes'][dkb_field]
+
+                    # overwrite display name set in ui
+                    if 'accounts' in product_settings_dic:
+                        output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
+                    else:
+                        output_dic['name'] = account['attributes']['product']['displayName']
+
+                    if 'balance' in account['attributes']:
+                        mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
                         for my_field, dkb_field in mapping_dic.items():
-                            if dkb_field in account['attributes']:
-                                output_dic[my_field] = account['attributes'][dkb_field]
+                            if dkb_field in account['attributes']['balance']:
+                                output_dic[my_field] = account['attributes']['balance'][dkb_field]
 
-                        # overwrite display name set in ui
-                        if 'accounts' in product_settings_dic:
-                            output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
-                        else:
-                            output_dic['name'] = account['attributes']['product']['displayName']
-
-                        if 'balance' in account['attributes']:
-                            mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
-                            for my_field, dkb_field in mapping_dic.items():
-                                if dkb_field in account['attributes']['balance']:
-                                    output_dic[my_field] = account['attributes']['balance'][dkb_field]
-
-                        if 'updatedAt' in account['attributes']:
-                            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
+                    if 'updatedAt' in account['attributes']:
+                        output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
 
         return output_dic
 
@@ -1376,27 +1375,26 @@ class DKBRobo(object):
         output_dic = {}
         if 'data' in cards_dic:
             for card in cards_dic['data']:
-                if card['id'] == cid:
-                    if 'attributes' in card:
-                        output_dic['type'] = 'creditcard'
-                        output_dic['id'] = cid
-                        output_dic['productgroup'] = group_name
-                        if 'maskedPan' in card['attributes']:
-                            output_dic['maskedpan'] = card['attributes']['maskedPan']
-                            output_dic['account'] = card['attributes']['maskedPan']
-                        if 'balance' in card['attributes']:
-                            # DKB show it in a weired way
-                            output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
-                            output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
-                            output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
-                            output_dic['limit'] = card['attributes']['limit']['value']
-                        if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
-                            output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
-                        # set display name
-                        if 'creditCards' in product_settings_dic:
-                            output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
-                        else:
-                            output_dic['name'] = card['attributes']['product']['displayName']
+                if card['id'] == cid and 'attributes' in card:
+                    output_dic['type'] = 'creditcard'
+                    output_dic['id'] = cid
+                    output_dic['productgroup'] = group_name
+                    if 'maskedPan' in card['attributes']:
+                        output_dic['maskedpan'] = card['attributes']['maskedPan']
+                        output_dic['account'] = card['attributes']['maskedPan']
+                    if 'balance' in card['attributes']:
+                        # DKB show it in a weired way
+                        output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
+                        output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
+                        output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
+                        output_dic['limit'] = card['attributes']['limit']['value']
+                    if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
+                        output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
+                    # set display name
+                    if 'creditCards' in product_settings_dic:
+                        output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
+                    else:
+                        output_dic['name'] = card['attributes']['product']['displayName']
 
         return output_dic
 
@@ -1455,6 +1453,18 @@ class DKBRobo(object):
 
         return product_dic, account_cnt
 
+    def _build_product_settings_dic(self, data_ele):
+        """ build products settings dictionary """
+        self.logger.debug('DKBRobo._build_product_settings_dic()\n')
+
+        if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
+            product_settings_dic = data_ele['attributes']['productSettings']
+        else:
+            product_settings_dic = {}
+
+        return product_settings_dic
+
+
     def _build_account_dic(self, portfolio_dic):
         """ create overview """
         self.logger.debug('DKBRobo._build_account_list()\n')
@@ -1463,10 +1473,9 @@ class DKBRobo(object):
         account_cnt = 0
         if 'product_display' in portfolio_dic and 'data' in portfolio_dic['product_display']:
             for data_ele in portfolio_dic['product_display']['data']:
-                if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
-                    product_settings_dic = data_ele['attributes']['productSettings']
-                else:
-                    product_settings_dic = {}
+
+                # build product settings dictioary needed to sort the productgroup
+                product_settings_dic = self._build_product_settings_dic(data_ele)
 
                 if 'attributes' in data_ele and 'productGroups' in data_ele['attributes']:
                     # sorting should be similar to frontend
