@@ -174,15 +174,19 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
 
-    def _complete_2fa(self, challenge_id, devicename):
-        """ wait for confirmation for the 2nd factor """
-
-        self.logger.debug('DKBRobo._complete_2fa()\n')
-
+    def _print_2fa_confirmation(self, devicename):
+        """ 2fa confirmation message """
+        self.logger.debug('DKBRobo._print_2fa_confirmation()\n')
         if devicename:
             print(f'check your banking app on "{devicename}" and confirm login...')
         else:
             print('check your banking app and confirm login...')
+
+    def _complete_2fa(self, challenge_id, devicename):
+        """ wait for confirmation for the 2nd factor """
+        self.logger.debug('DKBRobo._complete_2fa()\n')
+
+        self._print_2fa_confirmation(devicename)
 
         cnt = 0
         mfa_completed = False
@@ -1463,7 +1467,6 @@ class DKBRobo(object):
             product_settings_dic = {}
 
         return product_settings_dic
-
 
     def _build_account_dic(self, portfolio_dic):
         """ create overview """
