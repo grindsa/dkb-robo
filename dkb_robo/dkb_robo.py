@@ -182,6 +182,17 @@ class DKBRobo(object):
         else:
             print('check your banking app and confirm login...')
 
+    def _check_processing_status(self, polling_dic, cnt):
+        self.logger.debug('DKBRobo._check_processing_status()\n')
+        self.logger.debug('DKBRobo._login: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
+
+        mfa_completed = False
+        if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
+            mfa_completed = True
+        elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
+            raise DKBRoboError('2fa chanceled by user')
+        return mfa_completed
+
     def _complete_2fa(self, challenge_id, devicename):
         """ wait for confirmation for the 2nd factor """
         self.logger.debug('DKBRobo._complete_2fa()\n')
@@ -190,19 +201,17 @@ class DKBRobo(object):
 
         cnt = 0
         mfa_completed = False
-        # we give us 50 seconds to press a button on your phone
+        # we give us 50 seconds to press a button on the phone
         while cnt <= 10:
             response = self.client.get(self.banking_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}")
             cnt += 1
             if response.status_code == 200:
                 polling_dic = response.json()
                 if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
-                    self.logger.debug('DKBRobo._login: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
-                    if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
-                        mfa_completed = True
+                    # check processing status
+                    mfa_completed = self._check_processing_status(polling_dic, cnt)
+                    if mfa_completed:
                         break
-                    if (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
-                        raise DKBRoboError('2fa chanceled by user')
                 else:
                     self.logger.error('DKBRobo._complete_2fa(): error parsing polling response: %s', polling_dic)
             else:
