@@ -1351,6 +1351,7 @@ class DKBRobo(object):
     def _add_account_balance(self, account):
         """ add balance to dictionary """
         self.logger.debug('DKBRobo._add_account_balance()\n')
+
         output_dic = {}
         if 'balance' in account['attributes']:
             mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
@@ -1363,6 +1364,7 @@ class DKBRobo(object):
     def _add_accountname(self, account, product_settings_dic, aid):
         """ add card name """
         self.logger.debug('DKBRobo._add_accountname()\n')
+
         output_dic = {}
         # overwrite display name set in ui
         if 'accounts' in product_settings_dic:
@@ -1375,6 +1377,7 @@ class DKBRobo(object):
     def _add_accountdetails(self, account):
         """ add several details to dictionaries """
         self.logger.debug('DKBRobo._add_accountdetails()\n')
+
         output_dic = {}
         mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
         for my_field, dkb_field in mapping_dic.items():
@@ -1386,6 +1389,7 @@ class DKBRobo(object):
     def _add_accountinformation(self, account, aid, group_name):
         """ add general account information """
         self.logger.debug('DKBRobo._add_accountinformation()\n')
+
         output_dic = {}
         output_dic['type'] = 'account'
         output_dic['id'] = aid
@@ -1398,8 +1402,8 @@ class DKBRobo(object):
     def _get_account_details(self, aid, accounts_dic, group_name, product_settings_dic):
         """ get credit account details from cc json """
         self.logger.debug('DKBRobo._get_account_details(%s)\n', aid)
-        output_dic = {}
 
+        output_dic = {}
         if 'data' in accounts_dic:
             for account in accounts_dic['data']:
                 if account['id'] == aid and 'attributes' in account:
@@ -1412,6 +1416,7 @@ class DKBRobo(object):
     def _add_cardname(self, card, product_settings_dic, cid):
         """ add card name """
         self.logger.debug('DKBRobo._add_cardname()\n')
+
         output_dic = {}
         if 'creditCards' in product_settings_dic:
             output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
@@ -1426,7 +1431,6 @@ class DKBRobo(object):
 
         output_dic = {}
         if 'balance' in card['attributes']:
-
             # DKB show it in a weired way
             if 'value' in card['attributes']['balance']:
                 output_dic['amount'] = float(card['attributes']['balance']['value']) * -1
@@ -1440,6 +1444,7 @@ class DKBRobo(object):
     def _add_cardlimit(self, card):
         """ add cardlimit """
         self.logger.debug('DKBRobo._add_cardlimit()\n')
+
         output_dic = {}
         if 'limit' in card['attributes'] and 'value' in card['attributes']['limit']:
             output_dic['limit'] = card['attributes']['limit']['value']
@@ -1449,11 +1454,12 @@ class DKBRobo(object):
     def _add_cardholder(self, card):
         """ add card holder information """
         self.logger.debug('DKBRobo._add_cardholder()\n')
-        output_dic = {}
 
+        output_dic = {}
         if 'holder' in card['attributes'] and 'person' in card['attributes']['holder']:
             if 'firstName' in card['attributes']['holder']['person'] and 'lastName' in card['attributes']['holder']['person']:
                 output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
+
         return output_dic
 
     def _add_cardinformation(self, card, cid, group_name):
@@ -1484,31 +1490,59 @@ class DKBRobo(object):
 
         return output_dic
 
+    def _add_brokerageholder(self, depot, bid, product_settings_dic):
+        """ add card holder information """
+        self.logger.debug('DKBRobo._add_brokerageholder()\n')
+
+        output_dic = {}
+        # set display name
+        if 'brokerageAccounts' in product_settings_dic:
+            output_dic['name'] = self._display_name_lookup(bid, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
+        else:
+            output_dic['name'] = depot['attributes']['holderName']
+
+        return output_dic
+
+    def _add_brokerageperformance(self, depot):
+        """ add depot value and currentcy """
+        self.logger.debug('DKBRobo._add_brokerage_performance()\n')
+
+        output_dic = {}
+        if 'brokerageAccountPerformance' in depot['attributes']:
+            if 'currentValue' in depot['attributes']['brokerageAccountPerformance']:
+                if 'currencyCode' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
+                    output_dic['currencycode'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['currencyCode']
+                if 'value' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
+                    output_dic['amount'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['value']
+
+        return output_dic
+
+    def _add_brokerageinformation(self, depot, bid, group_name):
+        """ add depot information """
+        self.logger.debug('DKBRobo._add_brokerageinformation()\n')
+
+        output_dic = {}
+        output_dic['type'] = 'depot'
+        output_dic['id'] = bid
+        output_dic['productgroup'] = group_name
+
+        if 'holderName' in depot['attributes']:
+            output_dic['holdername'] = depot['attributes']['holderName']
+        if 'depositAccountId' in depot['attributes']:
+            output_dic['account'] = depot['attributes']['depositAccountId']
+
+        return output_dic
+
     def _get_brokerage_details(self, bid, brokerage_dic, group_name, product_settings_dic):
         """ get depod details from brokerage json """
         self.logger.debug('DKBRobo._get_brokerage_details(%s)\n', bid)
+
         output_dic = {}
         if 'data' in brokerage_dic:
             for depot in brokerage_dic['data']:
                 if depot['id'] == bid and 'attributes' in depot:
-                    output_dic['type'] = 'depot'
-                    output_dic['id'] = bid
-                    output_dic['productgroup'] = group_name
-                    # set display name
-                    if 'brokerageAccounts' in product_settings_dic:
-                        output_dic['name'] = self._display_name_lookup(bid, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
-                    else:
-                        output_dic['name'] = depot['attributes']['holderName']
-                    if 'holderName' in depot['attributes']:
-                        output_dic['holdername'] = depot['attributes']['holderName']
-                    if 'depositAccountId' in depot['attributes']:
-                        output_dic['account'] = depot['attributes']['depositAccountId']
-                    if 'brokerageAccountPerformance' in depot['attributes']:
-                        if 'currentValue' in depot['attributes']['brokerageAccountPerformance']:
-                            if 'currencyCode' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
-                                output_dic['currencycode'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['currencyCode']
-                            if 'value' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
-                                output_dic['amount'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['value']
+                    output_dic = {**self._add_brokerageinformation(depot, bid, group_name), **self._add_brokerageperformance(depot), **self._add_brokerageholder(depot, bid, product_settings_dic)}
+                    break
 
         return output_dic
 
