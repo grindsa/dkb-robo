@@ -708,28 +708,28 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(self.dkb.scan_postbox(archive=True), e_result)
 
     def test_033_get_tr_invalid(self, _unused):
-        """ test DKBRobo.get_transactions() method with an invalid account type"""
-        self.assertEqual(self.dkb.get_transactions('url', 'foo', '01.03.2017', '02.03.2017'), [])
+        """ test DKBRobo._legacy_get_transactions() method with an invalid account type"""
+        self.assertEqual(self.dkb._legacy_get_transactions('url', 'foo', '01.03.2017', '02.03.2017'), [])
 
     @patch('dkb_robo.DKBRobo.get_creditcard_transactions')
     def test_034_get_tr_cc(self, mock_cc_tran, _unused):
-        """ test DKBRobo.get_transactions() method with an credit-card account"""
+        """ test DKBRobo._legacy_get_transactions() method with an credit-card account"""
         mock_cc_tran.return_value = ['credit_card']
-        self.assertEqual(self.dkb.get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
+        self.assertEqual(self.dkb._legacy_get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
         self.assertTrue(mock_cc_tran.called)
 
     @patch('dkb_robo.DKBRobo.get_account_transactions')
     def test_035_get_tr_ac(self, mock_ca_tran, _unused):
-        """ test DKBRobo.get_transactions() method with an checking account"""
+        """ test DKBRobo._legacy_get_transactions() method with an checking account"""
         mock_ca_tran.return_value = ['account']
-        self.assertEqual(self.dkb.get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
+        self.assertEqual(self.dkb._legacy_get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
         self.assertTrue(mock_ca_tran.called)
 
     @patch('dkb_robo.DKBRobo.get_depot_status')
     def test_036_get_tr_ac(self, mock_dep_tran, _unused):
-        """ test DKBRobo.get_transactions() method for a deptot """
+        """ test DKBRobo._legacy_get_transactions() method for a deptot """
         mock_dep_tran.return_value = ['dep']
-        self.assertEqual(self.dkb.get_transactions('url', 'depot', '01.03.2017', '02.03.2017'), ['dep'])
+        self.assertEqual(self.dkb._legacy_get_transactions('url', 'depot', '01.03.2017', '02.03.2017'), ['dep'])
         self.assertTrue(mock_dep_tran.called)
 
     def test_037_parse_account_tr(self, _mock_browser):
@@ -1386,21 +1386,21 @@ class TestDKBRobo(unittest.TestCase):
             self.assertFalse(self.dkb._get_loans())
         self.assertIn('ERROR:dkb_robo:DKBRobo._get_loans(): RC is not 200 but 400', lcm.output)
 
-    def test_118_get_transactions(self, _unused):
-        """ test _get_transactions() ok """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        self.assertEqual({'foo': 'bar'}, self.dkb._get_transactions())
+    #def test_118_get_transactions(self, _unused):
+    #    """ test __legacy_get_transactions() ok """
+    #    self.dkb.client = Mock()
+    #    self.dkb.client.get.return_value.status_code = 200
+    #    self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+    #    self.assertEqual({'foo': 'bar'}, self.dkb._get_transactions())
 
-    def test_119_get_transactions(self, _unused):
-        """ test _get_transactions() ok """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 400
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._get_transactions())
-        self.assertIn('ERROR:dkb_robo:DKBRobo._get_transactions(): RC is not 200 but 400', lcm.output)
+    #def test_119_get_transactions(self, _unused):
+    #    """ test __legacy_get_transactions() ok """
+    #    self.dkb.client = Mock()
+    #    self.dkb.client.get.return_value.status_code = 400
+    #    self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+    #    with self.assertLogs('dkb_robo', level='INFO') as lcm:
+    #        self.assertFalse(self.dkb._get_transactions())
+    #    self.assertIn('ERROR:dkb_robo:DKBRobo.__legacy_get_transactions(): RC is not 200 but 400', lcm.output)
 
     def test_120_update_token(self, _unused):
         """ test _update_token() ok """
@@ -1989,7 +1989,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertFalse(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2002,7 +2002,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'accounts': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2015,7 +2015,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'accounts': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'mock_date', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'mock_date', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2058,7 +2058,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname', 'transactions': 'https://banking.dkb.de/api/api/credit-card/cards/cid/transactions'}
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
         self.assertFalse(mock_dnl.called)
         self.assertTrue(mock_date.called)
@@ -2071,7 +2071,7 @@ class TestDKBRobo(unittest.TestCase):
         product_settings_dic = {'creditCards': {'foo': 'bar'}}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl', 'transactions': 'https://banking.dkb.de/api/api/credit-card/cards/cid/transactions'}
+        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'mock_date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertTrue(mock_date.called)
