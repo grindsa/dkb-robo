@@ -599,7 +599,7 @@ class DKBRobo(object):
 
         return mfa_dic
 
-    def _filter_account_transactions(self, transaction_list, date_from, date_to, transaction_type):
+    def _filter_transactions(self, transaction_list, date_from, date_to, transaction_type):
         """ filter transaction by date """
         self.logger.debug('DKBRobo._filter_transactions()\n')
 
@@ -624,11 +624,12 @@ class DKBRobo(object):
             transaction_dic = {}
 
             transaction_dic['amount'] = float(transaction['attributes']['amount']['value'])
+            transaction_dic['currencycode'] = float(transaction['attributes']['amount']['currencyCode'])
             if transaction_dic['amount'] > 0:
                 # we need debitor information for incoming payments
                 transaction_dic['peeraccount'] = transaction['attributes']['debtor']['debtorAccount']['iban']
                 transaction_dic['peerbic'] = transaction['attributes']['debtor']['agent']['bic']
-                if 'intermediaryName' in transaction['attributes']['debtor'] and  transaction['attributes']['debtor']['intermediaryName']:
+                if 'intermediaryName' in transaction['attributes']['debtor'] and transaction['attributes']['debtor']['intermediaryName']:
                     transaction_dic['peer'] = transaction['attributes']['debtor']['intermediaryName']
                 else:
                     transaction_dic['peer'] = transaction['attributes']['debtor']['name']
@@ -641,9 +642,6 @@ class DKBRobo(object):
                 # we need creditor information for outgoing payments
                 transaction_dic['peeraccount'] = transaction['attributes']['creditor']['creditorAccount']['iban']
                 transaction_dic['peerbic'] = transaction['attributes']['creditor']['agent']['bic']
-                # if 'intermediaryName' in transaction['attributes']['creditor'] and  transaction['attributes']['creditor']['intermediaryName']:
-                #     transaction_dic['peer'] = transaction['attributes']['creditor']['intermediaryName']
-                #else:
                 transaction_dic['peer'] = transaction['attributes']['creditor']['name']
                 if 'id' in transaction['attributes']['creditor']:
                     transaction_dic['peerid'] = transaction['attributes']['creditor']['id']
@@ -657,31 +655,55 @@ class DKBRobo(object):
                 transaction_dic['customerreferenz'] = transaction['attributes']['endToEndId']
             transaction_dic['postingtext'] = transaction['attributes']['transactionType']
             transaction_dic['reasonforpayment'] = transaction['attributes']['description']
-            transaction_dic['text']  = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
+            transaction_dic['text'] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
             format_transaction_list.append(transaction_dic)
 
         return format_transaction_list
 
+    def _format_card_transactions(self, transaction_list):
+        """ format credit card transactions """
+        self.logger.debug('DKBRobo._format_card_transactions(%s)\n', len(transaction_list))
+        format_transaction_list = []
+        for transaction in transaction_list:
+            transaction_dic = {}
+
+            transaction_dic['amount'] = float(transaction['attributes']['amount']['value'])
+            transaction_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
+            transaction_dic['bdate'] = transaction['attributes']['bookingDate']
+            transaction_dic['vdate'] = transaction['attributes']['bookingDate']
+            transaction_dic['text'] = transaction['attributes']['description']
+            format_transaction_list.append(transaction_dic)
+
+        return format_transaction_list
 
     def _get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type):
         """ get transactions via API """
-        self.logger.debug('DKBRobo._get_transactions()\n')
+        self.logger.debug('DKBRobo._get_transactions(%s, %s)\n', atype, transaction_type)
 
         transaction_list = []
-        if atype == 'account':
-            response = self.client.get(transaction_url)
-            if response.status_code == 200:
-                transaction_dic = response.json()
-            else:
-                self.logger.error('DKBRobo._get_transactions(): RC is not 200 but %s', response.status_code)
-                transaction_dic = {}
 
-            if transaction_dic:
-                transaction_list = self._filter_account_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
+        response = self.client.get(transaction_url)
+        if response.status_code == 200:
+            transaction_dic = response.json()
+        else:
+            self.logger.error('DKBRobo._get_transactions(): RC is not 200 but %s', response.status_code)
+            transaction_dic = {}
+
+        # Serializing json
+        # json_object = json.dumps(transaction_dic, indent=4)
+
+        # Writing to sample.json
+        # with open("cards_transactions.json", "w", encoding='utf8') as outfile:
+        #    outfile.write(json_object)
+
+        transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
+        if transaction_list:
+            if atype == 'account':
                 transaction_list = self._format_account_transactions(transaction_list)
+            elif atype == 'creditcard':
+                transaction_list = self._format_card_transactions(transaction_list)
 
         return transaction_list
-
 
     def _get_token(self):
         """ get access token """
