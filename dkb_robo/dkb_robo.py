@@ -624,7 +624,7 @@ class DKBRobo(object):
             transaction_dic = {}
 
             transaction_dic['amount'] = float(transaction['attributes']['amount']['value'])
-            transaction_dic['currencycode'] = float(transaction['attributes']['amount']['currencyCode'])
+            transaction_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
             if transaction_dic['amount'] > 0:
                 # we need debitor information for incoming payments
                 transaction_dic['peeraccount'] = transaction['attributes']['debtor']['debtorAccount']['iban']
@@ -676,6 +676,42 @@ class DKBRobo(object):
 
         return format_transaction_list
 
+    def _format_brokerage_account(self, brokerage_dic):
+        """ format brokerage dictionary """
+        self.logger.debug('DKBRobo._format_brokerage_account(%s)\n', len(brokerage_dic))
+
+        position_list = []
+        included_list = brokerage_dic['included']
+        for position in brokerage_dic['data']:
+            _instrument_id = position['relationships']['instrument']['data']['id']
+            _quote_id = position['relationships']['quote']['data']['id']
+            position_dic = {}
+            position_dic['shares'] = position['attributes']['quantity']['value']
+            position_dic['shares'] = position['attributes']['quantity']['value']
+            position_dic['shares_unit'] = position['attributes']['quantity']['unit']
+            position_dic['quantity'] = float(position['attributes']['quantity']['value'])
+            position_dic['lastorderdate'] = position['attributes']['lastOrderDate']
+            position_dic['price_euro'] = position['attributes']['performance']['currentValue']['value']
+
+            for ele in included_list:
+                if ele['id'] == _instrument_id:
+                    position_dic['text'] = ele['attributes']['name']['short']
+                    for identifier in ele['attributes']['identifiers']:
+
+                        if identifier['identifier'] == 'isin':
+                            position_dic['isin_wkn'] = identifier['value']
+                            break
+
+                elif ele['id'] == _quote_id:
+                    position_dic['price'] = float(ele['attributes']['price']['value'])
+                    position_dic['currencycode'] = ele['attributes']['price']['currencyCode']
+                    position_dic['market'] = ele['attributes']['market']
+
+            # position_dic['text'] = included_dic[_instrument_id]['attributes']['name']['short']
+            position_list.append(position_dic)
+
+        return position_list
+
     def _get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type):
         """ get transactions via API """
         self.logger.debug('DKBRobo._get_transactions(%s, %s)\n', atype, transaction_type)
@@ -689,19 +725,15 @@ class DKBRobo(object):
             self.logger.error('DKBRobo._get_transactions(): RC is not 200 but %s', response.status_code)
             transaction_dic = {}
 
-        # Serializing json
-        # json_object = json.dumps(transaction_dic, indent=4)
-
-        # Writing to sample.json
-        # with open("cards_transactions.json", "w", encoding='utf8') as outfile:
-        #    outfile.write(json_object)
-
-        transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
-        if transaction_list:
+        if transaction_dic:
             if atype == 'account':
+                transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
                 transaction_list = self._format_account_transactions(transaction_list)
             elif atype == 'creditcard':
+                transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
                 transaction_list = self._format_card_transactions(transaction_list)
+            elif atype == 'depot':
+                transaction_list = self._format_brokerage_account(transaction_dic)
 
         return transaction_list
 
@@ -1621,7 +1653,7 @@ class DKBRobo(object):
         output_dic['type'] = 'depot'
         output_dic['id'] = bid
         output_dic['productgroup'] = group_name
-
+        output_dic['transactions'] = self.banking_url + self.api_prefix + f"/broker/brokerage-accounts/{bid}/positions?include=instrument%2Cquote"
         if 'holderName' in depot['attributes']:
             output_dic['holdername'] = depot['attributes']['holderName']
         if 'depositAccountId' in depot['attributes']:
