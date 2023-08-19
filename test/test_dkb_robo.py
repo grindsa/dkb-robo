@@ -2120,7 +2120,7 @@ class TestDKBRobo(unittest.TestCase):
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'holdername', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value'}
+        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'holdername', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
         self.assertFalse(mock_dnl.called)
         self.assertFalse(mock_date.called)
@@ -2133,7 +2133,7 @@ class TestDKBRobo(unittest.TestCase):
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'mock_dnl', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value'}
+        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'mock_dnl', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
         self.assertTrue(mock_dnl.called)
         self.assertFalse(mock_date.called)
