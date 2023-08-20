@@ -16,6 +16,9 @@ import mechanicalsoup
 import requests
 
 
+API_DATE_FORMAT = '%Y-%m-%d'
+
+
 def convert_date_format(logger, input_date, input_format, output_format):
     """ convert date to a specified output format """
     logger.debug('convert_date_format()')
@@ -610,7 +613,7 @@ class DKBRobo(object):
         for transaction in transaction_list:
             if 'attributes' in transaction and 'status' in transaction['attributes'] and 'bookingDate' in transaction['attributes']:
                 if transaction['attributes']['status'] == transaction_type:
-                    bookingdate_uts = int(time.mktime(datetime.strptime(transaction['attributes']['bookingDate'], '%Y-%m-%d').timetuple()))
+                    bookingdate_uts = int(time.mktime(datetime.strptime(transaction['attributes']['bookingDate'], API_DATE_FORMAT).timetuple()))
                     if date_from_uts <= bookingdate_uts <= date_to_uts:
                         filtered_transaction_list.append(transaction)
 
@@ -618,7 +621,7 @@ class DKBRobo(object):
 
     def _add_account_transaction_information(self, transaction):
         """ add infromation from accont transaction """
-        self.logger.debug('DKBRobo._add_card_transaction_amount()\n')
+        self.logger.debug('DKBRobo._add_account_transaction_information()\n')
 
         output_dic = {}
         if 'bookingDate' in transaction['attributes']:
@@ -637,7 +640,7 @@ class DKBRobo(object):
 
     def _add_account_transaction_amount(self, transaction):
         """ add amount from accont transaction """
-        self.logger.debug('DKBRobo._add_card_transaction_amount()\n')
+        self.logger.debug('DKBRobo._add_account_transaction_amount()\n')
 
         output_dic = {}
         if 'amount' in transaction['attributes']:
@@ -1674,7 +1677,7 @@ class DKBRobo(object):
         output_dic['productgroup'] = group_name
         output_dic['transactions'] = self.banking_url + self.api_prefix + f"/accounts/accounts/{aid}/transactions"
         if 'updatedAt' in account['attributes']:
-            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], '%Y-%m-%d', '%d.%m.%Y')
+            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], API_DATE_FORMAT, '%d.%m.%Y')
 
         return output_dic
 
@@ -1716,7 +1719,7 @@ class DKBRobo(object):
             if 'currencyCode' in card['attributes']['balance']:
                 output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
             if 'date' in card['attributes']['balance']:
-                output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], '%Y-%m-%d', '%d.%m.%Y')
+                output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], API_DATE_FORMAT, '%d.%m.%Y')
 
         return output_dic
 
