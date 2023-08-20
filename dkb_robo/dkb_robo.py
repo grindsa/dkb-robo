@@ -616,6 +616,87 @@ class DKBRobo(object):
 
         return filtered_transaction_list
 
+    def _add_account_transaction_information(self, transaction):
+        """ add infromation from accont transaction """
+        self.logger.debug('DKBRobo._add_card_transaction_amount()\n')
+
+        output_dic = {}
+        if 'bookingDate' in transaction['attributes']:
+            output_dic['date'] = transaction['attributes']['bookingDate']
+            output_dic['bdate'] = transaction['attributes']['bookingDate']
+        if 'valueDate' in transaction['attributes']:
+            output_dic['vdate'] = transaction['attributes']['valueDate']
+        if 'endToEndId' in transaction['attributes']:
+            output_dic['customerreferenz'] = transaction['attributes']['endToEndId']
+        if 'transactionType' in transaction['attributes']:
+            output_dic['postingtext'] = transaction['attributes']['transactionType']
+        if 'description' in transaction['attributes']:
+            output_dic['reasonforpayment'] = transaction['attributes']['description']
+
+        return output_dic
+
+    def _add_account_transaction_amount(self, transaction):
+        """ add amount from accont transaction """
+        self.logger.debug('DKBRobo._add_card_transaction_amount()\n')
+
+        output_dic = {}
+        if 'amount' in transaction['attributes']:
+            if 'value' in transaction['attributes']['amount']:
+                output_dic['amount'] = float(transaction['attributes']['amount']['value'])
+            if 'currencyCode' in transaction['attributes']['amount']:
+                output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
+
+        return output_dic
+
+    def _add_account_transaction_creditor_info(self, transaction):
+        """ we need creditor information for outgoing payments"""
+        self.logger.debug('DKBRobo._add_account_transaction_creditor_info()\n')
+
+        output_dic = {}
+        if 'creditor' in transaction['attributes']:
+            if 'creditorAccount' in transaction['attributes']['creditor'] and 'iban' in transaction['attributes']['creditor']['creditorAccount']:
+                output_dic['peeraccount'] = transaction['attributes']['creditor']['creditorAccount']['iban']
+            if 'agent' in transaction['attributes']['creditor'] and 'bic' in transaction['attributes']['creditor']['agent']:
+                output_dic['peerbic'] = transaction['attributes']['creditor']['agent']['bic']
+            if 'name' in transaction['attributes']['creditor']:
+                output_dic['peer'] = transaction['attributes']['creditor']['name']
+            if 'id' in transaction['attributes']['creditor']:
+                output_dic['peerid'] = transaction['attributes']['creditor']['id']
+            else:
+                output_dic['peerid'] = ''
+
+        return output_dic
+
+    def _add_account_transaction_debtor_peerid(self, transaction):
+        """ lookup peerid """
+        self.logger.debug('DKBRobo._add_account_transaction_debtor_peerid()\n')
+        peer_id = ''
+        if 'id' in transaction['attributes']['debtor']:
+            peer_id = transaction['attributes']['debtor']['id']
+
+        return peer_id
+
+    def _add_account_transaction_debtor_info(self, transaction):
+        """we need debitor information for incoming payments """
+        self.logger.debug('DKBRobo._add_account_transaction_creditor_info()\n')
+
+        output_dic = {}
+        if 'debtor' in transaction['attributes']:
+            if 'debtorAccount' in transaction['attributes']['debtor'] and 'iban' in transaction['attributes']['debtor']['debtorAccount']:
+                output_dic['peeraccount'] = transaction['attributes']['debtor']['debtorAccount']['iban']
+            if 'agent' in transaction['attributes']['debtor'] and 'bic' in transaction['attributes']['debtor']['agent']:
+                output_dic['peerbic'] = transaction['attributes']['debtor']['agent']['bic']
+            if 'intermediaryName' in transaction['attributes']['debtor'] and transaction['attributes']['debtor']['intermediaryName']:
+                output_dic['peer'] = transaction['attributes']['debtor']['intermediaryName']
+            else:
+                if 'name' in transaction['attributes']['debtor']:
+                    output_dic['peer'] = transaction['attributes']['debtor']['name']
+
+            # add perrid
+            output_dic['peerid'] = self._add_account_transaction_debtor_peerid(transaction)
+
+        return output_dic
+
     def _format_account_transactions(self, transaction_list):
         """ format transactions """
         self.logger.debug('DKBRobo._format_transactions()\n')
@@ -623,61 +704,45 @@ class DKBRobo(object):
         format_transaction_list = []
         for transaction in transaction_list:
             if 'attributes' in transaction:
-                transaction_dic = {}
-
-                if 'amount' in transaction['attributes']:
-                    if 'value' in transaction['attributes']['amount']:
-                        transaction_dic['amount'] = float(transaction['attributes']['amount']['value'])
-                    if 'currencyCode' in transaction['attributes']['amount']:
-                        transaction_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
+                transaction_dic = {**self._add_account_transaction_amount(transaction), **self._add_account_transaction_information(transaction)}
 
                 if transaction_dic['amount'] > 0:
-                    if 'debtor' in transaction['attributes']:
-                        # we need debitor information for incoming payments
-                        if 'debtorAccount' in transaction['attributes']['debtor'] and 'iban' in transaction['attributes']['debtor']['debtorAccount']:
-                            transaction_dic['peeraccount'] = transaction['attributes']['debtor']['debtorAccount']['iban']
-                        if 'agent' in transaction['attributes']['debtor'] and 'bic' in transaction['attributes']['debtor']['agent']:
-                            transaction_dic['peerbic'] = transaction['attributes']['debtor']['agent']['bic']
-                        if 'intermediaryName' in transaction['attributes']['debtor'] and transaction['attributes']['debtor']['intermediaryName']:
-                            transaction_dic['peer'] = transaction['attributes']['debtor']['intermediaryName']
-                        else:
-                            if 'name' in transaction['attributes']['debtor']:
-                                transaction_dic['peer'] = transaction['attributes']['debtor']['name']
-
-                        if 'id' in transaction['attributes']['debtor']:
-                            transaction_dic['peerid'] = transaction['attributes']['debtor']['id']
-                        else:
-                            transaction_dic['peerid'] = ''
+                    # incoming payment - collect debitor information
+                    transaction_dic = {**transaction_dic, **self._add_account_transaction_debtor_info(transaction)}
                 else:
-                    # we need creditor information for outgoing payments
-                    if 'creditor' in transaction['attributes']:
-                        if 'creditorAccount' in transaction['attributes']['creditor'] and 'iban' in transaction['attributes']['creditor']['creditorAccount']:
-                            transaction_dic['peeraccount'] = transaction['attributes']['creditor']['creditorAccount']['iban']
-                        if 'agent' in transaction['attributes']['creditor'] and 'bic' in transaction['attributes']['creditor']['agent']:
-                            transaction_dic['peerbic'] = transaction['attributes']['creditor']['agent']['bic']
-                        if 'name' in transaction['attributes']['creditor']:
-                            transaction_dic['peer'] = transaction['attributes']['creditor']['name']
-                        if 'id' in transaction['attributes']['creditor']:
-                            transaction_dic['peerid'] = transaction['attributes']['creditor']['id']
-                        else:
-                            transaction_dic['peerid'] = ''
+                    # outgoing payment - collect creditor information
+                    transaction_dic = {**transaction_dic, **self._add_account_transaction_creditor_info(transaction)}
 
-                if 'bookingDate' in transaction['attributes']:
-                    transaction_dic['date'] = transaction['attributes']['bookingDate']
-                    transaction_dic['bdate'] = transaction['attributes']['bookingDate']
-                if 'valueDate' in transaction['attributes']:
-                    transaction_dic['vdate'] = transaction['attributes']['valueDate']
-                if 'endToEndId' in transaction['attributes']:
-                    transaction_dic['customerreferenz'] = transaction['attributes']['endToEndId']
-                if 'transactionType' in transaction['attributes']:
-                    transaction_dic['postingtext'] = transaction['attributes']['transactionType']
-                if 'description' in transaction['attributes']:
-                    transaction_dic['reasonforpayment'] = transaction['attributes']['description']
+                # add posting test for backwards compability
                 if 'postingtext' in transaction_dic and 'peer' in transaction_dic and 'reasonforpayment' in transaction_dic:
                     transaction_dic['text'] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
+
                 format_transaction_list.append(transaction_dic)
 
         return format_transaction_list
+
+    def _add_card_transaction_amount(self, transaction):
+        """ add amount from card transaction """
+        self.logger.debug('DKBRobo._add_card_transaction_amount()\n')
+        output_dic = {}
+        if 'amount' in transaction['attributes']:
+            if 'value' in transaction['attributes']['amount']:
+                output_dic['amount'] = float(transaction['attributes']['amount']['value'])
+            if 'currencyCode' in transaction['attributes']['amount']:
+                output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
+
+        return output_dic
+
+    def _add_card_transaction_information(self, transaction):
+        """ add card transaction infromatoin """
+        self.logger.debug('DKBRobo._add_card_transaction_information()\n')
+        output_dic = {}
+        if 'bookingDate' in transaction['attributes']:
+            output_dic['bdate'] = transaction['attributes']['bookingDate']
+            output_dic['vdate'] = transaction['attributes']['bookingDate']
+        if 'description' in transaction['attributes']:
+            output_dic['text'] = transaction['attributes']['description']
+        return output_dic
 
     def _format_card_transactions(self, transaction_list):
         """ format credit card transactions """
@@ -685,75 +750,118 @@ class DKBRobo(object):
 
         format_transaction_list = []
         for transaction in transaction_list:
-            transaction_dic = {}
             if 'attributes' in transaction:
-                if 'amount' in transaction['attributes']:
-                    if 'value' in transaction['attributes']['amount']:
-                        transaction_dic['amount'] = float(transaction['attributes']['amount']['value'])
-                    if 'currencyCode' in transaction['attributes']['amount']:
-                        transaction_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
-                if 'bookingDate' in transaction['attributes']:
-                    transaction_dic['bdate'] = transaction['attributes']['bookingDate']
-                    transaction_dic['vdate'] = transaction['attributes']['bookingDate']
-                if 'description' in transaction['attributes']:
-                    transaction_dic['text'] = transaction['attributes']['description']
-            format_transaction_list.append(transaction_dic)
+                transaction_dic = {**self._add_card_transaction_amount(transaction), **self._add_card_transaction_information(transaction)}
+                format_transaction_list.append(transaction_dic)
 
         return format_transaction_list
+
+    def _get_relationship_ids(self, position):
+        """ get relationship ids from depot position """
+        self.logger.debug('DKBRobo._get_relationship_ids()\n')
+
+        instrument_id = None
+        quote_id = None
+        if 'relationships' in position:
+            if 'instrument' in position['relationships'] and 'data' in position['relationships']['instrument'] and 'id' in position['relationships']['instrument']['data']:
+                instrument_id = position['relationships']['instrument']['data']['id']
+            if 'quote' in position['relationships'] and 'data' in position['relationships']['quote'] and 'id' in position['relationships']['quote']['data']:
+                quote_id = position['relationships']['quote']['data']['id']
+
+        return instrument_id, quote_id
+
+    def _get_included_list(self, brokerage_dic):
+        """ get include list from brokerage_account dictionary"""
+        self.logger.debug('DKBRobo._get_included_list()\n')
+
+        included_list = []
+        if 'included' in brokerage_dic:
+            included_list = brokerage_dic['included']
+
+        return included_list
+
+    def _add_brokerage_quantity(self, position):
+        """ add quantity information """
+        self.logger.debug('DKBRobo._add_brokerage_quantity()\n')
+        output_dic = {}
+        if 'quantity' in position['attributes']:
+            output_dic['shares'] = position['attributes']['quantity']['value']
+            output_dic['quantity'] = float(position['attributes']['quantity']['value'])
+            output_dic['shares_unit'] = position['attributes']['quantity']['unit']
+
+        return output_dic
+
+    def _add_brokerage_informationy(self, position):
+        """ add lastorder date and value """
+        self.logger.debug('DKBRobo._add_brokerage_informationy()\n')
+
+        output_dic = {}
+        if 'lastOrderDate' in position['attributes']:
+            output_dic['lastorderdate'] = position['attributes']['lastOrderDate']
+
+        if 'performance' in position['attributes'] and 'currentValue' in position['attributes']['performance'] and 'value' in position['attributes']['performance']['currentValue']:
+            output_dic['price_euro'] = position['attributes']['performance']['currentValue']['value']
+
+        return output_dic
+
+    def _add_instrument_information(self, ele):
+        """ add instrument information """
+        self.logger.debug('DKBRobo._add_instrument_information()\n')
+
+        output_dic = {}
+        if 'attributes' in ele:
+            if 'name' in ele['attributes'] and 'short' in ele['attributes']['name']:
+                output_dic['text'] = ele['attributes']['name']['short']
+            if 'identifiers' in ele['attributes']:
+                for identifier in ele['attributes']['identifiers']:
+                    if identifier['identifier'] == 'isin':
+                        output_dic['isin_wkn'] = identifier['value']
+                        break
+        return output_dic
+
+    def _add_quote_information(self, ele):
+        """ add quote information """
+        self.logger.debug('DKBRobo._add_quote_information()\n')
+
+        output_dic = {}
+        if 'attributes' in ele and 'price' in ele['attributes']:
+            if 'value' in ele['attributes']['price']:
+                output_dic['price'] = float(ele['attributes']['price']['value'])
+            if 'currencyCode' in ele['attributes']['price']:
+                output_dic['currencycode'] = ele['attributes']['price']['currencyCode']
+        if 'market' in ele['attributes']:
+            output_dic['market'] = ele['attributes']['market']
+
+        return output_dic
+
+    def _get_position(self, position, included_list):
+        """ get position """
+        self.logger.debug('DKBRobo._get_position()\n')
+        (_instrument_id, _quote_id) = self._get_relationship_ids(position)
+
+        position_dic = {}
+        if 'attributes' in position:
+            position_dic = {**self._add_brokerage_quantity(position), **self._add_brokerage_informationy(position)}
+            for ele in included_list:
+                if 'id' in ele and ele['id'] == _instrument_id:
+                    position_dic = {**position_dic, **self._add_instrument_information(ele)}
+                if 'id' in ele and ele['id'] == _quote_id:
+                    position_dic = {**position_dic, **self._add_quote_information(ele)}
+
+        return position_dic
 
     def _format_brokerage_account(self, brokerage_dic):
         """ format brokerage dictionary """
         self.logger.debug('DKBRobo._format_brokerage_account(%s)\n', len(brokerage_dic))
 
         position_list = []
-        included_list = []
-
-        if 'included' in brokerage_dic:
-            included_list = brokerage_dic['included']
-
+        included_list = self._get_included_list(brokerage_dic)
         if 'data' in brokerage_dic:
             for position in brokerage_dic['data']:
-                if 'relationships' in position:
-                    if 'instrument' in position['relationships'] and 'data' in position['relationships']['instrument'] and 'id' in position['relationships']['instrument']['data']:
-                        _instrument_id = position['relationships']['instrument']['data']['id']
-                    if 'quote' in position['relationships'] and 'data' in position['relationships']['quote'] and 'id' in position['relationships']['quote']['data']:
-                        _quote_id = position['relationships']['quote']['data']['id']
-
-                position_dic = {}
-                if 'attributes' in position:
-                    if 'quantity' in position['attributes']:
-                        position_dic['shares'] = position['attributes']['quantity']['value']
-                        position_dic['quantity'] = float(position['attributes']['quantity']['value'])
-                        position_dic['shares_unit'] = position['attributes']['quantity']['unit']
-
-                    if 'lastOrderDate' in position['attributes']:
-                        position_dic['lastorderdate'] = position['attributes']['lastOrderDate']
-
-                    if 'performance' in position['attributes'] and 'currentValue' in position['attributes']['performance'] and 'value' in position['attributes']['performance']['currentValue']:
-                        position_dic['price_euro'] = position['attributes']['performance']['currentValue']['value']
-
-                    for ele in included_list:
-                        if 'id' in ele and ele['id'] == _instrument_id:
-                            if 'attributes' in ele:
-                                if 'name' in ele['attributes'] and 'short' in ele['attributes']['name']:
-                                    position_dic['text'] = ele['attributes']['name']['short']
-                                if 'identifiers' in ele['attributes']:
-                                    for identifier in ele['attributes']['identifiers']:
-                                        if identifier['identifier'] == 'isin':
-                                            position_dic['isin_wkn'] = identifier['value']
-                                            break
-
-                        if 'id' in ele and ele['id'] == _quote_id:
-                            if 'attributes' in ele and 'price' in ele['attributes']:
-                                if 'value' in ele['attributes']['price']:
-                                    position_dic['price'] = float(ele['attributes']['price']['value'])
-                                if 'currencyCode' in ele['attributes']['price']:
-                                    position_dic['currencycode'] = ele['attributes']['price']['currencyCode']
-                            if 'market' in ele['attributes']:
-                                position_dic['market'] = ele['attributes']['market']
-
-                    # position_dic['text'] = included_dic[_instrument_id]['attributes']['name']['short']
+                position_dic = self._get_position(position, included_list)
+                if position_dic:
                     position_list.append(position_dic)
+
         return position_list
 
     def _get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type):
