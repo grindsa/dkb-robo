@@ -711,21 +711,21 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo._legacy_get_transactions() method with an invalid account type"""
         self.assertEqual(self.dkb._legacy_get_transactions('url', 'foo', '01.03.2017', '02.03.2017'), [])
 
-    @patch('dkb_robo.DKBRobo.get_creditcard_transactions')
+    @patch('dkb_robo.DKBRobo._legacy_get_creditcard_transactions')
     def test_034_get_tr_cc(self, mock_cc_tran, _unused):
         """ test DKBRobo._legacy_get_transactions() method with an credit-card account"""
         mock_cc_tran.return_value = ['credit_card']
         self.assertEqual(self.dkb._legacy_get_transactions('url', 'creditcard', '01.03.2017', '02.03.2017'), ['credit_card'])
         self.assertTrue(mock_cc_tran.called)
 
-    @patch('dkb_robo.DKBRobo.get_account_transactions')
+    @patch('dkb_robo.DKBRobo._legacy_get_account_transactions')
     def test_035_get_tr_ac(self, mock_ca_tran, _unused):
         """ test DKBRobo._legacy_get_transactions() method with an checking account"""
         mock_ca_tran.return_value = ['account']
         self.assertEqual(self.dkb._legacy_get_transactions('url', 'account', '01.03.2017', '02.03.2017'), ['account'])
         self.assertTrue(mock_ca_tran.called)
 
-    @patch('dkb_robo.DKBRobo.get_depot_status')
+    @patch('dkb_robo.DKBRobo._legacy_get_depot_status')
     def test_036_get_tr_ac(self, mock_dep_tran, _unused):
         """ test DKBRobo._legacy_get_transactions() method for a deptot """
         mock_dep_tran.return_value = ['dep']
@@ -733,7 +733,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_dep_tran.called)
 
     def test_037_parse_account_tr(self, _mock_browser):
-        """ test DKBRobo.get_account_transactions for one page only """
+        """ test DKBRobo._legacy_get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
         result = [
             {'amount':  100.0, 'bdate': '01.03.2017', 'customerreferenz': 'Kundenreferenz1', 'date': '01.03.2017', 'mandatereference': 'Mandatsreferenz1', 'peer': 'Auftraggeber1', 'peeraccount': 'Kontonummer1', 'peerbic': 'BLZ1', 'peerid': 'GID1', 'postingtext': 'Buchungstext1', 'reasonforpayment': 'Verwendungszweck1', 'text': 'Buchungstext1 Auftraggeber1 Verwendungszweck1', 'vdate': '01.03.2017'},
@@ -745,7 +745,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._parse_account_transactions(csv))
 
     def test_038_parse_no_account_tr(self, _mock_browser):
-        """ test DKBRobo.get_account_transactions for one page only """
+        """ test DKBRobo._legacy_get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_no_account_tr.csv')
         self.assertEqual(self.dkb._parse_account_transactions(csv), [])
 
@@ -897,32 +897,32 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_logout.called)
 
     @patch('dkb_robo.DKBRobo._parse_account_transactions')
-    def test_055_get_account_transactions(self, mock_parse, mock_browser):
-        """ test get_account_transactions """
+    def test_055__legacy_get_account_transactions(self, mock_parse, mock_browser):
+        """ test _legacy_get_account_transactions """
         mock_browser.get_current_page.return_value = 'mock_browser'
         mock_parse.return_value = 'mock_parse'
-        self.assertEqual('mock_parse', self.dkb.get_account_transactions('url', 'date_from', 'date_to'))
+        self.assertEqual('mock_parse', self.dkb._legacy_get_account_transactions('url', 'date_from', 'date_to'))
 
     @patch('dkb_robo.DKBRobo._parse_account_transactions')
-    def test_056_get_account_transactions(self, mock_parse, mock_browser):
-        """ test get_account_transactions """
+    def test_056__legacy_get_account_transactions(self, mock_parse, mock_browser):
+        """ test _legacy_get_account_transactions """
         mock_browser.get_current_page.return_value = 'mock_browser'
         mock_parse.return_value = 'mock_parse'
-        self.assertEqual('mock_parse', self.dkb.get_account_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
+        self.assertEqual('mock_parse', self.dkb._legacy_get_account_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
 
     @patch('dkb_robo.DKBRobo._parse_cc_transactions')
     def test_057_get_cc_transactions(self, mock_parse, mock_browser):
-        """ test get_account_transactions """
+        """ test _legacy_get_account_transactions """
         mock_browser.get_current_page.return_value = 'mock_browser'
         mock_parse.return_value = 'mock_parse'
-        self.assertEqual('mock_parse', self.dkb.get_creditcard_transactions('url', 'date_from', 'date_to'))
+        self.assertEqual('mock_parse', self.dkb._legacy_get_creditcard_transactions('url', 'date_from', 'date_to'))
 
     @patch('dkb_robo.DKBRobo._parse_cc_transactions')
     def test_058_get_cc_transactions(self, mock_parse, mock_browser):
-        """ test get_account_transactions """
+        """ test _legacy_get_account_transactions """
         mock_browser.get_current_page.return_value = 'mock_browser'
         mock_parse.return_value = 'mock_parse'
-        self.assertEqual('mock_parse', self.dkb.get_creditcard_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
+        self.assertEqual('mock_parse', self.dkb._legacy_get_creditcard_transactions('url', 'date_from', 'date_to', transaction_type='reserved'))
 
     def test_059_logout(self, _unused):
         """ test logout """
@@ -1262,10 +1262,10 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(-1000.23, self.string2float(value))
 
     @patch('dkb_robo.DKBRobo._parse_depot_status')
-    def test_103_get_depot_status(self, mock_pds, _unused):
+    def test_103__legacy_get_depot_status(self, mock_pds, _unused):
         """ test get depot status """
         mock_pds.return_value = 'mock_pds'
-        self.assertEqual('mock_pds', self.dkb.get_depot_status('url', 'fdate', 'tdate', 'booked'))
+        self.assertEqual('mock_pds', self.dkb._legacy_get_depot_status('url', 'fdate', 'tdate', 'booked'))
 
     @patch('dkb_robo.DKBRobo._get_document')
     def test_104_download_document(self, mock_get_doc, _ununsed):
