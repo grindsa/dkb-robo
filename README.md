@@ -207,7 +207,7 @@ pprint(tlist)
 
 The list of transactions from a creditcard will look as below:
 
-```json
+```python
 [{'amount': 500.0,
   'bdate': '2023-08-18',
   'currencycode': 'EUR',
@@ -227,7 +227,7 @@ The list of transactions from a creditcard will look as below:
 
 A brokerage account (depot) will not show the list of transactions but rather a list of positions:
 
-```json
+```python
 [{'currencycode': 'EUR',
   'isin_wkn': 'DE0005140008',
   'lastorderdate': '2017-01-01',
