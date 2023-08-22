@@ -94,43 +94,60 @@ After login you can return the
 - the last login date
 
 ```python
-> print(dkb.last_login)
+print(dkb.last_login)
 14.03.2019, 13:19 Uhr
 ```
 
 - a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
 
 ```python
-> from pprint import pprint
-> pprint(dkb.account_dic)
-{0: {'account': u'DExx xxx xxxx xxxx xxx xx',
-     'amount': -9999.99,
-     'date': u'15.03.2017',
-     'details': u'https://www.dkb.de/banking/finanzstatus?$event=details&row=0&group=0',
-     'name': u'checking account',
-     'transactions': u'https://www.dkb.de/banking/finanzstatus?$event=paymentTransaction&row=0&group=0',
+from pprint import pprint
+pprint(dkb.account_dic)
+{0: {
+     'amount': '1458.00',
+     'currencycode': 'EUR',
+     'date': '22.01.2023',
+     'holdername': 'Firstname Lastname',
+     'iban': 'DEXXXXXXXXXXXXXXXXXXXXX',
+     'id': 'xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+     'limit': '2500.00',
+     'name': 'Girokonto',
+     'productgroup': 'Meine Konten',
+     'transactions': 'https://banking.dkb.de/api/accounts/accounts/xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/transactions',
      'type': 'account'},
- 1: {'account': u'DExx xxx xxxx xxxx xxx xx',
-     'amount': 999999.99,
-     'date': u'15.03.2017',
-     'details': u'https://www.dkb.de/banking/finanzstatus?$event=details&row=1&group=0',
-     'name': u'savings account',
-     'transactions': u'https://www.dkb.de/banking/finanzstatus?$event=paymentTransaction&row=1&group=0',
-     'type': 'account'},
- 2: {'account': u'XXXX********XXXX',
-     'amount': 0.0,
-     'date': u'15.03.2017',
-     'details': u'https://www.dkb.de/banking/finanzstatus?$event=details&row=2&group=0',
-     'name': u'first creditcard',
-     'transactions': u'https://www.dkb.de/banking/finanzstatus?$event=paymentTransaction&row=2&group=0',
+ 1: {
+     'amount': -1000.23,
+     'currencycode': 'EUR',
+     'date': '22.01.2023',
+     'holdername': 'Firstname Lastname',
+     'id': 'xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+     'limit': '2000.00',
+     'maskedpan': '1234XXXXXXXX5678',
+     'name': 'Visa CC',
+     'productgroup': 'Meine Konten',
+     'transactions': 'https://banking.dkb.de/api/credit-card/cards/xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/transactions',
      'type': 'creditcard'},
- 3: {'account': u'XXXX********XXXX',
-     'amount': -9999.99,
-     'date': u'15.03.2017',
-     'details': u'https://www.dkb.de/banking/finanzstatus?$event=details&row=3&group=0',
-     'name': u'second creditcard',
-     'transactions': u'https://www.dkb.de/banking/finanzstatus?$event=paymentTransaction&row=3&group=0',
-     'type': 'creditcard'}}
+ 2: {
+     'amount': 100000.23,
+     'currencycode': 'EUR',
+     'date': '22.01.2023',
+     'holdername': 'Firstname lastname',
+     'id': 'xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+     'limit': '0.00',
+     'maskedpan': '5678XXXXXXXX1234',
+     'name': 'Another Visa',
+     'productgroup': 'Meine Konten',
+     'transactions': 'https://banking.dkb.de/api/credit-card/xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/transactions',
+     'type': 'creditcard'},
+ 3: {
+     'amount': '123456,79',
+     'currencycode': 'EUR',
+     'holdername': 'Firstname Lastname',
+     'id': 'xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+     'name': 'Mein Depot',
+     'productgroup': 'Meine Konten',
+     'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx(positions?include=instrument%2Cquote',
+     'type': 'depot'}}
 ```
 
 to get the list of transactions for a certain checking account or a credit card use the following method
@@ -145,23 +162,90 @@ tlist = dkb.get_transactions(link, type, date_from, date_to)
 - date_to - end date in European notation (DD.MM.YYYY)
 - transaction_type - optional: "booked" (default if not specified) or "reserved" ("vorgemerkt")
 
-this method returns a list of transactions in the below format
+this method returns a list of transactions.
+
+A list of transactions for a regular checking account follows the below format.
 
 ```python
-> from pprint import pprint
-> pprint(tlist)
-[{'amount': 0.16,
-  'amount_original': u'',
-  'date': u'13.03.2017',
-  'text': u'Umbuchung DEUTSCHE KREDITBANK AGERSTATTUNG AUSLANDSEINSATZENTGELT'},
- {'amount': -12.50,
-  'amount_original': u'',
-  'date': u'12.03.2017',
-  'text': u'Lastschrift PREBIFIX GmbH K111631 Anz 10'},
- {'amount': -18,82,
-  'amount_original': u'-27,34 CAD',
-  'date': u'12.03.2017',
-  'text': u'SENS HOUSEOTTAWA'}]
+from pprint import pprint
+pprint(tlist)
+[{'amount': -44.98,
+  'bdate': '2023-01-22',
+  'currencycode': 'EUR',
+  'customerreferenz': 'XXXXXX',
+  'peer': 'PayPal Europe S.a.r.l. et Cie S.C.A',
+  'peeraccount': 'XXXXXXXXX',
+  'peerbic': 'XXXXXXXXX',
+  'peerid': 'XXXXXXXXXXX',
+  'postingtext': 'FOLGELASTSCHRIFT',
+  'reasonforpayment': 'XXXXXX PP.XXXXX.PP . Foo-bar AG, Ihr Einkauf bei '
+                      'Foo-bar AG',
+  'vdate': '2023-01-22'},
+ {'amount': -70.05,
+  'bdate': '2023-01-22',
+  'currencycode': 'EUR',
+  'customerreferenz': '68251782022947180823144926',
+  'peer': 'FEFASE GmbH',
+  'peeraccount': 'XXXXXXXXX',
+  'peerbic': 'XXXXXXXXX',
+  'peerid': 'XXXXXXXXX',
+  'postingtext': 'SEPA-ELV-LASTSCHRIFT',
+  'reasonforpayment': 'ELV68251782 18.08 14.49 MEFAS ',
+  'vdate': '2023-01-22'},
+ {'amount': -7.49,
+  'bdate': '2023-01-22',
+  'currencycode': 'EUR',
+  'customerreferenz': '3REFeSERENC',
+  'peer': 'PEER',
+  'peeraccount': 'XXXXXXXXX',
+  'peerbic': 'XXXXXXXXX',
+  'peerid': 'XXXXXXXXX',
+  'postingtext': 'FOLGELASTSCHRIFT',
+  'reasonforpayment': 'VIELEN DANK VON BAR-FOO GMBH',
+  'vdate': '2023-01-22'}]
+```
+
+The list of transactions from a creditcard will look as below:
+
+```json
+[{'amount': 500.0,
+  'bdate': '2023-08-18',
+  'currencycode': 'EUR',
+  'text': 'Berliner Sparkasse',
+  'vdate': '2023-08-18'},
+ {'amount': 125.95,
+  'bdate': '2023-08-14',
+  'currencycode': 'EUR',
+  'text': 'Zara Deutschland 3742',
+  'vdate': '2023-08-14'},
+ {'amount': 500.0,
+  'bdate': '2023-08-14',
+  'currencycode': 'EUR',
+  'text': 'Commerzbank Berlin',
+  'vdate': '2023-08-14'}]
+```
+
+A brokerage account (depot) will not show the list of transactions but rather a list of positions:
+
+```json
+[{'currencycode': 'EUR',
+  'isin_wkn': 'DE0005140008',
+  'lastorderdate': '2017-01-01',
+  'market': 'Frankfurt',
+  'price': 9.872,
+  'price_euro': '39488.00',
+  'quantity': 4000.0,
+  'shares_unit': 'pieces',
+  'text': 'DEUTSCHE BANK AG NA O.N.'},
+ {'currencycode': 'EUR',
+  'isin_wkn': 'DE0005557508',
+  'lastorderdate': '2017-10-01',
+  'market': 'Frankfurt',
+  'price': 19.108,
+  'price_euro': '28.662.00',
+  'quantity': 1500.0,
+  'shares_unit': 'pieces',
+  'text': 'DT.TELEKOM AG NA'}]
 ```
 
 to get the credit limits per account or credit-card the method get_credit_limits() must be used
