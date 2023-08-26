@@ -489,8 +489,8 @@ class DKBRobo(object):
         output_dic['productgroup'] = group_name
         output_dic['transactions'] = self.banking_url + self.api_prefix + f"/accounts/accounts/{aid}/transactions"
         if 'updatedAt' in account['attributes']:
-            output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], API_DATE_FORMAT, '%d.%m.%Y')
-
+            # output_dic['date'] = convert_date_format(self.logger, account['attributes']['updatedAt'], API_DATE_FORMAT, '%d.%m.%Y')
+            output_dic['date'] = account['attributes']['updatedAt']
         return output_dic
 
     def _add_accountname(self, account, product_settings_dic, aid):
@@ -627,7 +627,8 @@ class DKBRobo(object):
             if 'currencyCode' in card['attributes']['balance']:
                 output_dic['currencycode'] = card['attributes']['balance']['currencyCode']
             if 'date' in card['attributes']['balance']:
-                output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], API_DATE_FORMAT, '%d.%m.%Y')
+                output_dic['date'] = card['attributes']['balance']['date']
+                # output_dic['date'] = convert_date_format(self.logger, card['attributes']['balance']['date'], API_DATE_FORMAT, '%d.%m.%Y')
 
         return output_dic
 
