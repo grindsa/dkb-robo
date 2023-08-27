@@ -11,6 +11,7 @@ import dkb_robo
 sys.path.append("..")
 
 DATE_FORMAT = "%d.%m.%Y"
+DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
 
 
 @click.group()
@@ -54,14 +55,23 @@ DATE_FORMAT = "%d.%m.%Y"
     help="output format to use",
     envvar="DKB_FORMAT",
 )
+@click.option(
+    "--legacy_login",
+    "-l",
+    default=False,
+    help="use okd DKB frontend",
+    is_flag=True,
+    envvar="DKB_LEGACY_LOGIN",
+)
 @click.pass_context
-def main(ctx, debug, use_tan, username, password, format):  # pragma: no cover
+def main(ctx, debug, use_tan, username, password, format, legacy_login):  # pragma: no cover
     """ main fuunction """
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
     ctx.obj["USE_TAN"] = use_tan
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
+    ctx.obj["LEGACY_LOGIN"] = legacy_login
     ctx.obj["FORMAT"] = _load_format(format)
 
 
@@ -73,7 +83,8 @@ def accounts(ctx):
         with _login(ctx) as dkb:
             accounts_dict = dkb.account_dic
             for _, value in accounts_dict.items():
-                del value["details"]
+                if 'details' in value:
+                    del value["details"]
                 del value["transactions"]
             ctx.obj["FORMAT"](list(accounts_dict.values()))
     except dkb_robo.DKBRoboError as _err:
@@ -106,12 +117,12 @@ def accounts(ctx):
 )
 @click.option(
     "--date-from",
-    type=click.DateTime(formats=[DATE_FORMAT]),
+    type=click.DateTime(formats=[DATE_FORMAT, DATE_FORMAT_ALTERNATE]),
     default=date.today().strftime(DATE_FORMAT),
 )
 @click.option(
     "--date-to",
-    type=click.DateTime(formats=[DATE_FORMAT]),
+    type=click.DateTime(formats=[DATE_FORMAT, DATE_FORMAT_ALTERNATE]),
     default=date.today().strftime(DATE_FORMAT),
 )
 def transactions(ctx, name, account, transaction_type, date_from, date_to):  # pragma: no cover
@@ -213,5 +224,5 @@ def _load_format(output_format):
 
 def _login(ctx):
     return dkb_robo.DKBRobo(
-        ctx.obj["USERNAME"], ctx.obj["PASSWORD"], ctx.obj["USE_TAN"], ctx.obj["DEBUG"]
+        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], tan_insert=ctx.obj["USE_TAN"], legacy_login=ctx.obj["LEGACY_LOGIN"], debug=ctx.obj["DEBUG"]
     )
