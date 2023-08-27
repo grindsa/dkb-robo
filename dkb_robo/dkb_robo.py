@@ -126,12 +126,11 @@ class DKBRobo(object):
         self.logger = logger_setup(debug)
 
     def __enter__(self):
-        """
-        Makes DKBRobo a Context Manager
+        """ Makes DKBRobo a Context Manager """
+        # tan usage requires legacy login
+        if self.tan_insert:
+            self.legacy_login =True
 
-        with DKBRobo("user","pwd") as dkb:
-            print (dkb.lastlogin)
-        """
         if self.legacy_login and not self.dkb_br:
             self._legacy_login()
         elif not self.legacy_login and not self.client:
