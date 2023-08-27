@@ -24,7 +24,7 @@ if __name__ == "__main__":
     DKB = DKBRobo()
 
     # Using a Contexthandler (with) makes sure that the connection is closed after use
-    with DKBRobo(DKB_USER, DKB_PASSWORD) as dkb:
+    with DKBRobo(dkb_user=DKB_USER, dkb_password=DKB_PASSWORD) as dkb:
         print(dkb.last_login)
         pprint(dkb.account_dic)
 
