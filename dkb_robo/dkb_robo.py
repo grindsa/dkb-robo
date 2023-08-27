@@ -70,8 +70,14 @@ def logger_setup(debug):
 def validate_dates(logger, date_from, date_to):
     """ correct dates if needed """
     logger.debug('validate_dates()')
-    date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
-    date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
+    try:
+        date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
+    except ValueError:
+        date_from_uts = int(time.mktime(datetime.strptime(date_from, "%Y-%m-%d").timetuple()))
+    try:
+        date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
+    except ValueError:
+        date_to_uts = int(time.mktime(datetime.strptime(date_to, "%Y-%m-%d").timetuple()))
     now_uts = int(time.time())
 
     # minimal date (3 years back)
@@ -129,7 +135,7 @@ class DKBRobo(object):
         """ Makes DKBRobo a Context Manager """
         # tan usage requires legacy login
         if self.tan_insert:
-            self.legacy_login =True
+            self.legacy_login = True
 
         if self.legacy_login and not self.dkb_br:
             self._legacy_login()
@@ -1063,8 +1069,15 @@ class DKBRobo(object):
         """ filter transaction by date """
         self.logger.debug('DKBRobo._filter_transactions()\n')
 
-        date_from_uts = int(time.mktime(datetime.strptime(date_from, '%d.%m.%Y').timetuple()))
-        date_to_uts = int(time.mktime(datetime.strptime(date_to, '%d.%m.%Y').timetuple()))
+        try:
+            date_from_uts = int(time.mktime(datetime.strptime(date_from, '%d.%m.%Y').timetuple()))
+        except ValueError:
+            date_from_uts = int(time.mktime(datetime.strptime(date_from, '%Y-%m-%d').timetuple()))
+
+        try:
+            date_to_uts = int(time.mktime(datetime.strptime(date_to, '%d.%m.%Y').timetuple()))
+        except ValueError:
+            date_to_uts = int(time.mktime(datetime.strptime(date_to, '%Y-%m-%d').timetuple()))
 
         filtered_transaction_list = []
         for transaction in transaction_list:
