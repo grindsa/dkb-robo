@@ -1102,14 +1102,14 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._filter_transactions()\n')
 
         try:
-            date_from_uts = int(time.mktime(datetime.strptime(date_from, '%d.%m.%Y').timetuple()))
+            date_from_uts = int(time.mktime(datetime.strptime(date_from, LEGACY_DATE_FORMAT).timetuple()))
         except ValueError:
-            date_from_uts = int(time.mktime(datetime.strptime(date_from, '%Y-%m-%d').timetuple()))
+            date_from_uts = int(time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
 
         try:
-            date_to_uts = int(time.mktime(datetime.strptime(date_to, '%d.%m.%Y').timetuple()))
+            date_to_uts = int(time.mktime(datetime.strptime(date_to, LEGACY_DATE_FORMAT).timetuple()))
         except ValueError:
-            date_to_uts = int(time.mktime(datetime.strptime(date_to, '%Y-%m-%d').timetuple()))
+            date_to_uts = int(time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
 
         filtered_transaction_list = []
         for transaction in transaction_list:
