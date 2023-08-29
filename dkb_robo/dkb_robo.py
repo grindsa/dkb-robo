@@ -32,7 +32,7 @@ def convert_date_format(logger, input_date, input_format_list, output_format):
             output_date = parsed_date.strftime(output_format)
             break
         except Exception:
-            logger.error('convert_date_format(): cannot convert date: %s', input_date)
+            logger.debug('convert_date_format(): cannot convert date: %s', input_date)
             # something went wrong. we return the date we got as input
             continue
 
