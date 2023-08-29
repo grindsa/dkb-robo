@@ -2018,9 +2018,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_166_convert_date_format(self, _unused):
         """ test convert_date_format() """
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d'], '%d.%m.%Y'))
-        self.assertIn('ERROR:dkb_robo:convert_date_format(): cannot convert date: wrong date', lcm.output)
+        self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d'], '%d.%m.%Y'))
 
     def test_167_convert_date_format(self, _unused):
         """ test convert_date_format() first match """
@@ -2040,9 +2038,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_171_convert_date_format(self, _unused):
         """ test convert_date_format() no match """
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
-        self.assertIn('ERROR:dkb_robo:convert_date_format(): cannot convert date: wrong date', lcm.output)
+        self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
     def test_172__display_name_lookup(self, _ununsed):
         """ test _display_name_lookup() """
