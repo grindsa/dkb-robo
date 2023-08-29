@@ -3,6 +3,26 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.23.1
+
+**Improvements**:
+
+- #45 - CLI support of the new API
+- CLI option `-l` to use the old frontend
+- support date input in `%Y-%m-%d` format
+- all dates will be returned in `%Y-%m-%d` format when using the new API
+
+**Bufixes**:
+
+- #46 - `tan_insert` option enforces the useage of old frontend
+- CLI option `-l` enforces the useage of old frontend
+
+# Changes in 0.23
+
+**Improvements**:
+
+- get_transactions() and get_overview() methods are using the new API
+
 # Changes in 0.22
 
 **Bugfixes**:

@@ -360,14 +360,15 @@ Commands:
 ### Example command to fetch account list
 
 ```bash
-> py dkb -u <user> -p <password> accounts
+py dkb -u <user> -p <password> accounts
 ```
 
 ### Example commands to fetch transactions via CLI tool
 
 ```bash
-> py dkb -u <user> -p <password> transactions --name Girokonto
-> py dkb -u <user> -p <password> transactions --account "DE75 xxxx xxxx xxxx xxxx xxx"
+py dkb -u <user> -p <password> transactions --name Girokonto
+py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
+py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
 ```
 
 ## Further documentation
