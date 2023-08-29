@@ -16,21 +16,30 @@ import mechanicalsoup
 import requests
 
 
+LEGACY_DATE_FORMAT = '%d.%m.%Y'
 API_DATE_FORMAT = '%Y-%m-%d'
 
 
-def convert_date_format(logger, input_date, input_format, output_format):
+def convert_date_format(logger, input_date, input_format_list, output_format):
     """ convert date to a specified output format """
-    logger.debug('convert_date_format()')
-    try:
-        parsed_date = datetime.strptime(input_date, input_format)
-        # convert date
-        output_date = parsed_date.strftime(output_format)
-    except Exception:
-        logger.error('convert_date_format(): cannot convert date: %s', input_date)
-        # something went wrong. we return the date we got as input
+    logger.debug('convert_date_format(%s)', input_date)
+
+    output_date = None
+    for input_format in input_format_list:
+        try:
+            parsed_date = datetime.strptime(input_date, input_format)
+            # convert date
+            output_date = parsed_date.strftime(output_format)
+            break
+        except Exception:
+            logger.error('convert_date_format(): cannot convert date: %s', input_date)
+            # something went wrong. we return the date we got as input
+            continue
+
+    if not output_date:
         output_date = input_date
 
+    logger.debug('convert_date_format() ended with: %s', output_date)
     return output_date
 
 
@@ -67,21 +76,38 @@ def logger_setup(debug):
     return logger
 
 
-def validate_dates(logger, date_from, date_to):
+def enforce_date_format(logger, date_from, date_to, min_year):
+    """ enforce a certain date format """
+    logger.debug('enforce_date_format(): %s, %s %s', date_from, date_to, min_year)
+
+    if min_year == 1:
+        # this is the new api we need to ensure %Y-%m-%d
+        date_from = convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+        date_to = convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+    else:
+        # this is the old  api we need to ensure $d.%m,%Y
+        date_from = convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
+        date_to = convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
+
+    logger.debug('enforce_date_format() ended with: %s, %s', date_from, date_to)
+    return date_from, date_to
+
+
+def validate_dates(logger, date_from, date_to, min_year=3):
     """ correct dates if needed """
     logger.debug('validate_dates()')
     try:
         date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_from_uts = int(time.mktime(datetime.strptime(date_from, "%Y-%m-%d").timetuple()))
+        date_from_uts = int(time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
     try:
         date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_to_uts = int(time.mktime(datetime.strptime(date_to, "%Y-%m-%d").timetuple()))
+        date_to_uts = int(time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
     now_uts = int(time.time())
 
     # minimal date (3 years back)
-    minimal_date_uts = now_uts - 3 * 365 * 86400
+    minimal_date_uts = now_uts - min_year * 365 * 86400
 
     if date_from_uts < minimal_date_uts:
         logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
@@ -97,6 +123,9 @@ def validate_dates(logger, date_from, date_to):
         logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
+    date_from, date_to = enforce_date_format(logger, date_from, date_to, min_year)
+
+    logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
     return (date_from, date_to)
 
 
@@ -306,9 +335,12 @@ class DKBRobo(object):
     def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
         """ exported method to get transactions """
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
+
         if self.legacy_login:
+            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 3)
             transaction_list = self._legacy_get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
         else:
+            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 1)
             transaction_list = self._get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))
@@ -1646,8 +1678,6 @@ class DKBRobo(object):
     def _legacy_get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
         """ get transactions for a certain amount of time       """
         self.logger.debug('DKBRobo._legacy_get_transactions(%s/%s: %s/%s, %s)\n', transaction_url, atype, date_from, date_to, transaction_type)
-
-        (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
 
         transaction_list = []
         if atype == 'account':
