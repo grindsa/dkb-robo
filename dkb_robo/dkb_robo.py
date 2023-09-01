@@ -1344,12 +1344,6 @@ class DKBRobo(object):
         except Exception as _err:
             self.logger.debug('confirmForm not found\n')
 
-        try:
-            self.dkb_br.select_form('form[name="next"]')
-            self.dkb_br[event_field] = 'next'
-        except Exception:
-            self.logger.debug('nextForm not found\n')
-
         # open page to insert tan
         self.dkb_br.submit_selected()
         soup = self.dkb_br.get_current_page()
