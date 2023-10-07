@@ -737,13 +737,18 @@ class DKBRobo(object):
 
                 # build product settings dictioary needed to sort the productgroup
                 product_settings_dic = self._build_product_settings_dic(data_ele)
+                # print('############ HACK!!!#################################################')
+                # data_ele['attributes']['productGroups'] = {}
 
-                if 'attributes' in data_ele and 'productGroups' in data_ele['attributes']:
-                    # sorting should be similar to frontend
-                    for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
-                        product_group_name = product_group['name']
-                        product_group_dic, account_cnt = self._sort_product_group(account_cnt, product_settings_dic, product_group_name, product_group, portfolio_dic['accounts'], portfolio_dic['cards'], portfolio_dic['brokerage_accounts'])
-                        account_dic = {**account_dic, **product_group_dic}
+                if 'attributes' in data_ele:
+                    if 'productGroups' in data_ele['attributes'] and data_ele['attributes']['productGroups']:
+                        # sorting should be similar to frontend
+                        for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
+                            product_group_name = product_group['name']
+                            product_group_dic, account_cnt = self._sort_product_group(account_cnt, product_settings_dic, product_group_name, product_group, portfolio_dic['accounts'], portfolio_dic['cards'], portfolio_dic['brokerage_accounts'])
+                            account_dic = {**account_dic, **product_group_dic}
+                    else:
+                        account_dic, account_cnt = self._sort_products(account_cnt, product_settings_dic, portfolio_dic['accounts'], portfolio_dic['cards'], portfolio_dic['brokerage_accounts'])
 
         return account_dic
 
@@ -1293,6 +1298,24 @@ class DKBRobo(object):
                         self.logger.error('DKBRobo._sort_product_group(): product %s not implemented yet.', product)
                     account_cnt += 1
 
+        return product_dic, account_cnt
+
+    def _sort_products(self, account_cnt, product_settings_dic, accounts_dic, cards_dic, brokerage_dic):
+        """ sort products and get details """
+        self.logger.debug('DKBRobo._sort_products()\n')
+        product_dic = {}
+
+        for product_group in [accounts_dic, cards_dic, brokerage_dic]:
+            if 'data' in product_group:
+                for ele in product_group['data']:
+                    if 'id' in ele and 'type' in ele:
+                        if ele['type'] == 'brokerageAccount':
+                            product_dic[account_cnt] = self._get_brokerage_details(ele['id'], brokerage_dic, None, product_settings_dic)
+                        elif 'Card' in ele['type']:
+                            product_dic[account_cnt] = self._get_card_details(ele['id'], cards_dic, None, product_settings_dic)
+                        elif 'account' in ele['type']:
+                            product_dic[account_cnt] = self._get_account_details(ele['id'], accounts_dic, None, product_settings_dic)
+                        account_cnt += 1
         return product_dic, account_cnt
 
     #
