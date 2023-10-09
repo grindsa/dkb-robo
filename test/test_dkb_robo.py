@@ -2084,283 +2084,118 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_loans.called)
         self.assertTrue(mock_bac.called)
 
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_176__get_account_details(self, mock_dnl, _unused):
+    def test_176__get_account_details(self, _unused):
         """ test _get_account_details() """
         account_dic = {}
-        product_settings_dic = {}
-        mock_dnl.return_value = 'mock_dnl'
-        self.assertFalse(self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_account_details('aid', account_dic))
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_177__get_account_details(self, mock_dnl, mock_date, _unused):
+    def test_177__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
-        product_settings_dic = {}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'displayName', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
-        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_178__get_account_details(self, mock_dnl, mock_date, _unused):
+    def test_178__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
-        product_settings_dic = {'accounts': {'foo': 'bar'}}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban', 'name': 'mock_dnl', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
-        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
-        self.assertTrue(mock_dnl.called)
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_179__get_account_details(self, mock_dnl, mock_date, _unused):
+    def test_179__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
-        product_settings_dic = {'accounts': {'foo': 'bar'}}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'productgroup': 'group_name', 'iban': 'iban2', 'name': 'mock_dnl', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'updatedat2', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
-        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic, 'group_name', product_settings_dic))
-        self.assertTrue(mock_dnl.called)
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban2', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'updatedat2', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_180__get_card_details(self, mock_dnl, mock_date, _unused):
+    def test_180__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
-        product_settings_dic = {}
-        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_181__get_card_details(self, mock_dnl, mock_date, _unused):
+    def test_181__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
-        product_settings_dic = {'data': [{'foo': 'bar'}]}
-        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_182__get_card_details(self, mock_dnl, mock_date, _unused):
+    def test_182__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid'}]}
-        product_settings_dic = {}
-        self.assertFalse(self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_183__get_card_details(self, mock_dnl, mock_date, _unused):
+    def test_183__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
-        product_settings_dic = {}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'displayname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
-        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
+        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_184__get_card_details(self, mock_dnl, mock_date, _unused):
+    def test_184__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
-        product_settings_dic = {'creditCards': {'foo': 'bar'}}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'productgroup': 'group_name', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'name': 'mock_dnl', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
-        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic, 'group_name', product_settings_dic))
-        self.assertTrue(mock_dnl.called)
+        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
+        self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_185__get_brokerage_details(self, mock_dnl, mock_date, _unused):
+    def test_185__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
-        product_settings_dic = {}
         brok_dic = {}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_186__get_brokerage_details(self, mock_dnl, mock_date, _unused):
+    def test_186__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
-        product_settings_dic = {}
         brok_dic = {'data': []}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_187__get_brokerage_details(self, mock_dnl, mock_date, _unused):
+    def test_187__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
-        product_settings_dic = {}
         brok_dic = {'data': [{'id': 'bid'}]}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_188__get_brokerage_details(self, mock_dnl, mock_date, _unused):
+    def test_188__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
-        product_settings_dic = {}
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'holdername', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
-        self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
-        self.assertFalse(mock_dnl.called)
+        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
+        self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    @patch('dkb_robo.DKBRobo._display_name_lookup')
-    def test_189__get_brokerage_details(self, mock_dnl, mock_date, _unused):
+    def test_189__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
-        product_settings_dic = {'brokerageAccounts': {'foo': 'bar'}}
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
-        mock_dnl.return_value = 'mock_dnl'
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'productgroup': 'group_name', 'name': 'mock_dnl', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
-        self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic, 'group_name', product_settings_dic))
-        self.assertTrue(mock_dnl.called)
+        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
+        self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_190__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {}
-        self.assertEqual(({}, 0), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertFalse(mock_acc.called)
-        self.assertFalse(mock_card.called)
-        self.assertFalse(mock_br.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_191__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {'products': {'foo': {'product1': {'index': 1}}}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(({},1), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertIn('ERROR:dkb_robo:DKBRobo._sort_product_group(): product foo not implemented yet.', lcm.output)
-        self.assertFalse(mock_acc.called)
-        self.assertFalse(mock_card.called)
-        self.assertFalse(mock_br.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_192__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {'products': {'accounts': {'product1': {'index': 1}}}}
-        mock_acc.return_value = 'mock_acc'
-        mock_card.return_value = 'mock_card'
-        mock_br.return_value = 'mock_br'
-        self.assertEqual(({0: 'mock_acc'}, 1), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertTrue(mock_acc.called)
-        self.assertFalse(mock_card.called)
-        self.assertFalse(mock_br.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_193__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {'products': {'creditCards': {'product1': {'index': 1}}}}
-        mock_acc.return_value = 'mock_acc'
-        mock_card.return_value = 'mock_card'
-        mock_br.return_value = 'mock_br'
-        self.assertEqual(({0: 'mock_card'}, 1), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertFalse(mock_acc.called)
-        self.assertTrue(mock_card.called)
-        self.assertFalse(mock_br.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_194__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {'products': {'brokerageAccounts': {'product1': {'index': 1}}}}
-        mock_acc.return_value = 'mock_acc'
-        mock_card.return_value = 'mock_card'
-        mock_br.return_value = 'mock_br'
-        self.assertEqual(({0: 'mock_br'}, 1), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertFalse(mock_acc.called)
-        self.assertFalse(mock_card.called)
-        self.assertTrue(mock_br.called)
-
-    @patch('dkb_robo.DKBRobo._get_brokerage_details')
-    @patch('dkb_robo.DKBRobo._get_card_details')
-    @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_195__sort_product_group(self, mock_acc, mock_card, mock_br, _unused):
-        """ test _sort_product_group() """
-        product_group = {'products': {'accounts': {'product1': {'index': 2}}, 'creditCards': {'product2': {'index': 1}}, 'brokerageAccounts': {'product3': {'index': 0}}}}
-        mock_acc.return_value = 'mock_acc'
-        mock_card.return_value = 'mock_card'
-        mock_br.return_value = 'mock_br'
-        self.assertEqual(({0: 'mock_acc', 1: 'mock_card', 2: 'mock_br'}, 3), self.dkb._sort_product_group(0, {}, 'group_name', product_group, {}, {}, {}))
-        self.assertTrue(mock_acc.called)
-        self.assertTrue(mock_card.called)
-        self.assertTrue(mock_br.called)
-
-    def test_196__build_account_dic(self, _unused):
-        """ test _build_account_dic() """
-        portfolio_dic = {}
-        self.assertFalse(self.dkb._build_account_dic(portfolio_dic))
-
-
-    def test_197__build_account_dic(self, _unused):
-        """ test _build_account_dic() """
-        portfolio_dic = {'product_display': {'data': []}}
-        self.assertFalse(self.dkb._build_account_dic(portfolio_dic))
-
-    @patch('dkb_robo.DKBRobo._sort_product_group')
-    def test_198__build_account_dic(self, mock_sort, _unused):
-        """ test _build_account_dic() """
-        portfolio_dic = {'accounts': {}, 'cards': {}, 'brokerage_accounts': {}, 'product_display': {'data': [{'attributes': {'productGroups':{'bla': {'index': 0, 'name': 'name'}}}}]}}
-        mock_sort.side_effect = [({'foo': 'bar'}, 1), ({'foo2': 'bar2'}, 2)]
-        self.assertEqual({'foo': 'bar'}, self.dkb._build_account_dic(portfolio_dic))
-
-    @patch('dkb_robo.DKBRobo._sort_product_group')
-    def test_199__build_account_dic(self, mock_sort, _unused):
-        """ test _build_account_dic() """
-        portfolio_dic = {'accounts': {}, 'cards': {}, 'brokerage_accounts': {}, 'product_display': {'data': [{'attributes': {'productGroups':{'bla': {'index': 0, 'name': 'name'}, 'bla1': {'index': 1, 'name': 'name1'}}}}]}}
-        mock_sort.side_effect = [({'foo': 'bar'}, 1), ({'foo2': 'bar2'}, 2)]
-        self.assertEqual({'foo': 'bar', 'foo2': 'bar2'}, self.dkb._build_account_dic(portfolio_dic))
-
-    @patch('dkb_robo.DKBRobo._sort_product_group')
-    def test_200__build_account_dic(self, mock_sort, _unused):
-        """ test _build_account_dic() """
-        portfolio_dic = {'accounts': {}, 'cards': {}, 'brokerage_accounts': {}, 'product_display': {'data': [{'attributes': {'productGroups':{'bla': {'index': 0, 'name': 'name'}, 'bla1': {'index': 1, 'name': 'name1'}}, 'productSettings': {'pfoo': {'fbar'}}}}]}}
-        mock_sort.side_effect = [({'foo': 'bar'}, 1), ({'foo2': 'bar2'}, 2)]
-        self.assertEqual({'foo': 'bar', 'foo2': 'bar2'}, self.dkb._build_account_dic(portfolio_dic))
 
     def test_201__filter_transactions(self, _unused):
         """ test _filter_transactions() """
