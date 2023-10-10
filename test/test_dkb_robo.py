@@ -9,11 +9,21 @@ from bs4 import BeautifulSoup
 from mechanicalsoup import LinkNotFoundError
 from datetime import date
 import io
+import json
 
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
 from dkb_robo import DKBRobo
 import logging
+
+
+def json_load(fname):
+    """ simple json load """
+
+    with open(fname, 'r', encoding='utf8') as myfile:
+        data_dic = json.load(myfile)
+
+    return data_dic
 
 def read_file(fname):
     """ read file into string """
@@ -2552,7 +2562,73 @@ class TestDKBRobo(unittest.TestCase):
         """ test enforce_date_format() - new frontend - old date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
+    def test_228_build_account_dic(self, _unused):
+        """ e22 build account dic """
 
+        portfolio_dic = {
+            'accounts': json_load(self.dir_path + '/mocks/accounts.json'),
+            'cards': json_load(self.dir_path + '/mocks/cards.json'),
+            'brokerage_accounts': json_load(self.dir_path + '/mocks/brokerage.json'),
+            'product_display': json_load(self.dir_path + '/mocks/pd.json')}
+        result = {0: {'account': 'AccountIBAN3',
+                        'amount': '-1000.22',
+                        'currencycode': 'EUR',
+                        'date': '2020-03-01',
+                        'holdername': 'Account HolderName 3',
+                        'iban': 'AccountIBAN3',
+                        'id': 'accountid3',
+                        'limit': '2500.00',
+                        'name': 'pdsettings accoutname accountid2',
+                        'productgroup': 'productGroup name 1',
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
+                        'type': 'account'},
+                    1: {'account': 'maskedPan1',
+                        'amount': -1234.56,
+                        'currencycode': 'EUR',
+                        'date': '2020-01-03',
+                        'holdername': 'holderfirstName holderlastName',
+                        'id': 'cardid1',
+                        'limit': '1000.00',
+                        'maskedpan': 'maskedPan1',
+                        'name': 'pdsettings cardname cardid1',
+                        'productgroup': 'productGroup name 1',
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
+                        'type': 'creditcard'},
+                    2: {'account': 'maskedPan2',
+                        'amount': 12345.67,
+                        'currencycode': 'EUR',
+                        'date': '2020-02-07',
+                        'holdername': 'holderfirstName2 holderlastName2',
+                        'id': 'cardid2',
+                        'limit': '0.00',
+                        'maskedpan': 'maskedPan2',
+                        'name': 'displayName2',
+                        'productgroup': 'productGroup name 1',
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
+                        'type': 'creditcard'},
+                    3: {'account': '987654321',
+                        'amount': '1234.56',
+                        'currencycode': 'EUR',
+                        'holdername': 'HolderName1',
+                        'id': 'baccountid1',
+                        'name': 'pdsettings brokeraage baccountid1',
+                        'productgroup': 'productGroup name 1',
+                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
+                        'type': 'depot'},
+                    4: {'account': 'AccountIBAN3',
+                        'amount': '-1000.22',
+                        'currencycode': 'EUR',
+                        'date': '2020-03-01',
+                        'holdername': 'Account HolderName 3',
+                        'iban': 'AccountIBAN3',
+                        'id': 'accountid3',
+                        'limit': '2500.00',
+                        'name': 'pdsettings accoutname accountid2',
+                        'productgroup': 'productGroup name 2',
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
+                        'type': 'account'}}
+
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
 if __name__ == '__main__':
 
     unittest.main()
