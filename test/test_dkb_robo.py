@@ -2030,24 +2030,6 @@ class TestDKBRobo(unittest.TestCase):
         """ test convert_date_format() no match """
         self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
-    def test_171__display_name_lookup(self, _ununsed):
-        """ test _display_name_lookup() """
-        display_settings = {}
-        product_name = 'product_name'
-        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
-
-    def test_172__display_name_lookup(self, _ununsed):
-        """ test _display_name_lookup() """
-        display_settings = {'oid': {'foo': 'bar'}}
-        product_name = 'product_name'
-        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
-
-    def test_173__display_name_lookup(self, _ununsed):
-        """ test _display_name_lookup() """
-        display_settings = {'oid': {'name': 'name'}}
-        product_name = 'name'
-        self.assertEqual(product_name, self.dkb._display_name_lookup('oid', display_settings, product_name))
-
     @patch('dkb_robo.DKBRobo._build_account_dic')
     @patch('dkb_robo.DKBRobo._get_loans')
     @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
@@ -2094,7 +2076,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'name': 'displayName', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
@@ -2103,7 +2085,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban', 'account': 'iban', 'name': 'displayName', 'holdername': 'holdername', 'amount': 'value', 'currencycode': 'currencycode', 'date': 'updatedat', 'limit': 'overdraftLimit', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
@@ -2112,7 +2094,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'account', 'id': 'aid', 'iban': 'iban2', 'account': 'iban2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'updatedat2', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
+        result = {'type': 'account', 'id': 'aid', 'iban': 'iban2', 'account': 'iban2', 'name': 'displayName2', 'holdername': 'holdername2', 'amount': 'value2', 'currencycode': 'currencycode2', 'date': 'updatedat2', 'limit': 'overdraftLimit2', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions'}
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
@@ -2142,7 +2124,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
+        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'name': 'displayname', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
@@ -2151,7 +2133,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
+        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'name': 'displayname', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
@@ -2184,7 +2166,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
+        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'name': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
@@ -2193,7 +2175,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
+        result = {'type': 'depot', 'id': 'bid', 'holdername': 'holdername', 'name': 'holdername', 'account': 'depositaccountid', 'currencycode': 'currentcycode', 'amount': 'value', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/bid/positions?include=instrument%2Cquote'}
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 

@@ -486,7 +486,7 @@ class DKBRobo(object):
             for account in accounts_dic['data']:
                 if account['id'] == aid and 'attributes' in account:
                     # build dictionary with account information
-                    output_dic = {**self._add_accountinformation(account, aid), **self._add_accountdetails(account), **self._add_accountbalance(account)}
+                    output_dic = {**self._add_accountinformation(account, aid), **self._add_accountdetails(account), **self._add_accountbalance(account), **self._add_accountname(account)}
                     break
 
         return output_dic
@@ -528,16 +528,11 @@ class DKBRobo(object):
             output_dic['date'] = account['attributes']['updatedAt']
         return output_dic
 
-    def _add_accountname(self, account, product_settings_dic, aid):
+    def _add_accountname(self, account):
         """ add card name """
         self.logger.debug('DKBRobo._add_accountname()\n')
 
-        output_dic = {}
-        # overwrite display name set in ui
-        if 'accounts' in product_settings_dic:
-            output_dic['name'] = self._display_name_lookup(aid, product_settings_dic['accounts'], account['attributes']['product']['displayName'])
-        else:
-            output_dic['name'] = account['attributes']['product']['displayName']
+        output_dic = {'name': account['attributes']['product']['displayName']}
 
         return output_dic
 
@@ -595,17 +590,11 @@ class DKBRobo(object):
 
         return output_dic
 
-    def _add_brokerageholder(self, depot, bid, product_settings_dic):
+    def _add_brokerageholder(self, depot):
         """ add card holder information """
         self.logger.debug('DKBRobo._add_brokerageholder()\n')
 
-        output_dic = {}
-        # set display name
-        if 'brokerageAccounts' in product_settings_dic:
-            output_dic['name'] = self._display_name_lookup(bid, product_settings_dic['brokerageAccounts'], depot['attributes']['holderName'])
-        else:
-            output_dic['name'] = depot['attributes']['holderName']
-
+        output_dic = {'name': depot['attributes']['holderName']}
         return output_dic
 
     def _add_brokerageinformation(self, depot, bid):
@@ -711,18 +700,13 @@ class DKBRobo(object):
             output_dic['text'] = transaction['attributes']['description']
         return output_dic
 
-    def _add_cardname(self, card, product_settings_dic, cid):
+    def _add_cardname(self, card):
         """ add card name """
         self.logger.debug('DKBRobo._add_cardname()\n')
 
-        output_dic = {}
-        if 'creditCards' in product_settings_dic:
-            output_dic['name'] = self._display_name_lookup(cid, product_settings_dic['creditCards'], card['attributes']['product']['displayName'])
-        else:
-            output_dic['name'] = card['attributes']['product']['displayName']
+        output_dic = {'name': card['attributes']['product']['displayName']}
 
         return output_dic
-
 
     def _build_raw_account_dic(self, portfolio_dic):
         """ sort products and get details """
@@ -748,21 +732,24 @@ class DKBRobo(object):
         account_dic = {}
         account_cnt = 0
 
-        _raw_account_dic  = self._build_raw_account_dic(portfolio_dic)
+        _raw_account_dic = self._build_raw_account_dic(portfolio_dic)
 
         if 'product_display' in portfolio_dic and 'data' in portfolio_dic['product_display']:
             for data_ele in portfolio_dic['product_display']['data']:
                 # build product settings dictioary needed to sort the productgroup
-                product_settings_dic = self._build_product_settings_dic(data_ele)
+                product_display_dic = self._build_product_display_settings_dic(data_ele)
                 product_group_list = self._build_product_group_list(data_ele)
 
                 for product_group in product_group_list:
-                    for _id in sorted(product_group['product_list']):
-                        if product_group['product_list'][_id] in _raw_account_dic:
-                            self.logger.debug('DKBRobo._build_account_dic(): found "%s" %s in account_list', product_group['name'], _id)
-                            account_dic[account_cnt] = _raw_account_dic[product_group['product_list'][_id]]
+                    for dic_id in sorted(product_group['product_list']):
+                        if product_group['product_list'][dic_id] in _raw_account_dic:
+                            self.logger.debug('DKBRobo._build_account_dic(): found "%s" %s in account_list', product_group['name'], dic_id)
+                            account_dic[account_cnt] = _raw_account_dic[product_group['product_list'][dic_id]]
                             account_dic[account_cnt]['productgroup'] = product_group['name']
-                            del _raw_account_dic[product_group['product_list'][_id]]
+                            if product_group['product_list'][dic_id] in product_display_dic:
+                                self.logger.debug('DKBRobo._build_account_dic(): found "%s" in product_display_dic', product_group['product_list'][dic_id])
+                                account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
+                            del _raw_account_dic[product_group['product_list'][dic_id]]
                             account_cnt += 1
 
         for _id, product_data in _raw_account_dic.items():
@@ -784,20 +771,21 @@ class DKBRobo(object):
                     _tmp_dic = {'name': product_group['name']}
                     _tmp_id_dic = {}
                     for _id_dic in product_group['products'].values():
-                        for _id in _id_dic:
-                            _tmp_id_dic[_id_dic[_id]['index']] = _id
+                        for uid in _id_dic:
+                            _tmp_id_dic[_id_dic[uid]['index']] = uid
                     product_group_list.append({'name': product_group['name'], 'product_list': _tmp_id_dic})
 
         return product_group_list
 
-    def _build_product_settings_dic(self, data_ele):
+    def _build_product_display_settings_dic(self, data_ele):
         """ build products settings dictionary """
-        self.logger.debug('DKBRobo._build_product_settings_dic()\n')
+        self.logger.debug('DKBRobo._build_product_display_settings_dic()\n')
 
+        product_settings_dic = {}
         if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
-            product_settings_dic = data_ele['attributes']['productSettings']
-        else:
-            product_settings_dic = {}
+            for _product, product_data in data_ele['attributes']['productSettings'].items():
+                for uid, product_value in product_data.items():
+                    product_settings_dic[uid] = product_value['name']
 
         return product_settings_dic
 
@@ -838,14 +826,6 @@ class DKBRobo(object):
             time.sleep(5)
 
         return mfa_completed
-
-    def _display_name_lookup(self, oid, display_settings, product_name):
-        """ replace product name with name displayed in UI """
-        self.logger.debug('DKBRobo._diplay_name_lookup(%s)\n', product_name)
-        if oid in display_settings and 'name' in display_settings[oid]:
-            product_name = display_settings[oid]['name']
-
-        return product_name
 
     def _do_sso_redirect(self):
         """  redirect to access legacy page """
@@ -949,7 +929,7 @@ class DKBRobo(object):
         if 'data' in brokerage_dic:
             for depot in brokerage_dic['data']:
                 if depot['id'] == bid and 'attributes' in depot:
-                    output_dic = {**self._add_brokerageinformation(depot, bid), **self._add_brokerageperformance(depot)}
+                    output_dic = {**self._add_brokerageinformation(depot, bid), **self._add_brokerageperformance(depot), **self._add_brokerageholder(depot)}
                     break
 
         return output_dic
@@ -986,7 +966,7 @@ class DKBRobo(object):
             for card in cards_dic['data']:
                 if card['id'] == cid and 'attributes' in card:
                     # build dictionary with card information
-                    output_dic = {**self._add_cardinformation(card, cid), **self._add_cardholder(card), **self._add_cardlimit(card), **self._add_cardbalance(card)}
+                    output_dic = {**self._add_cardinformation(card, cid), **self._add_cardholder(card), **self._add_cardlimit(card), **self._add_cardbalance(card), **self._add_cardname(card)}
                     break
 
         return output_dic
