@@ -676,6 +676,8 @@ class DKBRobo(object):
         if 'maskedPan' in card['attributes']:
             output_dic['maskedpan'] = card['attributes']['maskedPan']
             output_dic['account'] = card['attributes']['maskedPan']
+        if 'status' in card['attributes']:
+            output_dic['status'] = card['attributes']['status']
 
         return output_dic
 
