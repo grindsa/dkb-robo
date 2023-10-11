@@ -715,7 +715,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._raw_entry_get()\n')
 
         if ele['type'] == 'brokerageAccount':
-           result = self._get_brokerage_details(ele['id'], portfolio_dic[product_group])
+            result = self._get_brokerage_details(ele['id'], portfolio_dic[product_group])
         elif 'Card' in ele['type']:
             result = self._get_card_details(ele['id'], portfolio_dic[product_group])
         elif 'account' in ele['type']:
