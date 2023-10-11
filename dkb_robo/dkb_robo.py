@@ -736,6 +736,27 @@ class DKBRobo(object):
 
         return product_dic
 
+    def _build_account_dic_from_pd(self, data_ele, account_dic, _raw_account_dic, account_cnt):
+        """ build account dic based on product_display dictionary"""
+        self.logger.debug('DKBRobo._build_account_dic_from_pd()\n')
+
+        # build product settings dictioary needed to sort the productgroup
+        product_display_dic = self._build_product_display_settings_dic(data_ele)
+        product_group_list = self._build_product_group_list(data_ele)
+        for product_group in product_group_list:
+            for dic_id in sorted(product_group['product_list']):
+                if product_group['product_list'][dic_id] in _raw_account_dic:
+                    self.logger.debug('DKBRobo._build_account_dic(): found "%s" %s in account_list', product_group['name'], dic_id)
+                    account_dic[account_cnt] = _raw_account_dic[product_group['product_list'][dic_id]]
+                    account_dic[account_cnt]['productgroup'] = product_group['name']
+                    if product_group['product_list'][dic_id] in product_display_dic:
+                        self.logger.debug('DKBRobo._build_account_dic(): found "%s" in product_display_dic', product_group['product_list'][dic_id])
+                        account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
+                    del _raw_account_dic[product_group['product_list'][dic_id]]
+                    account_cnt += 1
+
+        return account_dic, _raw_account_dic, account_cnt
+
     def _build_account_dic(self, portfolio_dic):
         """ create overview """
         self.logger.debug('DKBRobo._build_account_dic()\n')
@@ -747,20 +768,7 @@ class DKBRobo(object):
 
         if 'product_display' in portfolio_dic and 'data' in portfolio_dic['product_display']:
             for data_ele in portfolio_dic['product_display']['data']:
-                # build product settings dictioary needed to sort the productgroup
-                product_display_dic = self._build_product_display_settings_dic(data_ele)
-                product_group_list = self._build_product_group_list(data_ele)
-                for product_group in product_group_list:
-                    for dic_id in sorted(product_group['product_list']):
-                        if product_group['product_list'][dic_id] in _raw_account_dic:
-                            self.logger.debug('DKBRobo._build_account_dic(): found "%s" %s in account_list', product_group['name'], dic_id)
-                            account_dic[account_cnt] = _raw_account_dic[product_group['product_list'][dic_id]]
-                            account_dic[account_cnt]['productgroup'] = product_group['name']
-                            if product_group['product_list'][dic_id] in product_display_dic:
-                                self.logger.debug('DKBRobo._build_account_dic(): found "%s" in product_display_dic', product_group['product_list'][dic_id])
-                                account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
-                            del _raw_account_dic[product_group['product_list'][dic_id]]
-                            account_cnt += 1
+                account_dic, _raw_account_dic, account_cnt = self._build_account_dic_from_pd(data_ele, account_dic, _raw_account_dic, account_cnt)
 
         for _id, product_data in _raw_account_dic.items():
             account_dic[account_cnt] = product_data
@@ -790,6 +798,21 @@ class DKBRobo(object):
 
         return product_group_list
 
+    def _build_product_name_dic(self, product_data):
+        self.logger.debug('DKBRobo._build_product_display_items()\n')
+
+        uid_dic = {}
+        if isinstance(product_data, dict):
+            for uid, product_value in product_data.items():
+                if 'name' in product_value:
+                    uid_dic[uid] = product_value['name']
+                else:
+                    self.logger.error('DKBRobo._build_product_display_settings_dic(): "name" key not found')
+        else:
+            self.logger.error('DKBRobo._build_product_display_settings_dic(): product_data is not of type dic')
+
+        return uid_dic
+
     def _build_product_display_settings_dic(self, data_ele):
         """ build products settings dictionary """
         self.logger.debug('DKBRobo._build_product_display_settings_dic()\n')
@@ -797,14 +820,10 @@ class DKBRobo(object):
         product_settings_dic = {}
         if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
             for _product, product_data in data_ele['attributes']['productSettings'].items():
-                if isinstance(product_data, dict):
-                    for uid, product_value in product_data.items():
-                        if 'name' in product_value:
-                            product_settings_dic[uid] = product_value['name']
-                        else:
-                            self.logger.error('DKBRobo._build_product_display_settings_dic(): "name" key not found')
-                else:
-                    self.logger.error('DKBRobo._build_product_display_settings_dic(): product_data is not of type dic')
+                prod_name_dic = self._build_product_name_dic(product_data)
+                if prod_name_dic:
+                    product_settings_dic = {**product_settings_dic, **prod_name_dic}
+
         return product_settings_dic
 
     def _check_processing_status(self, polling_dic, cnt):

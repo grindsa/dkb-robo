@@ -1666,9 +1666,11 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.headers = {}
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'canceled'}}}]
-        with self.assertRaises(Exception) as err:
-            self.assertTrue(self.dkb._complete_2fa('challengeid', 'devicename'))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            with self.assertRaises(Exception) as err:
+                self.assertTrue(self.dkb._complete_2fa('challengeid', 'devicename'))
         self.assertEqual('2fa chanceled by user', str(err.exception))
+        self.assertIn("ERROR:dkb_robo:DKBRobo._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
 
     @patch('requests.session')
     def test_141_new_instance_new_session(self, mock_session, _unused):
@@ -2379,7 +2381,6 @@ class TestDKBRobo(unittest.TestCase):
         """ test enforce_date_format() - new frontend - old date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
-
     @patch('dkb_robo.DKBRobo._get_brokerage_details')
     @patch('dkb_robo.DKBRobo._get_card_details')
     @patch('dkb_robo.DKBRobo._get_account_details')
@@ -2440,11 +2441,6 @@ class TestDKBRobo(unittest.TestCase):
         data_ele = {'attributes': {'foo': 'bar'}}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_220_build_product_display_settings_dic(self, _unused):
-        """ _build_product_display_settings_dic() """
-        data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
-        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
-
     def test_221_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
@@ -2461,9 +2457,9 @@ class TestDKBRobo(unittest.TestCase):
     def test_223_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'foo': 'bar'}}}}}
-        # with self.assertLogs('dkb_robo', level='INFO') as lcm:
-        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
-        # self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): "name" key not found', lcm.output)
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): "name" key not found', lcm.output)
 
     def test_224_build_product_group_list(self, _unused):
         """ test _build_product_group_list() """
