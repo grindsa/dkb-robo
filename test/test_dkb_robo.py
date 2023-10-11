@@ -2045,7 +2045,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
     @patch('dkb_robo.DKBRobo._get_cards')
     @patch('dkb_robo.DKBRobo._get_accounts')
-    def test_174_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
+    def test_171_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
         """ test _get_overview() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -2063,7 +2063,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_accounts')
     @patch('dkb_robo.DKBRobo._get_cards')
     @patch('dkb_robo.DKBRobo._get_accounts')
-    def test_175_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
+    def test_172_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac, _unused):
         """ test _get_overview() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -2076,13 +2076,13 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_loans.called)
         self.assertTrue(mock_bac.called)
 
-    def test_176__get_account_details(self, _unused):
+    def test_173__get_account_details(self, _unused):
         """ test _get_account_details() """
         account_dic = {}
         self.assertFalse(self.dkb._get_account_details('aid', account_dic))
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_177__get_account_details(self, mock_date, _unused):
+    def test_174__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
@@ -2091,7 +2091,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_178__get_account_details(self, mock_date, _unused):
+    def test_175__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
@@ -2100,7 +2100,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_179__get_account_details(self, mock_date, _unused):
+    def test_176__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
         mock_date.return_value = 'mock_date'
@@ -2109,28 +2109,28 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_180__get_card_details(self, mock_date, _unused):
+    def test_177__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_181__get_card_details(self, mock_date, _unused):
+    def test_178__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_182__get_card_details(self, mock_date, _unused):
+    def test_179__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid'}]}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_183__get_card_details(self, mock_date, _unused):
+    def test_180__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'status': 'status', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
@@ -2139,7 +2139,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_184__get_card_details(self, mock_date, _unused):
+    def test_181__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
@@ -2148,7 +2148,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_185__get_brokerage_details(self, mock_date, _unused):
+    def test_182__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {}
         mock_date.return_value = 'mock_date'
@@ -2156,7 +2156,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_186__get_brokerage_details(self, mock_date, _unused):
+    def test_183__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': []}
         mock_date.return_value = 'mock_date'
@@ -2164,7 +2164,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_187__get_brokerage_details(self, mock_date, _unused):
+    def test_184__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid'}]}
         mock_date.return_value = 'mock_date'
@@ -2172,7 +2172,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_188__get_brokerage_details(self, mock_date, _unused):
+    def test_185__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
@@ -2181,7 +2181,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.dkb_robo.convert_date_format')
-    def test_189__get_brokerage_details(self, mock_date, _unused):
+    def test_186__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
@@ -2189,14 +2189,14 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    def test_201__filter_transactions(self, _unused):
+    def test_187__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = []
         from_date = '01.01.2023'
         to_date = '31.01.2023'
         self.assertFalse(self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_202__filter_transactions(self, _unused):
+    def test_188__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = [{'foo': 'bar', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -2204,7 +2204,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo': 'bar', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_203__filter_transactions(self, _unused):
+    def test_189__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -2212,7 +2212,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_204__filter_transactions(self, _unused):
+    def test_190__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-02-15'}}]
         from_date = '01.01.2023'
@@ -2220,7 +2220,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_205__filter_transactions(self, _unused):
+    def test_191__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype2', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -2228,7 +2228,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_206__filter_transactions(self, _unused):
+    def test_192__filter_transactions(self, _unused):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype2', 'bookingDate': '2023-01-15'}}]
         from_date = '2023-01-01'
@@ -2236,30 +2236,30 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_207_format_card_transactions(self, _unused):
+    def test_193_format_card_transactions(self, _unused):
         """ _format_card_transactions() """
         transaction_list = []
         self.assertFalse(self.dkb._format_card_transactions(transaction_list))
 
-    def test_208_format_card_transactions(self, _unused):
+    def test_194_format_card_transactions(self, _unused):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'description': 'description', 'bookingDate': '2023-01-01', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'bdate': '2023-01-01', 'vdate': '2023-01-01', 'text': 'description'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_209_format_card_transactions(self, _unused):
+    def test_195_format_card_transactions(self, _unused):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'bookingDate': '2023-01-01', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'bdate': '2023-01-01', 'vdate': '2023-01-01'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_210_format_card_transactions(self, _unused):
+    def test_196_format_card_transactions(self, _unused):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'description': 'description', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'text': 'description'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_211_format_brokerage_account(self, _unused):
+    def test_197_format_brokerage_account(self, _unused):
         """ test _format_brokerage_account() """
         included_list = []
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'id'}}, 'quote': {'data': {'id': 'id', 'value': 'value'}}}}]
@@ -2267,7 +2267,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_212_format_brokerage_account(self, _unused):
+    def test_198_format_brokerage_account(self, _unused):
         """ test _format_brokerage_account() """
         included_list = []
         data_dic = [
@@ -2277,7 +2277,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000}, {'shares': 2000, 'quantity': 2000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-02-01', 'price_euro': 2000}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_213_format_brokerage_account(self, _unused):
+    def test_199_format_brokerage_account(self, _unused):
         """ test _format_brokerage_account() """
         included_list = [{'id': 'inid', 'attributes': {'identifiers': [{'identifier': 'isin', 'value': 'value'}, {'identifier': 'isin', 'value': 'value2'}], 'name': {'short': 'short'}}}]
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'inid'}}, 'quote': {'data': {'id': 'quoteid', 'value': 'value'}}}}]
@@ -2285,7 +2285,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000, 'text': 'short', 'isin_wkn': 'value'}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_214_format_brokerage_account(self, _unused):
+    def test_200_format_brokerage_account(self, _unused):
         """ test _format_brokerage_account() """
         included_list = [{'id': 'quoteid', 'attributes': {'market': 'market', 'price': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'inid'}}, 'quote': {'data': {'id': 'quoteid', 'value': 'value'}}}}]
@@ -2293,36 +2293,36 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000, 'price': 1000.0, 'currencycode': 'currencyCode', 'market': 'market'}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_215_format_account_transactions(self, _unused):
+    def test_201_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'foo': 'bar'}]
         self.assertFalse(self.dkb._format_account_transactions(transaction_list))
 
-    def test_216_format_account_transactions(self, _unused):
+    def test_202_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_217_format_account_transactions(self, _unused):
+    def test_203_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'intermediaryName': 'intermediaryName', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'intermediaryName', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType intermediaryName description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_218_format_account_transactions(self, _unused):
+    def test_204_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_219_format_account_transactions(self, _unused):
+    def test_205_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_220_format_account_transactions(self, _unused):
+    def test_206_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
@@ -2331,7 +2331,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.validate_dates')
     @patch('dkb_robo.DKBRobo._get_transactions')
     @patch('dkb_robo.DKBRobo._legacy_get_transactions')
-    def test_221_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
+    def test_207_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
         """ test get_transactions() """
         mock_new.return_value = 'foo'
         mock_date.return_value = ('from', 'to')
@@ -2342,7 +2342,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.validate_dates')
     @patch('dkb_robo.DKBRobo._get_transactions')
     @patch('dkb_robo.DKBRobo._legacy_get_transactions')
-    def test_222_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
+    def test_208_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
         """ test get_transactions() """
         mock_legacy.return_value = 'foo_legacy'
         mock_date.return_value = ('from', 'to')
@@ -2354,7 +2354,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.validate_dates')
     @patch('dkb_robo.DKBRobo._get_transactions')
     @patch('dkb_robo.DKBRobo._legacy_get_transactions')
-    def test_223_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
+    def test_209_get_transactions(self, mock_legacy, mock_new, mock_date, _unused):
         """ test get_transactions() """
         mock_new.return_value = 'foo'
         mock_date.return_value = ('from', 'to')
@@ -2363,19 +2363,19 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_new.called)
         self.assertFalse(mock_legacy.called)
 
-    def test_224_enforce_date_format(self, _unused):
+    def test_210_enforce_date_format(self, _unused):
         """ test enforce_date_format() - old frontend - old date format """
         self.assertEqual(('01.01.2023', '02.01.2023'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 3))
 
-    def test_225_enforce_date_format(self, _unused):
+    def test_211_enforce_date_format(self, _unused):
         """ test enforce_date_format() - old frontend - new date format """
         self.assertEqual(('01.04.2023', '02.04.2023'), self.enforce_date_format(self.logger, '2023-04-01', '2023-04-02', 3))
 
-    def test_226_enforce_date_format(self, _unused):
+    def test_212_enforce_date_format(self, _unused):
         """ test enforce_date_format() - new frontend - new date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '2023-01-01', '2023-01-02', 1))
 
-    def test_227_enforce_date_format(self, _unused):
+    def test_213_enforce_date_format(self, _unused):
         """ test enforce_date_format() - new frontend - old date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
@@ -2383,7 +2383,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_details')
     @patch('dkb_robo.DKBRobo._get_card_details')
     @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_220_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+    def test_214_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
         """ teest _build_account_dic """
         portfolio_dic = {}
         self.assertFalse(self.dkb._build_raw_account_dic(portfolio_dic))
@@ -2394,7 +2394,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_details')
     @patch('dkb_robo.DKBRobo._get_card_details')
     @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_221_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+    def test_215_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
         """ teest _build_account_dic """
         portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'brokerageAccount', 'foo': 'bar'}]} }
         mock_ba.return_value = 'mock_ba'
@@ -2407,7 +2407,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_details')
     @patch('dkb_robo.DKBRobo._get_card_details')
     @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_222_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+    def test_216_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
         """ teest _build_account_dic """
         portfolio_dic = {'cards': {'data': [{'id': 'id', 'type': 'fooCard', 'foo': 'bar'}]} }
         mock_card.return_value = 'mock_card'
@@ -2420,7 +2420,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.DKBRobo._get_brokerage_details')
     @patch('dkb_robo.DKBRobo._get_card_details')
     @patch('dkb_robo.DKBRobo._get_account_details')
-    def test_223_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+    def test_217_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
         """ teest _build_account_dic """
         portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'account', 'foo': 'bar'}]} }
         mock_acc.return_value = 'mock_acc'
@@ -2430,22 +2430,22 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_card.called)
         self.assertFalse(mock_ba.called)
 
-    def test_224_build_product_display_settings_dic(self, _unused):
+    def test_218_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'foo': 'bar'}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_225_build_product_display_settings_dic(self, _unused):
+    def test_219_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'foo': 'bar'}}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_226_build_product_display_settings_dic(self, _unused):
+    def test_220_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_226_build_product_display_settings_dic(self, _unused):
+    def test_221_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
 
@@ -2453,29 +2453,29 @@ class TestDKBRobo(unittest.TestCase):
             self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
         self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): product_data is not of type dic', lcm.output)
 
-    def test_227_build_product_display_settings_dic(self, _unused):
+    def test_222_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'name': 'name'}}}}}
         self.assertEqual({'uid': 'name'}, self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_228_build_product_display_settings_dic(self, _unused):
+    def test_223_build_product_display_settings_dic(self, _unused):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'foo': 'bar'}}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
         self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): "name" key not found', lcm.output)
 
-    def test_229_build_product_group_list(self, _unused):
+    def test_224_build_product_group_list(self, _unused):
         """ test _build_product_group_list() """
         data_ele = {}
         self.assertFalse(self.dkb._build_product_group_list(data_ele))
 
-    def test_230_build_product_group_list(self, _unused):
+    def test_225_build_product_group_list(self, _unused):
         """ test _build_product_group_list() """
         data_ele = {'attributes': {'productGroups': {'foo': {'index': 0, 'name': 'foo', 'products': {'product1': {'uid1': {'index': 1}, 'uid2': {'index': 0}}}}}}}
         self.assertEqual([{'name': 'foo', 'product_list': {1: 'uid1', 0: 'uid2'}}], self.dkb._build_product_group_list(data_ele))
 
-    def test_231_build_product_group_list(self, _unused):
+    def test_226_build_product_group_list(self, _unused):
         """ test _build_product_group_list() """
         data_ele = {'attributes':
                     {'productGroups':
@@ -2489,7 +2489,7 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertEqual([{'name': 'foo', 'product_list': {0: 'uid3', 1: 'uid1', 2: 'uid2', 3: 'uid4'}}], self.dkb._build_product_group_list(data_ele))
 
-    def test_232_build_product_group_list(self, _unused):
+    def test_227_build_product_group_list(self, _unused):
         """ test _build_product_group_list() """
         data_ele = {'attributes':
                         {'productGroups':
