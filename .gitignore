@@ -105,7 +105,8 @@ ENV/
 /wa_hack_cli.py
 /dkb_test.py
 /*.html
-*.json
+/*.json
 # /*.txt
 foo*/*
 coverage.lcov
+settings.json
