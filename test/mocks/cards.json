@@ -1,0 +1,329 @@
+{
+	"data": [
+		{
+			"type": "creditCard",
+			"id": "cardid1",
+			"attributes": {
+				"maskedPan": "maskedPan1",
+				"network": "visa",
+				"engravedLine1": "engravedLine2",
+				"engravedLine2": "",
+				"activationDate": "2020-01-01",
+				"expiryDate": "2020-01-02",
+				"balance": {
+					"date": "2020-01-03",
+					"currencyCode": "EUR",
+					"value": "1234.56"
+				},
+				"state": "active",
+				"owner": {
+					"firstName": "ownerfirstName1",
+					"lastName": "ownerlastName1",
+					"title": "",
+					"salutation": "salutation"
+				},
+				"holder": {
+					"person": {
+						"firstName": "holderfirstName",
+						"lastName": "holderlastName"
+					}
+				},
+				"product": {
+					"superProductId": "superProductId1",
+					"displayName": "displayName1",
+					"institute": "DKB",
+					"productType": "CASH-BLACK",
+					"ownerType": "PRIVATE",
+					"id": "productid1",
+					"type": "CASH-BLACK"
+				},
+				"limit": {
+					"currencyCode": "EUR",
+					"value": "1000.00"
+				},
+				"availableLimit": {
+					"currencyCode": "EUR",
+					"value": "1000.00"
+				},
+				"authorizedAmount": {
+					"currencyCode": "EUR",
+					"value": "0.00"
+				},
+				"referenceAccount": {
+					"iban": "referenceAccountiban1",
+					"bic": "referenceAccountbic1"
+				},
+				"status": {
+					"category": "active",
+					"limitationsFor": []
+				},
+				"billingDetails": {
+					"days": [
+						22
+					],
+					"calendarType": "calendar",
+					"cycle": "monthly"
+				}
+			},
+			"relationships": {
+				"legitimates": {
+					"data": [
+						{
+							"type": "user",
+							"id": "relationshipid1"
+						}
+					]
+				}
+			}
+		},
+		{
+			"type": "creditCard",
+			"id": "cardid2",
+			"attributes": {
+				"maskedPan": "maskedPan2",
+				"network": "visa",
+				"engravedLine1": "engravedLine12",
+				"engravedLine2": "",
+				"activationDate": "2020-02-01",
+				"expiryDate": "2020-02-02",
+				"balance": {
+					"date": "2020-02-07",
+					"currencyCode": "EUR",
+					"value": "-12345.67"
+				},
+				"state": "active",
+				"owner": {
+					"firstName": "firstName2",
+					"lastName": "lastName2",
+					"title": "",
+					"salutation": "salutation2"
+				},
+				"holder": {
+					"person": {
+						"firstName": "holderfirstName2",
+						"lastName": "holderlastName2"
+					}
+				},
+				"product": {
+					"superProductId": "superProductId2",
+					"displayName": "displayName2",
+					"institute": "DKB",
+					"productType": "productType2",
+					"ownerType": "PRIVATE",
+					"id": "produchtid2",
+					"type": "CASH-BLACK"
+				},
+				"limit": {
+					"currencyCode": "EUR",
+					"value": "0.00"
+				},
+				"availableLimit": {
+					"currencyCode": "EUR",
+					"value": "12345.67"
+				},
+				"authorizedAmount": {
+					"currencyCode": "EUR",
+					"value": "0.00"
+				},
+				"referenceAccount": {
+					"iban": "referenceAccountiban2",
+					"bic": "referenceAccountbic2"
+				},
+				"status": {
+					"category": "active",
+					"limitationsFor": []
+				},
+				"billingDetails": {
+					"days": [
+						22
+					],
+					"calendarType": "calendar",
+					"cycle": "monthly"
+				}
+			},
+			"relationships": {
+				"owner": {
+					"data": {
+						"type": "user",
+						"id": "b013a178-0a73-4ee2-a3e0-ce73085672f1"
+					}
+				}
+			}
+		},
+		{
+			"type": "debitCard",
+			"id": "cardid3",
+			"attributes": {
+				"maskedPan": "maskedPan3",
+				"network": "visa",
+				"engravedLine1": "engravedLine13",
+				"blockedSince": "2020-03-01",
+				"activationDate": "2020-03-02",
+				"creationDate": "2020-03-03",
+				"expiryDate": "2020-04-04",
+				"state": "blocked",
+				"failedPinAttempts": 0,
+				"limit": {
+					"identifier": "lidentifier1",
+					"categories": [
+						{
+							"name": "categories1",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "1.99"
+							}
+						},
+						{
+							"name": "categories2",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "2.00"
+							}
+						},
+						{
+							"name": "categories3",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "3.99"
+							}
+						},
+						{
+							"name": "categories4",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "4.00"
+							}
+						},
+						{
+							"name": "categories5",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "6.00"
+							}
+						}
+					]
+				},
+				"holder": {
+					"person": {
+						"firstName": "holderfirstName3",
+						"lastName": "holderlastName3"
+					}
+				},
+				"product": {
+					"superProductId": "Debit",
+					"displayName": "Visa Debitkarte",
+					"institute": "DKB",
+					"productType": "producttype3",
+					"ownerType": "private",
+					"id": "Debit",
+					"type": "DebitPhysical"
+				},
+				"referenceAccount": {
+					"iban": "referenceAccount3",
+					"bic": "referenceAccountbic3"
+				},
+				"status": {
+					"category": "blocked",
+					"since": "2020-03-01",
+					"reason": "cancellation-of-product-by-customer",
+					"final": true
+				}
+			},
+			"relationships": {
+				"owner": {
+					"data": {
+						"type": "user",
+						"id": "relationshipsid3"
+					}
+				}
+			}
+		},
+		{
+			"type": "debitCard",
+			"id": "cardid4",
+			"attributes": {
+				"maskedPan": "maskedPan4",
+				"network": "visa",
+				"engravedLine1": "engravedLine4",
+				"activationDate": "2020-04-01",
+				"creationDate": "2020-04-02",
+				"expiryDate": "2020-04-03",
+				"state": "active",
+				"failedPinAttempts": 0,
+				"limit": {
+					"identifier": "lidentifier2",
+					"categories": [
+						{
+							"name": "categories21",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "1.99"
+							}
+						},
+						{
+							"name": "categories22",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "2.00"
+							}
+						},
+						{
+							"name": "categories23",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "3.99"
+							}
+						},
+						{
+							"name": "categories24",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "5.00"
+							}
+						},
+						{
+							"name": "categories25",
+							"amount": {
+								"currencyCode": "EUR",
+								"value": "6.00"
+							}
+						}
+					]
+				},
+				"holder": {
+					"person": {
+						"firstName": "holderfirstName4",
+						"lastName": "holderlastName4"
+					}
+				},
+				"product": {
+					"superProductId": "superProductId4",
+					"displayName": "Visa Debitkarte",
+					"institute": "DKB",
+					"productType": "DebitPhysical",
+					"ownerType": "private",
+					"id": "Debit",
+					"type": "DebitPhysical"
+				},
+				"referenceAccount": {
+					"iban": "referenceAccountiban4",
+					"bic": "referenceAccountbic4"
+				},
+				"status": {
+					"category": "active"
+				}
+			},
+			"relationships": {
+				"owner": {
+					"data": {
+						"type": "user",
+						"id": "relationships4"
+					}
+				}
+			}
+		}
+	],
+	"meta": {
+		"messages": []
+	}
+}

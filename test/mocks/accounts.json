@@ -1,0 +1,119 @@
+{
+	"data": [
+		{
+			"type": "account",
+			"id": "accountid1",
+			"attributes": {
+				"holderName": "Account HolderName 1",
+				"iban": "AccountIBAN1",
+				"permissions": [
+					"foo",
+					"bar",
+					"foo-bar"
+				],
+				"currencyCode": "EUR",
+				"balance": {
+					"currencyCode": "EUR",
+					"value": "12345.67"
+				},
+				"availableBalance": {
+					"currencyCode": "EUR",
+					"value": "12345.67"
+				},
+				"nearTimeBalance": {
+					"currencyCode": "EUR",
+					"value": "12345.67"
+				},
+				"product": {
+					"id": "Account productid1",
+					"type": "checking-account-type1",
+					"displayName": "Account DisplayName 1"
+				},
+				"state": "active",
+				"updatedAt": "2020-01-01",
+				"openingDate": "2020-01-02",
+				"overdraftLimit": "1000.00",
+				"interestRate": "1.000",
+				"unauthorizedOverdraftInterestRate": "11.000",
+				"lastAccountStatementDate": "2020-01-03"
+			}
+		},
+		{
+			"type": "account",
+			"id": "accountid2",
+			"attributes": {
+				"holderName": "Account HolderName 2",
+				"iban": "AccountIBAN2",
+				"permissions": [
+					"foo",
+					"bar",
+					"foo-bar"
+				],
+				"currencyCode": "EUR",
+				"balance": {
+					"currencyCode": "EUR",
+					"value": "1284.56"
+				},
+				"availableBalance": {
+					"currencyCode": "EUR",
+					"value": "123.45"
+				},
+				"nearTimeBalance": {
+					"currencyCode": "EUR",
+					"value": "123.45"
+				},
+				"product": {
+					"id": "Account productid2",
+					"type": "checking-account-type2",
+					"displayName": "Account DisplayName 2"
+				},
+				"state": "active",
+				"updatedAt": "2020-02-01",
+				"openingDate": "2020-02-02",
+				"overdraftLimit": "0.00",
+				"interestRate": "2.000",
+				"unauthorizedOverdraftInterestRate": "12.000",
+				"lastAccountStatementDate": "2023-02-04"
+			}
+		},
+		{
+			"type": "account",
+			"id": "accountid3",
+			"attributes": {
+				"holderName": "Account HolderName 3",
+				"iban": "AccountIBAN3",
+				"permissions": [
+					"foo",
+					"bar",
+					"foo-bar"
+				],
+				"currencyCode": "EUR",
+				"balance": {
+					"currencyCode": "EUR",
+					"value": "-1000.22"
+				},
+				"availableBalance": {
+					"currencyCode": "EUR",
+					"value": "1200.78"
+				},
+				"nearTimeBalance": {
+					"currencyCode": "EUR",
+					"value": "-690.00"
+				},
+				"product": {
+					"id": "Account productid3",
+					"type": "checking-account-type3",
+					"displayName": "Account DisplayName 3"
+				},
+				"state": "active",
+				"updatedAt": "2020-03-01",
+				"openingDate": "2020-03-02",
+				"overdraftLimit": "2500.00",
+				"overdraftInterestRate": "1.1234",
+				"interestRate": "1.000",
+				"unauthorizedOverdraftInterestRate": "1.234",
+				"lastAccountStatementDate": "2020-03-04"
+			}
+		}
+	]
+}

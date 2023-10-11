@@ -1,0 +1,76 @@
+{
+	"data": [
+		{
+			"type": "productDisplaySettings",
+			"id": "productDisplaySettingskid",
+			"attributes": {
+				"portfolio": "dkb",
+				"productSettings": {
+					"accounts": {
+						"accountid2": {
+							"name": "pdsettings accoutname accountid2"
+						},
+						"accountid3": {
+							"name": "pdsettings accoutname accountid3"
+						}
+					},
+					"creditCards": {
+						"cardid1": {
+							"name": "pdsettings cardname cardid1"
+						},
+						"creditCards2": {
+							"name": "pdsettings cardname cardid2"
+						}
+					},
+					"brokerageAccounts": {
+						"baccountid1": {
+							"name": "pdsettings brokeraage baccountid1"
+						}
+					}
+				},
+				"productGroups": {
+					"productGroup1": {
+						"name": "productGroup name 1",
+						"index": 0,
+						"products": {
+							"accounts": {
+								"accountid3": {
+									"index": 1
+								}
+							},
+							"creditCards": {
+								"cardid1": {
+									"index": 2
+								},
+								"cardid2": {
+									"index": 3
+								}
+							},
+							"brokerageAccounts": {
+								"baccountid1": {
+									"index": 0
+								}
+							}
+						}
+					},
+					"productGroup2": {
+						"name": "productGroup name 2",
+						"index": 1,
+						"products": {
+							"accounts": {
+								"accountid2": {
+									"index": 0
+								}
+							}
+						}
+					}
+				},
+				"clientTypeSpecificSettings": {}
+			},
+			"links": {
+				"self": "https://api.developer.dkb.de/config/users/me/product-display-settings/2e5556c2-4165-4ac6-8192-674890871f1c"
+			}
+		}
+	],
+	"included": []
+}

@@ -710,6 +710,19 @@ class DKBRobo(object):
 
         return output_dic
 
+    def _raw_entry_get(self, portfolio_dic, product_group, ele):
+        """ sort products and get details """
+        self.logger.debug('DKBRobo._raw_entry_get()\n')
+
+        if ele['type'] == 'brokerageAccount':
+           result = self._get_brokerage_details(ele['id'], portfolio_dic[product_group])
+        elif 'Card' in ele['type']:
+            result = self._get_card_details(ele['id'], portfolio_dic[product_group])
+        elif 'account' in ele['type']:
+            result = self._get_account_details(ele['id'], portfolio_dic[product_group])
+
+        return result
+
     def _build_raw_account_dic(self, portfolio_dic):
         """ sort products and get details """
         self.logger.debug('DKBRobo._build_raw_account_dic()\n')
@@ -719,12 +732,8 @@ class DKBRobo(object):
             if product_group in portfolio_dic and 'data' in portfolio_dic[product_group]:
                 for ele in portfolio_dic[product_group]['data']:
                     if 'id' in ele and 'type' in ele:
-                        if ele['type'] == 'brokerageAccount':
-                            product_dic[ele['id']] = self._get_brokerage_details(ele['id'], portfolio_dic[product_group])
-                        elif 'Card' in ele['type']:
-                            product_dic[ele['id']] = self._get_card_details(ele['id'], portfolio_dic[product_group])
-                        elif 'account' in ele['type']:
-                            product_dic[ele['id']] = self._get_account_details(ele['id'], portfolio_dic[product_group])
+                        product_dic[ele['id']] = self._raw_entry_get(portfolio_dic, product_group, ele)
+
         return product_dic
 
     def _build_account_dic(self, portfolio_dic):
@@ -760,21 +769,24 @@ class DKBRobo(object):
 
         return account_dic
 
+    def _build_product_group_list_index(self, product_group):
+        """ build index for group sorting """
+        self.logger.debug('DKBRobo._build_product_group_list_index()\n')
+        id_dic = {}
+        for _id_dic in product_group['products'].values():
+            for uid in _id_dic:
+                id_dic[_id_dic[uid]['index']] = uid
+
+        return id_dic
+
     def _build_product_group_list(self, data_ele):
         """ buuild list of product grups including objects """
-
         product_group_list = []
         if 'attributes' in data_ele:
             if 'productGroups' in data_ele['attributes'] and data_ele['attributes']['productGroups']:
-
                 # sorting should be similar to frontend
                 for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
-                    _tmp_dic = {'name': product_group['name']}
-                    _tmp_id_dic = {}
-                    for _id_dic in product_group['products'].values():
-                        for uid in _id_dic:
-                            _tmp_id_dic[_id_dic[uid]['index']] = uid
-                    product_group_list.append({'name': product_group['name'], 'product_list': _tmp_id_dic})
+                    product_group_list.append({'name': product_group['name'], 'product_list': self._build_product_group_list_index(product_group)})
 
         return product_group_list
 

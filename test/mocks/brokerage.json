@@ -1,0 +1,52 @@
+{
+	"data": [
+		{
+			"id": "baccountid1",
+			"type": "brokerageAccount",
+			"attributes": {
+				"brokerageAccountPerformance": {
+					"currentValue": {
+						"value": "1234.56",
+						"unit": "currency",
+						"currencyCode": "EUR"
+					},
+					"averagePrice": {
+						"value": "0",
+						"unit": "currency",
+						"currencyCode": "EUR"
+					},
+					"overallAbsolute": {
+						"value": "0",
+						"unit": "currency",
+						"currencyCode": "EUR"
+					},
+					"overallRelative": "0",
+					"isOutdated": true
+				},
+				"depositAccountId": "987654321",
+				"holder": {
+					"firstName": "firstname1",
+					"lastName": "lastname1"
+				},
+				"holderName": "HolderName1",
+				"referenceAccounts": [
+					{
+						"internalReferenceAccounts": true,
+						"accountType": "accounting",
+						"accountNumber": "refaccountNumber1",
+						"bankCode": "refbankCode1",
+						"holderName": "refholderName1"
+					},
+					{
+						"internalReferenceAccounts": true,
+						"accountType": "returns",
+						"accountNumber": "refaccountNumber2",
+						"bankCode": "refbankCode2",
+						"holderName": "refholderName2"
+					}
+				],
+				"tradingEnabled": true
+			}
+		}
+	]
+}
