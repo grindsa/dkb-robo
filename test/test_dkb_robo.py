@@ -2379,6 +2379,137 @@ class TestDKBRobo(unittest.TestCase):
         """ test enforce_date_format() - new frontend - old date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
+
+    @patch('dkb_robo.DKBRobo._get_brokerage_details')
+    @patch('dkb_robo.DKBRobo._get_card_details')
+    @patch('dkb_robo.DKBRobo._get_account_details')
+    def test_220_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+        """ teest _build_account_dic """
+        portfolio_dic = {}
+        self.assertFalse(self.dkb._build_raw_account_dic(portfolio_dic))
+        self.assertFalse(mock_acc.called)
+        self.assertFalse(mock_card.called)
+        self.assertFalse(mock_ba.called)
+
+    @patch('dkb_robo.DKBRobo._get_brokerage_details')
+    @patch('dkb_robo.DKBRobo._get_card_details')
+    @patch('dkb_robo.DKBRobo._get_account_details')
+    def test_221_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+        """ teest _build_account_dic """
+        portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'brokerageAccount', 'foo': 'bar'}]} }
+        mock_ba.return_value = 'mock_ba'
+        result = {'id': 'mock_ba'}
+        self.assertEqual(result, self.dkb._build_raw_account_dic(portfolio_dic))
+        self.assertFalse(mock_acc.called)
+        self.assertFalse(mock_card.called)
+        self.assertTrue(mock_ba.called)
+
+    @patch('dkb_robo.DKBRobo._get_brokerage_details')
+    @patch('dkb_robo.DKBRobo._get_card_details')
+    @patch('dkb_robo.DKBRobo._get_account_details')
+    def test_222_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+        """ teest _build_account_dic """
+        portfolio_dic = {'cards': {'data': [{'id': 'id', 'type': 'fooCard', 'foo': 'bar'}]} }
+        mock_card.return_value = 'mock_card'
+        result = {'id': 'mock_card'}
+        self.assertEqual(result, self.dkb._build_raw_account_dic(portfolio_dic))
+        self.assertFalse(mock_acc.called)
+        self.assertTrue(mock_card.called)
+        self.assertFalse(mock_ba.called)
+
+    @patch('dkb_robo.DKBRobo._get_brokerage_details')
+    @patch('dkb_robo.DKBRobo._get_card_details')
+    @patch('dkb_robo.DKBRobo._get_account_details')
+    def test_223_build_raw_account_dic(self, mock_acc, mock_card, mock_ba, _ununsed):
+        """ teest _build_account_dic """
+        portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'account', 'foo': 'bar'}]} }
+        mock_acc.return_value = 'mock_acc'
+        result = {'id': 'mock_acc'}
+        self.assertEqual(result, self.dkb._build_raw_account_dic(portfolio_dic))
+        self.assertTrue(mock_acc.called)
+        self.assertFalse(mock_card.called)
+        self.assertFalse(mock_ba.called)
+
+    def test_224_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'foo': 'bar'}
+        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+
+    def test_225_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'attributes': {'foo': 'bar'}}
+        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+
+    def test_226_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
+        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+
+    def test_226_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
+
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): product_data is not of type dic', lcm.output)
+
+    def test_227_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'attributes': {'productSettings': {'product': {'uid': {'name': 'name'}}}}}
+        self.assertEqual({'uid': 'name'}, self.dkb._build_product_display_settings_dic(data_ele))
+
+    def test_228_build_product_display_settings_dic(self, _unused):
+        """ _build_product_display_settings_dic() """
+        data_ele = {'attributes': {'productSettings': {'product': {'uid': {'foo': 'bar'}}}}}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._build_product_display_settings_dic(): "name" key not found', lcm.output)
+
+    def test_229_build_product_group_list(self, _unused):
+        """ test _build_product_group_list() """
+        data_ele = {}
+        self.assertFalse(self.dkb._build_product_group_list(data_ele))
+
+    def test_230_build_product_group_list(self, _unused):
+        """ test _build_product_group_list() """
+        data_ele = {'attributes': {'productGroups': {'foo': {'index': 0, 'name': 'foo', 'products': {'product1': {'uid1': {'index': 1}, 'uid2': {'index': 0}}}}}}}
+        self.assertEqual([{'name': 'foo', 'product_list': {1: 'uid1', 0: 'uid2'}}], self.dkb._build_product_group_list(data_ele))
+
+    def test_231_build_product_group_list(self, _unused):
+        """ test _build_product_group_list() """
+        data_ele = {'attributes':
+                    {'productGroups':
+                                   {'foo': {'index': 0,
+                                            'name': 'foo',
+                                            'products': {
+                                                'product1': {'uid1': {'index': 1}, 'uid2': {'index': 2}},
+                                                'product2': {'uid3': {'index': 0}, 'uid4': {'index': 3}}
+                                                }}}}}
+
+
+        self.assertEqual([{'name': 'foo', 'product_list': {0: 'uid3', 1: 'uid1', 2: 'uid2', 3: 'uid4'}}], self.dkb._build_product_group_list(data_ele))
+
+    def test_232_build_product_group_list(self, _unused):
+        """ test _build_product_group_list() """
+        data_ele = {'attributes':
+                        {'productGroups':
+                            {'foo': {'index': 1, 'name': 'foo',
+                                    'products': {
+                                        'product1': {'uid1': {'index': 1}, 'uid2': {'index': 2}},
+                                        'product2': {'uid3': {'index': 0}, 'uid4': {'index': 3}}
+                                    }},
+                            'bar': {'index': 0, 'name': 'bar',
+                                    'products': {
+                                        'product1': {'uid4': {'index': 1}, 'uid5': {'index': 2}},
+                                        'product2': {'uid6': {'index': 0}, 'uid7': {'index': 3}}
+                                    }}
+
+                                    }}}
+
+        result = [{'name': 'bar', 'product_list': {1: 'uid4', 2: 'uid5', 0: 'uid6', 3: 'uid7'}}, {'name': 'foo', 'product_list': {1: 'uid1', 2: 'uid2', 0: 'uid3', 3: 'uid4'}}]
+        self.assertEqual(result, self.dkb._build_product_group_list(data_ele))
+
+
     def test_228_build_account_dic(self, _unused):
         """ e22 build account dic """
 
@@ -2387,7 +2518,16 @@ class TestDKBRobo(unittest.TestCase):
             'cards': json_load(self.dir_path + '/mocks/cards.json'),
             'brokerage_accounts': json_load(self.dir_path + '/mocks/brokerage.json'),
             'product_display': json_load(self.dir_path + '/mocks/pd.json')}
-        result = {0: {'account': 'AccountIBAN3',
+        result = {0: {'account': '987654321',
+                        'amount': '1234.56',
+                        'currencycode': 'EUR',
+                        'holdername': 'HolderName1',
+                        'id': 'baccountid1',
+                        'name': 'pdsettings brokeraage baccountid1',
+                        'productgroup': 'productGroup name 1',
+                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
+                        'type': 'depot'},
+                    1: {'account': 'AccountIBAN3',
                         'amount': '-1000.22',
                         'currencycode': 'EUR',
                         'date': '2020-03-01',
@@ -2399,7 +2539,7 @@ class TestDKBRobo(unittest.TestCase):
                         'productgroup': 'productGroup name 1',
                         'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
                         'type': 'account'},
-                    1: {'account': 'maskedPan1',
+                    2: {'account': 'maskedPan1',
                         'amount': -1234.56,
                         'currencycode': 'EUR',
                         'date': '2020-01-03',
@@ -2409,9 +2549,10 @@ class TestDKBRobo(unittest.TestCase):
                         'maskedpan': 'maskedPan1',
                         'name': 'pdsettings cardname cardid1',
                         'productgroup': 'productGroup name 1',
+                        'status': {'category': 'active', 'limitationsFor': []},
                         'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
                         'type': 'creditcard'},
-                    2: {'account': 'maskedPan2',
+                    3: {'account': 'maskedPan2',
                         'amount': 12345.67,
                         'currencycode': 'EUR',
                         'date': '2020-02-07',
@@ -2421,17 +2562,9 @@ class TestDKBRobo(unittest.TestCase):
                         'maskedpan': 'maskedPan2',
                         'name': 'displayName2',
                         'productgroup': 'productGroup name 1',
+                        'status': {'category': 'active', 'limitationsFor': []},
                         'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
                         'type': 'creditcard'},
-                    3: {'account': '987654321',
-                        'amount': '1234.56',
-                        'currencycode': 'EUR',
-                        'holdername': 'HolderName1',
-                        'id': 'baccountid1',
-                        'name': 'pdsettings brokeraage baccountid1',
-                        'productgroup': 'productGroup name 1',
-                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
-                        'type': 'depot'},
                     4: {'account': 'AccountIBAN2',
                         'amount': '1284.56',
                         'currencycode': 'EUR',
@@ -2443,9 +2576,204 @@ class TestDKBRobo(unittest.TestCase):
                         'name': 'pdsettings accoutname accountid2',
                         'productgroup': 'productGroup name 2',
                         'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid2/transactions',
-                        'type': 'account'}}
+                        'type': 'account'},
+                    5: {'account': 'AccountIBAN1',
+                        'amount': '12345.67',
+                        'currencycode': 'EUR',
+                        'date': '2020-01-01',
+                        'holdername': 'Account HolderName 1',
+                        'iban': 'AccountIBAN1',
+                        'id': 'accountid1',
+                        'limit': '1000.00',
+                        'name': 'Account DisplayName 1',
+                        'productgroup': None,
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid1/transactions',
+                        'type': 'account'},
+                    6: {'account': 'maskedPan3',
+                        'holdername': 'holderfirstName3 holderlastName3',
+                        'id': 'cardid3',
+                        'maskedpan': 'maskedPan3',
+                        'name': 'Visa Debitkarte',
+                        'productgroup': None,
+                        'status': {'category': 'blocked',
+                                    'final': True,
+                                    'reason': 'cancellation-of-product-by-customer',
+                                    'since': '2020-03-01'},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid3/transactions',
+                        'type': 'creditcard'},
+                    7: {'account': 'maskedPan4',
+                        'holdername': 'holderfirstName4 holderlastName4',
+                        'id': 'cardid4',
+                        'maskedpan': 'maskedPan4',
+                        'name': 'Visa Debitkarte',
+                        'productgroup': None,
+                        'status': {'category': 'active'},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid4/transactions',
+                        'type': 'creditcard'}}
 
+        # self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+
+    def test_229_build_account_dic(self, _unused):
+        """ e22 build account dic """
+
+        portfolio_dic = {
+            'accounts': json_load(self.dir_path + '/mocks/accounts.json'),
+            'cards': json_load(self.dir_path + '/mocks/cards.json'),
+            'brokerage_accounts': json_load(self.dir_path + '/mocks/brokerage.json'),
+            'product_display': json_load(self.dir_path + '/mocks/pd.json')}
+
+        # empty display dic
+        portfolio_dic['product_display']['data'][0]['attributes']['productGroups'] = {}
+
+        result = {0: {'account': 'AccountIBAN1',
+                        'amount': '12345.67',
+                        'currencycode': 'EUR',
+                        'date': '2020-01-01',
+                        'holdername': 'Account HolderName 1',
+                        'iban': 'AccountIBAN1',
+                        'id': 'accountid1',
+                        'limit': '1000.00',
+                        'name': 'Account DisplayName 1',
+                        'productgroup': None,
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid1/transactions',
+                        'type': 'account'},
+                    1: {'account': 'AccountIBAN2',
+                        'amount': '1284.56',
+                        'currencycode': 'EUR',
+                        'date': '2020-02-01',
+                        'holdername': 'Account HolderName 2',
+                        'iban': 'AccountIBAN2',
+                        'id': 'accountid2',
+                        'limit': '0.00',
+                        'name': 'Account DisplayName 2',
+                        'productgroup': None,
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid2/transactions',
+                        'type': 'account'},
+                    2: {'account': 'AccountIBAN3',
+                        'amount': '-1000.22',
+                        'currencycode': 'EUR',
+                        'date': '2020-03-01',
+                        'holdername': 'Account HolderName 3',
+                        'iban': 'AccountIBAN3',
+                        'id': 'accountid3',
+                        'limit': '2500.00',
+                        'name': 'Account DisplayName 3',
+                        'productgroup': None,
+                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
+                        'type': 'account'},
+                    3: {'account': 'maskedPan1',
+                        'amount': -1234.56,
+                        'currencycode': 'EUR',
+                        'date': '2020-01-03',
+                        'holdername': 'holderfirstName holderlastName',
+                        'id': 'cardid1',
+                        'limit': '1000.00',
+                        'maskedpan': 'maskedPan1',
+                        'name': 'displayName1',
+                        'productgroup': None,
+                        'status': {'category': 'active', 'limitationsFor': []},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
+                        'type': 'creditcard'},
+                    4: {'account': 'maskedPan2',
+                        'amount': 12345.67,
+                        'currencycode': 'EUR',
+                        'date': '2020-02-07',
+                        'holdername': 'holderfirstName2 holderlastName2',
+                        'id': 'cardid2',
+                        'limit': '0.00',
+                        'maskedpan': 'maskedPan2',
+                        'name': 'displayName2',
+                        'productgroup': None,
+                        'status': {'category': 'active', 'limitationsFor': []},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
+                        'type': 'creditcard'},
+                    5: {'account': 'maskedPan3',
+                        'holdername': 'holderfirstName3 holderlastName3',
+                        'id': 'cardid3',
+                        'maskedpan': 'maskedPan3',
+                        'name': 'Visa Debitkarte',
+                        'productgroup': None,
+                        'status': {'category': 'blocked',
+                                    'final': True,
+                                    'reason': 'cancellation-of-product-by-customer',
+                                    'since': '2020-03-01'},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid3/transactions',
+                        'type': 'creditcard'},
+                    6: {'account': 'maskedPan4',
+                        'holdername': 'holderfirstName4 holderlastName4',
+                        'id': 'cardid4',
+                        'maskedpan': 'maskedPan4',
+                        'name': 'Visa Debitkarte',
+                        'productgroup': None,
+                        'status': {'category': 'active'},
+                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid4/transactions',
+                        'type': 'creditcard'},
+                    7: {'account': '987654321',
+                        'amount': '1234.56',
+                        'currencycode': 'EUR',
+                        'holdername': 'HolderName1',
+                        'id': 'baccountid1',
+                        'name': 'HolderName1',
+                        'productgroup': None,
+                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
+                        'type': 'depot'}}
+
+        # self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+
+    @patch('dkb_robo.DKBRobo._build_product_group_list')
+    @patch('dkb_robo.DKBRobo._build_product_display_settings_dic')
+    @patch('dkb_robo.DKBRobo._build_raw_account_dic')
+    def test_230_build_account_dic(self, mock_raw, mock_dis, mock_grp, _unused):
+        """ test build account dic """
+        portfolio_dic = {}
+        result = {}
         self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertTrue(mock_raw.called)
+        self.assertFalse(mock_dis.called)
+        self.assertFalse(mock_grp.called)
+
+    @patch('dkb_robo.DKBRobo._build_product_group_list')
+    @patch('dkb_robo.DKBRobo._build_product_display_settings_dic')
+    @patch('dkb_robo.DKBRobo._build_raw_account_dic')
+    def test_231_build_account_dic(self, mock_raw, mock_dis, mock_grp, _unused):
+        """ test build account dic """
+        portfolio_dic = {'product_display': {'data': ['foo']}}
+        result = {}
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertTrue(mock_raw.called)
+        self.assertTrue(mock_dis.called)
+        self.assertTrue(mock_grp.called)
+
+    @patch('dkb_robo.DKBRobo._build_product_group_list')
+    @patch('dkb_robo.DKBRobo._build_product_display_settings_dic')
+    @patch('dkb_robo.DKBRobo._build_raw_account_dic')
+    def test_232_build_account_dic(self, mock_raw, mock_dis, mock_grp, _unused):
+        """ test build account dic """
+        portfolio_dic = {'product_display': {'data': ['foo']}}
+        mock_raw.return_value = {'dic_id1': {'foo': 'bar1'}, 'dic_id2': {'foo': 'bar2'}, 'dic_id3': {'foo': 'bar3'}, 'dic_id4': {'foo': 'bar4'}, 'dic_id5': {'foo': 'bar5'}}
+        mock_dis.return_value = {}
+        mock_grp.return_value = [{'name': 'mylist1', 'product_list': {0: 'dic_id1', 2: 'dic_id4', 1: 'dic_list5'}}, {'name': 'mylist2', 'product_list': {0: 'dic_id2', 1: 'dic_id3'}}]
+        result = {0: {'foo': 'bar1', 'productgroup': 'mylist1'}, 1: {'foo': 'bar4', 'productgroup': 'mylist1'}, 2: {'foo': 'bar2', 'productgroup': 'mylist2'}, 3: {'foo': 'bar3', 'productgroup': 'mylist2'}, 4: {'foo': 'bar5', 'productgroup': None}}
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertTrue(mock_raw.called)
+        self.assertTrue(mock_dis.called)
+        self.assertTrue(mock_grp.called)
+
+    @patch('dkb_robo.DKBRobo._build_product_group_list')
+    @patch('dkb_robo.DKBRobo._build_product_display_settings_dic')
+    @patch('dkb_robo.DKBRobo._build_raw_account_dic')
+    def test_233_build_account_dic(self, mock_raw, mock_dis, mock_grp, _unused):
+        """ test build account dic """
+        portfolio_dic = {'product_display': {'data': ['foo']}}
+        mock_raw.return_value = {'dic_id1': {'foo': 'bar1'}, 'dic_id2': {'foo': 'bar2'}, 'dic_id3': {'foo': 'bar3'}, 'dic_id4': {'foo': 'bar4'}, 'dic_id5': {'foo': 'bar5'}}
+        mock_dis.return_value = {'dic_id2': 'changed_name2', 'dic_id4': 'changed_name4'}
+        mock_grp.return_value = [{'name': 'mylist1', 'product_list': {0: 'dic_id1', 2: 'dic_id4', 1: 'dic_list5'}}, {'name': 'mylist2', 'product_list': {0: 'dic_id2', 1: 'dic_id3'}}]
+        result = {0: {'foo': 'bar1', 'productgroup': 'mylist1'}, 1: {'foo': 'bar4', 'productgroup': 'mylist1', 'name': 'changed_name4'}, 2: {'foo': 'bar2', 'productgroup': 'mylist2', 'name': 'changed_name2'}, 3: {'foo': 'bar3', 'productgroup': 'mylist2'}, 4: {'foo': 'bar5', 'productgroup': None}}
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertTrue(mock_raw.called)
+        self.assertTrue(mock_dis.called)
+        self.assertTrue(mock_grp.called)
+
 if __name__ == '__main__':
 
     unittest.main()

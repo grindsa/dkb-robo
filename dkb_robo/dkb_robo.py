@@ -716,7 +716,7 @@ class DKBRobo(object):
         product_dic = {}
 
         for product_group in ['accounts', 'cards', 'brokerage_accounts']:
-            if 'data' in portfolio_dic[product_group]:
+            if product_group in portfolio_dic and 'data' in portfolio_dic[product_group]:
                 for ele in portfolio_dic[product_group]['data']:
                     if 'id' in ele and 'type' in ele:
                         if ele['type'] == 'brokerageAccount':
@@ -741,7 +741,6 @@ class DKBRobo(object):
                 # build product settings dictioary needed to sort the productgroup
                 product_display_dic = self._build_product_display_settings_dic(data_ele)
                 product_group_list = self._build_product_group_list(data_ele)
-
                 for product_group in product_group_list:
                     for dic_id in sorted(product_group['product_list']):
                         if product_group['product_list'][dic_id] in _raw_account_dic:
@@ -786,9 +785,14 @@ class DKBRobo(object):
         product_settings_dic = {}
         if 'attributes' in data_ele and 'productSettings' in data_ele['attributes']:
             for _product, product_data in data_ele['attributes']['productSettings'].items():
-                for uid, product_value in product_data.items():
-                    product_settings_dic[uid] = product_value['name']
-
+                if isinstance(product_data, dict):
+                    for uid, product_value in product_data.items():
+                        if 'name' in product_value:
+                            product_settings_dic[uid] = product_value['name']
+                        else:
+                            self.logger.error('DKBRobo._build_product_display_settings_dic(): "name" key not found')
+                else:
+                    self.logger.error('DKBRobo._build_product_display_settings_dic(): product_data is not of type dic')
         return product_settings_dic
 
     def _check_processing_status(self, polling_dic, cnt):
