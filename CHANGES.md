@@ -143,7 +143,7 @@ with DKBRobo(DKB_USER, DKB_PASSWORD, TAN, legacy_login=False) as dkb:
 
 **Features**:
 
-- support of the new [DKB-app](https://play.google.com/store/apps/details?id=de.dkb.portalapp&hl=de&gl=US)
+- support of the new [DKB-app](https://play.google.com/store/apps/details?id=com.dkbcodefactory.banking)
 
 **Improvements**:
 
