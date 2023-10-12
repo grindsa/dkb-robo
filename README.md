@@ -28,7 +28,7 @@ Starting from version 0.9 dkb-robo can handle the 2nd factor DKB introduced to f
 
 The introduction of a 2nd factor does limit the usage of dkb-robo for automation purposes. DKB is unfortunately ~~not willing/ not able~~ not allowed to open their PSD2-API for non-Fintechs. I discussed this with them for weeks at some point they stopped responding to my emails so I gave up.
 
-DKB introduced a new web-frontend in July 2023 which is using a REST-API as backend. The migration to the new REST endpoints started with v0.22, will take a certain amount of time and gets spread across different releases. We are trying to keep backwards compatibility as much as we can. However, there are certain breaking changes you need to be aware when upgrading from a release prior to v0.22. [Migration status](https://github.com/grindsa/dkb-robo/issues/42) and a [list of breaking changes](https://github.com/grindsa/dkb-robo/issues/42) can be found in the [issue section](https://github.com/grindsa/dkb-robo/issues) of this repo.
+DKB introduced a new web-frontend in July 2023 which is using a REST-API as backend. The migration to the new REST endpoints started with v0.22, will take a certain amount of time and gets spread across different releases. We are trying to keep backwards compatibility as much as we can. However, there are certain breaking changes you need to be aware when upgrading from a release prior to v0.22. [Migration status and a list of breaking changes](https://github.com/grindsa/dkb-robo/issues/42) can be found in the [issue section](https://github.com/grindsa/dkb-robo/issues) of this repo.
 
 ## Getting Started
 

@@ -3,6 +3,21 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.24
+
+**Bugfixes**:
+
+- #47 - refactor `DKBRobo._build_account_dic()` to reflect changes in rest-responses
+- do not show transactoin link for debitcards
+- several fixes to keep ordering as shown in UI
+- [fix](https://github.com/grindsa/dkb-robo/issues/47#issuecomment-1751807028) to allow future transaction dates in new API
+
+**Improvements**:
+
+- show accounts which are not assigned to a group
+- show debitcards in DKBRobo.account_dic
+- extend credit/debitcard information by status (blocked/active) and expiry date
+
 # Changes in 0.23.2
 
 **Bugfixes**:
