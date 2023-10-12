@@ -670,9 +670,15 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._add_cardinformation()\n')
 
         output_dic = {}
-        output_dic['type'] = 'creditcard'
         output_dic['id'] = cid
-        output_dic['transactions'] = self.banking_url + self.api_prefix + f"/credit-card/cards/{cid}/transactions"
+
+        if 'type' in card:
+            output_dic['type'] = card['type'].lower()
+            if card['type'] == 'debitCard':
+                output_dic['transactions'] = None
+            else:
+                output_dic['transactions'] = self.banking_url + self.api_prefix + f"/credit-card/cards/{cid}/transactions"
+
         if 'maskedPan' in card['attributes']:
             output_dic['maskedpan'] = card['attributes']['maskedPan']
             output_dic['account'] = card['attributes']['maskedPan']

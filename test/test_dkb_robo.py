@@ -2134,7 +2134,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.convert_date_format')
     def test_180__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
-        card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'status': 'status', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
+        card_dic = {'data': [{'id': 'cid', 'type': 'creditCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'status': 'status', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
         result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'name': 'displayname', 'status': 'status', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
@@ -2143,9 +2143,9 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.convert_date_format')
     def test_181__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
-        card_dic = {'data': [{'id': 'cid', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
+        card_dic = {'data': [{'id': 'cid', 'type': 'debitCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
-        result = {'type': 'creditcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'name': 'displayname', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions'}
+        result = {'type': 'debitcard', 'id': 'cid', 'maskedpan': 'maskedPan', 'name': 'displayname', 'account': 'maskedPan', 'amount': -101.0, 'currencycode': 'currencycode', 'date': 'date', 'limit': 'value', 'holdername': 'firstname lastname', 'transactions': None}
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
