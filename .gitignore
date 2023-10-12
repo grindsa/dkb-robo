@@ -110,3 +110,4 @@ ENV/
 foo*/*
 coverage.lcov
 settings.json
+poc.py
