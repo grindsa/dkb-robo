@@ -93,7 +93,7 @@ def enforce_date_format(logger, date_from, date_to, min_year):
     return date_from, date_to
 
 
-def validate_dates(logger, date_from, date_to, min_year=3):
+def validate_dates(logger, date_from, date_to, min_year=3, legacy_login=True):
     """ correct dates if needed """
     logger.debug('validate_dates()')
     try:
@@ -119,7 +119,7 @@ def validate_dates(logger, date_from, date_to, min_year=3):
     if date_from_uts > now_uts:
         logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
-    if date_to_uts > now_uts:
+    if date_to_uts > now_uts and legacy_login:
         logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
@@ -337,10 +337,10 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         if self.legacy_login:
-            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 3)
+            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 3, self.legacy_login)
             transaction_list = self._legacy_get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
         else:
-            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 1)
+            (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 1, self.legacy_login)
             transaction_list = self._get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))
