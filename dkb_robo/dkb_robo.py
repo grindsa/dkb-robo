@@ -688,10 +688,13 @@ class DKBRobo(object):
         return output_dic
 
     def _add_cardlimit(self, card):
-        """ add cardlimit """
+        """ add cardlimit and expiry date """
         self.logger.debug('DKBRobo._add_cardlimit()\n')
 
         output_dic = {}
+        if 'expiryDate' in card['attributes']:
+            output_dic['expirydate'] = card['attributes']['expiryDate']
+
         if 'limit' in card['attributes'] and 'value' in card['attributes']['limit']:
             output_dic['limit'] = card['attributes']['limit']['value']
 
