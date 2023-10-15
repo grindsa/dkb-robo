@@ -183,27 +183,12 @@ class DKBRobo(object):
     #
 
     def get_credit_limits(self):
-        """ create a dictionary of credit limits of the different accounts
-        args:
-            self.dkb_br - browser object
-        returns:
-            dictionary of the accounts and limits
-        """
-        self.logger.debug('DKBRobo.get_credit_limits()\n')
-        limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
-        self.dkb_br.open(limit_url)
+        """ create a dictionary of credit limits of the different accounts """
 
-        soup = self.dkb_br.get_current_page()
-        form = soup.find('form', attrs={'id': 'form597962073_1'})
-
-        if form:
-            # get checking account limits
-            limit_dic = self._get_checking_account_limit(form)
-
-            # get credit cards limits
-            limit_dic.update(self._get_cc_limits(form))
+        if self.legacy_login:
+            limit_dic = self._legacy_get_credit_limits()
         else:
-            limit_dic = {}
+            limit_dic = self._get_credit_limits(self.account_dic)
 
         return limit_dic
 
@@ -291,44 +276,14 @@ class DKBRobo(object):
 
         return p_dic
 
-    def get_standing_orders(self):
-        """ get standing orders
-        args:
-            self.dkb_br          - browser object
-        returns:
-            so_dic = standing order dic
-        """
+    def get_standing_orders(self, uid=None):
+        """ get standing orders """
         self.logger.debug('DKBRobo.get_standing_orders()\n')
-        so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
-        self.dkb_br.open(so_url)
 
-        so_list = []
-        soup = self.dkb_br.get_current_page()
-        table = soup.find('table', attrs={'class': 'expandableTable'})
-        if table:
-            tbody = table.find('tbody')
-            rows = tbody.findAll('tr')
-            for row in rows:
-                tmp_dic = {}
-                cols = row.findAll("td")
-                tmp_dic['recipient'] = cols[0].text.strip()
-                amount = cols[1].text.strip()
-                amount = amount.replace('\n', '')
-                amount = string2float(amount.replace('EUR', ''))
-                tmp_dic['amount'] = amount
-
-                interval = cols[2]
-                for brt in interval.findAll('br'):
-                    brt.unwrap()
-
-                interval = re.sub('\t+', ' ', interval.text.strip())
-                interval = interval.replace('\n', '')
-                interval = re.sub(' +', ' ', interval)
-                tmp_dic['interval'] = interval
-                tmp_dic['purpose'] = cols[3].text.strip()
-
-                # store dict in list
-                so_list.append(tmp_dic)
+        if self.legacy_login:
+            so_list = self._legacy_get_standing_orders()
+        else:
+            so_list = self._get_standing_orders(uid=uid)
 
         return so_list
 
@@ -1017,6 +972,20 @@ class DKBRobo(object):
 
         return output_dic
 
+    def _get_credit_limits(self, account_dic=None):
+        """ get credit limits """
+        self.logger.debug('DKBRobo._get_credit_limits()\n')
+        limit_dic = {}
+
+        for _aid, account_data in account_dic.items():
+            if 'limit' in account_data:
+                if 'iban' in account_data:
+                    limit_dic[account_data['iban']] = account_data['limit']
+                elif 'maskedpan' in account_data:
+                    limit_dic[account_data['maskedpan']] = account_data['limit']
+
+        return limit_dic
+
     def _get_loans(self):
         """ get loands via API """
         self.logger.debug('DKBRobo._get_loans()\n')
@@ -1129,6 +1098,22 @@ class DKBRobo(object):
 
         return instrument_id, quote_id
 
+    def _get_standing_orders(self, uid=None):
+        """ get standing orders """
+        self.logger.debug('DKBRobo._get_standing_orders()\n')
+
+        so_list = []
+        if uid:
+            response = self.client.get(self.banking_url + self.api_prefix + '/accounts/payments/recurring-credit-transfers' + '?accountId=' + uid)
+            if response.status_code == 200:
+                _so_list = response.json()
+                so_list = self._filter_standing_orders(_so_list)
+
+        else:
+            raise DKBRoboError('get_standing_orders(): account-id is required')
+
+        return so_list
+
     def _get_token(self):
         """ get access token """
         self.logger.debug('DKBRobo._get_token()\n')
@@ -1165,6 +1150,23 @@ class DKBRobo(object):
                 transaction_list = self._format_brokerage_account(transaction_dic)
 
         return transaction_list
+
+    def _filter_standing_orders(self, full_list):
+        """ filter standing orders """
+        self.logger.debug('DKBRobo._filter_standing_orders()\n')
+
+        so_list = []
+        if 'data' in full_list:
+            for ele in full_list['data']:
+                _tmp_dic = {
+                    'amount': float(ele['attributes']['amount']['value']),
+                    'currencycode': ele['attributes']['amount']['currencyCode'],
+                    'purpose': ele['attributes']['description'],
+                    'recpipient': ele['attributes']['creditor']['name'],
+                    'creditoraccount': ele['attributes']['creditor']['creditorAccount'],
+                    'interval': ele['attributes']['recurrence']}
+                so_list.append(_tmp_dic)
+        return so_list
 
     def _filter_transactions(self, transaction_list, date_from, date_to, transaction_type):
         """ filter transaction by date """
@@ -1391,7 +1393,7 @@ class DKBRobo(object):
         try:
             self.dkb_br.select_form('form[name="confirmForm"]')
             self.dkb_br[event_field] = 'tanVerification'
-        except Exception as _err:
+        except Exception as _err:  # pragma: no cover
             self.logger.debug('confirmForm not found\n')
 
         # open page to insert tan
@@ -1718,6 +1720,72 @@ class DKBRobo(object):
         self.dkb_br.open(transaction_url)
         response = self.dkb_br.follow_link('csvExport')
         return self._parse_depot_status(response.content)
+
+    def _legacy_get_credit_limits(self):
+        """ create a dictionary of credit limits of the different accounts
+        args:
+            self.dkb_br - browser object
+        returns:
+            dictionary of the accounts and limits
+        """
+        self.logger.debug('DKBRobo.get_credit_limits()\n')
+        limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
+        self.dkb_br.open(limit_url)
+
+        soup = self.dkb_br.get_current_page()
+        form = soup.find('form', attrs={'id': 'form597962073_1'})
+
+        if form:
+            # get checking account limits
+            limit_dic = self._get_checking_account_limit(form)
+
+            # get credit cards limits
+            limit_dic.update(self._get_cc_limits(form))
+        else:
+            limit_dic = {}
+
+        return limit_dic
+
+    def _legacy_get_standing_orders(self):
+        """ get standing orders
+        args:
+            self.dkb_br          - browser object
+        returns:
+            so_dic = standing order dic
+        """
+        self.logger.debug('DKBRobo._legacy_get_standing_orders()\n')
+        so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
+        self.dkb_br.open(so_url)
+
+        so_list = []
+        soup = self.dkb_br.get_current_page()
+        table = soup.find('table', attrs={'class': 'expandableTable'})
+        if table:
+            tbody = table.find('tbody')
+            rows = tbody.findAll('tr')
+            for row in rows:
+                tmp_dic = {}
+                cols = row.findAll("td")
+                tmp_dic['recipient'] = cols[0].text.strip()
+                amount = cols[1].text.strip()
+                amount = amount.replace('\n', '')
+                amount = string2float(amount.replace('EUR', ''))
+                tmp_dic['amount'] = amount
+
+                interval = cols[2]
+                for brt in interval.findAll('br'):
+                    brt.unwrap()
+
+                interval = re.sub('\t+', ' ', interval.text.strip())
+                interval = interval.replace('\n', '')
+                interval = re.sub(' +', ' ', interval)
+                tmp_dic['interval'] = interval
+                tmp_dic['purpose'] = cols[3].text.strip()
+
+                # store dict in list
+                so_list.append(tmp_dic)
+
+        return so_list
 
     def _legacy_get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
         """ get transactions for a certain amount of time       """

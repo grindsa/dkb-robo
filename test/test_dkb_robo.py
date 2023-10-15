@@ -58,29 +58,29 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger('dkb_robo')
 
     def test_001_get_cc_limit(self, mock_browser):
-        """ test DKBRobo.get_credit_limits() method """
+        """ test DKBRobo._legacy_get_credit_limits() method """
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'1111********1111': 100.00,
                     u'1111********1112': 2000.00,
                     u'DE01 1111 1111 1111 1111 11': 1000.00,
                     u'DE02 1111 1111 1111 1111 12': 2000.00}
-        self.assertEqual(e_result, self.dkb.get_credit_limits())
+        self.assertEqual(e_result, self.dkb._legacy_get_credit_limits())
 
     def test_002_get_cc_limit(self, mock_browser):
-        """ test DKBRobo.get_credit_limits() triggers exceptions """
+        """ test DKBRobo._legacy_get_credit_limits() triggers exceptions """
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
-        self.assertEqual(e_result, self.dkb.get_credit_limits())
+        self.assertEqual(e_result, self.dkb._legacy_get_credit_limits())
 
     def test_003_get_cc_limit(self, mock_browser):
-        """ test DKBRobo.get_credit_limits() no limits """
+        """ test DKBRobo._legacy_get_credit_limits() no limits """
         # html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
         html = '<html><body>fooo</body></html>'
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {}
-        self.assertEqual(e_result, self.dkb.get_credit_limits())
+        self.assertEqual(e_result, self.dkb._legacy_get_credit_limits())
 
     def test_004_get_exo_single(self, mock_browser):
         """ test DKBRobo.get_exemption_order() method for a single exemption order """
@@ -148,12 +148,12 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(self.dkb.get_points(), e_result)
 
     def test_012_get_so_multiple(self, mock_browser):
-        """ test DKBRobo.get_standing_orders() method """
+        """ test DKBRobo._legacy_get_standing_orders() method """
         html = read_file(self.dir_path + '/mocks/dauerauftraege.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = [{'amount': 100.0, 'interval': u'1. monatlich 01.03.2017', 'recipient': u'RECPIPIENT-1', 'purpose': u'KV 1234567890'},
                     {'amount': 200.0, 'interval': u'1. monatlich geloescht', 'recipient': u'RECPIPIENT-2', 'purpose': u'KV 0987654321'}]
-        self.assertEqual(self.dkb.get_standing_orders(), e_result)
+        self.assertEqual(self.dkb._legacy_get_standing_orders(), e_result)
 
     @patch('dkb_robo.DKBRobo._parse_overview')
     @patch('dkb_robo.DKBRobo._get_financial_statement')
@@ -2547,6 +2547,7 @@ class TestDKBRobo(unittest.TestCase):
                         'amount': -1234.56,
                         'currencycode': 'EUR',
                         'date': '2020-01-03',
+                        'expirydate': '2020-01-02',
                         'holdername': 'holderfirstName holderlastName',
                         'id': 'cardid1',
                         'limit': '1000.00',
@@ -2561,6 +2562,7 @@ class TestDKBRobo(unittest.TestCase):
                         'currencycode': 'EUR',
                         'date': '2020-02-07',
                         'holdername': 'holderfirstName2 holderlastName2',
+                        'expirydate': '2020-02-02',
                         'id': 'cardid2',
                         'limit': '0.00',
                         'maskedpan': 'maskedPan2',
@@ -2596,6 +2598,7 @@ class TestDKBRobo(unittest.TestCase):
                     6: {'account': 'maskedPan3',
                         'holdername': 'holderfirstName3 holderlastName3',
                         'id': 'cardid3',
+                        'expirydate': '2020-04-04',
                         'maskedpan': 'maskedPan3',
                         'name': 'Visa Debitkarte',
                         'productgroup': None,
@@ -2603,19 +2606,20 @@ class TestDKBRobo(unittest.TestCase):
                                     'final': True,
                                     'reason': 'cancellation-of-product-by-customer',
                                     'since': '2020-03-01'},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid3/transactions',
-                        'type': 'creditcard'},
+                        'transactions': None,
+                        'type': 'debitcard'},
                     7: {'account': 'maskedPan4',
                         'holdername': 'holderfirstName4 holderlastName4',
                         'id': 'cardid4',
+                        'expirydate': '2020-04-03',
                         'maskedpan': 'maskedPan4',
                         'name': 'Visa Debitkarte',
                         'productgroup': None,
                         'status': {'category': 'active'},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid4/transactions',
-                        'type': 'creditcard'}}
+                        'transactions': None,
+                        'type': 'debitcard'}}
 
-        # self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
 
     def test_229_build_account_dic(self, _unused):
         """ e22 build account dic """
@@ -2675,6 +2679,7 @@ class TestDKBRobo(unittest.TestCase):
                         'maskedpan': 'maskedPan1',
                         'name': 'displayName1',
                         'productgroup': None,
+                        'expirydate': '2020-01-02',
                         'status': {'category': 'active', 'limitationsFor': []},
                         'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
                         'type': 'creditcard'},
@@ -2688,6 +2693,7 @@ class TestDKBRobo(unittest.TestCase):
                         'maskedpan': 'maskedPan2',
                         'name': 'displayName2',
                         'productgroup': None,
+                        'expirydate': '2020-02-02',
                         'status': {'category': 'active', 'limitationsFor': []},
                         'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
                         'type': 'creditcard'},
@@ -2697,12 +2703,13 @@ class TestDKBRobo(unittest.TestCase):
                         'maskedpan': 'maskedPan3',
                         'name': 'Visa Debitkarte',
                         'productgroup': None,
+                        'expirydate': '2020-04-04',
                         'status': {'category': 'blocked',
                                     'final': True,
                                     'reason': 'cancellation-of-product-by-customer',
                                     'since': '2020-03-01'},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid3/transactions',
-                        'type': 'creditcard'},
+                        'transactions': None,
+                        'type': 'debitcard'},
                     6: {'account': 'maskedPan4',
                         'holdername': 'holderfirstName4 holderlastName4',
                         'id': 'cardid4',
@@ -2710,8 +2717,9 @@ class TestDKBRobo(unittest.TestCase):
                         'name': 'Visa Debitkarte',
                         'productgroup': None,
                         'status': {'category': 'active'},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid4/transactions',
-                        'type': 'creditcard'},
+                        'transactions': None,
+                        'expirydate': '2020-04-03',
+                        'type': 'debitcard'},
                     7: {'account': '987654321',
                         'amount': '1234.56',
                         'currencycode': 'EUR',
@@ -2722,7 +2730,7 @@ class TestDKBRobo(unittest.TestCase):
                         'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
                         'type': 'depot'}}
 
-        # self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
+        self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
 
     @patch('dkb_robo.DKBRobo._build_product_group_list')
     @patch('dkb_robo.DKBRobo._build_product_display_settings_dic')
@@ -2777,6 +2785,134 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_raw.called)
         self.assertTrue(mock_dis.called)
         self.assertTrue(mock_grp.called)
+
+    @patch('dkb_robo.DKBRobo._get_credit_limits')
+    @patch('dkb_robo.DKBRobo._legacy_get_credit_limits')
+    def test_234_get_credit_limits(self, mock_lcr, mock_cr, _unused):
+        """ test get_credit_limits()"""
+        mock_cr.return_value = 'mock_cr'
+        mock_lcr.return_value = 'mock_lcr'
+        self.assertEqual('mock_cr', self.dkb.get_credit_limits())
+        self.assertTrue(mock_cr.called)
+        self.assertFalse(mock_lcr.called)
+
+    @patch('dkb_robo.DKBRobo._get_credit_limits')
+    @patch('dkb_robo.DKBRobo._legacy_get_credit_limits')
+    def test_235_get_credit_limits(self, mock_lcr, mock_cr, _unused):
+        """ test get_credit_limits()"""
+        mock_cr.return_value = 'mock_cr'
+        mock_lcr.return_value = 'mock_lcr'
+        self.dkb.legacy_login = True
+        self.assertEqual('mock_lcr', self.dkb.get_credit_limits())
+        self.assertFalse(mock_cr.called)
+        self.assertTrue(mock_lcr.called)
+
+
+    @patch('dkb_robo.DKBRobo._get_standing_orders')
+    @patch('dkb_robo.DKBRobo._legacy_get_standing_orders')
+    def test_236_get_standing_orders(self, mock_lso, mock_so, _unused):
+        """ test get_standing_orders()"""
+        mock_so.return_value = 'mock_cr'
+        mock_lso.return_value = 'mock_lcr'
+        self.assertEqual('mock_cr', self.dkb.get_standing_orders())
+        self.assertTrue(mock_so.called)
+        self.assertFalse(mock_lso.called)
+
+    @patch('dkb_robo.DKBRobo._get_standing_orders')
+    @patch('dkb_robo.DKBRobo._legacy_get_standing_orders')
+    def test_237_get_standing_orders(self, mock_lso, mock_so, _unused):
+        """ test get_standing_orders()"""
+        mock_so.return_value = 'mock_cr'
+        mock_lso.return_value = 'mock_lcr'
+        self.dkb.legacy_login = True
+        self.assertEqual('mock_lcr', self.dkb.get_standing_orders())
+        self.assertFalse(mock_so.called)
+        self.assertTrue(mock_lso.called)
+
+    def test_238__get_credit_limits(self, _unused):
+        """ teest _get_credit_limits() """
+        account_dic = {0: {'limit': 1000, 'iban': 'iban'}, 1: {'limit': 2000, 'maskedpan': 'maskedpan'}}
+        result_dic = {'iban': 1000, 'maskedpan': 2000}
+        self.assertEqual(result_dic, self.dkb._get_credit_limits(account_dic))
+
+    def test_239__get_credit_limits(self, _unused):
+        """ teest _get_credit_limits() """
+        account_dic = {'foo': 'bar'}
+        self.assertFalse(self.dkb._get_credit_limits(account_dic))
+
+    @patch('dkb_robo.DKBRobo._filter_standing_orders')
+    def test_240___get_standing_orders(self, mock_filter, _unused):
+        """ test _get_standing_orders() """
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb._get_standing_orders())
+        self.assertEqual('get_standing_orders(): account-id is required', str(err.exception))
+        self.assertFalse(mock_filter.called)
+
+    @patch('dkb_robo.DKBRobo._filter_standing_orders')
+    def test_241___get_standing_orders(self, mock_filter, _unused):
+        """ test _get_standing_orders() """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        self.assertFalse(self.dkb._get_standing_orders(uid='uid'))
+        self.assertFalse(mock_filter.called)
+
+    @patch('dkb_robo.DKBRobo._filter_standing_orders')
+    def test_242___get_standing_orders(self, mock_filter, _unused):
+        """ test _get_standing_orders() """
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
+        mock_filter.return_value = 'mock_filter'
+        self.assertEqual('mock_filter', self.dkb._get_standing_orders(uid='uid'))
+        self.assertTrue(mock_filter.called)
+
+    def test_243__filter_standing_orders(self, _unused):
+        """ test _filter_standing_orders() """
+        full_list = {}
+        self.assertFalse(self.dkb._filter_standing_orders(full_list))
+
+    def test_244__filter_standing_orders(self, _unused):
+        """ test _filter_standing_orders() """
+        full_list = {
+            "data": [
+                {
+                    "attributes": {
+                        "description": "description",
+                        "amount": {
+                            "currencyCode": "EUR",
+                            "value": "100.00"
+                        },
+                        "creditor": {
+                            "name": "cardname",
+                            "creditorAccount": {
+                                "iban": "crediban",
+                                "bic": "credbic"
+                            }
+                        },
+                        "recurrence": {
+                            "from": "2020-01-01",
+                            "until": "2025-12-01",
+                            "frequency": "monthly",
+                            "nextExecutionAt": "2020-02-01"
+                        }
+                    }
+                }]}
+        result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
+        self.assertEqual(result, self.dkb._filter_standing_orders(full_list))
+
+    def test_245_add_cardlimit(self, _unused):
+        """ test _add_cardlimit() """
+        card = {'attributes': {'expiryDate': 'expiryDate', 'limit': {'value': 'value', 'foo': 'bar'}}}
+        result = {'expirydate': 'expiryDate', 'limit': 'value'}
+        self.assertEqual(result, self.dkb._add_cardlimit(card))
+
+    def test_246_filter_standing_orders(self, _unused):
+        """ e2e get_standing_orders() """
+        so_list = json_load(self.dir_path + '/mocks/so.json')
+        result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description1', 'recpipient': 'name1', 'creditoraccount': {'iban': 'iban1', 'bic': 'bic1'}, 'interval': {'from': '2022-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-01'}}, {'amount': 200.0, 'currencycode': 'EUR', 'purpose': 'description2', 'recpipient': 'name2', 'creditoraccount': {'iban': 'iban2', 'bic': 'bic2'}, 'interval': {'from': '2022-02-01', 'until': '2025-12-02', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-02'}}, {'amount': 300.0, 'currencycode': 'EUR', 'purpose': 'description3', 'recpipient': 'name3', 'creditoraccount': {'iban': 'iban3', 'bic': 'bic3'}, 'interval': {'from': '2022-03-01', 'until': '2025-03-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-03-01'}}]
+        self.assertEqual(result, self.dkb._filter_standing_orders(so_list))
+
 
 if __name__ == '__main__':
 
