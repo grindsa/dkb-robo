@@ -1,0 +1,100 @@
+{
+    "data": [
+        {
+            "type": "recurringCreditTransferResponse",
+            "id": "id1",
+            "attributes": {
+                "status": "accepted",
+                "description": "description1",
+                "amount": {
+                    "currencyCode": "EUR",
+                    "value": "100.00"
+                },
+                "creditor": {
+                    "name": "name1",
+                    "creditorAccount": {
+                        "iban": "iban1",
+                        "bic": "bic1"
+                    }
+                },
+                "debtor": {
+                    "debtorAccount": {
+                        "iban": "debiban1"
+                    }
+                },
+                "messages": [],
+                "recurrence": {
+                    "from": "2022-01-01",
+                    "until": "2025-12-01",
+                    "frequency": "monthly",
+                    "holidayExecutionStrategy": "following",
+                    "nextExecutionAt": "2022-11-01"
+                }
+            }
+        },
+        {
+            "type": "recurringCreditTransferResponse",
+            "id": "id2",
+            "attributes": {
+                "status": "accepted",
+                "description": "description2",
+                "amount": {
+                    "currencyCode": "EUR",
+                    "value": "200.00"
+                },
+                "creditor": {
+                    "name": "name2",
+                    "creditorAccount": {
+                        "iban": "iban2",
+                        "bic": "bic2"
+                    }
+                },
+                "debtor": {
+                    "debtorAccount": {
+                        "iban": "debiban2"
+                    }
+                },
+                "messages": [],
+                "recurrence": {
+                    "from": "2022-02-01",
+                    "until": "2025-12-02",
+                    "frequency": "monthly",
+                    "holidayExecutionStrategy": "following",
+                    "nextExecutionAt": "2022-11-02"
+                }
+            }
+        },
+        {
+            "type": "recurringCreditTransferResponse",
+            "id": "id3",
+            "attributes": {
+                "status": "accepted",
+                "description": "description3",
+                "amount": {
+                    "currencyCode": "EUR",
+                    "value": "300.00"
+                },
+                "creditor": {
+                    "name": "name3",
+                    "creditorAccount": {
+                        "iban": "iban3",
+                        "bic": "bic3"
+                    }
+                },
+                "debtor": {
+                    "debtorAccount": {
+                        "iban": "debiban3"
+                    }
+                },
+                "messages": [],
+                "recurrence": {
+                    "from": "2022-03-01",
+                    "until": "2025-03-01",
+                    "frequency": "monthly",
+                    "holidayExecutionStrategy": "following",
+                    "nextExecutionAt": "2022-03-01"
+                }
+            }
+        }       
+    ]
+}
