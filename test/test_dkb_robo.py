@@ -656,8 +656,8 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_updow.called)
 
     @patch('dkb_robo.DKBRobo._get_document_links')
-    def test_030_scan_postbox(self, mock_doclinks, mock_browser):
-        """ test DKBRobo.scan_postbox() method """
+    def test_030__legacy__legacy_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_doclinks.return_value = {}
@@ -674,11 +674,11 @@ class TestDKBRobo(unittest.TestCase):
                          'name': u'Vertragsinformationen',
                          'details': u'https://www.ib.dkb.de/banking/postfach/Vertragsinformationen'}
                    }
-        self.assertEqual(self.dkb.scan_postbox(), e_result)
+        self.assertEqual(self.dkb._legacy_scan_postbox(), e_result)
 
     @patch('dkb_robo.DKBRobo._get_document_links')
-    def test_031_scan_postbox(self, mock_doclinks, mock_browser):
-        """ test DKBRobo.scan_postbox() method """
+    def test_031__legacy_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_doclinks.return_value = {}
@@ -695,11 +695,11 @@ class TestDKBRobo(unittest.TestCase):
                          'name': u'Vertragsinformationen',
                          'details': u'https://www.ib.dkb.de/banking/postfach/Vertragsinformationen'}
                    }
-        self.assertEqual(self.dkb.scan_postbox(path='path'), e_result)
+        self.assertEqual(self.dkb._legacy_scan_postbox(path='path'), e_result)
 
     @patch('dkb_robo.DKBRobo._get_document_links')
-    def test_032_scan_postbox(self, mock_doclinks, mock_browser):
-        """ test DKBRobo.scan_postbox() method """
+    def test_032__legacy_scan_postbox(self, mock_doclinks, mock_browser):
+        """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox-2.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_doclinks.return_value = {}
@@ -716,7 +716,7 @@ class TestDKBRobo(unittest.TestCase):
                          'name': u'Vertragsinformationen',
                          'details': u'https://www.ib.dkb.de/banking/postfach/Vertragsinformationen'}
                    }
-        self.assertEqual(self.dkb.scan_postbox(archive=True), e_result)
+        self.assertEqual(self.dkb._legacy_scan_postbox(archive=True), e_result)
 
     def test_033_get_tr_invalid(self, _unused):
         """ test DKBRobo._legacy_get_transactions() method with an invalid account type"""

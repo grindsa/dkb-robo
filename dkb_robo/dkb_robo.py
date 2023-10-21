@@ -302,50 +302,14 @@ class DKBRobo(object):
         return transaction_list
 
     def scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
-        """ scans the DKB postbox and creates a dictionary out of the
-            different documents
-        args:
-            self.dkb_br = browser object
-            path = directory to store the downloaded data
-            download_all = download all documents instead just the new ones
-        returns:
-           dictionary in the following format
+        """ scan posbox and return document dictionary """
 
-           - folder name in postbox
-                - details -> link to document overview
-                - documents
-                    - name of document -> document link
-        """
-        self.logger.debug('DKBRobo.scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
-        if archive:
-            pb_url = self.base_url + '/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
+        if self.legacy_login:
+            documents_dic = self._legacy_scan_postbox(path, download_all, archive, prepend_date)
         else:
-            pb_url = self.base_url + '/banking/postfach'
-        self.dkb_br.open(pb_url)
-        soup = self.dkb_br.get_current_page()
-        if archive:
-            table = soup.find('table', attrs={'id': re.compile('mbo-message-list*')})
-        else:
-            table = soup.find('table', attrs={'id': 'welcomeMboTable'})
-        tbody = table.find('tbody')
+            documents_dic = self._scan_postbox(path, download_all, archive, prepend_date)
 
-        if archive:
-            select_all = True
-        else:
-            select_all = download_all
-
-        pb_dic = {}
-        for row in tbody.findAll('tr'):
-            link = row.find('a')
-            link_name = link.contents[0]
-            pb_dic[link_name] = {}
-            pb_dic[link_name]['name'] = link_name
-            pb_dic[link_name]['details'] = self.base_url + link['href']
-            if path:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all, prepend_date)
-            else:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all, prepend_date=prepend_date)
-        return pb_dic
+        return documents_dic
 
     #
     # private objects using the new api
@@ -1151,6 +1115,43 @@ class DKBRobo(object):
 
         return transaction_list
 
+    def _get_document_name(self, doc_name):
+        self.logger.debug('DKBRobo._get_document_name()\n')
+
+        return ' '.join(doc_name.split())
+
+    def _get_document_type(self, doc_type):
+        self.logger.debug('DKBRobo._filter_postbox()\n')
+        mapping_dic = {
+            'bankAccountStatement': 'Kontoauszüge',
+            'creditCardStatement': 'Kreditkartenabrechnungen'
+        }
+
+        if doc_type in mapping_dic:
+            result = mapping_dic[doc_type]
+        else:
+            result = doc_type
+
+        return result
+
+    def _filter_postbox(self, pb_dic, path, download_all, archive, prepend_date):
+        """ filter postbox """
+        self.logger.debug('DKBRobo._filter_postbox()\n')
+
+        documents_dic = {}
+        if 'data' in pb_dic:
+            for message in pb_dic['data']:
+
+                document_type = self._get_document_type(message['attributes']['documentType'])
+
+                if document_type not in documents_dic:
+                    documents_dic[document_type] = {}
+
+                doc_name = self._get_document_name(message['attributes']['subject'])
+                documents_dic[document_type][doc_name] = message['relationships']['document']['links']['self']
+
+        return documents_dic
+
     def _filter_standing_orders(self, full_list):
         """ filter standing orders """
         self.logger.debug('DKBRobo._filter_standing_orders()\n')
@@ -1313,6 +1314,19 @@ class DKBRobo(object):
             print('\nInvalid input!')
 
         return device_num, deviceselection_completed
+
+    def _scan_postbox(self, path, download_all, archive, prepend_date):
+        """ scans the DKB postbox and creates a dictionary """
+        self.logger.debug('DKBRobo.scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
+
+        response = self.client.get(self.banking_url + self.api_prefix + '/documentstorage/messages')
+
+        documents_dic = {}
+        if response.status_code == 200:
+            response_dic = response.json()
+            documents_dic = self._filter_postbox(response_dic, path, download_all, archive, prepend_date)
+
+        return documents_dic
 
     def _update_token(self):
         """ update token information with 2fa iformation """
@@ -1852,6 +1866,40 @@ class DKBRobo(object):
                         self.account_dic = self._parse_overview(soup_new)
         except mechanicalsoup.utils.LinkNotFoundError as err:
             raise DKBRoboError('Login failed: LinkNotFoundError') from err
+
+    def _legacy_scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
+        """ scans the DKB postbox and creates a dictionary """
+        self.logger.debug('DKBRobo._legacy_scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
+
+        if archive:
+            pb_url = self.base_url + '/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
+        else:
+            pb_url = self.base_url + '/banking/postfach'
+        self.dkb_br.open(pb_url)
+        soup = self.dkb_br.get_current_page()
+        if archive:
+            table = soup.find('table', attrs={'id': re.compile('mbo-message-list*')})
+        else:
+            table = soup.find('table', attrs={'id': 'welcomeMboTable'})
+        tbody = table.find('tbody')
+
+        if archive:
+            select_all = True
+        else:
+            select_all = download_all
+
+        pb_dic = {}
+        for row in tbody.findAll('tr'):
+            link = row.find('a')
+            link_name = link.contents[0]
+            pb_dic[link_name] = {}
+            pb_dic[link_name]['name'] = link_name
+            pb_dic[link_name]['details'] = self.base_url + link['href']
+            if path:
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all, prepend_date)
+            else:
+                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all, prepend_date=prepend_date)
+        return pb_dic
 
     def _login_confirm(self):
         """ confirm login to dkb via app
