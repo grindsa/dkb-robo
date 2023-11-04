@@ -5,7 +5,7 @@ import os
 import csv
 import random
 import time
-from datetime import datetime
+import datetime
 import re
 import json
 from string import digits, ascii_letters
@@ -27,7 +27,7 @@ def convert_date_format(logger, input_date, input_format_list, output_format):
     output_date = None
     for input_format in input_format_list:
         try:
-            parsed_date = datetime.strptime(input_date, input_format)
+            parsed_date = datetime.datetime.strptime(input_date, input_format)
             # convert date
             output_date = parsed_date.strftime(output_format)
             break
@@ -97,31 +97,31 @@ def validate_dates(logger, date_from, date_to, min_year=3, legacy_login=True):
     """ correct dates if needed """
     logger.debug('validate_dates()')
     try:
-        date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
+        date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_from_uts = int(time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
+        date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
     try:
-        date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
+        date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_to_uts = int(time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
+        date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
     now_uts = int(time.time())
 
     # minimal date (3 years back)
     minimal_date_uts = now_uts - min_year * 365 * 86400
 
     if date_from_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
-        date_from = datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        date_from = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
     if date_to_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
-        date_to = datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        date_to = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
-        date_from = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+        date_from = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts and legacy_login:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
-        date_to = datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+        date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
     date_from, date_to = enforce_date_format(logger, date_from, date_to, min_year)
 
@@ -389,6 +389,8 @@ class DKBRobo(object):
             output_dic['vdate'] = transaction['attributes']['valueDate']
         if 'endToEndId' in transaction['attributes']:
             output_dic['customerreferenz'] = transaction['attributes']['endToEndId']
+        if 'mandateId' in transaction['attributes']:
+            output_dic['mandatereference'] = transaction['attributes']['mandateId']
         if 'transactionType' in transaction['attributes']:
             output_dic['postingtext'] = transaction['attributes']['transactionType']
         if 'description' in transaction['attributes']:
@@ -1207,20 +1209,20 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._filter_transactions()\n')
 
         try:
-            date_from_uts = int(time.mktime(datetime.strptime(date_from, LEGACY_DATE_FORMAT).timetuple()))
+            date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, LEGACY_DATE_FORMAT).timetuple()))
         except ValueError:
-            date_from_uts = int(time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
+            date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
 
         try:
-            date_to_uts = int(time.mktime(datetime.strptime(date_to, LEGACY_DATE_FORMAT).timetuple()))
+            date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, LEGACY_DATE_FORMAT).timetuple()))
         except ValueError:
-            date_to_uts = int(time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
+            date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
 
         filtered_transaction_list = []
         for transaction in transaction_list:
             if 'attributes' in transaction and 'status' in transaction['attributes'] and 'bookingDate' in transaction['attributes']:
                 if transaction['attributes']['status'] == transaction_type:
-                    bookingdate_uts = int(time.mktime(datetime.strptime(transaction['attributes']['bookingDate'], API_DATE_FORMAT).timetuple()))
+                    bookingdate_uts = int(time.mktime(datetime.datetime.strptime(transaction['attributes']['bookingDate'], API_DATE_FORMAT).timetuple()))
                     if date_from_uts <= bookingdate_uts <= date_to_uts:
                         filtered_transaction_list.append(transaction)
 
@@ -1591,7 +1593,7 @@ class DKBRobo(object):
             if fname in document_name_list:
                 # rename to avoid overrides
                 self.logger.debug('DKBRobo._get_document(): adding datetime to avoid overrides.\n')
-                now = datetime.now()
+                now = datetime.datetime.now()
                 fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
 
             if formatted_date:
@@ -1955,7 +1957,7 @@ class DKBRobo(object):
 
         if soup:
             # poll url
-            poll_id = int(datetime.utcnow().timestamp() * 1e3)
+            poll_id = int(datetime.datetime.utcnow().timestamp() * 1e3)
             poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
             for _cnt in range(120):
                 # add id to pollurl

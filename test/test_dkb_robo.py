@@ -72,7 +72,9 @@ class TestDKBRobo(unittest.TestCase):
         html = read_file(self.dir_path + '/mocks/konto-kreditkarten-limits-exception.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
-        self.assertEqual(e_result, self.dkb._legacy_get_credit_limits())
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(e_result, self.dkb._legacy_get_credit_limits())
+        self.assertIn("ERROR:dkb_robo:DKBRobo.get_credit_limits() get credit card limits: 'NoneType' object has no attribute 'find'\n", lcm.output)
 
     def test_003_get_cc_limit(self, mock_browser):
         """ test DKBRobo._legacy_get_credit_limits() no limits """
@@ -111,6 +113,7 @@ class TestDKBRobo(unittest.TestCase):
                         'description': u'Gemeinsam mit Firstname2 Familyname2',
                         'validity': u'02.01.2016 unbefristet'}
                    }
+
         self.assertEqual(self.dkb.get_exemption_order(), e_result)
 
     def test_007_get_exo_single(self, mock_browser):
@@ -118,10 +121,9 @@ class TestDKBRobo(unittest.TestCase):
         html = read_file(self.dir_path + '/mocks/freistellungsauftrag-indexerror.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {1:{}}
-        # with self.assertRaises(Exception) as err:
-        self.assertEqual(self.dkb.get_exemption_order(), e_result)
-        # print(err.exception)
-        # self.assertEqual("foo could not convert string to float: 'aaa'", str(err.exception))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(self.dkb.get_exemption_order(), e_result)
+        self.assertIn('ERROR:dkb_robo:DKBRobo.get_exemption_order(): list index out of range\n', lcm.output)
 
     def test_008_new_instance(self, _unused):
         """ test DKBRobo._new_instance() method """
@@ -388,6 +390,7 @@ class TestDKBRobo(unittest.TestCase):
                         'name': u'3rd acc',
                         'transactions': u'https://www.ib.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
                         'type': 'account'}}
+
         self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
 
     def test_021_parse_overview(self, _unused):
@@ -441,7 +444,9 @@ class TestDKBRobo(unittest.TestCase):
                         'name': u'3rd acc',
                         'transactions': u'https://www.ib.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
                         'type': 'account'}}
-        self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() convert amount: could not convert string to float: 'aaa'\n", lcm.output)
 
     def test_022_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception detail link"""
@@ -494,7 +499,10 @@ class TestDKBRobo(unittest.TestCase):
                         'name': u'3rd acc',
                         'transactions': u'https://www.ib.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
                         'type': 'account'}}
-        self.assertEqual(e_result, self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
+
 
     def test_023_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception depot """
@@ -547,7 +555,9 @@ class TestDKBRobo(unittest.TestCase):
                         'details': u'https://www.ib.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=details&row=3&group=1',
                         'name': u'3rd acc',
                         'type': 'depot'}}
-        self.assertEqual(e_result, self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(e_result, self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')))
+        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() parse depot: 'NoneType' object is not subscriptable\n", lcm.output)
 
     def test_024_parse_overview_mbank(self, _unused):
         """ test DKBRobo._parse_overview() method for accounts from other banks"""
@@ -1034,7 +1044,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('re.findall')
     @patch('dkb_robo.dkb_robo.generate_random_string')
@@ -1061,7 +1071,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -1084,7 +1094,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.dkb_robo.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -1433,7 +1443,9 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.status_code = 400
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         atype = 'account'
-        self.assertFalse(self.dkb._get_transactions('transaction_url', atype, 'date_from', 'date_to', 'transaction_type'))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._get_transactions('transaction_url', atype, 'date_from', 'date_to', 'transaction_type'))
+        self.assertIn('ERROR:dkb_robo:DKBRobo._get_transactions(): RC is not 200 but 400', lcm.output)
         self.assertFalse(mock_atrans.called)
         self.assertFalse(mock_ctrans.called)
         self.assertFalse(mock_btrans.called)
@@ -2334,8 +2346,8 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_206_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
-        transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
+        transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'mandateId': 'mandateId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
+        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'mandatereference': 'mandateId', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     @patch('dkb_robo.dkb_robo.validate_dates')
