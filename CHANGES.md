@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.24.1
+
+**Bugfixes**:
+
+- [#49](https://github.com/grindsa/dkb-robo/issues/49) - adding Mandatsreferenz to transcation dictionary
+
 # Changes in 0.24
 
 **Bugfixes**:
