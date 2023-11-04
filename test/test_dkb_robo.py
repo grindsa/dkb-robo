@@ -499,7 +499,10 @@ class TestDKBRobo(unittest.TestCase):
                         'name': u'3rd acc',
                         'transactions': u'https://www.ib.dkb.de/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=paymentTransaction&row=3&group=1',
                         'type': 'account'}}
-        self.assertEqual(e_result, self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
+        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
+
 
     def test_023_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception depot """
