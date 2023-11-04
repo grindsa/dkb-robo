@@ -425,6 +425,8 @@ class DKBRobo(object):
             output_dic['vdate'] = transaction['attributes']['valueDate']
         if 'endToEndId' in transaction['attributes']:
             output_dic['customerreferenz'] = transaction['attributes']['endToEndId']
+        if 'mandateId' in transaction['attributes']:
+            output_dic['mandatereference'] = transaction['attributes']['mandateId']
         if 'transactionType' in transaction['attributes']:
             output_dic['postingtext'] = transaction['attributes']['transactionType']
         if 'description' in transaction['attributes']:
