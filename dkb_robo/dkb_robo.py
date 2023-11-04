@@ -1134,21 +1134,54 @@ class DKBRobo(object):
 
         return result
 
-    def _filter_postbox(self, pb_dic, path, download_all, archive, prepend_date):
+    def _objectname_lookup(self, document):
+        """ lookup object name """
+        self.logger.debug('DKBRobo._objectname_lookup()\n')
+
+        object_name = None
+
+        if 'cardId' in document['attributes']['metadata']:
+            for acc_id, acc_data in self.account_dic.items():
+                if acc_data['id'] == document['attributes']['metadata']['cardId']:
+                    object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {acc_data['account']}"
+                    break
+            if not object_name:
+                _sinin, cardnr, _sinin = document['attributes']['fileName'].split('_', 2)
+                object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {cardnr}"
+        else:
+            object_name = self._get_document_name(document['attributes']['metadata']['subject'])
+
+        self.logger.debug('DKBRobo._objectname_lookup()\n')
+        return object_name
+
+    def _filter_postbox(self, pb_dic, msg_dic, path, download_all, archive, prepend_date):
         """ filter postbox """
         self.logger.debug('DKBRobo._filter_postbox()\n')
 
         documents_dic = {}
-        if 'data' in pb_dic:
-            for message in pb_dic['data']:
 
-                document_type = self._get_document_type(message['attributes']['documentType'])
+        _tmp_dic = {}
+        if 'data' in msg_dic:
+            for document in msg_dic['data']:
+                _tmp_dic[document['id']] = {
+                    'filename': document['attributes']['fileName'],
+                    'date': document['attributes']['metadata']['statementDate'],
+                    'name': self._objectname_lookup(document)
+                }
 
-                if document_type not in documents_dic:
-                    documents_dic[document_type] = {}
 
-                doc_name = self._get_document_name(message['attributes']['subject'])
-                documents_dic[document_type][doc_name] = message['relationships']['document']['links']['self']
+        from pprint import pprint
+        print(_tmp_dic)
+        #if 'data' in pb_dic:
+        #    for message in pb_dic['data']:
+
+        #        document_type = self._get_document_type(message['attributes']['documentType'])
+
+        #        if document_type not in documents_dic:
+        #            documents_dic[document_type] = {}
+
+        #        doc_name = self._get_document_name(message['attributes']['subject'])
+        #        documents_dic[document_type][doc_name] = message['relationships']['document']['links']['self']
 
         return documents_dic
 
