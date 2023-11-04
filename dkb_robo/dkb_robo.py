@@ -110,18 +110,18 @@ def validate_dates(logger, date_from, date_to, min_year=3, legacy_login=True):
     minimal_date_uts = now_uts - min_year * 365 * 86400
 
     if date_from_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.fromtimestamp(minimal_date_uts, datetime.UTC).strftime('%d.%m.%Y'))
-        date_from = datetime.datetime.fromtimestamp(minimal_date_uts, datetime.UTC).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        date_from = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
     if date_to_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.fromtimestamp(minimal_date_uts, datetime.UTC).strftime('%d.%m.%Y'))
-        date_to = datetime.datetime.fromtimestamp(minimal_date_uts, datetime.UTC).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        date_to = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.fromtimestamp(now_uts, datetime.UTC).strftime('%d.%m.%Y'))
-        date_from = datetime.datetime.fromtimestamp(now_uts, datetime.UTC).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+        date_from = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts and legacy_login:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.fromtimestamp(now_uts, datetime.UTC).strftime('%d.%m.%Y'))
-        date_to = datetime.datetime.fromtimestamp(now_uts, datetime.UTC).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+        date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
     date_from, date_to = enforce_date_format(logger, date_from, date_to, min_year)
 
