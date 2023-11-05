@@ -606,29 +606,29 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'depot'}}
         self.assertEqual(self.dkb._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
 
-    def test_025_get_document_links(self, mock_browser):
-        """ test DKBRobo._get_document_links() method """
+    def test_025_legacy_get_document_links(self, mock_browser):
+        """ test DKBRobo._legacy_get_document_links() method """
         html = read_file(self.dir_path + '/mocks/doclinks.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         e_result = {u'Kontoauszug Nr. 003_2017 zu Konto 87654321': u'https://www.ib.dkb.de/doc-2',
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.ib.dkb.de/doc-1'}
-        self.assertEqual(self.dkb._get_document_links('http://foo.bar/foo'), e_result)
+        self.assertEqual(self.dkb._legacy_get_document_links('http://foo.bar/foo'), e_result)
 
     @patch('dkb_robo.DKBRobo._update_downloadstate')
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_026_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method """
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_026_legacy_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._legacy_get_document_links() method """
         html = read_file(self.dir_path + '/mocks/doclinks-2.html')
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_doc.return_value=(200, 'fname', ['foo'])
         e_result = {'Kontoauszug Nr. 003_2017 zu Konto 12345678': {'rcode': 200, 'link': 'https://www.ib.dkb.de/doc-1', 'fname': 'fname'}, 'Kontoauszug Nr. 003_2017 zu Konto 87654321': {'rcode': 200, 'link': 'https://www.ib.dkb.de/doc-2', 'fname': 'fname'}}
-        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._legacy_get_document_links('http://foo.bar/foo', path='path'))
         self.assertTrue(mock_updow.called)
 
     @patch('dkb_robo.DKBRobo._update_downloadstate')
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_027_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method """
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_027_legacy_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._legacy_get_document_links() method """
         html1 = read_file(self.dir_path + '/mocks/doclinks-3.html')
         html2 = read_file(self.dir_path + '/mocks/doclinks-2.html')
         mock_browser.get_current_page.side_effect = [BeautifulSoup(html1, 'html5lib'), BeautifulSoup(html2, 'html5lib')]
@@ -638,34 +638,34 @@ class TestDKBRobo(unittest.TestCase):
                     u'Kontoauszug Nr. 003_2017 zu Konto 12345678': u'https://www.ib.dkb.de/doc-1',
                     u'Kontoauszug Nr. 003_2017 zu Konto 87654321': 'https://www.ib.dkb.de/doc-2',
                     u'Kontoauszug Nr. 003_2017 zu Konto 98765432': 'https://www.ib.dkb.de/doc-2'}
-        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._legacy_get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
     @patch('dkb_robo.DKBRobo._update_downloadstate')
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_028_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method no html return """
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_028_legacy_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._legacy_get_document_links() method no html return """
         mock_browser.get_current_page.return_value = None
         mock_browser.open.return_value = True
         mock_doc.return_value=(None, 'fname', ['foo'])
         e_result = {}
-        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._legacy_get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
 
     @patch('dkb_robo.DKBRobo._update_downloadstate')
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_029_get_document_links(self, mock_doc, mock_updow, mock_browser):
-        """ test DKBRobo._get_document_links() method  wrong html return """
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_029_legacy_get_document_links(self, mock_doc, mock_updow, mock_browser):
+        """ test DKBRobo._legacy_get_document_links() method  wrong html return """
         html = '<html><body>fooo</body></html>'
         mock_browser.get_current_page.return_value = BeautifulSoup(html, 'html5lib')
         mock_browser.open.return_value = True
         mock_doc.return_value=(None, 'fname', ['foo'])
         e_result = {}
-        self.assertEqual(e_result, self.dkb._get_document_links('http://foo.bar/foo', path='path'))
+        self.assertEqual(e_result, self.dkb._legacy_get_document_links('http://foo.bar/foo', path='path'))
         self.assertFalse(mock_updow.called)
 
-    @patch('dkb_robo.DKBRobo._get_document_links')
+    @patch('dkb_robo.DKBRobo._legacy_get_document_links')
     def test_030__legacy__legacy_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox.html')
@@ -686,7 +686,7 @@ class TestDKBRobo(unittest.TestCase):
                    }
         self.assertEqual(self.dkb._legacy_scan_postbox(), e_result)
 
-    @patch('dkb_robo.DKBRobo._get_document_links')
+    @patch('dkb_robo.DKBRobo._legacy_get_document_links')
     def test_031__legacy_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox.html')
@@ -707,7 +707,7 @@ class TestDKBRobo(unittest.TestCase):
                    }
         self.assertEqual(self.dkb._legacy_scan_postbox(path='path'), e_result)
 
-    @patch('dkb_robo.DKBRobo._get_document_links')
+    @patch('dkb_robo.DKBRobo._legacy_get_document_links')
     def test_032__legacy_scan_postbox(self, mock_doclinks, mock_browser):
         """ test DKBRobo._legacy_scan_postbox() method """
         html = read_file(self.dir_path + '/mocks/postbox-2.html')
@@ -1010,22 +1010,22 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.generate_random_string')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_067_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
+    def test_067_legacy_legacy_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
         """ test get_document create path """
         mock_exists.return_value = False
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertTrue(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
     @patch('dkb_robo.dkb_robo.generate_random_string')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_068_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
+    def test_068_legacy_get_document(self, mock_exists, mock_makedir, mock_rand, _unused):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
-        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((None, 'path/mock_rand.pdf', []), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
         self.assertTrue(mock_rand.called)
 
@@ -1034,14 +1034,14 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.generate_random_string')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_069_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
+    def test_069_legacy_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
@@ -1050,95 +1050,95 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.dkb_robo.generate_random_string')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_070_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
+    def test_070_legacy_get_document(self, mock_exists, mock_makedir, mock_rand, mock_re, mock_browser):
         """ test get_document override """
         mock_exists.return_value = True
         mock_rand.return_value = 'mock_rand'
         mock_browser.open.return_value.headers = {'Content-Disposition': ['foo', 'bar']}
         mock_browser.open.return_value.status_code = 200
         mock_re.return_value = ['mock_re.pdf', 'mock_re2.pdf']
-        self.assertEqual((200, 'path/2022-09-30-00-00-00_mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00_mock_re.pdf']), self.dkb._get_document('folder_url', 'path', 'url', ['mock_re.pdf'], False))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_mock_re.pdf', ['mock_re.pdf', '2022-09-30-00-00-00_mock_re.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', ['mock_re.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_071_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_071_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_072_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_072_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', '2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('folder_url', 'path', 'url', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf'], False))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', '2022-09-30-00-00-00_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_073_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_073_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch('dkb_robo.dkb_robo.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_074_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_074_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/2022-09-30-00-00-00_foo.pdf', ['foo.pdf', '2022-09-30-00-00-00_foo.pdf']), self.dkb._get_document('folder_url', 'path', 'url', ['foo.pdf'], False))
+        self.assertEqual((200, 'path/2022-09-30-00-00-00_foo.pdf', ['foo.pdf', '2022-09-30-00-00-00_foo.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', ['foo.pdf'], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('urllib.parse.unquote')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_075_get_document(self, mock_exists, mock_makedir, mock_parse, mock_browser):
+    def test_075_legacy_get_document(self, mock_exists, mock_makedir, mock_parse, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
         mock_parse.side_effect = [Exception('exc1')]
-        self.assertEqual((200, 'path/Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf', ['Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], False))
+        self.assertEqual((200, 'path/Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf', ['Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_076_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_076_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document prepend string """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=Mitteilung_%c3%bcber_steigende_Sollzinss%c3%a4tze_ab_01.10.2022.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], 'prepend_'))
+        self.assertEqual((200, 'path/prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['prepend_Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], 'prepend_'))
         self.assertFalse(mock_makedir.called)
 
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_077_get_document(self, mock_exists, mock_makedir, mock_browser):
+    def test_077_legacy_get_document(self, mock_exists, mock_makedir, mock_browser):
         """ test get_document create path """
         mock_exists.return_value = True
         mock_browser.open.return_value.headers =  {'Content-Disposition': 'inline; filename=foo.pdf'}
         mock_browser.open.return_value.status_code = 200
-        self.assertEqual((200, 'path/prepend_foo.pdf', ['prepend_foo.pdf']), self.dkb._get_document('folder_url', 'path', 'url', [], 'prepend_'))
+        self.assertEqual((200, 'path/prepend_foo.pdf', ['prepend_foo.pdf']), self.dkb._legacy_get_document('folder_url', 'path', 'url', [], 'prepend_'))
         self.assertFalse(mock_makedir.called)
 
     @patch('builtins.input')
@@ -1314,8 +1314,8 @@ class TestDKBRobo(unittest.TestCase):
         mock_pds.return_value = 'mock_pds'
         self.assertEqual('mock_pds', self.dkb._legacy_get_depot_status('url', 'fdate', 'tdate', 'booked'))
 
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_106_download_document(self, mock_get_doc, _ununsed):
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_106_legacy_download_document(self, mock_get_doc, _ununsed):
         """ test download document """
         html = read_file(self.dir_path + '/mocks/document_list.html')
         table = BeautifulSoup(html, 'html5lib')
@@ -1323,10 +1323,10 @@ class TestDKBRobo(unittest.TestCase):
         class_filter = {}
         doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.ib.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
         result = (doc_dic, [''])
-        self.assertEqual(result, self.dkb._download_document('folder_url', 'path',  class_filter, 'link_name', table, False))
+        self.assertEqual(result, self.dkb._legacy_download_document('folder_url', 'path',  class_filter, 'link_name', table, False))
 
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_107_download_document(self, mock_get_doc, _ununsed):
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_107_legacy_download_document(self, mock_get_doc, _ununsed):
         """ test download document prepend date """
         html = read_file(self.dir_path + '/mocks/document_list.html')
         table = BeautifulSoup(html, 'html5lib')
@@ -1334,10 +1334,10 @@ class TestDKBRobo(unittest.TestCase):
         class_filter = {}
         doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.ib.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
         result = (doc_dic, ['2022-01-04_'])
-        self.assertEqual(result, self.dkb._download_document('folder_url', 'path',  class_filter, 'link_name', table, True))
+        self.assertEqual(result, self.dkb._legacy_download_document('folder_url', 'path',  class_filter, 'link_name', table, True))
 
-    @patch('dkb_robo.DKBRobo._get_document')
-    def test_108_download_document(self, mock_get_doc, _ununsed):
+    @patch('dkb_robo.DKBRobo._legacy_get_document')
+    def test_108_legacy_download_document(self, mock_get_doc, _ununsed):
         """ test download document prepend date """
         html = read_file(self.dir_path + '/mocks/document_list-2.html')
         table = BeautifulSoup(html, 'html5lib')
@@ -1346,7 +1346,7 @@ class TestDKBRobo(unittest.TestCase):
         doc_dic = {'Name 04.01.2022': {'rcode': 200, 'link': 'https://www.ib.dkb.dehttps://www.dkb.de/DkbTransactionBanking/content/mailbox/MessageList.xhtml?$event=getMailboxAttachment&filename=Name+04.01.2022&row=0', 'fname': 'path/link_name'}}
         result = (doc_dic, [''])
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(result, self.dkb._download_document('folder_url', 'path',  class_filter, 'link_name', table, True))
+            self.assertEqual(result, self.dkb._legacy_download_document('folder_url', 'path',  class_filter, 'link_name', table, True))
         self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
     def test_109__get_formatted_date(self, _ununsed):

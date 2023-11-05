@@ -1123,16 +1123,13 @@ class DKBRobo(object):
         return ' '.join(doc_name.split())
 
     def _get_document_type(self, doc_type):
-        self.logger.debug('DKBRobo._filter_postbox()\n')
+        self.logger.debug('DKBRobo._get_document_type()\n')
         mapping_dic = {
             'bankAccountStatement': 'Kontoauszüge',
             'creditCardStatement': 'Kreditkartenabrechnungen'
         }
 
-        if doc_type in mapping_dic:
-            result = mapping_dic[doc_type]
-        else:
-            result = doc_type
+        result = mapping_dic.get(doc_type, doc_type)
 
         return result
 
@@ -1143,7 +1140,7 @@ class DKBRobo(object):
         object_name = None
 
         if 'cardId' in document['attributes']['metadata']:
-            for acc_id, acc_data in self.account_dic.items():
+            for _acc_id, acc_data in self.account_dic.items():
                 if acc_data['id'] == document['attributes']['metadata']['cardId']:
                     object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {acc_data['account']}"
                     break
@@ -1171,19 +1168,27 @@ class DKBRobo(object):
                     'name': self._objectname_lookup(document)
                 }
 
+        if 'data' in pb_dic:
+            for message in pb_dic['data']:
+                if message['id'] in _tmp_dic:
+                    _tmp_dic[message['id']]['document_type'] = self._get_document_type(message['attributes']['documentType'])
+                    _tmp_dic[message['id']]['read'] = message['attributes']['read']
+                    _tmp_dic[message['id']]['archived'] = message['attributes']['archived']
+                    _tmp_dic[message['id']]['link'] = self.banking_url + self.api_prefix + '/documentstorage/documents/' + message['id']
+                else:
+                    print('nope')
 
-        from pprint import pprint
-        print(_tmp_dic)
-        #if 'data' in pb_dic:
-        #    for message in pb_dic['data']:
+        for document in _tmp_dic.values():
 
-        #        document_type = self._get_document_type(message['attributes']['documentType'])
-
-        #        if document_type not in documents_dic:
-        #            documents_dic[document_type] = {}
-
-        #        doc_name = self._get_document_name(message['attributes']['subject'])
-        #        documents_dic[document_type][doc_name] = message['relationships']['document']['links']['self']
+            if 'read' in document:
+                if download_all or not document['read']:
+                    document_type = document.pop('document_type')
+                    if document_type not in documents_dic:
+                        documents_dic[document_type] = {}
+                        documents_dic[document_type]['documents'] = {}
+                    documents_dic[document_type]['documents'][document['name']] = document['link']
+            else:
+                self.logger.error('DKBRobo._filter_standing_orders(): document_dic incomplete: %s', document)
 
         return documents_dic
 
@@ -1480,34 +1485,6 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
-    def _download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
-        """ document download """
-        self.logger.debug('_download_document()\n')
-        document_dic = {}
-        document_name_list = []
-
-        tbody = table.find('tbody')
-        for row in tbody.findAll('tr', class_filter):
-            link = row.find('a')
-
-            # get formatted date
-            formatted_date = self._get_formatted_date(prepend_date, row)
-
-            # download file
-            if path:
-                folder_path = f'{path}/{folder}'
-                rcode, fname, document_name_list = self._get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
-                if rcode == 200:
-                    # mark url as read
-                    self._update_downloadstate(folder, self.base_url + link['href'])
-                if rcode:
-                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
-                else:
-                    document_dic[link.contents[0]] = self.base_url + link['href']
-            else:
-                document_dic[link.contents[0]] = self.base_url + link['href']
-        return (document_dic, document_name_list)
-
     def _get_amount(self, cols, ontop):
         """ get link for transactions """
         self.logger.debug('_get_amount()')
@@ -1558,106 +1535,6 @@ class DKBRobo(object):
                     limit_dic[account] = string2float(limit)
 
         return limit_dic
-
-    def _get_document(self, folder_url, path, url, document_name_list, formatted_date):
-        """ get download document from postbox
-        args:
-            self.dkb_br - browser object
-            path - path to store the document
-            url - download url
-        returns:
-            http response code
-        """
-        self.logger.debug('DKBRobo._get_document(%s)\n', url)
-
-        # create directory if not existing
-        if not os.path.exists(path):
-            self.logger.debug('create directory %s\n', path)
-            os.makedirs(path)
-
-        # fetch file
-        response = self.dkb_br.open(folder_url)
-        response = self.dkb_br.open(url)
-
-        # gt filename from response header
-        fname = ''
-        if "Content-Disposition" in response.headers.keys():
-            self.logger.debug('DKBRobo._get_document(): response.header: %s\n', response.headers)
-            # unquote filename to cover german umlaut including a fallback
-            try:
-                fname = parse.unquote(re.findall("filename=(.+)", response.headers["Content-Disposition"])[0])
-            except Exception as _err:
-                self.logger.debug('DKBRobo._get_document(): error during filename conversion: %s\n', _err)
-                fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
-
-            if fname in document_name_list:
-                # rename to avoid overrides
-                self.logger.debug('DKBRobo._get_document(): adding datetime to avoid overrides.\n')
-                now = datetime.datetime.now()
-                fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
-
-            if formatted_date:
-                fname = f'{formatted_date}{fname}'
-
-            # log filename
-            self.logger.debug('DKBRobo._get_document(): filename: %s\n', fname)
-
-            # dump content to file
-            self.logger.debug('DKBRobo._get_document() content-length: %s\n', len(response.content))
-            with open(f'{path}/{fname}', 'wb') as pdf_file:
-                pdf_file.write(response.content)
-            result = response.status_code
-            document_name_list.append(fname)
-        else:
-            fname = f'{generate_random_string(20)}.pdf'
-            result = None
-
-        return result, f'{path}/{fname}', document_name_list
-
-    def _get_document_links(self, url, path=None, link_name=None, select_all=False, prepend_date=False):
-        """ create a dictionary of the documents stored in a pbost folder
-        args:
-            self.dkb_br - browser object
-            url - folder url
-            path - path for document download
-        returns:
-            dictionary of documents
-        """
-        # pylint: disable=R0914
-        self.logger.debug('DKBRobo._get_document_links(%s)\n', url)
-        document_dic = {}
-
-        # set download filter if there is a need to do so
-        if path and not select_all:
-            class_filter = {'class': 'mbo-messageState-unread'}
-        else:
-            class_filter = {}
-
-        self.dkb_br.open(url)
-        # create a list of documents to avoid overrides
-        document_name_list = []
-
-        next_url = url
-
-        while True:
-            soup = self.dkb_br.get_current_page()
-            if soup:
-                table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
-                if table:
-                    (tmp_dic, tmp_list, ) = self._download_document(next_url, path, class_filter, link_name, table, prepend_date)
-                    document_name_list.extend(tmp_list)
-                    document_dic.update(tmp_dic)
-
-                next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
-                if next_site:
-                    next_url = self.base_url + next_site.find('a')['href']
-                    self.dkb_br.open(next_url)
-                else:
-                    break  # pragma: no cover
-            else:
-                break  # pragma: no cover
-
-        return document_dic
 
     def _get_evtdetails_link(self, cols, ontop):
         """ get link for details """
@@ -1723,6 +1600,134 @@ class DKBRobo(object):
                 self.logger.error('DKBRobo._parse_overview() parse depot: %s\n', _err)
 
         return (account_type, transaction_link)
+
+    def _legacy_get_document(self, folder_url, path, url, document_name_list, formatted_date):
+        """ get download document from postbox
+        args:
+            self.dkb_br - browser object
+            path - path to store the document
+            url - download url
+        returns:
+            http response code
+        """
+        self.logger.debug('DKBRobo._legacy_get_document(%s)\n', url)
+
+        # create directory if not existing
+        if not os.path.exists(path):
+            self.logger.debug('create directory %s\n', path)
+            os.makedirs(path)
+
+        # fetch file
+        response = self.dkb_br.open(folder_url)
+        response = self.dkb_br.open(url)
+
+        # gt filename from response header
+        fname = ''
+        if "Content-Disposition" in response.headers.keys():
+            self.logger.debug('DKBRobo._legacy_get_document(): response.header: %s\n', response.headers)
+            # unquote filename to cover german umlaut including a fallback
+            try:
+                fname = parse.unquote(re.findall("filename=(.+)", response.headers["Content-Disposition"])[0])
+            except Exception as _err:
+                self.logger.debug('DKBRobo._legacy_get_document(): error during filename conversion: %s\n', _err)
+                fname = re.findall("filename=(.+)", response.headers["Content-Disposition"])[0]
+
+            if fname in document_name_list:
+                # rename to avoid overrides
+                self.logger.debug('DKBRobo._legacy_get_document(): adding datetime to avoid overrides.\n')
+                now = datetime.datetime.now()
+                fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
+
+            if formatted_date:
+                fname = f'{formatted_date}{fname}'
+
+            # log filename
+            self.logger.debug('DKBRobo._legacy_get_document(): filename: %s\n', fname)
+
+            # dump content to file
+            self.logger.debug('DKBRobo._legacy_get_document() content-length: %s\n', len(response.content))
+            with open(f'{path}/{fname}', 'wb') as pdf_file:
+                pdf_file.write(response.content)
+            result = response.status_code
+            document_name_list.append(fname)
+        else:
+            fname = f'{generate_random_string(20)}.pdf'
+            result = None
+
+        return result, f'{path}/{fname}', document_name_list
+
+    def _legacy_get_document_links(self, url, path=None, link_name=None, select_all=False, prepend_date=False):
+        """ create a dictionary of the documents stored in a pbost folder
+        args:
+            self.dkb_br - browser object
+            url - folder url
+            path - path for document download
+        returns:
+            dictionary of documents
+        """
+        # pylint: disable=R0914
+        self.logger.debug('DKBRobo._legacy_get_document_links(%s)\n', url)
+        document_dic = {}
+
+        # set download filter if there is a need to do so
+        if path and not select_all:
+            class_filter = {'class': 'mbo-messageState-unread'}
+        else:
+            class_filter = {}
+
+        self.dkb_br.open(url)
+        # create a list of documents to avoid overrides
+        document_name_list = []
+
+        next_url = url
+
+        while True:
+            soup = self.dkb_br.get_current_page()
+            if soup:
+                table = soup.find('table', attrs={'class': 'widget widget abaxx-table expandableTable expandableTable-with-sort'})
+                if table:
+                    (tmp_dic, tmp_list, ) = self._legacy_download_document(next_url, path, class_filter, link_name, table, prepend_date)
+                    document_name_list.extend(tmp_list)
+                    document_dic.update(tmp_dic)
+
+                next_site = soup.find('span', attrs={'class': 'pager-navigator-next'})
+                if next_site:
+                    next_url = self.base_url + next_site.find('a')['href']
+                    self.dkb_br.open(next_url)
+                else:
+                    break  # pragma: no cover
+            else:
+                break  # pragma: no cover
+
+        return document_dic
+
+    def _legacy_download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
+        """ document download """
+        self.logger.debug('_legacy_download_document()\n')
+        document_dic = {}
+        document_name_list = []
+
+        tbody = table.find('tbody')
+        for row in tbody.findAll('tr', class_filter):
+            link = row.find('a')
+
+            # get formatted date
+            formatted_date = self._get_formatted_date(prepend_date, row)
+
+            # download file
+            if path:
+                folder_path = f'{path}/{folder}'
+                rcode, fname, document_name_list = self._legacy_get_document(folder_url, folder_path, self.base_url + link['href'], document_name_list, formatted_date)
+                if rcode == 200:
+                    # mark url as read
+                    self._update_downloadstate(folder, self.base_url + link['href'])
+                if rcode:
+                    document_dic[link.contents[0]] = {'rcode': rcode, 'link': self.base_url + link['href'], 'fname': fname}
+                else:
+                    document_dic[link.contents[0]] = self.base_url + link['href']
+            else:
+                document_dic[link.contents[0]] = self.base_url + link['href']
+        return (document_dic, document_name_list)
 
     def _legacy_get_account_transactions(self, transaction_url, date_from, date_to, transaction_type="booked"):
         """ get transactions from an regular account for a certain amount of time """
@@ -1931,9 +1936,9 @@ class DKBRobo(object):
             pb_dic[link_name]['name'] = link_name
             pb_dic[link_name]['details'] = self.base_url + link['href']
             if path:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], path, link_name, select_all, prepend_date)
+                pb_dic[link_name]['documents'] = self._legacy_get_document_links(pb_dic[link_name]['details'], path, link_name, select_all, prepend_date)
             else:
-                pb_dic[link_name]['documents'] = self._get_document_links(pb_dic[link_name]['details'], select_all=select_all, prepend_date=prepend_date)
+                pb_dic[link_name]['documents'] = self._legacy_get_document_links(pb_dic[link_name]['details'], select_all=select_all, prepend_date=prepend_date)
         return pb_dic
 
     def _login_confirm(self):
