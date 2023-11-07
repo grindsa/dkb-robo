@@ -757,10 +757,10 @@ class TestDKBRobo(unittest.TestCase):
         """ test DKBRobo._legacy_get_account_transactions for one page only """
         csv = read_file(self.dir_path + '/mocks/test_parse_account_tr.csv')
         result = [
-            {'amount':  100.0, 'bdate': '01.03.2017', 'customerreferenz': 'Kundenreferenz1', 'date': '01.03.2017', 'mandatereference': 'Mandatsreferenz1', 'peer': 'Auftraggeber1', 'peeraccount': 'Kontonummer1', 'peerbic': 'BLZ1', 'peerid': 'GID1', 'postingtext': 'Buchungstext1', 'reasonforpayment': 'Verwendungszweck1', 'text': 'Buchungstext1 Auftraggeber1 Verwendungszweck1', 'vdate': '01.03.2017'},
-            {'amount': -200.0, 'bdate': '02.03.2017', 'customerreferenz': 'Kundenreferenz2', 'date': '02.03.2017', 'mandatereference': 'Mandatsreferenz2', 'peer': 'Auftraggeber2', 'peeraccount': 'Kontonummer2', 'peerbic': 'BLZ2', 'peerid': 'GID2', 'postingtext': 'Buchungstext2', 'reasonforpayment': 'Verwendungszweck2', 'text': 'Buchungstext2 Auftraggeber2 Verwendungszweck2', 'vdate': '02.03.2017'},
-            {'amount': 3000.0, 'bdate': '03.03.2017', 'customerreferenz': 'Kundenreferenz3', 'date': '03.03.2017', 'mandatereference': 'Mandatsreferenz3', 'peer': 'Auftraggeber3', 'peeraccount': 'Kontonummer3', 'peerbic': 'BLZ3', 'peerid': 'GID3', 'postingtext': 'Buchungstext3', 'reasonforpayment': 'Verwendungszweck3', 'text': 'Buchungstext3 Auftraggeber3 Verwendungszweck3', 'vdate': '03.03.2017'},
-             {'amount': -4000.0, 'bdate': '04.03.2017', 'customerreferenz': 'Kundenreferenz4', 'date': '04.03.2017', 'mandatereference': 'Mandatsreferenz4', 'peer': 'Auftraggeber4', 'peeraccount': 'Kontonummer4', 'peerbic': 'BLZ4', 'peerid': 'GID4', 'postingtext': 'Buchungstext4', 'reasonforpayment': 'Verwendungszweck4', 'text': 'Buchungstext4 Auftraggeber4 Verwendungszweck4', 'vdate': '04.03.2017'}
+            {'amount':  100.0, 'bdate': '01.03.2017', 'customerreferenz': 'Kundenreferenz1', 'customerreference': 'Kundenreferenz1', 'date': '01.03.2017', 'mandatereference': 'Mandatsreferenz1', 'peer': 'Auftraggeber1', 'peeraccount': 'Kontonummer1', 'peerbic': 'BLZ1', 'peerid': 'GID1', 'postingtext': 'Buchungstext1', 'reasonforpayment': 'Verwendungszweck1', 'text': 'Buchungstext1 Auftraggeber1 Verwendungszweck1', 'vdate': '01.03.2017'},
+            {'amount': -200.0, 'bdate': '02.03.2017', 'customerreferenz': 'Kundenreferenz2', 'customerreference': 'Kundenreferenz2', 'date': '02.03.2017', 'mandatereference': 'Mandatsreferenz2', 'peer': 'Auftraggeber2', 'peeraccount': 'Kontonummer2', 'peerbic': 'BLZ2', 'peerid': 'GID2', 'postingtext': 'Buchungstext2', 'reasonforpayment': 'Verwendungszweck2', 'text': 'Buchungstext2 Auftraggeber2 Verwendungszweck2', 'vdate': '02.03.2017'},
+            {'amount': 3000.0, 'bdate': '03.03.2017', 'customerreferenz': 'Kundenreferenz3', 'customerreference': 'Kundenreferenz3', 'date': '03.03.2017', 'mandatereference': 'Mandatsreferenz3', 'peer': 'Auftraggeber3', 'peeraccount': 'Kontonummer3', 'peerbic': 'BLZ3', 'peerid': 'GID3', 'postingtext': 'Buchungstext3', 'reasonforpayment': 'Verwendungszweck3', 'text': 'Buchungstext3 Auftraggeber3 Verwendungszweck3', 'vdate': '03.03.2017'},
+             {'amount': -4000.0, 'bdate': '04.03.2017', 'customerreferenz': 'Kundenreferenz4', 'customerreference': 'Kundenreferenz4', 'date': '04.03.2017', 'mandatereference': 'Mandatsreferenz4', 'peer': 'Auftraggeber4', 'peeraccount': 'Kontonummer4', 'peerbic': 'BLZ4', 'peerid': 'GID4', 'postingtext': 'Buchungstext4', 'reasonforpayment': 'Verwendungszweck4', 'text': 'Buchungstext4 Auftraggeber4 Verwendungszweck4', 'vdate': '04.03.2017'}
             ]
 
         self.assertEqual(result, self.dkb._parse_account_transactions(csv))
@@ -2323,31 +2323,31 @@ class TestDKBRobo(unittest.TestCase):
     def test_202_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
+        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     def test_203_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'intermediaryName': 'intermediaryName', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'intermediaryName', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType intermediaryName description'}]
+        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'intermediaryName', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType intermediaryName description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     def test_204_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
+        result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     def test_205_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
+        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     def test_206_format_account_transactions(self, _unused):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'mandateId': 'mandateId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
-        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'mandatereference': 'mandateId', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreferenz': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
+        result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'mandatereference': 'mandateId', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
     @patch('dkb_robo.dkb_robo.validate_dates')

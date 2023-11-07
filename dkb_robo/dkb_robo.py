@@ -388,7 +388,7 @@ class DKBRobo(object):
         if 'valueDate' in transaction['attributes']:
             output_dic['vdate'] = transaction['attributes']['valueDate']
         if 'endToEndId' in transaction['attributes']:
-            output_dic['customerreferenz'] = transaction['attributes']['endToEndId']
+            output_dic['customerreference'] = transaction['attributes']['endToEndId']
         if 'mandateId' in transaction['attributes']:
             output_dic['mandatereference'] = transaction['attributes']['mandateId']
         if 'transactionType' in transaction['attributes']:
@@ -1182,6 +1182,8 @@ class DKBRobo(object):
 
             if 'read' in document:
                 if download_all or not document['read']:
+                    if path:
+                        self._download_document(path, document)
                     document_type = document.pop('document_type')
                     if document_type not in documents_dic:
                         documents_dic[document_type] = {}
@@ -1191,6 +1193,19 @@ class DKBRobo(object):
                 self.logger.error('DKBRobo._filter_standing_orders(): document_dic incomplete: %s', document)
 
         return documents_dic
+
+    def _download_document(self, path, document):
+        """ filter standing orders """
+        self.logger.debug('DKBRobo._download_document()\n')
+
+        # create directory if not existing
+        directories = [path, f'{path}/{document['document_type']}']
+        for directory in directories:
+            if not os.path.exists(directory):
+                self.logger.debug('DKBRobo._download_document(): Create directory %s\n', directory)
+                os.makedirs(directory)
+
+        print(document['document_type'])
 
     def _filter_standing_orders(self, full_list):
         """ filter standing orders """
@@ -2065,6 +2080,7 @@ class DKBRobo(object):
                     tmp_dic['reasonforpayment'] = ' '.join(row[4].split())
                     tmp_dic['mandatereference'] = ' '.join(row[9].split())
                     tmp_dic['customerreferenz'] = ' '.join(row[10].split())
+                    tmp_dic['customerreference'] = ' '.join(row[10].split())
 
                     tmp_dic['peeraccount'] = row[5]
                     tmp_dic['peerbic'] = row[6]
