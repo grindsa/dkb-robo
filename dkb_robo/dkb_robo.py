@@ -1069,7 +1069,7 @@ class DKBRobo(object):
                 else:
                     print('nope')
 
-        documentname_list = ['Kreditkarte_4748XXXXXXXX8954_Abrechnung_20220722.pdf']
+        documentname_list = []
         for document in _tmp_dic.values():
 
             if 'read' in document:
@@ -1110,11 +1110,11 @@ class DKBRobo(object):
 
             if document['contenttype'] == 'application/pdf' and not document['filename'].endswith('pdf'):
                 self.logger.debug('DKBRobo._download_document(): renaming %s', document['filename'])
-                document['filename'] = f'{document['filename']}.pdf'
+                document['filename'] = f'{document["filename"]}.pdf'
 
             if response.status_code == 200:
                 self.logger.info('Saving %s/%s...', directories[1], document['filename'])
-                with open(f'{directories[1]}/{document['filename']}', 'wb') as file:
+                with open(f'{directories[1]}/{document["filename"]}', 'wb') as file:
                     file.write(response.content)
 
                 if not document['read']:
