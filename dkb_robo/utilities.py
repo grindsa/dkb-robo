@@ -3,7 +3,7 @@
 import logging
 import random
 from string import digits, ascii_letters
-from typing import List
+from typing import List, Tuple
 import datetime
 import time
 
@@ -12,7 +12,7 @@ LEGACY_DATE_FORMAT = '%d.%m.%Y'
 API_DATE_FORMAT = '%Y-%m-%d'
 
 
-def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list, output_format: str) -> str:
+def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: List[str], output_format: str) -> str:
     """ convert date to a specified output format """
     logger.debug('_convert_date_format(%s)', input_date)
 
@@ -35,7 +35,7 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     return output_date
 
 
-def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, min_year: int) -> tuple[str, str]:
+def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, min_year: int) -> Tuple[str, str]:
     """ enforce a certain date format """
     logger.debug('_enforce_date_format(): %s, %s %s', date_from, date_to, min_year)
 
@@ -85,7 +85,7 @@ def logger_setup(debug: bool) -> logging.Logger:
     return logger
 
 
-def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_year: int = 3, legacy_login: bool = True) -> tuple[str, str]:
+def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_year: int = 3, legacy_login: bool = True) -> Tuple[str, str]:
     """ correct dates if needed """
     logger.debug('validate_dates()')
     try:
