@@ -1906,7 +1906,7 @@ class TestDKBRobo(unittest.TestCase):
         account_dic = {}
         self.assertFalse(self.dkb._get_account_details('aid', account_dic))
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_143__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
@@ -1915,7 +1915,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_144__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
@@ -1924,7 +1924,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_145__get_account_details(self, mock_date, _unused):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
@@ -1933,28 +1933,28 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_account_details('aid', account_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_146__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_147__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_148__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid'}]}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_149__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'type': 'creditCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'status': 'status', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
@@ -1963,7 +1963,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_150__get_card_details(self, mock_date, _unused):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'type': 'debitCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
@@ -1972,7 +1972,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_151__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {}
@@ -1980,7 +1980,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_152__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': []}
@@ -1988,7 +1988,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_153__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid'}]}
@@ -1996,7 +1996,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_154__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
@@ -2005,7 +2005,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    @patch('dkb_robo.utilities.convert_date_format')
+    @patch('dkb_robo.utilities._convert_date_format')
     def test_155__get_brokerage_details(self, mock_date, _unused):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}

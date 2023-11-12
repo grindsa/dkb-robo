@@ -11,9 +11,9 @@ LEGACY_DATE_FORMAT = '%d.%m.%Y'
 API_DATE_FORMAT = '%Y-%m-%d'
 
 
-def convert_date_format(logger, input_date, input_format_list, output_format):
+def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: list[str], output_format: str) -> str:
     """ convert date to a specified output format """
-    logger.debug('convert_date_format(%s)', input_date)
+    logger.debug('_convert_date_format(%s)', input_date)
 
     output_date = None
     for input_format in input_format_list:
@@ -23,24 +23,41 @@ def convert_date_format(logger, input_date, input_format_list, output_format):
             output_date = parsed_date.strftime(output_format)
             break
         except Exception:
-            logger.debug('convert_date_format(): cannot convert date: %s', input_date)
+            logger.debug('_convert_date_format(): cannot convert date: %s', input_date)
             # something went wrong. we return the date we got as input
             continue
 
     if not output_date:
         output_date = input_date
 
-    logger.debug('convert_date_format() ended with: %s', output_date)
+    logger.debug('_convert_date_format() ended with: %s', output_date)
     return output_date
 
 
-def generate_random_string(length):
+def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, min_year: int) -> tuple[str, str]:
+    """ enforce a certain date format """
+    logger.debug('_enforce_date_format(): %s, %s %s', date_from, date_to, min_year)
+
+    if min_year == 1:
+        # this is the new api we need to ensure %Y-%m-%d
+        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+    else:
+        # this is the old  api we need to ensure $d.%m,%Y
+        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
+        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
+
+    logger.debug('_enforce_date_format() ended with: %s, %s', date_from, date_to)
+    return date_from, date_to
+
+
+def generate_random_string(length: int) -> str:
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
     return ''.join(random.choice(char_set) for _ in range(length))
 
 
-def string2float(value):
+def string2float(value: str) -> float:
     """ convert string to float value """
     try:
         result = float(value.replace('.', '').replace(',', '.'))
@@ -50,7 +67,7 @@ def string2float(value):
     return result
 
 
-def logger_setup(debug):
+def logger_setup(debug: bool) -> logging.Logger:
     """ setup logger """
     if debug:
         log_mode = logging.DEBUG
@@ -67,24 +84,7 @@ def logger_setup(debug):
     return logger
 
 
-def enforce_date_format(logger, date_from, date_to, min_year):
-    """ enforce a certain date format """
-    logger.debug('enforce_date_format(): %s, %s %s', date_from, date_to, min_year)
-
-    if min_year == 1:
-        # this is the new api we need to ensure %Y-%m-%d
-        date_from = convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-        date_to = convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-    else:
-        # this is the old  api we need to ensure $d.%m,%Y
-        date_from = convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
-        date_to = convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
-
-    logger.debug('enforce_date_format() ended with: %s, %s', date_from, date_to)
-    return date_from, date_to
-
-
-def validate_dates(logger, date_from, date_to, min_year=3, legacy_login=True):
+def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_year: int = 3, legacy_login: bool = True) -> tuple[str, str]:
     """ correct dates if needed """
     logger.debug('validate_dates()')
     try:
@@ -114,7 +114,7 @@ def validate_dates(logger, date_from, date_to, min_year=3, legacy_login=True):
         logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
-    date_from, date_to = enforce_date_format(logger, date_from, date_to, min_year)
+    date_from, date_to = _enforce_date_format(logger, date_from, date_to, min_year)
 
     logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
-    return (date_from, date_to)
+    return date_from, date_to

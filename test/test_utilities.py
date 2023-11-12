@@ -1,42 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable=r0904, c0415
 """ unittests for dkb_robo """
 import sys
 import os
 import unittest
-from unittest.mock import patch, MagicMock, Mock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
-from datetime import date
-import io
-import json
-
+import logging
+from unittest.mock import patch
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
-import logging
 
-
-def json_load(fname):
-    """ simple json load """
-
-    with open(fname, 'r', encoding='utf8') as myfile:
-        data_dic = json.load(myfile)
-
-    return data_dic
-
-def read_file(fname):
-    """ read file into string """
-    with open(fname, "rb") as myfile:
-        data = myfile.read()
-
-    return data
-
-def cnt_list(value):
-    """ customized function return just the number if entries in input list """
-    return len(value)
-
-def my_side_effect(*args, **kwargs):
-    return [200, args[1], [args[4]]]
 
 class TestDKBRobo(unittest.TestCase):
     """ test class """
@@ -45,15 +17,14 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, convert_date_format, enforce_date_format
+        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, _enforce_date_format
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
-        self.convert_date_format = convert_date_format
-        self.enforce_date_format = enforce_date_format
+        self._convert_date_format = _convert_date_format
+        self._enforce_date_format = _enforce_date_format
         self.logger = logging.getLogger('dkb_robo')
-
 
     @patch('time.time')
     def test_001_validate_dates(self, mock_time):
@@ -202,49 +173,49 @@ class TestDKBRobo(unittest.TestCase):
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_023_convert_date_format(self):
-        """ test convert_date_format() """
-        self.assertEqual('01.01.2023', self.convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d'], '%d.%m.%Y'))
+    def test_023__convert_date_format(self):
+        """ test _convert_date_format() """
+        self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_024_convert_date_format(self):
-        """ test convert_date_format() """
-        self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d'], '%d.%m.%Y'))
+    def test_024__convert_date_format(self):
+        """ test _convert_date_format() """
+        self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_025_convert_date_format(self):
-        """ test convert_date_format() first match """
-        self.assertEqual('01.01.2023', self.convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%d.%m.%Y'))
+    def test_025__convert_date_format(self):
+        """ test _convert_date_format() first match """
+        self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%d.%m.%Y'))
 
-    def test_026_convert_date_format(self):
-        """ test convert_date_format() last match """
-        self.assertEqual('01.01.2023', self.convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%d.%m.%Y'))
+    def test_026__convert_date_format(self):
+        """ test _convert_date_format() last match """
+        self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_027_convert_date_format(self):
-        """ test convert_date_format() last match """
-        self.assertEqual('2023/01/01', self.convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%Y/%m/%d'))
+    def test_027__convert_date_format(self):
+        """ test _convert_date_format() last match """
+        self.assertEqual('2023/01/01', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%Y/%m/%d'))
 
-    def test_028_convert_date_format(self):
-        """ test convert_date_format() first match """
-        self.assertEqual('2023/01/01', self.convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%Y/%m/%d'))
+    def test_028__convert_date_format(self):
+        """ test _convert_date_format() first match """
+        self.assertEqual('2023/01/01', self._convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%Y/%m/%d'))
 
-    def test_029_convert_date_format(self):
-        """ test convert_date_format() no match """
-        self.assertEqual('wrong date', self.convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
+    def test_029__convert_date_format(self):
+        """ test _convert_date_format() no match """
+        self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
-    def test_030_enforce_date_format(self):
-        """ test enforce_date_format() - old frontend - old date format """
-        self.assertEqual(('01.01.2023', '02.01.2023'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 3))
+    def test_030__enforce_date_format(self):
+        """ test _enforce_date_format() - old frontend - old date format """
+        self.assertEqual(('01.01.2023', '02.01.2023'), self._enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 3))
 
-    def test_031_enforce_date_format(self):
-        """ test enforce_date_format() - old frontend - new date format """
-        self.assertEqual(('01.04.2023', '02.04.2023'), self.enforce_date_format(self.logger, '2023-04-01', '2023-04-02', 3))
+    def test_031__enforce_date_format(self):
+        """ test _enforce_date_format() - old frontend - new date format """
+        self.assertEqual(('01.04.2023', '02.04.2023'), self._enforce_date_format(self.logger, '2023-04-01', '2023-04-02', 3))
 
-    def test_032_enforce_date_format(self):
-        """ test enforce_date_format() - new frontend - new date format """
-        self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '2023-01-01', '2023-01-02', 1))
+    def test_032__enforce_date_format(self):
+        """ test _enforce_date_format() - new frontend - new date format """
+        self.assertEqual(('2023-01-01', '2023-01-02'), self._enforce_date_format(self.logger, '2023-01-01', '2023-01-02', 1))
 
-    def test_033_enforce_date_format(self):
-        """ test enforce_date_format() - new frontend - old date format """
-        self.assertEqual(('2023-01-01', '2023-01-02'), self.enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
+    def test_033__enforce_date_format(self):
+        """ test _enforce_date_format() - new frontend - old date format """
+        self.assertEqual(('2023-01-01', '2023-01-02'), self._enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
 
 if __name__ == '__main__':
