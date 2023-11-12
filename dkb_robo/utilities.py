@@ -12,7 +12,7 @@ LEGACY_DATE_FORMAT = '%d.%m.%Y'
 API_DATE_FORMAT = '%Y-%m-%d'
 
 
-def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: List[str], output_format: str) -> str:
+def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list, output_format: str) -> str:
     """ convert date to a specified output format """
     logger.debug('_convert_date_format(%s)', input_date)
 
