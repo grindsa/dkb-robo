@@ -1095,7 +1095,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._download_document()\n')
 
         # create directory if not existing
-        directories = [path, f'{path}/{document['document_type']}']
+        directories = [path, f'{path}/{document["document_type"]}']
         for directory in directories:
             if not os.path.exists(directory):
                 self.logger.debug('DKBRobo._download_document(): Create directory %s\n', directory)
