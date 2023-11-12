@@ -1077,7 +1077,7 @@ class DKBRobo(object):
                     if path:
                         if prepend_date and document['filename'] in documentname_list:
                             self.logger.debug('DKBRobo._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
-                            document['filename'] = f'{document['date']}_{document['filename']}'
+                            document['filename'] = f'{document["date"]}_{document["filename"]}'
                         self._download_document(path, document)
                         documentname_list.append(document['filename'])
                     document_type = document.pop('document_type')
