@@ -143,6 +143,7 @@ class DKBRobo(object):
     mfa_method = 'seal_one'
     legacy_login = False
     proxies = {}
+    # proxies = {'http': 'http://127.0.0.1:8080', 'https': 'http://127.0.0.1:8080'}
     dkb_user = None
     dkb_password = None
     dkb_br = None
@@ -1153,23 +1154,24 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo._objectname_lookup()\n')
         return object_name
 
-    def _filter_postbox(self, pb_dic, msg_dic, path, download_all, archive, prepend_date):
+    def _filter_postbox(self, msg_dic, pb_dic, path=None, download_all=False, _archive=False, prepend_date=None):
         """ filter postbox """
         self.logger.debug('DKBRobo._filter_postbox()\n')
 
         documents_dic = {}
 
         _tmp_dic = {}
-        if 'data' in msg_dic:
-            for document in msg_dic['data']:
+        if 'data' in pb_dic:
+            for document in pb_dic['data']:
                 _tmp_dic[document['id']] = {
                     'filename': document['attributes']['fileName'],
+                    'contenttype': document['attributes']['contentType'],
                     'date': document['attributes']['metadata']['statementDate'],
                     'name': self._objectname_lookup(document)
                 }
 
-        if 'data' in pb_dic:
-            for message in pb_dic['data']:
+        if 'data' in msg_dic:
+            for message in msg_dic['data']:
                 if message['id'] in _tmp_dic:
                     _tmp_dic[message['id']]['document_type'] = self._get_document_type(message['attributes']['documentType'])
                     _tmp_dic[message['id']]['read'] = message['attributes']['read']
@@ -1178,19 +1180,24 @@ class DKBRobo(object):
                 else:
                     print('nope')
 
+        documentname_list = ['Kreditkarte_4748XXXXXXXX8954_Abrechnung_20220722.pdf']
         for document in _tmp_dic.values():
 
             if 'read' in document:
                 if download_all or not document['read']:
                     if path:
+                        if prepend_date and document['filename'] in documentname_list:
+                            self.logger.debug('DKBRobo._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
+                            document['filename'] = f'{document['date']}_{document['filename']}'
                         self._download_document(path, document)
+                        documentname_list.append(document['filename'])
                     document_type = document.pop('document_type')
                     if document_type not in documents_dic:
                         documents_dic[document_type] = {}
                         documents_dic[document_type]['documents'] = {}
                     documents_dic[document_type]['documents'][document['name']] = document['link']
             else:
-                self.logger.error('DKBRobo._filter_standing_orders(): document_dic incomplete: %s', document)
+                self.logger.error('DKBRobo._filter_postbox(): document_dic incomplete: %s', document)
 
         return documents_dic
 
@@ -1205,7 +1212,33 @@ class DKBRobo(object):
                 self.logger.debug('DKBRobo._download_document(): Create directory %s\n', directory)
                 os.makedirs(directory)
 
-        print(document['document_type'])
+        if 'filename' in document and 'link' in document:
+
+            # modify accept attribute in
+            dlc = self.client
+            dlc.headers['Accept'] = document['contenttype']
+            response = dlc.get(document['link'])
+
+            if document['contenttype'] == 'application/pdf' and not document['filename'].endswith('pdf'):
+                self.logger.debug('DKBRobo._download_document(): renaming %s', document['filename'])
+                document['filename'] = f'{document['filename']}.pdf'
+
+            if response.status_code == 200:
+                self.logger.info('Saving %s/%s...', directories[1], document['filename'])
+                with open(f'{directories[1]}/{document['filename']}', 'wb') as file:
+                    file.write(response.content)
+
+                if not document['read']:
+                    # set document status to "read"
+                    self.logger.debug('DKBRobo._download_document() set docment to "read"\n')
+                    data_dic = {"data": {"attributes": {"read": True}, "type": "message"}}
+                    dlc.headers['Accept'] = 'application/vnd.api+json'
+                    dlc.headers['Content-type'] = 'application/vnd.api+json'
+                    _response = self.client.patch(document['link'].replace('/documents/', '/messages/'), json=data_dic)
+
+                time.sleep(2)
+            else:
+                self.logger.error('DKBRobo._download_document(): RC is not 200 but %s', response.status_code)
 
     def _filter_standing_orders(self, full_list):
         """ filter standing orders """
@@ -1374,12 +1407,18 @@ class DKBRobo(object):
         """ scans the DKB postbox and creates a dictionary """
         self.logger.debug('DKBRobo.scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
 
-        response = self.client.get(self.banking_url + self.api_prefix + '/documentstorage/messages')
-
         documents_dic = {}
+
+        response = self.client.get(self.banking_url + self.api_prefix + '/documentstorage/messages')
         if response.status_code == 200:
-            response_dic = response.json()
-            documents_dic = self._filter_postbox(response_dic, path, download_all, archive, prepend_date)
+            msg_dic = response.json()
+
+        response = self.client.get(self.banking_url + self.api_prefix + '/documentstorage/documents?page%5Blimit%5D=1000')
+        if response.status_code == 200:
+            pb_dic = response.json()
+
+        if msg_dic and pb_dic:
+            documents_dic = self._filter_postbox(msg_dic, pb_dic, path, download_all, archive, prepend_date)
 
         return documents_dic
 
