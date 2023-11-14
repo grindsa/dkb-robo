@@ -442,7 +442,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
-        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() convert amount: could not convert string to float: 'aaa'\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() convert amount: could not convert string to float: 'aaa'\n", lcm.output)
 
     def test_022_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception detail link"""
@@ -497,7 +497,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
-        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
 
     def test_023_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception depot """
@@ -552,7 +552,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'depot'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(e_result, self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')))
-        self.assertIn("ERROR:dkb_robo:DKBRobo._parse_overview() parse depot: 'NoneType' object is not subscriptable\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() parse depot: 'NoneType' object is not subscriptable\n", lcm.output)
 
     def test_024_parse_overview_mbank(self, _unused):
         """ test DKBRobo._parse_overview() method for accounts from other banks"""

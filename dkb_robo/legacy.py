@@ -44,7 +44,7 @@ class Wrapper(object):
         try:
             result = float(amount.replace(',', '.'))
         except Exception as _err:
-            self.logger.error('DKBRobo._parse_overview() convert amount: %s\n', _err)
+            self.logger.error('legacy.Wrapper._parse_overview() convert amount: %s\n', _err)
             result = None
 
         self.logger.debug('legacy.Wrapper._get_amount() ended')
@@ -344,7 +344,7 @@ class Wrapper(object):
             link = cols[4 + ontop].find('a', attrs={'class': 'evt-details'})
             details_link = self.base_url + link['href']
         except Exception as _err:
-            self.logger.error('DKBRobo._parse_overview() get link: %s\n', _err)
+            self.logger.error('legacy.Wrapper._parse_overview() get link: %s\n', _err)
             details_link = None
 
         self.logger.debug('legacy.Wrapper.get_evt_details() ended')
@@ -402,7 +402,7 @@ class Wrapper(object):
                 link = cols[4 + ontop].find('a', attrs={'class': 'evt-depot'})
                 transaction_link = self.base_url + link['href']
             except Exception as _err:
-                self.logger.error('DKBRobo._parse_overview() parse depot: %s\n', _err)
+                self.logger.error('legacy.Wrapper._parse_overview() parse depot: %s\n', _err)
 
         self.logger.debug('legacy.Wrapper._get_transaction_link() ended')
         return account_type, transaction_link
@@ -793,7 +793,7 @@ class Wrapper(object):
 
     def get_transactions(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str = 'booked') -> List[str]:
         """ get transactions for a certain amount of time       """
-        self.logger.debug('DKBRobo._legacy_get_transactions(%s/%s: %s/%s, %s)\n', transaction_url, atype, date_from, date_to, transaction_type)
+        self.logger.debug('legacy.Wrapper.get_transactions(%s/%s: %s/%s, %s)\n', transaction_url, atype, date_from, date_to, transaction_type)
 
         transaction_list = []
         if atype == 'account':
@@ -803,7 +803,7 @@ class Wrapper(object):
         elif atype == 'depot':
             transaction_list = self._get_depot_status(transaction_url, date_from, date_to, transaction_type)
 
-        self.logger.debug('DKBRobo.get_transactions() ended\n')
+        self.logger.debug('legacy.Wrapper.get_transactions() ended\n')
         return transaction_list
 
     def login(self) -> Tuple[Dict[str, str], str]:
