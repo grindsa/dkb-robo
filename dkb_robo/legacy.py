@@ -5,10 +5,13 @@ import os
 import datetime
 import time
 import re
+import logging
 from http import cookiejar
 import csv
+from typing import Dict, List, Tuple
 from urllib import parse
 import mechanicalsoup
+import bs4
 from dkb_robo.utilities import string2float, generate_random_string
 
 
@@ -27,17 +30,16 @@ class Wrapper(object):
     logger = None
     proxies = {}
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, proxies=None, logger=False):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, tan_insert: bool = False, proxies: Dict[str, str] = None, logger: logging.Logger = False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.tan_insert = tan_insert
         self.proxies = proxies
         self.logger = logger
 
-    def _get_amount(self, cols, ontop):
+    def _get_amount(self, cols: bs4.element.ResultSet, ontop: int) -> float:
         """ get link for transactions """
         self.logger.debug('legacy.Wrapper._get_amount()')
-
         amount = cols[3 + ontop].text.strip().replace('.', '')
         try:
             result = float(amount.replace(',', '.'))
@@ -48,7 +50,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_amount() ended')
         return result
 
-    def _check_confirmation(self, result, poll_id):
+    def _check_confirmation(self, result: Dict[str, str], poll_id: int) -> bool:
         """ check if login has been confirmed via app """
         self.logger.debug('legacy.Wrapper._check_confirmation()\n')
 
@@ -77,7 +79,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._check_confirmation() ended with %s\n', login_confirmed)
         return login_confirmed
 
-    def _ctan_check(self, _soup):
+    def _ctan_check(self, _soup: str) -> bool:
         """ input of chiptan during login """
         self.logger.debug('legacy.Wrapper._ctan_check()\n')
 
@@ -124,7 +126,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
-    def _download_document(self, folder_url, path, class_filter, folder, table, prepend_date):
+    def _download_document(self, folder_url: str, path: str, class_filter: str, folder: str, table: 'bs4.BeautifulSoup', prepend_date: bool) -> Tuple[Dict, List]:
         """ document download """
         self.logger.debug('legacy.Wrapper._download_document()\n')
         document_dic = {}
@@ -154,7 +156,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._download_document()\n')
         return (document_dic, document_name_list)
 
-    def _get_account_transactions(self, transaction_url, date_from, date_to, transaction_type="booked"):
+    def _get_account_transactions(self, transaction_url: str, date_from: str, date_to: str, transaction_type: str = "booked") -> Dict:
         """ get transactions from an regular account for a certain amount of time """
         self.logger.debug('legacy.Wrapper._get_account_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to, transaction_type)
 
@@ -175,7 +177,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_account_transactions() ended\n')
         return self._parse_account_transactions(response.content)
 
-    def _get_cc_limits(self, form):
+    def _get_cc_limits(self, form: bs4.element.Tag) -> Dict[str, str]:
         """ get credit card limits """
         self.logger.debug('legacy.Wrapper._get_cc_limits()\n')
 
@@ -197,7 +199,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_cc_limits() ended\n')
         return limit_dic
 
-    def _get_checking_account_limit(self, form):
+    def _get_checking_account_limit(self, form: bs4.element.Tag) -> Dict[str, str]:
         """ get checking account limits """
         self.logger.debug('legacy.Wrapper._get_checking_account_limit()\n')
 
@@ -215,7 +217,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_checking_account_limit() ended\n')
         return limit_dic
 
-    def _get_creditcard_transactions(self, transaction_url, date_from, date_to, transaction_type="booked"):
+    def _get_creditcard_transactions(self, transaction_url: str, date_from: str, date_to: str, transaction_type: str = "booked") -> Dict[str, str]:
         """ get transactions from an regular account for a certain amount of time """
         self.logger.debug('legacy.Wrapper._legacy_get_creditcard_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to, transaction_type)
         # get credit card transaction form yesterday
@@ -236,7 +238,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_creditcard_transactions() ended')
         return self._parse_cc_transactions(response.content)
 
-    def _get_depot_status(self, transaction_url, date_from, date_to, transaction_type="booked"):
+    def _get_depot_status(self, transaction_url: str, date_from: str, date_to: str, transaction_type: str = "booked") -> Dict[str, str]:
         """ get depoot status """
         self.logger.debug('legacy.Wrapper..get_depot_transactions(%s: %s/%s, %s)\n', transaction_url, date_from, date_to, transaction_type)
 
@@ -246,7 +248,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_creditcard_transactions() ended´\n')
         return self._parse_depot_status(response.content)
 
-    def _get_document(self, folder_url, path, url, document_name_list, formatted_date):
+    def _get_document(self, folder_url: str, path: str, url: str, document_name_list: List[str], formatted_date: str) -> Tuple[int, str, List[str]]:
         """ get download document from postbox """
         self.logger.debug('legacy.Wrapper._get_document(%s)\n', url)
 
@@ -295,7 +297,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_document() ended')
         return result, f'{path}/{fname}', document_name_list
 
-    def _get_document_links(self, url, path=None, link_name=None, select_all=False, prepend_date=False):
+    def _get_document_links(self, url: str, path: str = None, link_name: str = None, select_all: bool = False, prepend_date: bool = False) -> Dict[str, str]:
         """ create a dictionary of the documents stored in a pbost folder """
         # pylint: disable=R0914
         self.logger.debug('legacy.Wrapper._get_document_links(%s)\n', url)
@@ -334,7 +336,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_document_links()')
         return document_dic
 
-    def _get_evtdetails_link(self, cols, ontop):
+    def _get_evtdetails_link(self, cols: bs4.element.ResultSet, ontop: int) -> str:
         """ get link for details """
         self.logger.debug('legacy.Wrapper.get_evt_details()')
 
@@ -348,7 +350,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.get_evt_details() ended')
         return details_link
 
-    def _get_financial_statement(self):
+    def _get_financial_statement(self) -> bs4.BeautifulSoup:
         """ get finanical statement """
         self.logger.debug('legacy.Wrapper._get_financial_statement()\n')
 
@@ -360,9 +362,10 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_financial_statement() ended\n')
         return soup
 
-    def _get_formatted_date(self, prepend_date, row):
+    def _get_formatted_date(self, prepend_date: bool, row: bs4.element.Tag) -> str:
         """ get document date for prepending """
         self.logger.debug('legacy.Wrapper._get_formatted_date()\n')
+
         formatted_date = ""
         if prepend_date:
             try:
@@ -375,7 +378,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._get_formatted_date() ended\n')
         return formatted_date
 
-    def _get_transaction_link(self, cols, ontop, account_number):
+    def _get_transaction_link(self, cols: bs4.element.ResultSet, ontop: int, account_number: str) -> Tuple[str, str]:
         """ get link for transactions """
         self.logger.debug('legacy.Wrapper.get_transaction_link()')
 
@@ -402,9 +405,9 @@ class Wrapper(object):
                 self.logger.error('DKBRobo._parse_overview() parse depot: %s\n', _err)
 
         self.logger.debug('legacy.Wrapper._get_transaction_link() ended')
-        return (account_type, transaction_link)
+        return account_type, transaction_link
 
-    def _login_confirm(self):
+    def _login_confirm(self) -> bool:
         """ confirm login to dkb via app """
         self.logger.debug('legacy.Wrapper._login_confirm()\n')
 
@@ -445,7 +448,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._login_confirm() ended\n')
         return login_confirmed
 
-    def _new_instance(self, clientcookies=None):
+    def _new_instance(self, clientcookies=None) -> mechanicalsoup.stateful_browser.StatefulBrowser:
         """ creates a new browser instance """
         self.logger.debug('legacy.Wrapper._new_instance()\n')
 
@@ -483,7 +486,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._new_instance() ended\n')
         return self.dkb_br
 
-    def _parse_account_transactions(self, transactions):
+    def _parse_account_transactions(self, transactions: bytes) -> List[str]:
         """ parses html code and creates a list of transactions included """
         self.logger.debug('legacy.Wrapper._parse_account_transactions()\n')
 
@@ -524,10 +527,10 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._parse_account_transactions() ended\n')
         return transaction_list
 
-    def _parse_cc_transactions(self, transactions):
+    def _parse_cc_transactions(self, transactions: bytes) -> List[str]:
         """ parses html code and creates a list of transactions included """
         self.logger.debug('legacy.Wrapper._parse_cc_transactions()\n')
-
+        print(type(transactions))
         # create empty list
         transaction_list = []
 
@@ -550,7 +553,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._parse_cc_transactions() ended\n')
         return transaction_list
 
-    def _parse_depot_status(self, transactions):
+    def _parse_depot_status(self, transactions: bytes) -> List[str]:
         """ parses html code and creates a list of stocks included  """
         self.logger.debug('legacy.Wrapper._parse_depot_status()\n')
 
@@ -583,9 +586,10 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._parse_depot_status() ended\n')
         return stocks_list
 
-    def _parse_overview(self, soup):
+    def _parse_overview(self, soup: bs4.BeautifulSoup) -> Dict[str, str]:
         """ creates a dictionary including account information """
         self.logger.debug('legacy.Wrapper._parse_overview()\n')
+
         overview_dic = {}
         counter = 0
         ontop = 0
@@ -629,7 +633,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._parse_overview() ended\n')
         return overview_dic
 
-    def _update_downloadstate(self, link_name, url):
+    def _update_downloadstate(self, link_name: str, url: str) -> Dict[str, str]:
         """ mark document as read """
         self.logger.debug('legacy.Wrapper._update_downloadstate(%s, %s)\n', link_name, url)
 
@@ -645,7 +649,7 @@ class Wrapper(object):
         _response = self.dkb_br.open(mark_url)  # lgtm [py/unused-local-variable]
         self.logger.debug('legacy.Wrapper._update_downloadstate() ended\n')
 
-    def get_credit_limits(self):
+    def get_credit_limits(self) -> Dict[str, str]:
         """ create a dictionary of credit limits of the different accounts """
         self.logger.debug('legacy.Wrapper.get_credit_limits()\n')
 
@@ -667,7 +671,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.get_credit_limits() ended\n')
         return limit_dic
 
-    def get_exemption_order(self):
+    def get_exemption_order(self) -> dict[str, str]:
         """ returns a dictionary of the stored exemption orders """
         self.logger.debug('legacy.Wrapper.get_exemption_order()\n')
 
@@ -713,7 +717,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.get_exemption_order() ended\n')
         return exo_dic
 
-    def get_points(self):
+    def get_points(self) -> Dict[str, str]:
         """ returns the DKB points """
         self.logger.debug('legacy.Wrapper..get_points()\n')
 
@@ -749,7 +753,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper..get_points() ended\n')
         return p_dic
 
-    def get_standing_orders(self, _uid=None):
+    def get_standing_orders(self, _uid: str = None) -> List[str]:
         """ get standing orders  """
         self.logger.debug('legacy.Wrapper.get_standing_orders()\n')
 
@@ -787,7 +791,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.get_standing_orders() ended\n')
         return so_list
 
-    def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
+    def get_transactions(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str = 'booked') -> List[str]:
         """ get transactions for a certain amount of time       """
         self.logger.debug('DKBRobo._legacy_get_transactions(%s/%s: %s/%s, %s)\n', transaction_url, atype, date_from, date_to, transaction_type)
 
@@ -802,7 +806,7 @@ class Wrapper(object):
         self.logger.debug('DKBRobo.get_transactions() ended\n')
         return transaction_list
 
-    def login(self):
+    def login(self) -> Tuple[Dict[str, str], str]:
         """ login into DKB banking area via the legacy frontend """
         self.logger.debug('legacy.Wrapper.login()\n')
 
@@ -868,7 +872,7 @@ class Wrapper(object):
             self.dkb_br.open(logout_url)
         self.logger.debug('legacy.Wrapper.logout() ended\n')
 
-    def scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
+    def scan_postbox(self, path: str = None, download_all: bool = False, archive: bool = False, prepend_date: bool = False):
         """ scans the DKB postbox and creates a dictionary """
         self.logger.debug('legacy.Wrapper.san_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
 
