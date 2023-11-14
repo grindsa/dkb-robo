@@ -192,7 +192,7 @@ class Wrapper(object):
                         account = cols[0].find('div', attrs={'class': 'minorLine'}).text.strip()
                         limit_dic[account] = string2float(limit)
                     except Exception as _err:
-                        self.logger.error('DKBRobo.get_credit_limits() get credit card limits: %s\n', _err)
+                        self.logger.error('legacy.Wrapper.get_credit_limits() get credit card limits: %s\n', _err)
 
         self.logger.debug('legacy.Wrapper._get_cc_limits() ended\n')
         return limit_dic
@@ -708,7 +708,7 @@ class Wrapper(object):
                         exo_dic[count]['used'] = string2float(cols[4].text.strip().replace('EUR', ''))
                         exo_dic[count]['available'] = string2float(cols[5].text.strip().replace('EUR', ''))
                     except Exception as _err:
-                        self.logger.error('DKBRobo.get_exemption_order(): %s\n', _err)
+                        self.logger.error('legacy.Wrapper.get_exemption_order(): %s\n', _err)
 
         self.logger.debug('legacy.Wrapper.get_exemption_order() ended\n')
         return exo_dic
@@ -813,6 +813,7 @@ class Wrapper(object):
         self.dkb_br = self._new_instance()
 
         last_login = None
+        account_dic = {}
 
         self.dkb_br.open(login_url)
         try:
