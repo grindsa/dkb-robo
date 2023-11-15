@@ -9,7 +9,7 @@ import json
 from typing import Dict, List, Tuple
 import requests
 from dkb_robo.utilities import get_dateformat
-
+import mechanicalsoup
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
@@ -535,7 +535,7 @@ class Wrapper(object):
 
         clientcookies = self.client.cookies
         self.logger.error('sso redirect disabled')
-        # self.dkb_br = self._new_instance(clientcookies)
+        self.dkb_br = self._new_instance(clientcookies)
 
     def _download_document(self, path, document):
         """ filter standing orders """
@@ -1189,3 +1189,42 @@ class Wrapper(object):
             documents_dic = self._filter_postbox(msg_dic, pb_dic, path, download_all, archive, prepend_date)
 
         return documents_dic
+
+    # redundant but needed
+    def _new_instance(self, clientcookies=None) -> mechanicalsoup.stateful_browser.StatefulBrowser:
+        """ creates a new browser instance """
+        self.logger.debug('legacy.Wrapper._new_instance()\n')
+
+        # create browser and cookiestore objects
+        self.dkb_br = mechanicalsoup.StatefulBrowser()
+
+        # set proxies
+        if self.proxies:
+            self.dkb_br.session.proxies = self.proxies
+            self.dkb_br.session.verify = False
+
+        dkb_cj = cookiejar.LWPCookieJar()
+        self.dkb_br.set_cookiejar = dkb_cj
+
+        # configure browser
+        self.dkb_br.set_handle_equiv = True
+        self.dkb_br.set_handle_redirect = True
+        self.dkb_br.set_handle_referer = True
+        self.dkb_br.set_handle_robots = False
+        self.dkb_br.addheaders = [('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8 GTB7.1 (.NET CLR 3.5.30729)'), ('Accept-Language', 'en-US,en;q=0.5'), ('Connection', 'keep-alive')]
+
+        # initialize some cookies to fool dkb
+        dkb_ck = cookiejar.Cookie(version=0, name='javascript', value='enabled', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_browserPlugins', value='NPSWF32_25_0_0_127.dll%3B', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+        dkb_ck = cookiejar.Cookie(version=0, name='BRSINFO_screen', value='width%3D1600%3Bheight%3D900%3BcolorDepth%3D24', port=None, port_specified=False, domain=self.base_url, domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+        dkb_cj.set_cookie(dkb_ck)
+
+        if clientcookies:
+            self.logger.debug('_new_instance(): adding clientcookies.')
+            for cookie in clientcookies:
+                self.dkb_br.session.cookies.set_cookie(cookie)
+
+        self.logger.debug('legacy.Wrapper._new_instance() ended\n')
+        return self.dkb_br
