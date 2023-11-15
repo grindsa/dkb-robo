@@ -671,7 +671,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.get_credit_limits() ended\n')
         return limit_dic
 
-    def get_exemption_order(self) -> dict[str, str]:
+    def get_exemption_order(self) -> Dict[str, str]:
         """ returns a dictionary of the stored exemption orders """
         self.logger.debug('legacy.Wrapper.get_exemption_order()\n')
 
