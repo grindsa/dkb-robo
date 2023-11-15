@@ -530,7 +530,7 @@ class Wrapper(object):
     def _parse_cc_transactions(self, transactions: bytes) -> List[str]:
         """ parses html code and creates a list of transactions included """
         self.logger.debug('legacy.Wrapper._parse_cc_transactions()\n')
-        print(type(transactions))
+
         # create empty list
         transaction_list = []
 

@@ -1133,6 +1133,18 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual('', self.wrapper._get_formatted_date(True, table))
         self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
+    def test_082_logout(self, _unused):
+        """" test logout """
+        self.wrapper.dkb_br = Mock()
+        self.wrapper.dkb_br.open = Mock()
+        self.assertFalse(self.wrapper.logout())
+        self.assertTrue(self.wrapper.dkb_br.open.called)
+
+    def test_083_logout(self, _unused):
+        """" test logout """
+        self.wrapper.dkb_br = None
+        self.assertFalse(self.wrapper.logout())
+
 
 if __name__ == '__main__':
 

@@ -17,13 +17,14 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, _enforce_date_format
+        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, _enforce_date_format, get_dateformat
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
         self._convert_date_format = _convert_date_format
         self._enforce_date_format = _enforce_date_format
+        self.get_dateformat = get_dateformat
         self.logger = logging.getLogger('dkb_robo')
 
     @patch('time.time')
@@ -217,6 +218,9 @@ class TestDKBRobo(unittest.TestCase):
         """ test _enforce_date_format() - new frontend - old date format """
         self.assertEqual(('2023-01-01', '2023-01-02'), self._enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
 
+    def test_034_get_dateformat(self):
+        """ test get_dateformat() """
+        self.assertEqual(('%d.%m.%Y', '%Y-%m-%d'), self.get_dateformat())
 
 if __name__ == '__main__':
 
