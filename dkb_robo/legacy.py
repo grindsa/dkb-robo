@@ -126,7 +126,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper._ctan_check() ended with :%s\n', login_confirm)
         return login_confirm
 
-    def _download_document(self, folder_url: str, path: str, class_filter: str, folder: str, table: 'bs4.BeautifulSoup', prepend_date: bool) -> Tuple[Dict, List]:
+    def _download_document(self, folder_url: str, path: str, class_filter: Dict[str], folder: str, table: 'bs4.BeautifulSoup', prepend_date: bool) -> Tuple[Dict, List]:
         """ document download """
         self.logger.debug('legacy.Wrapper._download_document()\n')
         document_dic = {}

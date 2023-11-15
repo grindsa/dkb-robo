@@ -12,7 +12,7 @@ from dkb_robo.utilities import get_dateformat
 from dkb_robo.legacy import Wrapper as Legacywrapper
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
-
+JSON_CONTENT_TYPE = 'application/vnd.api+json'
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
@@ -569,8 +569,8 @@ class Wrapper(object):
                     # set document status to "read"
                     self.logger.debug('api.Wrapper._download_document() set docment to "read"\n')
                     data_dic = {"data": {"attributes": {"read": True}, "type": "message"}}
-                    dlc.headers['Accept'] = 'application/vnd.api+json'
-                    dlc.headers['Content-type'] = 'application/vnd.api+json'
+                    dlc.headers['Accept'] = JSON_CONTENT_TYPE
+                    dlc.headers['Content-type'] = JSON_CONTENT_TYPE
                     _response = self.client.patch(document['link'].replace('/documents/', '/messages/'), json=data_dic)
 
                 time.sleep(2)
@@ -850,7 +850,7 @@ class Wrapper(object):
                 device_name = None
 
             # additional headers needed as this call requires it
-            self.client.headers['Content-Type'] = 'application/vnd.api+json'
+            self.client.headers['Content-Type'] = JSON_CONTENT_TYPE
             self.client.headers["Accept"] = "application/vnd.api+json"
 
             # we are expecting the first method from mfa_dic to be used
