@@ -8,8 +8,12 @@ import datetime
 import time
 
 
-LEGACY_DATE_FORMAT = '%d.%m.%Y'
-API_DATE_FORMAT = '%Y-%m-%d'
+def get_dateformat():
+    """ get date format """
+    return '%d.%m.%Y', '%Y-%m-%d'
+
+
+LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
 
 def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: List[str], output_format: str) -> str:
