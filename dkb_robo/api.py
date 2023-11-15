@@ -11,8 +11,10 @@ import requests
 from dkb_robo.utilities import get_dateformat
 from dkb_robo.legacy import Wrapper as Legacywrapper
 
+
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
+
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
