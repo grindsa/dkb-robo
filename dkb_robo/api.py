@@ -1,6 +1,6 @@
+# pylint: disable=c0302, r0913
 """ legacy api """
 # -*- coding: utf-8 -*-
-# pylint: disable=c0302, r0913
 import os
 import datetime
 import time
@@ -18,7 +18,6 @@ JSON_CONTENT_TYPE = 'application/vnd.api+json'
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
-    ...
 
 
 class Wrapper(object):
@@ -52,6 +51,7 @@ class Wrapper(object):
             if 'currencyCode' in transaction['attributes']['amount']:
                 output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
 
+        self.logger.debug('api.Wrapper._add_account_transactionamount() ended\n')
         return output_dic
 
     def _add_account_transaction_creditorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
@@ -71,6 +71,7 @@ class Wrapper(object):
             else:
                 output_dic['peerid'] = ''
 
+        self.logger.debug('api.Wrapper._add_account_transaction_creditorinfo() ended\n')
         return output_dic
 
     def _add_account_transaction_debtorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
@@ -92,6 +93,7 @@ class Wrapper(object):
             # add perrid
             output_dic['peerid'] = self._add_account_transaction_debtorpeerid(transaction)
 
+        self.logger.debug('api.Wrapper._add_account_transaction_debtorinfo() ended\n')
         return output_dic
 
     def _add_account_transaction_debtorpeerid(self, transaction: Dict[str, str]) -> str:
@@ -101,6 +103,7 @@ class Wrapper(object):
         if 'id' in transaction['attributes']['debtor']:
             peer_id = transaction['attributes']['debtor']['id']
 
+        self.logger.debug('api.Wrapper._add_account_transaction_debtorpeerid()\n')
         return peer_id
 
     def _add_account_transactioninformation(self, transaction: Dict[str, str]) -> Dict[str, str]:
@@ -122,6 +125,7 @@ class Wrapper(object):
         if 'description' in transaction['attributes']:
             output_dic['reasonforpayment'] = transaction['attributes']['description']
 
+        self.logger.debug('api.Wrapper._add_account_transactioninformation() ended\n')
         return output_dic
 
     def _get_account_details(self, aid, accounts_dic: Dict[str, str]) -> Dict[str, str]:
@@ -136,6 +140,7 @@ class Wrapper(object):
                     output_dic = {**self._add_accountinformation(account, aid), **self._add_accountdetails(account), **self._add_accountbalance(account), **self._add_accountname(account)}
                     break
 
+        self.logger.debug('api.Wrapper._get_account_details() ended\n')
         return output_dic
 
     def _add_accountbalance(self, account: Dict[str, str]) -> Dict[str, str]:
@@ -149,6 +154,7 @@ class Wrapper(object):
                 if dkb_field in account['attributes']['balance']:
                     output_dic[my_field] = account['attributes']['balance'][dkb_field]
 
+        self.logger.debug('api.Wrapper._add_accountbalance() ended\n')
         return output_dic
 
     def _add_accountdetails(self, account: Dict[str, str]) -> Dict[str, str]:
@@ -161,6 +167,7 @@ class Wrapper(object):
             if dkb_field in account['attributes']:
                 output_dic[my_field] = account['attributes'][dkb_field]
 
+        self.logger.debug('api.Wrapper._add_accountdetails() ended\n')
         return output_dic
 
     def _add_accountinformation(self, account: Dict[str, str], aid: str) -> Dict[str, str]:
@@ -173,6 +180,8 @@ class Wrapper(object):
         output_dic['transactions'] = self.base_url + self.api_prefix + f"/accounts/accounts/{aid}/transactions"
         if 'updatedAt' in account['attributes']:
             output_dic['date'] = account['attributes']['updatedAt']
+
+        self.logger.debug('api.Wrapper._add_accountinformation() ended\n')
         return output_dic
 
     def _add_accountname(self, account: Dict[str, str]) -> Dict[str, str]:
@@ -181,6 +190,7 @@ class Wrapper(object):
 
         output_dic = {'name': account['attributes']['product']['displayName']}
 
+        self.logger.debug('api.Wrapper._add_accountname() ended\n')
         return output_dic
 
     def _add_brokerage_informationy(self, position: Dict[str, str]) -> Dict[str, str]:
@@ -194,6 +204,7 @@ class Wrapper(object):
         if 'performance' in position['attributes'] and 'currentValue' in position['attributes']['performance'] and 'value' in position['attributes']['performance']['currentValue']:
             output_dic['price_euro'] = position['attributes']['performance']['currentValue']['value']
 
+        self.logger.debug('api.Wrapper._add_brokerage_informationy() ended\n')
         return output_dic
 
     def _add_brokerage_instrumentinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
@@ -209,6 +220,8 @@ class Wrapper(object):
                     if identifier['identifier'] == 'isin':
                         output_dic['isin_wkn'] = identifier['value']
                         break
+
+        self.logger.debug('api.Wrapper._add_brokerage_instrumentinformation() ended\n')
         return output_dic
 
     def _add_brokerage_quoteinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
@@ -224,6 +237,7 @@ class Wrapper(object):
         if 'market' in ele['attributes']:
             output_dic['market'] = ele['attributes']['market']
 
+        self.logger.debug('api.Wrapper._add_brokerage_quoteinformation() ended\n')
         return output_dic
 
     def _add_brokerage_quantity(self, position: Dict[str, str]) -> Dict[str, str]:
@@ -235,6 +249,7 @@ class Wrapper(object):
             output_dic['quantity'] = float(position['attributes']['quantity']['value'])
             output_dic['shares_unit'] = position['attributes']['quantity']['unit']
 
+        self.logger.debug('api.Wrapper._add_brokerage_quantity() ended\n')
         return output_dic
 
     def _add_brokerageholder(self, depot: Dict[str, str]) -> Dict[str, str]:
@@ -242,6 +257,8 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._add_brokerageholder()\n')
 
         output_dic = {'name': depot['attributes']['holderName']}
+
+        self.logger.debug('api.Wrapper._add_brokerageholder() ended\n')
         return output_dic
 
     def _add_brokerageinformation(self, depot: Dict[str, str], bid: str) -> Dict[str, str]:
@@ -271,6 +288,7 @@ class Wrapper(object):
                 if 'value' in depot['attributes']['brokerageAccountPerformance']['currentValue']:
                     output_dic['amount'] = depot['attributes']['brokerageAccountPerformance']['currentValue']['value']
 
+        self.logger.debug('api.Wrapper._add_brokerageperformance() ended\n')
         return output_dic
 
     def _add_card_transactionamount(self, transaction: Dict[str, str]) -> Dict[str, str]:
@@ -283,6 +301,7 @@ class Wrapper(object):
             if 'currencyCode' in transaction['attributes']['amount']:
                 output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
 
+        self.logger.debug('api.Wrapper._add_card_transactionamount() ended\n')
         return output_dic
 
     def _add_cardbalance(self, card: Dict[str, str]) -> Dict[str, str]:
@@ -299,6 +318,7 @@ class Wrapper(object):
             if 'date' in card['attributes']['balance']:
                 output_dic['date'] = card['attributes']['balance']['date']
 
+        self.logger.debug('api.Wrapper._add_cardbalance() ended\n')
         return output_dic
 
     def _add_cardholder(self, card: Dict[str, str]) -> Dict[str, str]:
@@ -310,6 +330,7 @@ class Wrapper(object):
             if 'firstName' in card['attributes']['holder']['person'] and 'lastName' in card['attributes']['holder']['person']:
                 output_dic['holdername'] = f"{card['attributes']['holder']['person']['firstName']} {card['attributes']['holder']['person']['lastName']}"
 
+        self.logger.debug('api.Wrapper._add_cardholder() ended\n')
         return output_dic
 
     def _add_cardinformation(self, card: Dict[str, str], cid: str) -> Dict[str, str]:
@@ -332,6 +353,7 @@ class Wrapper(object):
         if 'status' in card['attributes']:
             output_dic['status'] = card['attributes']['status']
 
+        self.logger.debug('api.Wrapper._add_cardinformation() ended\n')
         return output_dic
 
     def _add_cardlimit(self, card: Dict[str, str]) -> Dict[str, str]:
@@ -345,6 +367,7 @@ class Wrapper(object):
         if 'limit' in card['attributes'] and 'value' in card['attributes']['limit']:
             output_dic['limit'] = card['attributes']['limit']['value']
 
+        self.logger.debug('api.Wrapper._add_cardlimit() ended\n')
         return output_dic
 
     def _add_card_transactioninformation(self, transaction: Dict[str, str]) -> Dict[str, str]:
@@ -356,6 +379,8 @@ class Wrapper(object):
             output_dic['vdate'] = transaction['attributes']['bookingDate']
         if 'description' in transaction['attributes']:
             output_dic['text'] = transaction['attributes']['description']
+
+        self.logger.debug('api.Wrapper._add_card_transactioninformation() ended\n')
         return output_dic
 
     def _add_cardname(self, card: Dict[str, str]) -> Dict[str, str]:
@@ -364,6 +389,7 @@ class Wrapper(object):
 
         output_dic = {'name': card['attributes']['product']['displayName']}
 
+        self.logger.debug('api.Wrapper._add_cardname() ended\n')
         return output_dic
 
     def _raw_entry_get(self, portfolio_dic: Dict[str, str], product_group: str, ele: Dict[str, str]) -> Dict[str, str]:
@@ -377,6 +403,7 @@ class Wrapper(object):
         elif 'account' in ele['type']:
             result = self._get_account_details(ele['id'], portfolio_dic[product_group])
 
+        self.logger.debug('api.Wrapper._raw_entry_get() ended\n')
         return result
 
     def _build_raw_account_dic(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
@@ -390,6 +417,7 @@ class Wrapper(object):
                     if 'id' in ele and 'type' in ele:
                         product_dic[ele['id']] = self._raw_entry_get(portfolio_dic, product_group, ele)
 
+        self.logger.debug('api.Wrapper._build_raw_account_dic() ended\n')
         return product_dic
 
     def _build_account_dic_from_pd(self, data_ele: Dict[str, str], account_dic: Dict[str, str], _raw_account_dic: Dict[str, str], account_cnt: int) -> Tuple[Dict[str, str], Dict[str, str], int]:
@@ -411,6 +439,7 @@ class Wrapper(object):
                     del _raw_account_dic[product_group['product_list'][dic_id]]
                     account_cnt += 1
 
+        self.logger.debug('api.Wrapper._build_account_dic_from_pd() ended\n')
         return account_dic, _raw_account_dic, account_cnt
 
     def _build_account_dic(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
@@ -431,6 +460,7 @@ class Wrapper(object):
             account_dic[account_cnt]['productgroup'] = None
             account_cnt += 1
 
+        self.logger.debug('api.Wrapper._build_account_dic() ended\n')
         return account_dic
 
     def _build_product_group_list_index(self, product_group: Dict[str, str]) -> Dict[str, str]:
@@ -441,6 +471,7 @@ class Wrapper(object):
             for uid in _id_dic:
                 id_dic[_id_dic[uid]['index']] = uid
 
+        self.logger.debug('api.Wrapper._build_product_group_list_index() ended\n')
         return id_dic
 
     def _build_product_group_list(self, data_ele: Dict[str, str]) -> List[str]:
@@ -452,6 +483,7 @@ class Wrapper(object):
                 for product_group in sorted(data_ele['attributes']['productGroups'].values(), key=lambda x: x['index']):
                     product_group_list.append({'name': product_group['name'], 'product_list': self._build_product_group_list_index(product_group)})
 
+        self.logger.debug('api.Wrapper._build_product_group_list() ended\n')
         return product_group_list
 
     def _build_product_name_dic(self, product_data: Dict[str, str]) -> Dict[str, str]:
@@ -467,6 +499,7 @@ class Wrapper(object):
         else:
             self.logger.error('api.Wrapper._build_product_display_settings_dic(): product_data is not of type dic')
 
+        self.logger.debug('api.Wrapper._build_product_name_dic() ended\n')
         return uid_dic
 
     def _build_product_display_settings_dic(self, data_ele: Dict[str, str]) -> Dict[str, str]:
@@ -480,6 +513,7 @@ class Wrapper(object):
                 if prod_name_dic:
                     product_settings_dic = {**product_settings_dic, **prod_name_dic}
 
+        self.logger.debug('api.Wrapper._build_product_display_settings_dic() ended\n')
         return product_settings_dic
 
     def _check_processing_status(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
@@ -491,6 +525,8 @@ class Wrapper(object):
             mfa_completed = True
         elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
             raise DKBRoboError('2fa chanceled by user')
+
+        self.logger.debug('api.Wrapper._check_processing_status() ended with: %s\n', mfa_completed)
         return mfa_completed
 
     def _complete_2fa(self, challenge_id: str, devicename: str) -> bool:
@@ -518,6 +554,7 @@ class Wrapper(object):
                 self.logger.error('api.Wrapper._complete_2fa(): polling request failed. RC: %s', response.status_code)
             time.sleep(5)
 
+        self.logger.debug('api.Wrapper._complete_2fa() ended with: %s\n', mfa_completed)
         return mfa_completed
 
     def _do_sso_redirect(self):
@@ -539,6 +576,7 @@ class Wrapper(object):
         legacywrappper = Legacywrapper(logger=self.logger)
         # pylint: disable=w0212
         self.dkb_br = legacywrappper._new_instance(clientcookies)
+        self.logger.debug('api.Wrapper._do_sso_redirect() ended.\n')
 
     def _download_document(self, path: str, document: Dict[str, str]):
         """ filter standing orders """
@@ -579,12 +617,13 @@ class Wrapper(object):
             else:
                 self.logger.error('api.Wrapper._download_document(): RC is not 200 but %s', response.status_code)
 
+        self.logger.debug('api.Wrapper._download_document() ended.\n')
+
     def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
         """ filter postbox """
         self.logger.debug('api.Wrapper._filter_postbox()\n')
 
         documents_dic = {}
-
         _tmp_dic = {}
         if 'data' in pb_dic:
             for document in pb_dic['data']:
@@ -623,6 +662,7 @@ class Wrapper(object):
             else:
                 self.logger.error('api.Wrapper._filter_postbox(): document_dic incomplete: %s', document)
 
+        self.logger.debug('api.Wrapper._filter_postbox() ended.\n')
         return documents_dic
 
     def _filter_standing_orders(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
@@ -640,6 +680,8 @@ class Wrapper(object):
                     'creditoraccount': ele['attributes']['creditor']['creditorAccount'],
                     'interval': ele['attributes']['recurrence']}
                 so_list.append(_tmp_dic)
+
+        self.logger.debug('api.Wrapper._filter_standing_orders() ended\n')
         return so_list
 
     def _filter_transactions(self, transaction_list: List[Dict[str, str]], date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
@@ -664,6 +706,7 @@ class Wrapper(object):
                     if date_from_uts <= bookingdate_uts <= date_to_uts:
                         filtered_transaction_list.append(transaction)
 
+        self.logger.debug('api.Wrapper._filter_transactions() ended\n')
         return filtered_transaction_list
 
     def _format_account_transactions(self, transaction_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
@@ -688,6 +731,7 @@ class Wrapper(object):
 
                 format_transaction_list.append(transaction_dic)
 
+        self.logger.debug('api.Wrapper._format_account_transactions() ended\n')
         return format_transaction_list
 
     def _format_brokerage_account(self, brokerage_dic: Dict[str, str]) -> List[Dict[str, str]]:
@@ -702,6 +746,7 @@ class Wrapper(object):
                 if position_dic:
                     position_list.append(position_dic)
 
+        self.logger.debug('api.Wrapper._format_brokerage_account() ended\n')
         return position_list
 
     def _format_card_transactions(self, transaction_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
@@ -714,6 +759,7 @@ class Wrapper(object):
                 transaction_dic = {**self._add_card_transactionamount(transaction), **self._add_card_transactioninformation(transaction)}
                 format_transaction_list.append(transaction_dic)
 
+        self.logger.debug('api.Wrapper._format_card_transactions() ended\n')
         return format_transaction_list
 
     def _get_accounts(self) -> Dict[str, str]:
@@ -727,6 +773,7 @@ class Wrapper(object):
             self.logger.error('api.Wrapper._get_accounts(): RC is not 200 but %s', response.status_code)
             account_dic = {}
 
+        self.logger.debug('api.Wrapper._get_accounts() ended\n')
         return account_dic
 
     def _get_brokerage_accounts(self) -> Dict[str, str]:
@@ -740,6 +787,7 @@ class Wrapper(object):
             self.logger.error('api.Wrapper._get_brokerage_accounts(): RC is not 200 but %s', response.status_code)
             account_dic = {}
 
+        self.logger.debug('api.Wrapper._get_brokerage_accounts() ended\n')
         return account_dic
 
     def _get_brokerage_details(self, bid: str, brokerage_dic: Dict[str, str]) -> Dict[str, str]:
@@ -753,6 +801,7 @@ class Wrapper(object):
                     output_dic = {**self._add_brokerageinformation(depot, bid), **self._add_brokerageperformance(depot), **self._add_brokerageholder(depot)}
                     break
 
+        self.logger.debug('api.Wrapper._get_brokerage_details() ended\n')
         return output_dic
 
     def _get_brokerage_includedlist(self, brokerage_dic: Dict[str, str]) -> Dict[str, str]:
@@ -763,6 +812,7 @@ class Wrapper(object):
         if 'included' in brokerage_dic:
             included_list = brokerage_dic['included']
 
+        self.logger.debug('api.Wrapper._get_brokerage_includedlist() ended\n')
         return included_list
 
     def _get_brokerage_position(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
@@ -779,6 +829,7 @@ class Wrapper(object):
                 if 'id' in ele and ele['id'] == _quote_id:
                     position_dic = {**position_dic, **self._add_brokerage_quoteinformation(ele)}
 
+        self.logger.debug('api.Wrapper._get_brokerage_position() ended\n')
         return position_dic
 
     def _get_cards(self) -> Dict[str, str]:
@@ -792,6 +843,7 @@ class Wrapper(object):
             self.logger.error('api.Wrapper._get_cards(): RC is not 200 but %s', response.status_code)
             card_dic = {}
 
+        self.logger.debug('api.Wrapper._get_cards() ended\n')
         return card_dic
 
     def _get_card_details(self, cid: str, cards_dic: Dict[str, str]) -> Dict[str, str]:
@@ -806,6 +858,7 @@ class Wrapper(object):
                     output_dic = {**self._add_cardinformation(card, cid), **self._add_cardholder(card), **self._add_cardlimit(card), **self._add_cardbalance(card), **self._add_cardname(card)}
                     break
 
+        self.logger.debug('api.Wrapper._get_card_details() ended\n')
         return output_dic
 
     def _get_document_name(self, doc_name: str) -> str:
@@ -822,11 +875,13 @@ class Wrapper(object):
 
         result = mapping_dic.get(doc_type, doc_type)
 
+        self.logger.debug('api.Wrapper._get_document_type() ended\n')
         return result
 
     def _get_loans(self) -> Dict[str, str]:
         """ get loands via API """
         self.logger.debug('api.Wrapper._get_loans()\n')
+
         response = self.client.get(self.base_url + self.api_prefix + '/loans/loans')
         if response.status_code == 200:
             loans_dic = response.json()
@@ -834,6 +889,7 @@ class Wrapper(object):
             self.logger.error('api.Wrapper._get_loans(): RC is not 200 but %s', response.status_code)
             loans_dic = {}
 
+        self.logger.debug('api.Wrapper._get_loans() ended\n')
         return loans_dic
 
     def _get_mfa_challenge_id(self, mfa_dic: Dict[str, str], device_num: int = 0) -> Tuple[str, str]:
@@ -906,6 +962,7 @@ class Wrapper(object):
             portfolio_dic['brokerage_accounts'] = self._get_brokerage_accounts()
             portfolio_dic['loands'] = self._get_loans()
 
+        self.logger.debug('api.Wrapper._get_overview() ended\n')
         return self._build_account_dic(portfolio_dic)
 
     def _get_relationship_ids(self, position: Dict[str, str]) -> Tuple[str, str]:
@@ -920,6 +977,7 @@ class Wrapper(object):
             if 'quote' in position['relationships'] and 'data' in position['relationships']['quote'] and 'id' in position['relationships']['quote']['data']:
                 quote_id = position['relationships']['quote']['data']['id']
 
+        self.logger.debug('api.Wrapper._get_relationship_ids()\n')
         return instrument_id, quote_id
 
     def _get_token(self):
@@ -984,7 +1042,7 @@ class Wrapper(object):
         else:
             object_name = self._get_document_name(document['attributes']['metadata']['subject'])
 
-        self.logger.debug('api.Wrapper._objectname_lookup()\n')
+        self.logger.debug('api.Wrapper._objectname_lookup() ended with: %s\n', object_name)
         return object_name
 
     def _print_2fa_confirmation(self, devicename: str):
@@ -1012,6 +1070,7 @@ class Wrapper(object):
         else:
             raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
 
+        self.logger.debug('api.Wrapper._process_challenge_response() ended with: %s\n', challenge_id)
         return challenge_id
 
     def _process_userinput(self, device_num: int, device_list: List[int], _tmp_device_num: str, deviceselection_completed: bool) -> Tuple[int, bool]:
@@ -1025,6 +1084,7 @@ class Wrapper(object):
         except Exception:
             print('\nInvalid input!')
 
+        self.logger.debug('api.Wrapper._process_userinput()\n ended')
         return device_num, deviceselection_completed
 
     def _select_mfa_device(self, mfa_dic: Dict[str, str]) -> int:
@@ -1072,6 +1132,7 @@ class Wrapper(object):
                 elif 'maskedpan' in account_data:
                     limit_dic[account_data['maskedpan']] = account_data['limit']
 
+        self.logger.debug('api.Wrapper.get_credit_limits() ended\n')
         return limit_dic
 
     def get_standing_orders(self, uid: str = None):
@@ -1087,6 +1148,7 @@ class Wrapper(object):
         else:
             raise DKBRoboError('get_standing_orders(): account-id is required')
 
+        self.logger.debug('api.Wrapper.get_standing_orders() ended\n')
         return so_list
 
     def get_transactions(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
@@ -1175,6 +1237,7 @@ class Wrapper(object):
         legacywrappper = Legacywrapper(logger=self.logger)
         legacywrappper.dkb_br = self.dkb_br
 
+        self.logger.debug('api.Wrapper.logout() ended.\n')
         return legacywrappper.get_exemption_order()
 
     def logout(self):
@@ -1200,4 +1263,5 @@ class Wrapper(object):
         if msg_dic and pb_dic:
             documents_dic = self._filter_postbox(msg_dic, pb_dic, path, download_all, archive, prepend_date)
 
+        self.logger.debug('api.Wrapper.scan_postbox() ended.\n')
         return documents_dic

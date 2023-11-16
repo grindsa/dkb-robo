@@ -1,6 +1,6 @@
+# pylint: disable=r0913
 """ legacy api """
 # -*- coding: utf-8 -*-
-# pylint: disable=r0913
 import os
 import datetime
 import time
@@ -17,7 +17,6 @@ from dkb_robo.utilities import string2float, generate_random_string
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
-    ...
 
 
 class Wrapper(object):

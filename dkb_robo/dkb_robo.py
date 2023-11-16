@@ -9,7 +9,6 @@ LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
-    ...
 
 
 class DKBRobo(object):
