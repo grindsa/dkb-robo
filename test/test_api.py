@@ -902,6 +902,31 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
+    def test_075__filter_transactions(self):
+        """ test _filter_transactions() """
+        transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
+        from_date = '01.01.2023'
+        to_date = '31.01.2023'
+        result = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}]
+        self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'booked'))
+
+    def test_076__filter_transactions(self):
+        """ test _filter_transactions() """
+        transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
+        from_date = '01.01.2023'
+        to_date = '31.01.2023'
+        result = [{'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
+        self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'pending'))
+
+    def test_077__filter_transactions(self):
+        """ test _filter_transactions() """
+        transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
+        from_date = '01.01.2023'
+        to_date = '31.01.2023'
+        result = [{'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
+        self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'reserved'))
+
+
     def test_075_format_card_transactions(self):
         """ _format_card_transactions() """
         transaction_list = []

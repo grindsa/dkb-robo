@@ -712,6 +712,9 @@ class Wrapper(object):
         """ filter transaction by date """
         self.logger.debug('api.Wrapper._filter_transactions()\n')
 
+        # support transation type 'reserved' for backwards compatibility
+        transaction_type = 'pending' if transaction_type == 'reserved' else transaction_type
+
         try:
             date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, LEGACY_DATE_FORMAT).timetuple()))
         except ValueError:

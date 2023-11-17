@@ -162,7 +162,7 @@ tlist = dkb.get_transactions(link, type, date_from, date_to)
 - type - account type (either "account" or "creditcard") - see former step if you do not know how to get it
 - date_from - start date in European notation (DD.MM.YYYY)
 - date_to - end date in European notation (DD.MM.YYYY)
-- transaction_type - optional: "booked" (default if not specified) or "reserved" ("vorgemerkt")
+- transaction_type - optional: "booked" (default if not specified) or "pending" ("vorgemerkt")
 
 this method returns a list of transactions.
 
