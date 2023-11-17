@@ -645,6 +645,20 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._merge_postbox() ended\n')
         return message_dic
 
+    def _process_document(self, path, prepend_date, document, documentname_list):
+        """ check for duplicaton and download """
+        self.logger.debug('api.Wrapper._process_document()\n')
+
+        if path:
+            if prepend_date and document['filename'] in documentname_list:
+                self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
+                document['filename'] = f'{document["date"]}_{document["filename"]}'
+            self._download_document(path, document)
+            documentname_list.append(document['filename'])
+
+        self.logger.debug('api.Wrapper._process_document() ended\n')
+        return documentname_list
+
     def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
         """ filter postbox """
         self.logger.debug('api.Wrapper._filter_postbox()\n')
@@ -653,18 +667,17 @@ class Wrapper(object):
         message_dic = self._merge_postbox(msg_dic, pb_dic)
 
         # list to store filenames to check for duplicates
-        _documentname_list = []
+        documentname_list = []
 
         documents_dic = {}
         for document in message_dic.values():
             if 'read' in document:
                 if download_all or not document['read']:
-                    if path:
-                        if prepend_date and document['filename'] in _documentname_list:
-                            self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
-                            document['filename'] = f'{document["date"]}_{document["filename"]}'
-                        self._download_document(path, document)
-                        _documentname_list.append(document['filename'])
+
+                    # check filenames and download
+                    documentname_list = self._process_document(path, prepend_date, document, documentname_list)
+
+                    # store entry in dictionary
                     document_type = document.pop('document_type')
                     if document_type not in documents_dic:
                         documents_dic[document_type] = {}
