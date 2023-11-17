@@ -619,15 +619,14 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper._download_document() ended.\n')
 
-    def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
-        """ filter postbox """
-        self.logger.debug('api.Wrapper._filter_postbox()\n')
+    def _merge_postbox(self, msg_dic, pb_dic):
+        """ reformat postbox dictionary from DKB """
+        self.logger.debug('api.Wrapper._merge_postbox()\n')
 
-        documents_dic = {}
-        _tmp_dic = {}
+        message_dic = {}
         if 'data' in pb_dic:
             for document in pb_dic['data']:
-                _tmp_dic[document['id']] = {
+                message_dic[document['id']] = {
                     'filename': document['attributes']['fileName'],
                     'contenttype': document['attributes']['contentType'],
                     'date': document['attributes']['metadata']['statementDate'],
@@ -636,24 +635,36 @@ class Wrapper(object):
 
         if 'data' in msg_dic:
             for message in msg_dic['data']:
-                if message['id'] in _tmp_dic:
-                    _tmp_dic[message['id']]['document_type'] = self._get_document_type(message['attributes']['documentType'])
+                if message['id'] in message_dic:
+                    message_dic[message['id']]['document_type'] = self._get_document_type(message['attributes']['documentType'])
                     if 'read' in message['attributes']:
-                        _tmp_dic[message['id']]['read'] = message['attributes']['read']
-                    _tmp_dic[message['id']]['archived'] = message['attributes']['archived']
-                    _tmp_dic[message['id']]['link'] = self.base_url + self.api_prefix + '/documentstorage/documents/' + message['id']
+                        message_dic[message['id']]['read'] = message['attributes']['read']
+                    message_dic[message['id']]['archived'] = message['attributes']['archived']
+                    message_dic[message['id']]['link'] = self.base_url + self.api_prefix + '/documentstorage/documents/' + message['id']
 
-        documentname_list = []
+        self.logger.debug('api.Wrapper._merge_postbox() ended\n')
+        return message_dic
 
-        for document in _tmp_dic.values():
+    def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
+        """ filter postbox """
+        self.logger.debug('api.Wrapper._filter_postbox()\n')
+
+        # merge message dictionaries
+        message_dic = self._merge_postbox(msg_dic, pb_dic)
+
+        # list to store filenames to check for duplicates
+        _documentname_list = []
+
+        documents_dic = {}
+        for document in message_dic.values():
             if 'read' in document:
                 if download_all or not document['read']:
                     if path:
-                        if prepend_date and document['filename'] in documentname_list:
+                        if prepend_date and document['filename'] in _documentname_list:
                             self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
                             document['filename'] = f'{document["date"]}_{document["filename"]}'
                         self._download_document(path, document)
-                        documentname_list.append(document['filename'])
+                        _documentname_list.append(document['filename'])
                     document_type = document.pop('document_type')
                     if document_type not in documents_dic:
                         documents_dic[document_type] = {}
