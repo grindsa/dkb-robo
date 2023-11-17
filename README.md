@@ -272,7 +272,7 @@ A list of standing orders (Daueraufträge) can be obtained by calling get_standi
 > so = dkb.get_standing_orders(account_id)
 ```
 
-- account_id - 'id' field from account dictionary (`dkb.account_dic[x]['id]`)
+- account_id - 'id' field from account dictionary (`dkb.account_dic[x]['id']`)
 
 A list of standing orders will be returned containing a dictionary per standing order
 
