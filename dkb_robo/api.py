@@ -596,7 +596,7 @@ class Wrapper(object):
             dlc = self.client
             dlc.headers['Accept'] = document['contenttype']
             response = dlc.get(document['link'])
-            rcode  = response.status_code
+            rcode = response.status_code
             if document['contenttype'] == 'application/pdf' and not document['filename'].endswith('pdf'):
                 self.logger.info('api.Wrapper._download_document(): renaming %s', document['filename'])
                 document['filename'] = f'{document["filename"]}.pdf'
@@ -618,7 +618,7 @@ class Wrapper(object):
             else:
                 self.logger.error('api.Wrapper._download_document(): RC is not 200 but %s', response.status_code)
 
-        self.logger.debug('api.Wrapper._download_document() ended with: {0}.\n'.format(rcode))
+        self.logger.debug('api.Wrapper._download_document() ended with: %s.\n', rcode)
         return rcode
 
     def _merge_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str]) -> Dict[str, str]:
