@@ -578,10 +578,11 @@ class Wrapper(object):
         self.dkb_br = legacywrappper._new_instance(clientcookies)
         self.logger.debug('api.Wrapper._do_sso_redirect() ended.\n')
 
-    def _download_document(self, path: str, document: Dict[str, str]):
+    def _download_document(self, path: str, document: Dict[str, str]) -> str:
         """ filter standing orders """
         self.logger.debug('api.Wrapper._download_document()\n')
 
+        rcode = 'unknown'
         # create directory if not existing
         directories = [path, f'{path}/{document["document_type"]}']
         for directory in directories:
@@ -595,7 +596,7 @@ class Wrapper(object):
             dlc = self.client
             dlc.headers['Accept'] = document['contenttype']
             response = dlc.get(document['link'])
-
+            rcode  = response.status_code
             if document['contenttype'] == 'application/pdf' and not document['filename'].endswith('pdf'):
                 self.logger.info('api.Wrapper._download_document(): renaming %s', document['filename'])
                 document['filename'] = f'{document["filename"]}.pdf'
@@ -617,9 +618,10 @@ class Wrapper(object):
             else:
                 self.logger.error('api.Wrapper._download_document(): RC is not 200 but %s', response.status_code)
 
-        self.logger.debug('api.Wrapper._download_document() ended.\n')
+        self.logger.debug('api.Wrapper._download_document() ended with: {0}.\n'.format(rcode))
+        return rcode
 
-    def _merge_postbox(self, msg_dic, pb_dic):
+    def _merge_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str]) -> Dict[str, str]:
         """ reformat postbox dictionary from DKB """
         self.logger.debug('api.Wrapper._merge_postbox()\n')
 
@@ -645,19 +647,20 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._merge_postbox() ended\n')
         return message_dic
 
-    def _process_document(self, path, prepend_date, document, documentname_list):
+    def _process_document(self, path: str, prepend_date: bool, document: List[str], documentname_list: Dict[str, str]) -> Tuple[List[str], str, str]:
         """ check for duplicaton and download """
         self.logger.debug('api.Wrapper._process_document()\n')
 
+        rcode = 'unknown'
         if path:
             if prepend_date and document['filename'] in documentname_list:
                 self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
                 document['filename'] = f'{document["date"]}_{document["filename"]}'
-            self._download_document(path, document)
+            rcode = self._download_document(path, document)
             documentname_list.append(document['filename'])
 
         self.logger.debug('api.Wrapper._process_document() ended\n')
-        return documentname_list
+        return documentname_list, f'{path}/{document["document_type"]}/{document["filename"]}', rcode
 
     def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
         """ filter postbox """
@@ -675,14 +678,14 @@ class Wrapper(object):
                 if download_all or not document['read']:
 
                     # check filenames and download
-                    documentname_list = self._process_document(path, prepend_date, document, documentname_list)
+                    documentname_list, document_name, rcode = self._process_document(path, prepend_date, document, documentname_list)
 
                     # store entry in dictionary
                     document_type = document.pop('document_type')
                     if document_type not in documents_dic:
                         documents_dic[document_type] = {}
                         documents_dic[document_type]['documents'] = {}
-                    documents_dic[document_type]['documents'][document['name']] = document['link']
+                    documents_dic[document_type]['documents'][document['name']] = {'link': document['link'], 'fname': document_name, 'date': document['date'], 'rcode': rcode}
             else:
                 self.logger.error('api.Wrapper._filter_postbox(): document_dic incomplete: %s', document)
 

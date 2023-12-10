@@ -278,14 +278,25 @@ A list of standing orders will be returned containing a dictionary per standing 
 
 ```python
 > pprint(so)
-[{'amount': 900.0,
-  'interval': u'1. monatlich 01.03.2017',
-  'purpose': u'Rate FKB 1234567890',
-  'recipient': u'FOO BANK'},
- {'amount': 100.0,
-  'interval': u'1. monatlich gel\xf6scht',
-  'purpose': u'TRANSACTION',
-  'recipient': u'ANY RECIEVER'}]
+[{'amount': 30.0,
+  'creditoraccount': {'bic': 'BIC-1', 'iban': 'IBAN-1'},
+  'currencycode': 'EUR',
+  'interval': {'frequency': 'monthly',
+               'from': '2019-01-05',
+               'holidayExecutionStrategy': 'following',
+               'nextExecutionAt': '2023-10-01',
+               'until': '2025-12-01'},
+  'purpose': 'Purpose-1',
+  'recpipient': 'Recipient-1'},
+ {'amount': 58.0,
+  'creditoraccount': {'bic': 'BIC-2', 'iban': 'IBAN-2'},
+  'currencycode': 'EUR',
+  'interval': {'frequency': 'monthly',
+               'from': '2022-12-30',
+               'holidayExecutionStrategy': 'following',
+               'nextExecutionAt': '2023-12-01'},
+  'purpose': 'Purpose-2',
+  'recpipient': 'Recipient-2'},]
 ```
 
 The method get_exemption_order() can be used to get the exemption orders (Freistellungsaufträge)

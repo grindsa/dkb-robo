@@ -1605,7 +1605,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.return_value = 'mock_type'
         mock_download.return_value = 'mock_download'
-        result = {'mock_type': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'mock_lookup2': 'https://banking.dkb.de/api/documentstorage/documents/id2'}}}
+        result = {'mock_type': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'None/mock_type/filename1', 'date': 'statementDate1', 'rcode': 'unknown'}, 'mock_lookup2': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id2', 'fname': 'None/mock_type/filename2', 'date': 'statementDate2', 'rcode': 'unknown'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path=None, download_all=False, prepend_date=False))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
@@ -1622,12 +1622,11 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.return_value = 'mock_type'
         mock_download.return_value = 'mock_download'
-        result = {'mock_type': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1'}}}
+        result = {'mock_type': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'None/mock_type/filename1', 'date': 'statementDate1', 'rcode': 'unknown'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path=None, download_all=False, prepend_date=False))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
         self.assertFalse(mock_download.called)
-
 
     @patch('time.sleep')
     @patch('dkb_robo.api.Wrapper._download_document')
@@ -1640,7 +1639,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.return_value = 'mock_type'
         mock_download.return_value = 'mock_download'
-        result = {'mock_type': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'mock_lookup2': 'https://banking.dkb.de/api/documentstorage/documents/id2'}}}
+        result = {'mock_type': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'None/mock_type/filename1', 'date': 'statementDate1', 'rcode': 'unknown'}, 'mock_lookup2': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id2', 'fname': 'None/mock_type/filename2', 'date': 'statementDate2', 'rcode': 'unknown'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path=None, download_all=True, prepend_date=False))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
@@ -1657,7 +1656,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.side_effect = ['mock_type1', 'mock_type2']
         mock_download.return_value = 'mock_download'
-        result = {'mock_type1': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1'}}, 'mock_type2': {'documents': {'mock_lookup2': 'https://banking.dkb.de/api/documentstorage/documents/id2'}}}
+        result = {'mock_type1': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'None/mock_type1/filename1', 'date': 'statementDate1', 'rcode': 'unknown'}}}, 'mock_type2': {'documents': {'mock_lookup2': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id2', 'fname': 'None/mock_type2/filename2', 'date': 'statementDate2', 'rcode': 'unknown'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path=None, download_all=True, prepend_date=False))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
@@ -1674,7 +1673,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.side_effect = ['mock_type1', 'mock_type2']
         mock_download.return_value = 'mock_download'
-        result = {'mock_type1': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1'}}}
+        result = {'mock_type1': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'None/mock_type1/filename1', 'date': 'statementDate1', 'rcode': 'unknown'}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path=None, download_all=True, prepend_date=False))
         self.assertIn("ERROR:dkb_robo:api.Wrapper._filter_postbox(): document_dic incomplete: {'filename': 'filename2', 'contenttype': 'contentType2', 'date': 'statementDate2', 'name': 'mock_lookup2', 'document_type': 'mock_type2', 'archived': False, 'link': 'https://banking.dkb.de/api/documentstorage/documents/id2'}", lcm.output)
@@ -1693,7 +1692,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.return_value = 'mock_type'
         mock_download.return_value = 'mock_download'
-        result = {'mock_type': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1'}}}
+        result = {'mock_type': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'patch/mock_type/filename1', 'date': 'statementDate1', 'rcode': 'mock_download'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path='patch', download_all=False, prepend_date=False))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
@@ -1710,7 +1709,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_lookup.side_effect = ['mock_lookup1', 'mock_lookup2']
         mock_type.return_value = 'mock_type'
         mock_download.return_value = 'mock_download'
-        result = {'mock_type': {'documents': {'mock_lookup1': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'mock_lookup2': 'https://banking.dkb.de/api/documentstorage/documents/id2'}}}
+        result = {'mock_type': {'documents': {'mock_lookup1': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id1', 'fname': 'patch/mock_type/filename1', 'date': 'statementDate1', 'rcode': 'mock_download'}, 'mock_lookup2': {'link': 'https://banking.dkb.de/api/documentstorage/documents/id2', 'fname': 'patch/mock_type/statementDate2_filename1', 'date': 'statementDate2', 'rcode': 'mock_download'}}}}
         self.assertEqual(result, self.dkb._filter_postbox(msg_dic, pb_dic, path='patch', download_all=True, prepend_date=True))
         self.assertTrue(mock_lookup.called)
         self.assertTrue(mock_type.called)
@@ -1728,7 +1727,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         document = {'document_type': 'document_type', 'filename': 'filename', 'link': 'link', 'contenttype': 'contenttype', 'read': False}
-        self.assertFalse(self.dkb._download_document('path', document))
+        self.assertEqual(200, self.dkb._download_document('path', document))
         self.assertTrue(mock_makedir.called)
         self.assertTrue(self.dkb.client.patch.called)
         self.assertTrue(mock_open.called)
@@ -1745,7 +1744,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.status_code = 400
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         document = {'document_type': 'document_type', 'filename': 'filename', 'link': 'link', 'contenttype': 'contenttype', 'read': False}
-        self.assertFalse(self.dkb._download_document('path', document))
+        self.assertEqual(400, self.dkb._download_document('path', document))
         self.assertTrue(mock_makedir.called)
         self.assertFalse(self.dkb.client.patch.called)
         self.assertFalse(mock_open.called)
@@ -1763,7 +1762,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         document = {'document_type': 'document_type', 'filename': 'filename', 'link': 'link', 'contenttype': 'application/pdf', 'read': False}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._download_document('path', document))
+            self.assertEqual(200, self.dkb._download_document('path', document))
         self.assertIn('INFO:dkb_robo:api.Wrapper._download_document(): renaming filename', lcm.output)
         self.assertTrue(mock_makedir.called)
         self.assertTrue(self.dkb.client.patch.called)
