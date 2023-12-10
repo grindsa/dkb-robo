@@ -647,7 +647,7 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._merge_postbox() ended\n')
         return message_dic
 
-    def _process_document(self, path: str, prepend_date: bool, document: List[str], documentname_list: Dict[str, str]) -> Tuple[List[str], str, str]:
+    def _process_document(self, path: str, prepend_date: bool, document: Dict[str, str], documentname_list: Dict[str, str]) -> Tuple[List[str], str, str]:
         """ check for duplicaton and download """
         self.logger.debug('api.Wrapper._process_document()\n')
 
