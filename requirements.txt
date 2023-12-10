@@ -1,3 +1,4 @@
 mechanicalsoup
 tabulate
 click
+requests
