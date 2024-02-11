@@ -3,6 +3,19 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.26
+
+**Improvements**:
+
+- sort mfa devices by enrollment date with "main" device listed first
+- allow preselection of mfa device by using the `mfa_device` parameter in context-handler
+
+# Changes in 0.25
+
+**Improvements**:
+
+- [#50](https://github.com/grindsa/dkb-robo/issues/50) refactoring for better code readability
+
 # Changes in 0.24.1
 
 **Bugfixes**:
