@@ -19,17 +19,19 @@ class DKBRobo(object):
     dkb_password = None
     proxies = {}
     last_login = None
+    mfa_device = 0
     account_dic = {}
     tan_insert = False
     logger = None
     wrapper = None
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.tan_insert = tan_insert
         self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
+        self.mfa_device = mfa_device
 
     def __enter__(self):
         """ Makes DKBRobo a Context Manager """
@@ -37,13 +39,16 @@ class DKBRobo(object):
         if self.tan_insert:
             self.legacy_login = True
 
+        if self.mfa_device == 'm':
+            self.mfa_device = 1
+
         if self.legacy_login:
             from dkb_robo.legacy import Wrapper
             self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, tan_insert=self.tan_insert, proxies=self.proxies, logger=self.logger)
 
         else:
             from dkb_robo.api import Wrapper
-            self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, logger=self.logger)
+            self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, mfa_device=self.mfa_device, logger=self.logger)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()

@@ -95,7 +95,46 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_legacy.called)
         self.assertFalse(mock_api.called)
 
-    def test_005__exit(self):
+    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.legacy.Wrapper.login')
+    def test_005__enter(self, mock_legacy, mock_api):
+        """ test enter """
+        self.dkb.mfa_device = 1
+        # self.dkb.wrapper = Mock()
+        mock_legacy.return_value = ('legacy', 'foo')
+        mock_api.return_value = ('api', 'foo')
+        self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy.called)
+        self.assertTrue(mock_api.called)
+        self.assertEqual(1, self.dkb.mfa_device)
+
+    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.legacy.Wrapper.login')
+    def test_006__enter(self, mock_legacy, mock_api):
+        """ test enter """
+        self.dkb.mfa_device = 2
+        # self.dkb.wrapper = Mock()
+        mock_legacy.return_value = ('legacy', 'foo')
+        mock_api.return_value = ('api', 'foo')
+        self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy.called)
+        self.assertTrue(mock_api.called)
+        self.assertEqual(2, self.dkb.mfa_device)
+
+    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.legacy.Wrapper.login')
+    def test_007__enter(self, mock_legacy, mock_api):
+        """ test enter """
+        self.dkb.mfa_device = 'm'
+        # self.dkb.wrapper = Mock()
+        mock_legacy.return_value = ('legacy', 'foo')
+        mock_api.return_value = ('api', 'foo')
+        self.assertTrue(self.dkb.__enter__())
+        self.assertFalse(mock_legacy.called)
+        self.assertTrue(mock_api.called)
+        self.assertEqual(1, self.dkb.mfa_device)
+
+    def test_008__exit(self):
         """ test enter """
         self.dkb.wrapper = Mock()
         self.dkb.wrapper.logout = Mock()
@@ -103,7 +142,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb.wrapper.logout.called)
 
     @patch('dkb_robo.dkb_robo.validate_dates')
-    def test_006_get_transactions(self, mock_date):
+    def test_009_get_transactions(self, mock_date):
         """ test get_transactions() """
         self.dkb.legacy_login = True
         mock_date.return_value = ('from', 'to')
@@ -112,7 +151,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'atype', 'from', 'to', 'btype'))
 
     @patch('dkb_robo.dkb_robo.validate_dates')
-    def test_007_get_transactions(self, mock_date):
+    def test_010_get_transactions(self, mock_date):
         """ test get_transactions() """
         self.dkb.legacy_login = False
         mock_date.return_value = ('from', 'to')
@@ -120,31 +159,35 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.wrapper.get_transactions.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'atype', 'from', 'to', 'btype'))
 
-    def test_008_get_points(self):
+    def test_011_get_points(self):
         """ test get_exemption_order()"""
         self.dkb.wrapper = Mock()
         self.dkb.wrapper.get_points.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_points())
 
-    def test_009_get_exemption_order(self):
+    def test_012_get_exemption_order(self):
         """ test get_exemption_order()"""
         self.dkb.wrapper = Mock()
         self.dkb.wrapper.get_exemption_order.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_exemption_order())
 
-    def test_010_get_credit_limits(self):
+    def test_013_get_credit_limits(self):
         """ test get_credit_limits()"""
         self.dkb.wrapper = Mock()
         self.dkb.wrapper.get_credit_limits.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_credit_limits())
 
-    def test_011_get_standing_orders(self):
+    def test_014_get_standing_orders(self):
         """ test get_standing_orders()"""
         self.dkb.wrapper = Mock()
         self.dkb.wrapper.get_standing_orders.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_standing_orders())
 
-
+    def test_015_scan_postbox(self):
+        """ test get_standing_orders()"""
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.scan_postbox.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb.scan_postbox())
 
 if __name__ == '__main__':
 

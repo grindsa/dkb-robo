@@ -25,6 +25,7 @@ class Wrapper(object):
     base_url = 'https://banking.dkb.de'
     api_prefix = '/api'
     mfa_method = 'seal_one'
+    mfa_device = 0
     dkb_user = None
     dkb_password = None
     dkb_br = None
@@ -34,11 +35,15 @@ class Wrapper(object):
     token_dic = None
     account_dic = {}
 
-    def __init__(self, dkb_user: str = None, dkb_password: str = None, proxies: Dict[str, str] = None, logger: logging.Logger = False):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.proxies = proxies
         self.logger = logger
+        try:
+            self.mfa_device = int(mfa_device)
+        except (ValueError, TypeError):
+            self.mfa_device = 0
 
     def _add_account_transactionamount(self, transaction: Dict[str, str]) -> Dict[str, str]:
         """ add amount from accont transaction """
@@ -1106,9 +1111,10 @@ class Wrapper(object):
     def _process_userinput(self, device_num: int, device_list: List[int], _tmp_device_num: str, deviceselection_completed: bool) -> Tuple[int, bool]:
         self.logger.debug('api.Wrapper._process_userinput(%s)', _tmp_device_num)
         try:
-            if int(_tmp_device_num) in device_list:
+            # we are referring to an index in a list thus we need to lower the user input by 1
+            if int(_tmp_device_num) - 1 in device_list:
                 deviceselection_completed = True
-                device_num = int(_tmp_device_num)
+                device_num = int(_tmp_device_num) - 1
             else:
                 print('\nWrong input!')
         except Exception:
@@ -1122,7 +1128,17 @@ class Wrapper(object):
         self.logger.debug('_select_mfa_device()')
         device_num = 0
 
-        if 'data' in mfa_dic and len(mfa_dic['data']) > 1:
+        # adjust self.mfa_device if the user input is too high
+        if 'data' in mfa_dic and len(mfa_dic['data']) < self.mfa_device:
+            self.logger.warning('User submitted mfa_device number is invalid. Ingoring...')
+            self.mfa_device = 0
+
+        if self.mfa_device > 0:
+            # we need to lower by one as we refer to an index in a list
+            self.logger.debug('api.Wrapper._select_mfa_device(): using user submitted mfa_device number: %s', self.mfa_device)
+            device_num = self.mfa_device - 1
+
+        elif 'data' in mfa_dic and len(mfa_dic['data']) > 1:
             device_list = []
             deviceselection_completed = False
             while not deviceselection_completed:
@@ -1131,7 +1147,8 @@ class Wrapper(object):
                 for idx, device_dic in enumerate(mfa_dic['data']):
                     device_list.append(idx)
                     if 'attributes' in device_dic and 'deviceName' in device_dic['attributes']:
-                        print(f"[{idx}] - {device_dic['attributes']['deviceName']}")
+                        # we should start counting with 1 for the user
+                        print(f"[{idx + 1}] - {device_dic['attributes']['deviceName']}")
                 _tmp_device_num = input(':')
 
                 device_num, deviceselection_completed = self._process_userinput(device_num, device_list, _tmp_device_num, deviceselection_completed)
