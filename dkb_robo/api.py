@@ -1139,6 +1139,14 @@ class Wrapper(object):
         self.logger.debug('_select_mfa_device() ended with: %s', device_num)
         return device_num
 
+    def _sort_mfa_devices(self, mfa_dic):
+        """ sort mfa methods """
+        self.logger.debug('_sort_mfa_devices()')
+        mfa_list = mfa_dic['data']
+        mfa_list.sort(key=lambda x: (-x['attributes']['preferredDevice'], x['attributes']['enrolledAt']))
+        self.logger.debug('_sort_mfa_devices() ended with: %s elements', len(mfa_list))
+        return {'data': mfa_list}
+
     def _update_token(self):
         """ update token information with 2fa iformation """
         self.logger.debug('api.Wrapper._update_token()\n')
@@ -1221,6 +1229,10 @@ class Wrapper(object):
 
         # get mfa methods
         mfa_dic = self._get_mfa_methods()
+
+        if mfa_dic:
+            # sort mfa methods
+            mfa_dic = self._sort_mfa_devices(mfa_dic)
 
         # pick mfa device from list
         device_number = self._select_mfa_device(mfa_dic)

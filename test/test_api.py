@@ -481,13 +481,15 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
         self.assertEqual("Login failed: challenge response format is other than expected: {'foo': 'bar'}", str(err.exception))
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_040_login(self, mock_sess, mock_tok, mock_meth):
+    def test_040_login(self, mock_sess, mock_tok, mock_meth, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'foo': 'bar'}
         mock_meth.return_value = {'foo': 'bar'}
+        mock_sort.return_value = {'foo': 'bar'}
         with self.assertRaises(Exception) as err:
             self.dkb.login()
         self.assertEqual('Login failed: no 1fa access token.', str(err.exception))
@@ -495,14 +497,16 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_tok.called)
         self.assertTrue(mock_meth.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_041_login(self, mock_sess, mock_tok, mock_meth, mock_mfa):
+    def test_041_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'foo': 'bar'}
+        mock_sort.return_value = {'foo': 'bar'}
         mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
             self.dkb.login()
@@ -511,16 +515,19 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_tok.called)
         self.assertTrue(mock_meth.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_042_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa):
+    def test_042_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = (None, None)
         mock_mfa.return_value = 0
         with self.assertRaises(Exception) as err:
@@ -531,17 +538,20 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_meth.called)
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
     @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_043_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa):
+    def test_043_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = False
         mock_mfa.return_value = 0
@@ -554,7 +564,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
@@ -563,10 +575,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_044_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa):
+    def test_044_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = True
         mock_mfa.return_value = 0
@@ -580,7 +593,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_2fa.called)
         self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
@@ -589,10 +604,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_045_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa):
+    def test_045_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_2fa.return_value = True
         mock_mfa.return_value = 0
@@ -607,7 +623,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_upd.called)
         self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
@@ -616,10 +634,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_046_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa):
+    def test_046_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': 'token_factor_type'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_mfa.return_value = 0
         mock_2fa.return_value = True
@@ -634,7 +653,9 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_upd.called)
         self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
+        self.assertTrue(mock_sort.called)
 
+    @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._get_overview')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
@@ -644,10 +665,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_047_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_overview):
+    def test_047_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_overview, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': '2fa'}
         mock_meth.return_value = {'data': 'bar'}
+        mock_sort.return_value = {'data': 'bar'}
         mock_chall.return_value = ('mfa_challenge_id', 'deviceName')
         mock_mfa.return_value = 0
         mock_2fa.return_value = True
@@ -1767,6 +1789,63 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_makedir.called)
         self.assertTrue(self.dkb.client.patch.called)
         self.assertTrue(mock_open.called)
+
+    def test_173_sort_mfa_devices(self):
+        """ test sort_mfa_devices() """
+        mfa_dic = {
+            'data': [
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-01'}},
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}}
+            ]
+        }
+        expected_result = {
+            'data': [
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-01'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}}
+            ]
+        }
+        self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
+
+
+    def test_174_sort_mfa_devices(self):
+        """ test sort_mfa_devices() """
+        mfa_dic = {
+            'data': [
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}},
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-01'}}
+            ]
+        }
+        expected_result = {
+            'data': [
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-01'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}}
+            ]
+        }
+        self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
+
+
+    def test_175_sort_mfa_devices(self):
+        """ test sort_mfa_devices() """
+        mfa_dic = {
+            'data': [
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-04'}}
+            ]
+        }
+        expected_result = {
+            'data': [
+                {'attributes': {'preferredDevice': True, 'enrolledAt': '2022-01-04'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-02'}},
+                {'attributes': {'preferredDevice': False, 'enrolledAt': '2022-01-03'}}
+            ]
+        }
+        self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
+
 
 
 if __name__ == '__main__':
