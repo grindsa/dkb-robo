@@ -17,9 +17,9 @@ jobs:
         python_version: [3.x, 3.12, 3.11, '3.10', 3.9, 3.8, 3.7]
     name: Python Unittest (${{ matrix.python_version }})
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python_version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
     - name: Install dependencies
@@ -38,9 +38,9 @@ jobs:
         python_version: [3.x, 3.12, 3.11, '3.10', 3.9, 3.8, 3.7]
     name: Pylint test (${{ matrix.python_version }})
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
