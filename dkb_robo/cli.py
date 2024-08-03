@@ -195,6 +195,29 @@ def standing_orders(ctx):
         click.echo(_err.args[0], err=True)
 
 
+@main.command()
+@click.pass_context
+@click.option(
+    "--path",
+    "-p",
+    type=str,
+    help="Path to save the documents to",
+    envvar="PATH",
+)
+@click.option("--download_all", is_flag=True, show_default=True, default=False, help="Download all documents", envvar="DKB_DOWNLOAD_ALL")
+@click.option("--archive", is_flag=True, show_default=True, default=False, help="Download archive", envvar="DKB_ARCHIVE")
+@click.option("--prepend_date", is_flag=True, show_default=True, default=False, help="Prepend date to filename", envvar="DKB_PREPEND_DATE")
+def scan_postbox(ctx, path, download_all, archive, prepend_date):
+    """ scan postbox """
+    if not path:
+        path = "documents"
+    try:
+        with _login(ctx) as dkb:
+            ctx.obj["FORMAT"](dkb.scan_postbox(path=path, download_all=download_all, archive=archive, prepend_date=prepend_date))
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
+
+
 def _load_format(output_format):
     """ select output format based on cli option """
     if output_format == "pprint":
