@@ -626,6 +626,19 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._download_document() ended with: %s.\n', rcode)
         return rcode
 
+    def _docdate_lookup(self, document: Dict[str, str]) -> str:
+        """ lookup document date """
+        self.logger.debug('api.Wrapper._docdate_lookup()\n')
+
+        doc_date = 'unknown'
+        if 'statementDate' in document['attributes']['metadata']:
+            doc_date = document['attributes']['metadata']['statementDate']
+        elif 'creationDate' in document['attributes']['metadata']:
+            doc_date = document['attributes']['metadata']['creationDate']
+
+        self.logger.debug('api.Wrapper._docdate_lookup() ended\n')
+        return doc_date
+
     def _merge_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str]) -> Dict[str, str]:
         """ reformat postbox dictionary from DKB """
         self.logger.debug('api.Wrapper._merge_postbox()\n')
@@ -636,7 +649,7 @@ class Wrapper(object):
                 message_dic[document['id']] = {
                     'filename': document['attributes']['fileName'],
                     'contenttype': document['attributes']['contentType'],
-                    'date': document['attributes']['metadata']['statementDate'],
+                    'date': self._docdate_lookup(document),
                     'name': self._objectname_lookup(document)
                 }
 

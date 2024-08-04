@@ -1880,7 +1880,20 @@ class TestDKBRobo(unittest.TestCase):
         }
         self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
 
+    def test_153__docdate_lookup(self):
+        """ test _docdate_lookup() """
+        input_dic = {'attributes': {'metadata': {'statementDate': 'statementDate'}}}
+        self.assertEqual('statementDate', self.dkb._docdate_lookup(input_dic))
 
+    def test_154__docdate_lookup(self):
+        """ test _docdate_lookup() """
+        input_dic = {'attributes': {'metadata': {'creationDate': 'creationDate'}}}
+        self.assertEqual('creationDate', self.dkb._docdate_lookup(input_dic))
+
+    def test_155__docdate_lookup(self):
+        """ test _docdate_lookup() """
+        input_dic = {'attributes': {'metadata': {'fooDate': 'creationDate'}}}
+        self.assertEqual('unknown', self.dkb._docdate_lookup(input_dic))
 
 if __name__ == '__main__':
 
