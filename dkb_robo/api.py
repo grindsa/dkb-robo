@@ -1055,7 +1055,10 @@ class Wrapper(object):
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0'}
+            'te': 'trailers',
+            'priority': 'u=0',
+            'sec-gpc': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0'}
         client = requests.session()
         client.headers = headers
         if self.proxies:
@@ -1219,20 +1222,45 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper.get_standing_orders() ended\n')
         return so_list
 
+    def _get_transaction_list(self, transaction_url: str) -> Dict[str, str]:
+        """ get transaction list"""
+        self.logger.debug('api.Wrapper._get_transaction_list(%s)\n')
+
+        transaction_dic = {'data': []}
+        while transaction_url:
+            response = self.client.get(transaction_url)
+            if response.status_code == 200:
+                _transaction_dic = response.json()
+                if 'data' in _transaction_dic:
+                    transaction_dic['data'].extend(_transaction_dic['data'])
+                    if 'links' in _transaction_dic and 'next' in _transaction_dic['links']:
+                        self.logger.debug('api.Wrapper._get_transactions(): next page: %s', _transaction_dic['links']['next'])
+                        transaction_url = self.base_url + self.api_prefix + '/accounts' + _transaction_dic['links']['next']
+                    else:
+                        self.logger.debug('api.Wrapper._get_transactions(): no next page')
+                        transaction_url = None
+                else:
+                    self.logger.debug('api.Wrapper._get_transactions(): no data in response')
+                    transaction_url = None
+            else:
+                self.logger.error('api.Wrapper._get_transactions(): RC is not 200 but %s', response.status_code)
+                break
+
+        self.logger.debug('api.Wrapper._get_transaction_list() ended with %s entries\n', len(transaction_dic['data']))
+        return transaction_dic
+
     def get_transactions(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
         """ get transactions via API """
         self.logger.debug('api.Wrapper.get_transactions(%s, %s)\n', atype, transaction_type)
 
         transaction_list = []
 
-        response = self.client.get(transaction_url)
-        if response.status_code == 200:
-            transaction_dic = response.json()
-        else:
-            self.logger.error('api.Wrapper._get_transactions(): RC is not 200 but %s', response.status_code)
-            transaction_dic = {}
+        if transaction_url:
+            transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
 
-        if transaction_dic and 'data' in transaction_dic:
+        transaction_dic = self._get_transaction_list(transaction_url)
+
+        if transaction_dic and 'data' in transaction_dic and len(transaction_dic['data']) > 0:
             if atype == 'account':
                 transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
                 transaction_list = self._format_account_transactions(transaction_list)

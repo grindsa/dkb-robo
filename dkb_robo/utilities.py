@@ -39,18 +39,18 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     return output_date
 
 
-def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, min_year: int) -> Tuple[str, str]:
+def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, legacy_login: bool) -> Tuple[str, str]:
     """ enforce a certain date format """
-    logger.debug('_enforce_date_format(): %s, %s %s', date_from, date_to, min_year)
+    logger.debug('_enforce_date_format(): date_from: %s, date_to: %s legacy_login: %s', date_from, date_to, legacy_login)
 
-    if min_year == 1:
-        # this is the new api we need to ensure %Y-%m-%d
-        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-    else:
+    if legacy_login:
         # this is the old  api we need to ensure $d.%m,%Y
         date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
         date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
+    else:
+        # this is the new api we need to ensure %Y-%m-%d
+        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
 
     logger.debug('_enforce_date_format() ended with: %s, %s', date_from, date_to)
     return date_from, date_to
@@ -119,7 +119,7 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_yea
         logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
         date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
-    date_from, date_to = _enforce_date_format(logger, date_from, date_to, min_year)
+    date_from, date_to = _enforce_date_format(logger, date_from, date_to, legacy_login)
 
     logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
     return date_from, date_to
