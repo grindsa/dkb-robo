@@ -79,8 +79,10 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.legacy_login = True
         mock_legacy.return_value = ('legacy', 'foo')
         mock_api.return_value = ('api', 'foo')
-        self.assertTrue(self.dkb.__enter__())
-        self.assertTrue(mock_legacy.called)
+        with self.assertRaises(Exception) as err:
+            self.dkb.__enter__()
+        self.assertEqual('Legacy Login got deprecated. Please do not use this option anymore', str(err.exception))
+        self.assertFalse(mock_legacy.called)
         self.assertFalse(mock_api.called)
 
     @patch('dkb_robo.api.Wrapper.login')
@@ -91,8 +93,10 @@ class TestDKBRobo(unittest.TestCase):
         # self.dkb.wrapper = Mock()
         mock_legacy.return_value = ('legacy', 'foo')
         mock_api.return_value = ('api', 'foo')
-        self.assertTrue(self.dkb.__enter__())
-        self.assertTrue(mock_legacy.called)
+        with self.assertRaises(Exception) as err:
+            self.dkb.__enter__()
+        self.assertEqual('Legacy Login got deprecated. Please do not use this option anymore', str(err.exception))
+        self.assertFalse(mock_legacy.called)
         self.assertFalse(mock_api.called)
 
     @patch('dkb_robo.api.Wrapper.login')

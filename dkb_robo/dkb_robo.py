@@ -2,7 +2,7 @@
 """ dkb internet banking automation library """
 # -*- coding: utf-8 -*-
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
-
+from dkb_robo.api import Wrapper
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
@@ -39,16 +39,13 @@ class DKBRobo(object):
         if self.tan_insert:
             self.legacy_login = True
 
+        if self.legacy_login:
+            raise DKBRoboError('Legacy Login got deprecated. Please do not use this option anymore')
+
         if self.mfa_device == 'm':
             self.mfa_device = 1
 
-        if self.legacy_login:
-            from dkb_robo.legacy import Wrapper
-            self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, tan_insert=self.tan_insert, proxies=self.proxies, logger=self.logger)
-
-        else:
-            from dkb_robo.api import Wrapper
-            self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, mfa_device=self.mfa_device, logger=self.logger)
+        self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, mfa_device=self.mfa_device, logger=self.logger)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()
@@ -72,7 +69,7 @@ class DKBRobo(object):
     def get_points(self):
         """ returns the DKB points """
         self.logger.debug('DKBRobo.get_points()\n')
-        return self.wrapper.get_points()
+        raise DKBRoboError('Method not supported...')
 
     def get_standing_orders(self, uid=None):
         """ get standing orders """
@@ -83,9 +80,6 @@ class DKBRobo(object):
         """ exported method to get transactions """
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
-        #if self.legacy_login:
-        #    (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 3, self.legacy_login)
-        # else:
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to, 3, self.legacy_login)
 
         transaction_list = self.wrapper.get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
