@@ -982,8 +982,8 @@ class Wrapper(object):
         mfa_dic = {}
 
         # check for access_token and get mfa_methods
-        if 'access_token' in self.token_dic:
-            response = self.client.get(self.base_url + self.api_prefix + f'/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}')
+        if 'access_token' in self.token_dic and 'mfa_id' in self.token_dic:
+            response = self.client.get(self.base_url + self.api_prefix + f'/mfa/mfa/{self.token_dic["mfa_id"]}/methods?filter%5BmethodType%5D={self.mfa_method}')
             if response.status_code == 200:
                 mfa_dic = response.json()
             else:
@@ -1035,6 +1035,7 @@ class Wrapper(object):
         # login via API
         data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
         response = self.client.post(self.base_url + self.api_prefix + '/token', data=data_dic)
+        print(response.json())
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
