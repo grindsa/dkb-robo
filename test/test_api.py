@@ -297,7 +297,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_023_get_mfa_methods(self):
         """ test _get_mfa_methods() """
-        self.dkb.token_dic = {'access_token': 'bar'}
+        self.dkb.token_dic = {'access_token': 'bar', 'mfa_id': 'mfa_id'}
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 400
         with self.assertRaises(Exception) as err:
@@ -309,7 +309,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'foo1': 'bar1'}
-        self.dkb.token_dic = {'access_token': 'bar'}
+        self.dkb.token_dic = {'access_token': 'bar', 'mfa_id': 'mfa_id'}
         self.assertEqual({'foo1': 'bar1'}, self.dkb._get_mfa_methods())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)

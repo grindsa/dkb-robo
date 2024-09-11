@@ -1035,7 +1035,6 @@ class Wrapper(object):
         # login via API
         data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
         response = self.client.post(self.base_url + self.api_prefix + '/token', data=data_dic)
-        print(response.json())
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
