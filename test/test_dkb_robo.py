@@ -166,8 +166,9 @@ class TestDKBRobo(unittest.TestCase):
     def test_011_get_points(self):
         """ test get_exemption_order()"""
         self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_points.return_value = {'foo': 'bar'}
-        self.assertEqual({'foo': 'bar'}, self.dkb.get_points())
+        with self.assertRaises(Exception) as err:
+            self.dkb.get_points()
+        self.assertEqual('Method not supported...', str(err.exception))
 
     def test_012_get_exemption_order(self):
         """ test get_exemption_order()"""
