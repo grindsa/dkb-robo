@@ -35,11 +35,14 @@ class Wrapper(object):
     token_dic = None
     account_dic = {}
 
-    def __init__(self, dkb_user: str = None, dkb_password: str = None, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.proxies = proxies
         self.logger = logger
+        if chip_tan:
+            self.logger.info('Using to chip_tan to login')
+            self.mfa_method = 'chip_tan_manual'
         try:
             self.mfa_device = int(mfa_device)
         except (ValueError, TypeError):
@@ -523,7 +526,7 @@ class Wrapper(object):
 
     def _check_processing_status(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
         self.logger.debug('api.Wrapper._check_processing_status()\n')
-        self.logger.debug('api.Wrapper._login: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
+        self.logger.debug('api.Wrapper._check_processing_status: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
 
         mfa_completed = False
         if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
@@ -534,11 +537,11 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._check_processing_status() ended with: %s\n', mfa_completed)
         return mfa_completed
 
-    def _complete_2fa(self, challenge_id: str, devicename: str) -> bool:
+    def _complete_app_2fa(self, challenge_id: str, devicename: str) -> bool:
         """ wait for confirmation for the 2nd factor """
-        self.logger.debug('api.Wrapper._complete_2fa()\n')
+        self.logger.debug('api.Wrapper._complete_app_2fa()\n')
 
-        self._print_2fa_confirmation(devicename)
+        self._print_app_2fa_confirmation(devicename)
 
         cnt = 0
         mfa_completed = False
@@ -554,12 +557,60 @@ class Wrapper(object):
                     if mfa_completed:
                         break
                 else:
-                    self.logger.error('api.Wrapper._complete_2fa(): error parsing polling response: %s', polling_dic)
+                    self.logger.error('api.Wrapper._complete_app_2fa(): error parsing polling response: %s', polling_dic)
             else:
-                self.logger.error('api.Wrapper._complete_2fa(): polling request failed. RC: %s', response.status_code)
+                self.logger.error('api.Wrapper._complete_app_2fa(): polling request failed. RC: %s', response.status_code)
             time.sleep(5)
 
-        self.logger.debug('api.Wrapper._complete_2fa() ended with: %s\n', mfa_completed)
+        self.logger.debug('api.Wrapper._complete_app_2fa() ended with: %s\n', mfa_completed)
+        return mfa_completed
+
+    def _complete_ctm_2fa(self, challenge_id: str, challenge_dic: Dict[str, str]) -> bool:
+        """ complete 2fa with chip tan manual """
+        self.logger.debug('api.Wrapper._complete_ctm_2fa()\n')
+
+        if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes']:
+            if 'headline' in challenge_dic['data']['attributes']['chipTan']:
+                print(f'{challenge_dic['data']['attributes']['chipTan']['headline']}\n')
+            if 'instructions' in challenge_dic['data']['attributes']['chipTan']:
+                for idx, instruction in enumerate(challenge_dic['data']['attributes']['chipTan']['instructions'], start=1):
+                    print(f'{idx}. {instruction}\n')
+
+        tan = input("TAN: ")
+
+        data_dic = {"data": {"attributes": {"challengeResponse": tan, "methodType": self.mfa_method}, "type": "mfa-challenge"}}
+        self.client.headers['Content-Type'] = JSON_CONTENT_TYPE
+        self.client.headers["Accept"] = "application/vnd.api+json"
+
+        response = self.client.post(self.base_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}", data=json.dumps(data_dic))
+
+        mfa_completed = False
+        if response.ok:
+            result_dic = response.json()
+            if 'data' in result_dic and 'attributes' in result_dic['data'] and 'verificationStatus' in result_dic['data']['attributes'] and result_dic['data']['attributes']['verificationStatus'] == 'authorized':
+                mfa_completed = True
+
+        self.client.headers.pop('Content-Type')
+        self.client.headers.pop('Accept')
+
+        self.logger.debug('api.Wrapper._complete_ctm_2fa() ended with %s\n', mfa_completed)
+        return mfa_completed
+
+    def _complete_2fa(self, challenge_dic: Dict[str, str], devicename: str) -> bool:
+        """ wait for confirmation for the 2nd factor """
+        self.logger.debug('api.Wrapper._complete_2fa()\n')
+
+        challenge_id = self._get_challenge_id(challenge_dic)
+
+        if self.mfa_method == 'seal_one':
+            mfa_completed = self._complete_app_2fa(challenge_id, devicename)
+        elif self.mfa_method == 'chip_tan_manual':
+            mfa_completed = self._complete_ctm_2fa(challenge_id, challenge_dic)
+        else:
+            self.logger.error('api.Wrapper._complete_2fa(): unknown 2fa method %s', self.mfa_method)
+            mfa_completed = False
+
+        self.logger.debug('api.Wrapper._complete_2fa() ended with %s\n', mfa_completed)
         return mfa_completed
 
     def _do_sso_redirect(self):
@@ -940,19 +991,18 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._get_loans() ended\n')
         return loans_dic
 
-    def _get_mfa_challenge_id(self, mfa_dic: Dict[str, str], device_num: int = 0) -> Tuple[str, str]:
+    def _get_mfa_challenge_dic(self, mfa_dic: Dict[str, str], device_num: int = 0) -> Tuple[str, str]:
         """ get challenge dict with information on the 2nd factor """
-        self.logger.debug('api.Wrapper._get_mfa_challenge_id() login with device_num: %s\n', device_num)
+        self.logger.debug('api.Wrapper._get_mfa_challenge_dic(): login with device_num: %s\n', device_num)
 
-        challenge_id = None
         device_name = None
 
         if 'data' in mfa_dic and 'id' in mfa_dic['data'][device_num]:
             try:
                 device_name = mfa_dic['data'][device_num]['attributes']['deviceName']
-                self.logger.debug('api.Wrapper._get_mfa_challenge_id(): devicename: %s\n', device_name)
+                self.logger.debug('api.Wrapper._get_mfa_challenge_dic(): devicename: %s\n', device_name)
             except Exception as _err:
-                self.logger.error('api.Wrapper._get_mfa_challenge_id(): unable to get deviceName')
+                self.logger.error('api.Wrapper._get_mfa_challenge_dic(): unable to get deviceName')
                 device_name = None
 
             # additional headers needed as this call requires it
@@ -964,17 +1014,20 @@ class Wrapper(object):
             response = self.client.post(self.base_url + self.api_prefix + '/mfa/mfa/challenges', data=json.dumps(data_dic))
 
             # process response
-            challenge_id = self._process_challenge_response(response)
+            # challenge_id = self._process_challenge_response(response)
+            if response.status_code in (200, 201):
+                challenge_dic = response.json()
+            else:
+                raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
 
             # we rmove the headers we added earlier
             self.client.headers.pop('Content-Type')
             self.client.headers.pop('Accept')
-
         else:
-            self.logger.error('api.Wrapper._get_mfa_challenge_id(): mfa_dic has an unexpected data structure')
+            self.logger.error('api.Wrapper._get_mfa_challenge_dic(): mfa_dic has an unexpected data structure')
 
-        self.logger.debug('api.Wrapper._get_mfa_challenge_id() ended\n')
-        return challenge_id, device_name
+        self.logger.debug('api.Wrapper._get_mfa_challenge_dic() ended\n')
+        return challenge_dic, device_name
 
     def _get_mfa_methods(self) -> Dict[str, str]:
         """ get mfa methods """
@@ -1096,32 +1149,29 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._objectname_lookup() ended with: %s\n', object_name)
         return object_name
 
-    def _print_2fa_confirmation(self, devicename: str):
+    def _print_app_2fa_confirmation(self, devicename: str):
         """ 2fa confirmation message """
-        self.logger.debug('api.Wrapper._print_2fa_confirmation()\n')
+        self.logger.debug('api.Wrapper._print_app_2fa_confirmation()\n')
         if devicename:
             print(f'check your banking app on "{devicename}" and confirm login...')
         else:
             print('check your banking app and confirm login...')
 
-    def _process_challenge_response(self, response: Dict[str, str]) -> str:
+    def _get_challenge_id(self, challenge_dic: Dict[str, str]) -> str:
         """ get challenge dict with information on the 2nd factor """
-        self.logger.debug('api.Wrapper._process_challenge_response()\n')
+        self.logger.debug('api.Wrapper._get_challenge_id()\n')
         challenge_id = None
-        if response.status_code in (200, 201):
-            challenge_dic = response.json()
-            if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
-                if challenge_dic['data']['type'] == 'mfa-challenge':
-                    challenge_id = challenge_dic['data']['id']
-                else:
-                    raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}')
 
+        if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
+            if challenge_dic['data']['type'] == 'mfa-challenge':
+                challenge_id = challenge_dic['data']['id']
             else:
-                raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
-        else:
-            raise DKBRoboError(f'Login failed: post request to get the mfa challenges failed. RC: {response.status_code}')
+                raise DKBRoboError(f'Login failed:: wrong challenge type: {challenge_dic}')
 
-        self.logger.debug('api.Wrapper._process_challenge_response() ended with: %s\n', challenge_id)
+        else:
+            raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
+
+        self.logger.debug('api.Wrapper._get_challenge_id() ended with: %s\n', challenge_id)
         return challenge_id
 
     def _process_userinput(self, device_num: int, device_list: List[int], _tmp_device_num: str, deviceselection_completed: bool) -> Tuple[int, bool]:
@@ -1176,7 +1226,8 @@ class Wrapper(object):
         """ sort mfa methods """
         self.logger.debug('_sort_mfa_devices()')
         mfa_list = mfa_dic['data']
-        mfa_list.sort(key=lambda x: (-x['attributes']['preferredDevice'], x['attributes']['enrolledAt']))
+        if self.mfa_method == 'seal_one':
+            mfa_list.sort(key=lambda x: (-x['attributes']['preferredDevice'], x['attributes']['enrolledAt']))
         self.logger.debug('_sort_mfa_devices() ended with: %s elements', len(mfa_list))
         return {'data': mfa_list}
 
@@ -1185,11 +1236,12 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._update_token()\n')
 
         data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
+        print(data_dic)
         response = self.client.post(self.base_url + self.api_prefix + '/token', data=data_dic)
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            raise DKBRoboError(f'Login failed: token update failed. RC: {response.status_code}')
+            raise DKBRoboError(f'Login failed: token update failed. RC: {response.text}')
 
     def get_credit_limits(self) -> Dict[str, str]:
         """ get credit limits """
@@ -1287,7 +1339,6 @@ class Wrapper(object):
 
         # get mfa methods
         mfa_dic = self._get_mfa_methods()
-
         if mfa_dic:
             # sort mfa methods
             mfa_dic = self._sort_mfa_devices(mfa_dic)
@@ -1296,16 +1347,16 @@ class Wrapper(object):
         device_number = self._select_mfa_device(mfa_dic)
 
         # we need a challege-id for polling so lets try to get it
-        mfa_challenge_id = None
+        mfa_challenge_dic = None
         if 'mfa_id' in self.token_dic and 'data' in mfa_dic:
-            mfa_challenge_id, device_name = self._get_mfa_challenge_id(mfa_dic, device_number)
+            mfa_challenge_dic, device_name = self._get_mfa_challenge_dic(mfa_dic, device_number)
         else:
             raise DKBRoboError('Login failed: no 1fa access token.')
 
         # lets complete 2fa
         mfa_completed = False
-        if mfa_challenge_id:
-            mfa_completed = self._complete_2fa(mfa_challenge_id, device_name)
+        if mfa_challenge_dic:
+            mfa_completed = self._complete_2fa(mfa_challenge_dic, device_name)
         else:
             raise DKBRoboError('Login failed: No challenge id.')
 
