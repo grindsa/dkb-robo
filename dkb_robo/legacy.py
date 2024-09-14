@@ -2,7 +2,7 @@
 """ legacy api """
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 import re
 import logging
@@ -425,7 +425,7 @@ class Wrapper(object):
 
         if soup:
             # poll url
-            poll_id = int(datetime.utcnow().timestamp() * 1e3)
+            poll_id = int(datetime.now(timezone.utc).timestamp() * 1e3)
             poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
             for _cnt in range(120):
                 # add id to pollurl

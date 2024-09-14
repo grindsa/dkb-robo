@@ -38,6 +38,7 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     logger.debug('_convert_date_format() ended with: %s', output_date)
     return output_date
 
+
 def generate_random_string(length: int) -> str:
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
