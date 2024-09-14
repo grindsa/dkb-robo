@@ -534,6 +534,8 @@ class Wrapper(object):
             mfa_completed = False
             if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
                 mfa_completed = True
+            elif (polling_dic['data']['attributes']['verificationStatus']) == 'processing':
+                self.logger.info('Status: %s. Waiting for confirmation', polling_dic['data']['attributes']['verificationStatus'])
             elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
                 raise DKBRoboError('2fa chanceled by user')
             else:
@@ -601,7 +603,7 @@ class Wrapper(object):
         response = self.client.post(self.base_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}", data=json.dumps(data_dic))
 
         mfa_completed = False
-        if response.status_code == 200:
+        if response.status_code <= 400:
             result_dic = response.json()
             if 'data' in result_dic and 'attributes' in result_dic['data'] and 'verificationStatus' in result_dic['data']['attributes'] and result_dic['data']['attributes']['verificationStatus'] == 'authorized':
                 mfa_completed = True
