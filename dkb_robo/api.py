@@ -600,10 +600,10 @@ class Wrapper(object):
         data_dic = {"data": {"attributes": {"challengeResponse": tan, "methodType": self.mfa_method}, "type": "mfa-challenge"}}
         self.client.headers['Content-Type'] = JSON_CONTENT_TYPE
         self.client.headers["Accept"] = "application/vnd.api+json"
-        response = self.client.post(self.base_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}", data=json.dumps(data_dic))
 
+        response = self.client.post(self.base_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}", data=json.dumps(data_dic))
         mfa_completed = False
-        if response.status_code <= 400:
+        if response.status_code <= 300:
             result_dic = response.json()
             if 'data' in result_dic and 'attributes' in result_dic['data'] and 'verificationStatus' in result_dic['data']['attributes'] and result_dic['data']['attributes']['verificationStatus'] == 'authorized':
                 mfa_completed = True

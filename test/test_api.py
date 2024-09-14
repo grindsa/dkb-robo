@@ -1989,6 +1989,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.post.return_value.json.return_value = {'data': {'attributes': {'verificationStatus': 'authorized'}}}
         challenge_dic = {'foo': 'bar'}
         self.assertTrue(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
+        self.assertTrue(mock_ctan.called)
 
     @patch('dkb_robo.api.Wrapper._print_ctan_instructions')
     def test_169_complete_ctm_2fa(self, mock_ctan):
@@ -2000,6 +2001,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.post.return_value.json.return_value = {'data': {'attributes': {'verificationStatus': 'foo'}}}
         challenge_dic = {'foo': 'bar'}
         self.assertFalse(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
+        self.assertTrue(mock_ctan.called)
 
     @patch('dkb_robo.api.Wrapper._print_ctan_instructions')
     def test_170_complete_ctm_2fa(self, mock_ctan):
@@ -2014,6 +2016,7 @@ class TestDKBRobo(unittest.TestCase):
         with self.assertRaises(Exception) as err:
             self.assertFalse(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
         self.assertEqual('Login failed: 2fa failed. RC: 400 text: bump', str(err.exception))
+        self.assertTrue(mock_ctan.called)
 
     def test_171__print_ctan_instructions(self):
         """ test _print_ctan_instructions()"""

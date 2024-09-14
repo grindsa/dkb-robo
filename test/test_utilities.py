@@ -117,104 +117,104 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to date_to', lcm.output)
 
     @patch('random.choice')
-    def test_009_generate_random_string(self, mock_rc):
+    def test_010_generate_random_string(self, mock_rc):
         """ test generate_random_string """
         mock_rc.return_value = '1a'
         length = 5
         self.assertEqual('1a1a1a1a1a', self.generate_random_string(length))
 
     @patch('random.choice')
-    def test_010_generate_random_string(self, mock_rc):
+    def test_011_generate_random_string(self, mock_rc):
         """ generate_random_string """
         mock_rc.return_value = '1a'
         length = 10
         self.assertEqual('1a1a1a1a1a1a1a1a1a1a', self.generate_random_string(length))
 
-    def test_011_string2float(self):
+    def test_012_string2float(self):
         """ test string2float """
         value = 1000
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_012_string2float(self):
+    def test_013_string2float(self):
         """ test string2float """
         value = 1000.0
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_013_string2float(self):
+    def test_014_string2float(self):
         """ test string2float """
         value = '1.000,00'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_014_string2float(self):
+    def test_015_string2float(self):
         """ test string2float """
         value = '1000,00'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_015_string2float(self):
+    def test_016_string2float(self):
         """ test string2float """
         value = '1.000'
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_016_string2float(self):
+    def test_017_string2float(self):
         """ test string2float """
         value = '1.000,23'
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_017_string2float(self):
+    def test_018_string2float(self):
         """ test string2float """
         value = '1000,23'
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_018_string2float(self):
+    def test_019_string2float(self):
         """ test string2float """
         value = 1000.23
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_019_string2float(self):
+    def test_020_string2float(self):
         """ test string2float """
         value = '-1.000'
         self.assertEqual(-1000.0, self.string2float(value))
 
-    def test_020_string2float(self):
+    def test_021_string2float(self):
         """ test string2float """
         value = '-1.000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_021_string2float(self):
+    def test_022_string2float(self):
         """ test string2float """
         value = '-1000,23'
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_022_string2float(self):
+    def test_023_string2float(self):
         """ test string2float """
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_023__convert_date_format(self):
+    def test_024__convert_date_format(self):
         """ test _convert_date_format() """
         self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_024__convert_date_format(self):
+    def test_025__convert_date_format(self):
         """ test _convert_date_format() """
         self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_025__convert_date_format(self):
+    def test_026__convert_date_format(self):
         """ test _convert_date_format() first match """
         self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%d.%m.%Y'))
 
-    def test_026__convert_date_format(self):
+    def test_027__convert_date_format(self):
         """ test _convert_date_format() last match """
         self.assertEqual('01.01.2023', self._convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%d.%m.%Y'))
 
-    def test_027__convert_date_format(self):
+    def test_028__convert_date_format(self):
         """ test _convert_date_format() last match """
         self.assertEqual('2023/01/01', self._convert_date_format(self.logger, '2023/01/01', ['%Y/%m/%d', '%d.%m.%Y'], '%Y/%m/%d'))
 
-    def test_028__convert_date_format(self):
+    def test_029__convert_date_format(self):
         """ test _convert_date_format() first match """
         self.assertEqual('2023/01/01', self._convert_date_format(self.logger, '2023/01/01', ['%d.%m.%Y', '%Y/%m/%d'], '%Y/%m/%d'))
 
-    def test_029__convert_date_format(self):
+    def test_030__convert_date_format(self):
         """ test _convert_date_format() no match """
         self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
