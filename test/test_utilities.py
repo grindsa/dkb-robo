@@ -17,88 +17,104 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, _enforce_date_format, get_dateformat
+        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, get_dateformat
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
         self._convert_date_format = _convert_date_format
-        self._enforce_date_format = _enforce_date_format
         self.get_dateformat = get_dateformat
         self.logger = logging.getLogger('dkb_robo')
 
     @patch('time.time')
     def test_001_validate_dates(self, mock_time):
         """ test validate dates with correct data """
-        date_from = '01.12.2021'
-        date_to = '10.12.2021'
-        mock_time.return_value = 1639232579
-        self.assertEqual(('01.12.2021', '10.12.2021'), self.validate_dates(self.logger, date_from, date_to))
+        date_from = '01.01.2024'
+        date_to = '10.01.2024'
+        mock_time.return_value = 1726309859
+        self.assertEqual(('2024-01-01', '2024-01-10'), self.validate_dates(self.logger, date_from, date_to))
 
     @patch('time.time')
     def test_002_validate_dates(self, mock_time):
-        """ test validate dates date_from to be corrected """
+        """ test validate dates dates to be corrected """
         date_from = '12.12.2021'
         date_to = '11.12.2021'
-        mock_time.return_value = 1639232579
+        mock_time.return_value = 1726309859
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(('11.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
-        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 11.12.2021', lcm.output)
+            self.assertEqual(('2022-01-01', '2022-01-01'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 2022-01-01', lcm.output)
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 2022-01-01', lcm.output)
 
     @patch('time.time')
     def test_003_validate_dates(self, mock_time):
-        """ test validate dates date_to to be corrected """
-        date_from = '01.12.2021'
-        date_to = '12.12.2021'
-        mock_time.return_value = 1639232579
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(('01.12.2021', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
-        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 11.12.2021', lcm.output)
+        """ test validate dates with correct data """
+        date_from = '2024-01-01'
+        date_to = '2024-01-10'
+        mock_time.return_value = 1726309859
+        self.assertEqual(('2024-01-01', '2024-01-10'), self.validate_dates(self.logger, date_from, date_to))
 
     @patch('time.time')
     def test_004_validate_dates(self, mock_time):
-        """ test validate dates date_to to be corrected """
-        date_from = '01.12.2021'
-        date_to = '12.12.2021'
-        mock_time.return_value = 1639232579
-        self.assertEqual(('01.12.2021', '12.12.2021'), self.validate_dates(self.logger, date_from, date_to, legacy_login=False))
+        """ test validate dates dates to be corrected """
+        date_from = '2021-12-01'
+        date_to = '2021-12-11'
+        mock_time.return_value = 1726309859
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('2022-01-01', '2022-01-01'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 2022-01-01', lcm.output)
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 2022-01-01', lcm.output)
 
     @patch('time.time')
     def test_005_validate_dates(self, mock_time):
-        """ test validate dates date_from to be corrected past past > 3 years """
-        date_from = '01.01.1980'
-        date_to = '12.12.2021'
-        mock_time.return_value = 1639232579
+        """ test validate dates dates to be corrected """
+        date_from = '01.12.2024'
+        date_to = '11.12.2024'
+        mock_time.return_value = 1726309859
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(('12.12.2018', '11.12.2021'), self.validate_dates(self.logger, date_from, date_to))
-        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 12.12.2018', lcm.output)
+            self.assertEqual(('2024-09-14', '2024-09-14'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 2024-09-14', lcm.output)
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 2024-09-14', lcm.output)
 
     @patch('time.time')
     def test_006_validate_dates(self, mock_time):
-        """ test validate dates date_from to be corrected past past > 3 years """
-        date_from = '01.01.1980'
-        date_to = '02.01.1980'
-        mock_time.return_value = 1639232579
+        """ test validate dates dates to be corrected """
+        date_from = '2024-12-01'
+        date_to = '2024-12-11'
+        mock_time.return_value = 1726309859
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(('12.12.2018', '12.12.2018'), self.validate_dates(self.logger, date_from, date_to))
-        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 12.12.2018', lcm.output)
-        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 12.12.2018', lcm.output)
+            self.assertEqual(('2024-09-14', '2024-09-14'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to 2024-09-14', lcm.output)
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_to to 2024-09-14', lcm.output)
 
     @patch('time.time')
     def test_007_validate_dates(self, mock_time):
         """ test validate dates with correct data """
-        date_from = '2021-12-01'
-        date_to = '2021-12-10'
-        mock_time.return_value = 1639232579
-        self.assertEqual(('2021-12-01', '2021-12-10'), self.validate_dates(self.logger, date_from, date_to, 1))
+        date_from = '15.01.2024'
+        date_to = '10.01.2024'
+        mock_time.return_value = 1726309859
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('2024-01-10', '2024-01-10'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to date_to', lcm.output)
 
     @patch('time.time')
     def test_008_validate_dates(self, mock_time):
         """ test validate dates with correct data """
-        date_from = '2021-12-01'
-        date_to = '2021-12-10'
-        mock_time.return_value = 1639232579
-        self.assertEqual(('01.12.2021', '10.12.2021'), self.validate_dates(self.logger, date_from, date_to, 3))
+        date_from = '2024-01-15'
+        date_to = '2024-01-10'
+        mock_time.return_value = 1726309859
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('2024-01-10', '2024-01-10'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to date_to', lcm.output)
+
+    @patch('time.time')
+    def test_009_validate_dates(self, mock_time):
+        """ test validate dates with correct data """
+        date_from = '15.01.2024'
+        date_to = '10.01.2024'
+        mock_time.return_value = 1726309859
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(('2024-01-10', '2024-01-10'), self.validate_dates(self.logger, date_from, date_to))
+        self.assertIn('INFO:dkb_robo:validate_dates(): adjust date_from to date_to', lcm.output)
 
     @patch('random.choice')
     def test_009_generate_random_string(self, mock_rc):
@@ -202,25 +218,7 @@ class TestDKBRobo(unittest.TestCase):
         """ test _convert_date_format() no match """
         self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
-    def test_030__enforce_date_format(self):
-        """ test _enforce_date_format() - old frontend - old date format """
-        self.assertEqual(('01.01.2023', '02.01.2023'), self._enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 3))
 
-    def test_031__enforce_date_format(self):
-        """ test _enforce_date_format() - old frontend - new date format """
-        self.assertEqual(('01.04.2023', '02.04.2023'), self._enforce_date_format(self.logger, '2023-04-01', '2023-04-02', 3))
-
-    def test_032__enforce_date_format(self):
-        """ test _enforce_date_format() - new frontend - new date format """
-        self.assertEqual(('2023-01-01', '2023-01-02'), self._enforce_date_format(self.logger, '2023-01-01', '2023-01-02', 1))
-
-    def test_033__enforce_date_format(self):
-        """ test _enforce_date_format() - new frontend - old date format """
-        self.assertEqual(('2023-01-01', '2023-01-02'), self._enforce_date_format(self.logger, '01.01.2023', '02.01.2023', 1))
-
-    def test_034_get_dateformat(self):
-        """ test get_dateformat() """
-        self.assertEqual(('%d.%m.%Y', '%Y-%m-%d'), self.get_dateformat())
 
 if __name__ == '__main__':
 

@@ -38,24 +38,6 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     logger.debug('_convert_date_format() ended with: %s', output_date)
     return output_date
 
-
-def _enforce_date_format(logger: logging.Logger, date_from: str, date_to: str, legacy_login: bool) -> Tuple[str, str]:
-    """ enforce a certain date format """
-    logger.debug('_enforce_date_format(): date_from: %s, date_to: %s legacy_login: %s', date_from, date_to, legacy_login)
-
-    if legacy_login:
-        # this is the old  api we need to ensure $d.%m,%Y
-        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
-        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], LEGACY_DATE_FORMAT)
-    else:
-        # this is the new api we need to ensure %Y-%m-%d
-        date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-        date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-
-    logger.debug('_enforce_date_format() ended with: %s, %s', date_from, date_to)
-    return date_from, date_to
-
-
 def generate_random_string(length: int) -> str:
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
@@ -89,9 +71,10 @@ def logger_setup(debug: bool) -> logging.Logger:
     return logger
 
 
-def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_year: int = 3, legacy_login: bool = True) -> Tuple[str, str]:
+def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tuple[str, str]:
     """ correct dates if needed """
     logger.debug('validate_dates()')
+
     try:
         date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
     except ValueError:
@@ -100,26 +83,34 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str, min_yea
         date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
     except ValueError:
         date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
+
     now_uts = int(time.time())
 
-    # minimal date (3 years back)
-    minimal_date_uts = now_uts - min_year * 365 * 86400
+    # ajust valid_from to valid_to
+    if date_to_uts <= date_from_uts:
+        logger.info('validate_dates(): adjust date_from to date_to')
+        date_from = date_to
+
+    # minimal date uts (01.01.2022)
+    minimal_date_uts = 1640995200
 
     if date_from_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime(API_DATE_FORMAT))
         date_from = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
     if date_to_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y'))
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime(API_DATE_FORMAT))
         date_to = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime(API_DATE_FORMAT))
         date_from = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
-    if date_to_uts > now_uts and legacy_login:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y'))
+    if date_to_uts > now_uts:
+        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime(API_DATE_FORMAT))
         date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
 
-    date_from, date_to = _enforce_date_format(logger, date_from, date_to, legacy_login)
+    # this is the new api we need to ensure %Y-%m-%d
+    date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+    date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
 
     logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
     return date_from, date_to

@@ -581,7 +581,7 @@ class Wrapper(object):
         tan = None
         if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes']:
             if 'headline' in challenge_dic['data']['attributes']['chipTan']:
-                print(f'{challenge_dic['data']['attributes']['chipTan']['headline']}\n')
+                print(f"{challenge_dic['data']['attributes']['chipTan']['headline']}\n")
             if 'instructions' in challenge_dic['data']['attributes']['chipTan']:
                 for idx, instruction in enumerate(challenge_dic['data']['attributes']['chipTan']['instructions'], start=1):
                     print(f'{idx}. {instruction}\n')
