@@ -38,7 +38,6 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     is_flag=True,
     envvar="DKB_CHIP_TAN",
 )
-
 @click.option(
     "--username",
     "-u",
@@ -68,7 +67,7 @@ def main(ctx, debug, use_tan, chip_tan, username, password, format):  # pragma: 
     """ main fuunction """
 
     if use_tan:
-        click.echo("The --use-tan option is deprecated and will be removed in a future release. Please use the --chip-tan option",err=True)
+        click.echo("The --use-tan option is deprecated and will be removed in a future release. Please use the --chip-tan option", err=True)
         chip_tan = True
 
     ctx.ensure_object(dict)
