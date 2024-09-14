@@ -869,7 +869,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/mock_re.pdf', ['mock_re.pdf']), self.wrapper._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.utilities.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.legacy.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('re.findall')
     @patch('dkb_robo.utilities.generate_random_string')
@@ -896,7 +896,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf', ['Mitteilung_über_steigende_Sollzinssätze_ab_01.10.2022.pdf']), self.wrapper._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.utilities.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.legacy.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -919,7 +919,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual((200, 'path/foo.pdf', ['foo.pdf']), self.wrapper._get_document('folder_url', 'path', 'url', [], False))
         self.assertFalse(mock_makedir.called)
 
-    @patch('dkb_robo.utilities.datetime.datetime', Mock(now=lambda: date(2022, 9, 30)))
+    @patch('dkb_robo.legacy.datetime', Mock(now=lambda: date(2022, 9, 30)))
     @patch("builtins.open", mock_open(read_data='test'), create=True)
     @patch('os.makedirs')
     @patch('os.path.exists')

@@ -242,8 +242,8 @@ class Wrapper(object):
                 output_dic['price'] = float(ele['attributes']['price']['value'])
             if 'currencyCode' in ele['attributes']['price']:
                 output_dic['currencycode'] = ele['attributes']['price']['currencyCode']
-        if 'market' in ele['attributes']:
-            output_dic['market'] = ele['attributes']['market']
+            if 'market' in ele['attributes']:
+                output_dic['market'] = ele['attributes']['market']
 
         self.logger.debug('api.Wrapper._add_brokerage_quoteinformation() ended\n')
         return output_dic

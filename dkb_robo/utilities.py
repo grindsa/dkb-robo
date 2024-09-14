@@ -4,7 +4,7 @@ import logging
 import random
 from string import digits, ascii_letters
 from typing import List, Tuple
-import datetime
+from datetime import datetime, timezone
 import time
 
 
@@ -23,7 +23,7 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     output_date = None
     for input_format in input_format_list:
         try:
-            parsed_date = datetime.datetime.strptime(input_date, input_format)
+            parsed_date = datetime.strptime(input_date, input_format)
             # convert date
             output_date = parsed_date.strftime(output_format)
             break
@@ -76,13 +76,13 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tupl
     logger.debug('validate_dates()')
 
     try:
-        date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
+        date_from_uts = int(time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
+        date_from_uts = int(time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
     try:
-        date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
+        date_to_uts = int(time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple()))
     except ValueError:
-        date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
+        date_to_uts = int(time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
 
     now_uts = int(time.time())
 
@@ -95,18 +95,18 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tupl
     minimal_date_uts = 1640995200
 
     if date_from_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime(API_DATE_FORMAT))
-        date_from = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(API_DATE_FORMAT))
+        date_from = datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime('%d.%m.%Y')
     if date_to_uts < minimal_date_uts:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime(API_DATE_FORMAT))
-        date_to = datetime.datetime.utcfromtimestamp(minimal_date_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(API_DATE_FORMAT))
+        date_to = datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime('%d.%m.%Y')
 
     if date_from_uts > now_uts:
-        logger.info('validate_dates(): adjust date_from to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime(API_DATE_FORMAT))
-        date_from = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_from to %s', datetime.fromtimestamp(now_uts, timezone.utc).strftime(API_DATE_FORMAT))
+        date_from = datetime.fromtimestamp(now_uts).strftime('%d.%m.%Y')
     if date_to_uts > now_uts:
-        logger.info('validate_dates(): adjust date_to to %s', datetime.datetime.utcfromtimestamp(now_uts).strftime(API_DATE_FORMAT))
-        date_to = datetime.datetime.utcfromtimestamp(now_uts).strftime('%d.%m.%Y')
+        logger.info('validate_dates(): adjust date_to to %s', datetime.fromtimestamp(now_uts, timezone.utc).strftime(API_DATE_FORMAT))
+        date_to = datetime.fromtimestamp(now_uts, timezone.utc).strftime('%d.%m.%Y')
 
     # this is the new api we need to ensure %Y-%m-%d
     date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)

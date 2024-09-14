@@ -2,7 +2,7 @@
 """ legacy api """
 # -*- coding: utf-8 -*-
 import os
-import datetime
+from datetime import datetime
 import time
 import re
 import logging
@@ -274,7 +274,7 @@ class Wrapper(object):
             if fname in document_name_list:
                 # rename to avoid overrides
                 self.logger.debug('legacy.Wrapper._get_document(): adding datetime to avoid overrides.\n')
-                now = datetime.datetime.now()
+                now = datetime.now()
                 fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
 
             if formatted_date:
@@ -425,7 +425,7 @@ class Wrapper(object):
 
         if soup:
             # poll url
-            poll_id = int(datetime.datetime.utcnow().timestamp() * 1e3)
+            poll_id = int(datetime.utcnow().timestamp() * 1e3)
             poll_url = self.base_url + soup.find("form", attrs={'id': 'confirmForm'}).get('action')
             for _cnt in range(120):
                 # add id to pollurl
