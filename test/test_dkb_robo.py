@@ -93,11 +93,12 @@ class TestDKBRobo(unittest.TestCase):
         # self.dkb.wrapper = Mock()
         mock_legacy.return_value = ('legacy', 'foo')
         mock_api.return_value = ('api', 'foo')
-        with self.assertRaises(Exception) as err:
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.dkb.__enter__()
-        self.assertEqual('Legacy Login got deprecated. Please do not use this option anymore', str(err.exception))
+        self.assertIn("INFO:dkb_robo:tan_insert is a legacy login option and will be disabled soon. Please use chip_tan instead", lcm.output)
+        self.assertTrue(self.dkb.chip_tan)
         self.assertFalse(mock_legacy.called)
-        self.assertFalse(mock_api.called)
+        self.assertTrue(mock_api.called)
 
     @patch('dkb_robo.api.Wrapper.login')
     @patch('dkb_robo.legacy.Wrapper.login')

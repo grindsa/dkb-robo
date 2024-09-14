@@ -526,13 +526,20 @@ class Wrapper(object):
 
     def _check_processing_status(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
         self.logger.debug('api.Wrapper._check_processing_status()\n')
-        self.logger.debug('api.Wrapper._check_processing_status: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
 
-        mfa_completed = False
-        if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
-            mfa_completed = True
-        elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
-            raise DKBRoboError('2fa chanceled by user')
+        if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
+
+            self.logger.debug('api.Wrapper._check_processing_status: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
+
+            mfa_completed = False
+            if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
+                mfa_completed = True
+            elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
+                raise DKBRoboError('2fa chanceled by user')
+            else:
+                self.logger.info('Unknown processing status: %s', polling_dic['data']['attributes']['verificationStatus'])
+        else:
+            raise DKBRoboError('Login failed: processing status format is other than expected')
 
         self.logger.debug('api.Wrapper._check_processing_status() ended with: %s\n', mfa_completed)
         return mfa_completed
@@ -565,10 +572,11 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._complete_app_2fa() ended with: %s\n', mfa_completed)
         return mfa_completed
 
-    def _complete_ctm_2fa(self, challenge_id: str, challenge_dic: Dict[str, str]) -> bool:
-        """ complete 2fa with chip tan manual """
-        self.logger.debug('api.Wrapper._complete_ctm_2fa()\n')
+    def _print_ctan_instructions(self, challenge_dic: Dict[str, str]) -> str:
+        """ print instructions for chip tan """
+        self.logger.debug('api.Wrapper._print_ctan_instructions()\n')
 
+        tan = None
         if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes']:
             if 'headline' in challenge_dic['data']['attributes']['chipTan']:
                 print(f'{challenge_dic['data']['attributes']['chipTan']['headline']}\n')
@@ -576,19 +584,29 @@ class Wrapper(object):
                 for idx, instruction in enumerate(challenge_dic['data']['attributes']['chipTan']['instructions'], start=1):
                     print(f'{idx}. {instruction}\n')
 
-        tan = input("TAN: ")
+            tan = input("TAN: ")
+
+        self.logger.debug('api.Wrapper._print_ctan_instructions() ended\n')
+        return tan
+
+    def _complete_ctm_2fa(self, challenge_id: str, challenge_dic: Dict[str, str]) -> bool:
+        """ complete 2fa with chip tan manual """
+        self.logger.debug('api.Wrapper._complete_ctm_2fa()\n')
+
+        tan = self._print_ctan_instructions(challenge_dic)
 
         data_dic = {"data": {"attributes": {"challengeResponse": tan, "methodType": self.mfa_method}, "type": "mfa-challenge"}}
         self.client.headers['Content-Type'] = JSON_CONTENT_TYPE
         self.client.headers["Accept"] = "application/vnd.api+json"
-
         response = self.client.post(self.base_url + self.api_prefix + f"/mfa/mfa/challenges/{challenge_id}", data=json.dumps(data_dic))
 
         mfa_completed = False
-        if response.ok:
+        if response.status_code == 200:
             result_dic = response.json()
             if 'data' in result_dic and 'attributes' in result_dic['data'] and 'verificationStatus' in result_dic['data']['attributes'] and result_dic['data']['attributes']['verificationStatus'] == 'authorized':
                 mfa_completed = True
+        else:
+            raise DKBRoboError(f'Login failed: 2fa failed. RC: {response.status_code} text: {response.text}')
 
         self.client.headers.pop('Content-Type')
         self.client.headers.pop('Accept')
@@ -607,8 +625,8 @@ class Wrapper(object):
         elif self.mfa_method == 'chip_tan_manual':
             mfa_completed = self._complete_ctm_2fa(challenge_id, challenge_dic)
         else:
-            self.logger.error('api.Wrapper._complete_2fa(): unknown 2fa method %s', self.mfa_method)
             mfa_completed = False
+            raise DKBRoboError(f'Login failed: unknown 2fa method: {self.mfa_method}')
 
         self.logger.debug('api.Wrapper._complete_2fa() ended with %s\n', mfa_completed)
         return mfa_completed
@@ -996,7 +1014,7 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._get_mfa_challenge_dic(): login with device_num: %s\n', device_num)
 
         device_name = None
-
+        challenge_dic = {}
         if 'data' in mfa_dic and 'id' in mfa_dic['data'][device_num]:
             try:
                 device_name = mfa_dic['data'][device_num]['attributes']['deviceName']
@@ -1236,12 +1254,11 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._update_token()\n')
 
         data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
-        print(data_dic)
         response = self.client.post(self.base_url + self.api_prefix + '/token', data=data_dic)
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            raise DKBRoboError(f'Login failed: token update failed. RC: {response.text}')
+            raise DKBRoboError(f'Login failed: token update failed. RC: {response.status_code}')
 
     def get_credit_limits(self) -> Dict[str, str]:
         """ get credit limits """

@@ -312,72 +312,46 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.token_dic = {'access_token': 'bar', 'mfa_id': 'mfa_id'}
         self.assertEqual({'foo1': 'bar1'}, self.dkb._get_mfa_methods())
 
-    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    @patch('time.sleep', return_value=None)
-    def test_025__complete_2fa(self, _mock_sleep, mock_stdout):
-        """ test _complete_2fa() """
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.get.return_value.status_code = 400
+    def test_025_check_check_processing_status(self):
+        """ test _check_processing_status() """
+        polling_dic = {}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(False, self.dkb._check_processing_status(polling_dic, 1))
+        self.assertEqual('Login failed: processing status format is other than expected', str(err.exception))
+
+    def test_026_check_check_processing_status(self):
+        """ test _check_processing_status() """
+        polling_dic = {'data': {'attributes': {'verificationStatus': 'foo'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._complete_2fa('challengeid', 'devicename'))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._complete_2fa(): polling request failed. RC: 400', lcm.output)
-        self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
+            self.assertEqual(False, self.dkb._check_processing_status(polling_dic, 1))
+        self.assertIn('INFO:dkb_robo:Unknown processing status: foo', lcm.output)
+
+    def test_027_check_check_processing_status(self):
+        """ test _check_processing_status() """
+        polling_dic = {'data': {'attributes': {'verificationStatus': 'processed'}}}
+        self.assertEqual(True, self.dkb._check_processing_status(polling_dic, 1))
+
+    def test_028_check_check_processing_status(self):
+        """ test _check_processing_status() """
+        polling_dic = {'data': {'attributes': {'verificationStatus': 'canceled'}}}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(True, self.dkb._check_processing_status(polling_dic, 1))
+        self.assertEqual('2fa chanceled by user', str(err.exception))
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    @patch('time.sleep', return_value=None)
-    def test_026__complete_2fa(self, _mock_sleep, mock_stdout):
-        """ test _complete_2fa() """
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.get.return_value.status_code = 400
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._complete_2fa('challengeid', None))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._complete_2fa(): polling request failed. RC: 400', lcm.output)
+    def test_029_print_app_2fa_confirmation(self, mock_stdout):
+        """ test _print_app_2fa_confirmation()"""
+        self.dkb._print_app_2fa_confirmation(None)
         self.assertIn('check your banking app and confirm login...', mock_stdout.getvalue())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    @patch('time.sleep', return_value=None)
-    def test_027__complete_2fa(self, _mock_sleep, mock_stdout):
-        """ test _complete_2fa() """
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.return_value = {'foo1': 'bar1'}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._complete_2fa('challengeid', 'devicename'))
-        self.assertIn("ERROR:dkb_robo:api.Wrapper._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
+    def test_030_print_app_2fa_confirmation(self, mock_stdout):
+        """ test _print_app_2fa_confirmation()"""
+        self.dkb._print_app_2fa_confirmation('devicename')
         self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
-
-    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    @patch('time.sleep', return_value=None)
-    def test_028__complete_2fa(self, _mock_sleep, mock_stdout):
-        """ test _complete_2fa() """
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'processed'}}}]
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertTrue(self.dkb._complete_2fa('challengeid', 'devicename'))
-        self.assertIn("ERROR:dkb_robo:api.Wrapper._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
-        self.assertIn('check your banking app on "devicename" and confirm login...', mock_stdout.getvalue())
-
-    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    @patch('time.sleep', return_value=None)
-    def test_029__complete_2fa(self, _mock_sleep, mock_stdout):
-        """ test _complete_2fa() """
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'canceled'}}}]
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            with self.assertRaises(Exception) as err:
-                self.assertTrue(self.dkb._complete_2fa('challengeid', 'devicename'))
-        self.assertEqual('2fa chanceled by user', str(err.exception))
-        self.assertIn("ERROR:dkb_robo:api.Wrapper._complete_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
 
     @patch('requests.session')
-    def test_030_new_instance_new_session(self, mock_session):
+    def test_031_new_instance_new_session(self, mock_session):
         """ test _new_session() """
         mock_session.headers = {}
         client = self.dkb._new_session()
@@ -385,7 +359,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(exp_headers, client.headers)
 
     @patch('requests.session')
-    def test_031_new_instance_new_session(self, mock_session):
+    def test_032_new_instance_new_session(self, mock_session):
         """ test _new_session() """
         mock_session.headers = {}
         self.dkb.proxies = 'proxies'
@@ -393,7 +367,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('proxies', client.proxies)
 
     @patch('requests.session')
-    def test_032_new_instance_new_session(self, mock_session):
+    def test_033_new_instance_new_session(self, mock_session):
         """ test _new_session() """
         mock_session.headers = {}
         mock_session.get.return_value.status_code = 200
@@ -402,90 +376,11 @@ class TestDKBRobo(unittest.TestCase):
         exp_headers = {'Accept-Language': 'en-US,en;q=0.5', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'DNT': '1', 'Pragma': 'no-cache', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0', 'x-xsrf-token': 'foo', 'priority': 'u=0', 'sec-gpc': '1', 'te': 'trailers'}
         self.assertEqual(exp_headers, client.headers)
 
-    @patch('requests.session')
-    def test_033_get_mfa_challenge_id(self, mock_session):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual((None, None), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
-
-    @patch('requests.session')
-    def test_034_get_mfa_challenge_id(self, mock_session):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'foo': 'bar'}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual((None, None), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._get_mfa_challenge_id(): mfa_dic has an unexpected data structure', lcm.output)
-
-    def test_035_get_mfa_challenge_id(self):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.post.return_value.status_code = 200
-        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
-        self.dkb.mfa_method = 'mfa_method'
-        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
-        self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
-
-    def test_036_get_mfa_challenge_id(self):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'data': [{'id': 'id', 'attributes': {'foo': 'bar'}}]}
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.post.return_value.status_code = 200
-        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
-        self.dkb.mfa_method = 'mfa_method'
-        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(('id', None), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._get_mfa_challenge_id(): unable to get deviceName', lcm.output)
-
-    def test_037_get_mfa_challenge_id(self):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.post.return_value.status_code = 400
-        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
-        self.dkb.mfa_method = 'mfa_method'
-        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
-        with self.assertRaises(Exception) as err:
-            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertEqual('Login failed: post request to get the mfa challenges failed. RC: 400', str(err.exception))
-
-    def test_038_get_mfa_challenge_id(self):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.post.return_value.status_code = 200
-        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'unknown', 'id': 'id'}}
-        self.dkb.mfa_method = 'mfa_method'
-        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
-        with self.assertRaises(Exception) as err:
-            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertEqual("Login failed:: wrong challenge type: {'data': {'type': 'unknown', 'id': 'id'}}", str(err.exception))
-
-    def test_039_get_mfa_challenge_id(self):
-        """ test _get_mfa_challenge_id() """
-        mfa_dic = {'data': [{'id': 'id', 'attributes': {'deviceName': 'deviceName', 'foo': 'bar'}}]}
-        self.dkb.client = Mock()
-        self.dkb.client.headers = {}
-        self.dkb.client.post.return_value.status_code = 200
-        self.dkb.client.post.return_value.json.return_value = {'foo': 'bar'}
-        self.dkb.mfa_method = 'mfa_method'
-        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
-        with self.assertRaises(Exception) as err:
-            self.assertEqual(('id', 'deviceName'), self.dkb._get_mfa_challenge_id(mfa_dic))
-        self.assertEqual("Login failed: challenge response format is other than expected: {'foo': 'bar'}", str(err.exception))
-
     @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_040_login(self, mock_sess, mock_tok, mock_meth, mock_sort):
+    def test_034_login(self, mock_sess, mock_tok, mock_meth, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'foo': 'bar'}
         mock_meth.return_value = {'foo': 'bar'}
@@ -502,7 +397,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_041_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, mock_sort):
+    def test_035_login(self, mock_sess, mock_tok, mock_meth, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'foo': 'bar'}
@@ -519,11 +414,11 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_042_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, mock_sort):
+    def test_036_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -543,11 +438,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._sort_mfa_devices')
     @patch('dkb_robo.api.Wrapper._select_mfa_device')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_043_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, mock_sort):
+    def test_037_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -571,11 +466,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_044_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
+    def test_038_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id'}
         mock_meth.return_value = {'data': 'bar'}
@@ -600,11 +495,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_045_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
+    def test_039_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token'}
         mock_meth.return_value = {'data': 'bar'}
@@ -630,11 +525,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_046_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
+    def test_040_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': 'token_factor_type'}
         mock_meth.return_value = {'data': 'bar'}
@@ -661,11 +556,11 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._do_sso_redirect')
     @patch('dkb_robo.api.Wrapper._update_token')
     @patch('dkb_robo.api.Wrapper._complete_2fa')
-    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_id')
+    @patch('dkb_robo.api.Wrapper._get_mfa_challenge_dic')
     @patch('dkb_robo.api.Wrapper._get_mfa_methods')
     @patch('dkb_robo.api.Wrapper._get_token')
     @patch('dkb_robo.api.Wrapper._new_session')
-    def test_047_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_overview, mock_sort):
+    def test_041_login(self, mock_sess, mock_tok, mock_meth, mock_chall, mock_2fa, mock_upd, mock_redir, mock_mfa, mock_overview, mock_sort):
         """ test login() """
         self.dkb.token_dic = {'mfa_id': 'mfa_id', 'access_token': 'access_token', 'token_factor_type': '2fa'}
         mock_meth.return_value = {'data': 'bar'}
@@ -684,26 +579,26 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_mfa.called)
         self.assertTrue(mock_overview.called)
 
-    def test_048__select_mfa_device(self):
+    def test_042__select_mfa_device(self):
         """ test _select_mfa_device() """
         mfa_dic = {'foo': 'bar'}
         self.dkb.mfa_device = 1
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
 
-    def test_049__select_mfa_device(self):
+    def test_043__select_mfa_device(self):
         """ test _select_mfa_device() """
         mfa_dic = {'foo': 'bar'}
         self.dkb.mfa_device = 2
         self.assertEqual(1, self.dkb._select_mfa_device(mfa_dic))
 
-    def test_050__select_mfa_device(self):
+    def test_044__select_mfa_device(self):
         """ test _select_mfa_device() """
         mfa_dic = {'foo': 'bar'}
         self.assertEqual(0, self.dkb._select_mfa_device(mfa_dic))
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_051__select_mfa_device(self, mock_input, mock_stdout):
+    def test_045__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.return_value=1
         self.dkb.mfa_device = 0
@@ -713,7 +608,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_052__select_mfa_device(self, mock_input, mock_stdout):
+    def test_046__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.return_value=1
         self.dkb.mfa_device = 4
@@ -725,7 +620,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_053__select_mfa_device(self, mock_input, mock_stdout):
+    def test_047__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.return_value=1
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -734,7 +629,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_054__select_mfa_device(self, mock_input, mock_stdout):
+    def test_048__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.return_value=2
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -743,7 +638,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_055__select_mfa_device(self, mock_input, mock_stdout):
+    def test_049__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.side_effect = [4, 1]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -753,7 +648,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     @patch('builtins.input')
-    def test_056__select_mfa_device(self, mock_input, mock_stdout):
+    def test_050__select_mfa_device(self, mock_input, mock_stdout):
         """ test _select_mfa_device() """
         mock_input.side_effect = ['a', 4, 1]
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
@@ -767,7 +662,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_accounts')
     @patch('dkb_robo.api.Wrapper._get_cards')
     @patch('dkb_robo.api.Wrapper._get_accounts')
-    def test_057_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac):
+    def test_051_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac):
         """ test _get_overview() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -785,7 +680,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_accounts')
     @patch('dkb_robo.api.Wrapper._get_cards')
     @patch('dkb_robo.api.Wrapper._get_accounts')
-    def test_058_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac):
+    def test_052_get_overview(self, mock_acc, mock_cards, mock_br, mock_loans, mock_bac):
         """ test _get_overview() """
         self.dkb.client = Mock()
         self.dkb.client.headers = {}
@@ -798,13 +693,13 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_loans.called)
         self.assertTrue(mock_bac.called)
 
-    def test_059__get_account_details(self):
+    def test_053__get_account_details(self):
         """ test _get_account_details() """
         account_dic = {}
         self.assertFalse(self.dkb._get_account_details('aid', account_dic))
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_060__get_account_details(self, mock_date):
+    def test_054__get_account_details(self, mock_date):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
@@ -813,7 +708,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_061__get_account_details(self, mock_date):
+    def test_055__get_account_details(self, mock_date):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}]}
         mock_date.return_value = 'mock_date'
@@ -822,7 +717,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_062__get_account_details(self, mock_date):
+    def test_056__get_account_details(self, mock_date):
         """ test _get_account_details() """
         account_dic = {'data': [{'id': 'aid1', 'attributes': {'iban': 'iban', 'product': {'displayName': 'displayName'}, 'holderName': 'holdername', 'balance': {'value': 'value', 'currencyCode': 'currencycode'}, 'overdraftLimit': 'overdraftLimit', 'updatedAt': 'updatedat'}}, {'id': 'aid', 'attributes': {'iban': 'iban2', 'product': {'displayName': 'displayName2'}, 'holderName': 'holdername2', 'balance': {'value': 'value2', 'currencyCode': 'currencycode2'}, 'overdraftLimit': 'overdraftLimit2', 'updatedAt': 'updatedat2'}}]}
         mock_date.return_value = 'mock_date'
@@ -831,28 +726,28 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_063__get_card_details(self, mock_date):
+    def test_057__get_card_details(self, mock_date):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_064__get_card_details(self, mock_date):
+    def test_058__get_card_details(self, mock_date):
         """ test _get_card_details() """
         card_dic = {}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_065__get_card_details(self, mock_date):
+    def test_059__get_card_details(self, mock_date):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid'}]}
         self.assertFalse(self.dkb._get_card_details('cid', card_dic))
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_066__get_card_details(self, mock_date):
+    def test_060__get_card_details(self, mock_date):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'type': 'creditCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'status': 'status', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
@@ -861,7 +756,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_067__get_card_details(self, mock_date):
+    def test_061__get_card_details(self, mock_date):
         """ test _get_card_details() """
         card_dic = {'data': [{'id': 'cid', 'type': 'debitCard', 'attributes': {'product': {'displayName': 'displayname'}, 'holder': {'person': {'firstName': 'firstname', 'lastName': 'lastname'}}, 'maskedPan': 'maskedPan', 'limit': {'value': 'value'}, 'balance': {'date': 'date', 'value': '101', 'currencyCode': 'currencycode'}}}]}
         mock_date.return_value = 'mock_date'
@@ -870,7 +765,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_068__get_brokerage_details(self, mock_date):
+    def test_062__get_brokerage_details(self, mock_date):
         """ test _get_brokerage_details() """
         brok_dic = {}
         mock_date.return_value = 'mock_date'
@@ -878,7 +773,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_069__get_brokerage_details(self, mock_date):
+    def test_063__get_brokerage_details(self, mock_date):
         """ test _get_brokerage_details() """
         brok_dic = {'data': []}
         mock_date.return_value = 'mock_date'
@@ -886,7 +781,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_070__get_brokerage_details(self, mock_date):
+    def test_064__get_brokerage_details(self, mock_date):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid'}]}
         mock_date.return_value = 'mock_date'
@@ -894,7 +789,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_071__get_brokerage_details(self, mock_date):
+    def test_065__get_brokerage_details(self, mock_date):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
@@ -903,7 +798,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_date.called)
 
     @patch('dkb_robo.utilities._convert_date_format')
-    def test_072__get_brokerage_details(self, mock_date):
+    def test_066__get_brokerage_details(self, mock_date):
         """ test _get_brokerage_details() """
         brok_dic = {'data': [{'id': 'bid', 'attributes': {'holderName': 'holdername', 'depositAccountId': 'depositaccountid', 'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'currentcycode', 'value': 'value'} }}}]}
         mock_date.return_value = 'mock_date'
@@ -911,14 +806,14 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._get_brokerage_details('bid', brok_dic))
         self.assertFalse(mock_date.called)
 
-    def test_073__filter_transactions(self):
+    def test_067__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = []
         from_date = '01.01.2023'
         to_date = '31.01.2023'
         self.assertFalse(self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_074__filter_transactions(self):
+    def test_068__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo': 'bar', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -926,7 +821,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo': 'bar', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_075__filter_transactions(self):
+    def test_069__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -934,7 +829,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-15'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_076__filter_transactions(self):
+    def test_070__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype', 'bookingDate': '2023-02-15'}}]
         from_date = '01.01.2023'
@@ -942,7 +837,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_077__filter_transactions(self):
+    def test_071__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype2', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -950,7 +845,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_078__filter_transactions(self):
+    def test_072__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'trtype2', 'bookingDate': '2023-01-15'}}]
         from_date = '2023-01-01'
@@ -958,7 +853,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'trtype', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'trtype'))
 
-    def test_079__filter_transactions(self):
+    def test_073__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -966,7 +861,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'booked'))
 
-    def test_080__filter_transactions(self):
+    def test_074__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -974,7 +869,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'pending'))
 
-    def test_081__filter_transactions(self):
+    def test_075__filter_transactions(self):
         """ test _filter_transactions() """
         transaction_list = [{'foo1': 'bar1', 'attributes': {'status': 'booked', 'bookingDate': '2023-01-10'}}, {'foo2': 'bar2', 'attributes': {'status': 'pending', 'bookingDate': '2023-01-15'}}]
         from_date = '01.01.2023'
@@ -983,30 +878,30 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._filter_transactions(transaction_list, from_date, to_date, 'reserved'))
 
 
-    def test_082_format_card_transactions(self):
+    def test_076_format_card_transactions(self):
         """ _format_card_transactions() """
         transaction_list = []
         self.assertFalse(self.dkb._format_card_transactions(transaction_list))
 
-    def test_083_format_card_transactions(self):
+    def test_077_format_card_transactions(self):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'description': 'description', 'bookingDate': '2023-01-01', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'bdate': '2023-01-01', 'vdate': '2023-01-01', 'text': 'description'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_084_format_card_transactions(self):
+    def test_078_format_card_transactions(self):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'bookingDate': '2023-01-01', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'bdate': '2023-01-01', 'vdate': '2023-01-01'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_085_format_card_transactions(self):
+    def test_079_format_card_transactions(self):
         """ _format_card_transactions() """
         transaction_list = [{'foo':'bar', 'attributes': {'description': 'description', 'amount': {'value': 1000, 'currencyCode': 'CC'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'CC', 'text': 'description'}]
         self.assertEqual(result, self.dkb._format_card_transactions(transaction_list))
 
-    def test_086_format_brokerage_account(self):
+    def test_080_format_brokerage_account(self):
         """ test _format_brokerage_account() """
         included_list = []
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'id'}}, 'quote': {'data': {'id': 'id', 'value': 'value'}}}}]
@@ -1014,7 +909,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_087_format_brokerage_account(self):
+    def test_081_format_brokerage_account(self):
         """ test _format_brokerage_account() """
         included_list = []
         data_dic = [
@@ -1024,7 +919,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000}, {'shares': 2000, 'quantity': 2000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-02-01', 'price_euro': 2000}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_088_format_brokerage_account(self):
+    def test_082_format_brokerage_account(self):
         """ test _format_brokerage_account() """
         included_list = [{'id': 'inid', 'attributes': {'identifiers': [{'identifier': 'isin', 'value': 'value'}, {'identifier': 'isin', 'value': 'value2'}], 'name': {'short': 'short'}}}]
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'inid'}}, 'quote': {'data': {'id': 'quoteid', 'value': 'value'}}}}]
@@ -1032,7 +927,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000, 'text': 'short', 'isin_wkn': 'value'}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_089_format_brokerage_account(self):
+    def test_083_format_brokerage_account(self):
         """ test _format_brokerage_account() """
         included_list = [{'id': 'quoteid', 'attributes': {'market': 'market', 'price': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         data_dic = [{'attributes': {'performance': {'currentValue': {'value': 1000}}, 'lastOrderDate': '2020-01-01', 'quantity': {'value': 1000, 'unit': 'unit'}}, 'relationships': {'instrument': {'data': {'id': 'inid'}}, 'quote': {'data': {'id': 'quoteid', 'value': 'value'}}}}]
@@ -1040,36 +935,36 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'shares': 1000, 'quantity': 1000.0, 'shares_unit': 'unit', 'lastorderdate': '2020-01-01', 'price_euro': 1000, 'price': 1000.0, 'currencycode': 'currencyCode', 'market': 'market'}]
         self.assertEqual(result, self.dkb._format_brokerage_account(brokerage_dic))
 
-    def test_090_format_account_transactions(self):
+    def test_084_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'foo': 'bar'}]
         self.assertFalse(self.dkb._format_account_transactions(transaction_list))
 
-    def test_091_format_account_transactions(self):
+    def test_085_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_092_format_account_transactions(self):
+    def test_086_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'intermediaryName': 'intermediaryName', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'intermediaryName', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType intermediaryName description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_093_format_account_transactions(self):
+    def test_087_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'debtor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'debtorAccount': {'iban': 'iban'}}, 'amount': {'value': 1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': 1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_094_format_account_transactions(self):
+    def test_088_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'id': 'id', 'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'peerid': 'id', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
         self.assertEqual(result, self.dkb._format_account_transactions(transaction_list))
 
-    def test_095_format_account_transactions(self):
+    def test_089_format_account_transactions(self):
         """ test _format_account_transactions() """
         transaction_list = [{'attributes': {'description': 'description', 'transactionType': 'transactionType', 'endToEndId': 'endToEndId', 'mandateId': 'mandateId', 'valueDate': '2023-01-02', 'bookingDate': '2023-01-01', 'creditor': {'name': 'name', 'agent': {'bic': 'bic'}, 'creditorAccount': {'iban': 'iban'}}, 'amount': {'value': -1000, 'currencyCode': 'currencyCode'}}}]
         result = [{'amount': -1000.0, 'currencycode': 'currencyCode', 'peeraccount': 'iban', 'peerbic': 'bic', 'peer': 'name', 'mandatereference': 'mandateId', 'peerid': '', 'date': '2023-01-01', 'bdate': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'postingtext': 'transactionType', 'reasonforpayment': 'description', 'text': 'transactionType name description'}]
@@ -1078,7 +973,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_details')
     @patch('dkb_robo.api.Wrapper._get_card_details')
     @patch('dkb_robo.api.Wrapper._get_account_details')
-    def test_096_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
+    def test_090_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
         """ teest _build_account_dic """
         portfolio_dic = {}
         self.assertFalse(self.dkb._build_raw_account_dic(portfolio_dic))
@@ -1089,7 +984,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_details')
     @patch('dkb_robo.api.Wrapper._get_card_details')
     @patch('dkb_robo.api.Wrapper._get_account_details')
-    def test_097_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
+    def test_091_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
         """ teest _build_account_dic """
         portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'brokerageAccount', 'foo': 'bar'}]} }
         mock_ba.return_value = 'mock_ba'
@@ -1102,7 +997,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_details')
     @patch('dkb_robo.api.Wrapper._get_card_details')
     @patch('dkb_robo.api.Wrapper._get_account_details')
-    def test_098_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
+    def test_092_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
         """ teest _build_account_dic """
         portfolio_dic = {'cards': {'data': [{'id': 'id', 'type': 'fooCard', 'foo': 'bar'}]} }
         mock_card.return_value = 'mock_card'
@@ -1115,7 +1010,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._get_brokerage_details')
     @patch('dkb_robo.api.Wrapper._get_card_details')
     @patch('dkb_robo.api.Wrapper._get_account_details')
-    def test_099_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
+    def test_093_build_raw_account_dic(self, mock_acc, mock_card, mock_ba):
         """ teest _build_account_dic """
         portfolio_dic = {'accounts': {'data': [{'id': 'id', 'type': 'account', 'foo': 'bar'}]} }
         mock_acc.return_value = 'mock_acc'
@@ -1125,17 +1020,17 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_card.called)
         self.assertFalse(mock_ba.called)
 
-    def test_100_build_product_display_settings_dic(self):
+    def test_094_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'foo': 'bar'}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_101_build_product_display_settings_dic(self):
+    def test_095_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'foo': 'bar'}}
         self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_102_build_product_display_settings_dic(self):
+    def test_096_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
 
@@ -1143,29 +1038,29 @@ class TestDKBRobo(unittest.TestCase):
             self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
         self.assertIn('ERROR:dkb_robo:api.Wrapper._build_product_display_settings_dic(): product_data is not of type dic', lcm.output)
 
-    def test_103_build_product_display_settings_dic(self):
+    def test_097_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'name': 'name'}}}}}
         self.assertEqual({'uid': 'name'}, self.dkb._build_product_display_settings_dic(data_ele))
 
-    def test_104_build_product_display_settings_dic(self):
+    def test_098_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'foo': 'bar'}}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
         self.assertIn('ERROR:dkb_robo:api.Wrapper._build_product_display_settings_dic(): "name" key not found', lcm.output)
 
-    def test_105_build_product_group_list(self):
+    def test_099_build_product_group_list(self):
         """ test _build_product_group_list() """
         data_ele = {}
         self.assertFalse(self.dkb._build_product_group_list(data_ele))
 
-    def test_106_build_product_group_list(self):
+    def test_100_build_product_group_list(self):
         """ test _build_product_group_list() """
         data_ele = {'attributes': {'productGroups': {'foo': {'index': 0, 'name': 'foo', 'products': {'product1': {'uid1': {'index': 1}, 'uid2': {'index': 0}}}}}}}
         self.assertEqual([{'name': 'foo', 'product_list': {1: 'uid1', 0: 'uid2'}}], self.dkb._build_product_group_list(data_ele))
 
-    def test_107_build_product_group_list(self):
+    def test_101_build_product_group_list(self):
         """ test _build_product_group_list() """
         data_ele = {'attributes':
                     {'productGroups':
@@ -1179,7 +1074,7 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertEqual([{'name': 'foo', 'product_list': {0: 'uid3', 1: 'uid1', 2: 'uid2', 3: 'uid4'}}], self.dkb._build_product_group_list(data_ele))
 
-    def test_108_build_product_group_list(self):
+    def test_102_build_product_group_list(self):
         """ test _build_product_group_list() """
         data_ele = {'attributes':
                         {'productGroups':
@@ -1200,7 +1095,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._build_product_group_list(data_ele))
 
 
-    def test_109_build_account_dic(self):
+    def test_103_build_account_dic(self):
         """ e22 build account dic """
 
         portfolio_dic = {
@@ -1307,7 +1202,7 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertEqual(result, self.dkb._build_account_dic(portfolio_dic))
 
-    def test_110_build_account_dic(self):
+    def test_104_build_account_dic(self):
         """ e22 build account dic """
 
         portfolio_dic = {
@@ -1421,7 +1316,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._build_product_group_list')
     @patch('dkb_robo.api.Wrapper._build_product_display_settings_dic')
     @patch('dkb_robo.api.Wrapper._build_raw_account_dic')
-    def test_111_build_account_dic(self, mock_raw, mock_dis, mock_grp):
+    def test_105_build_account_dic(self, mock_raw, mock_dis, mock_grp):
         """ test build account dic """
         portfolio_dic = {}
         result = {}
@@ -1433,7 +1328,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._build_product_group_list')
     @patch('dkb_robo.api.Wrapper._build_product_display_settings_dic')
     @patch('dkb_robo.api.Wrapper._build_raw_account_dic')
-    def test_112_build_account_dic(self, mock_raw, mock_dis, mock_grp):
+    def test_106_build_account_dic(self, mock_raw, mock_dis, mock_grp):
         """ test build account dic """
         portfolio_dic = {'product_display': {'data': ['foo']}}
         result = {}
@@ -1445,7 +1340,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._build_product_group_list')
     @patch('dkb_robo.api.Wrapper._build_product_display_settings_dic')
     @patch('dkb_robo.api.Wrapper._build_raw_account_dic')
-    def test_113_build_account_dic(self, mock_raw, mock_dis, mock_grp):
+    def test_107_build_account_dic(self, mock_raw, mock_dis, mock_grp):
         """ test build account dic """
         portfolio_dic = {'product_display': {'data': ['foo']}}
         mock_raw.return_value = {'dic_id1': {'foo': 'bar1'}, 'dic_id2': {'foo': 'bar2'}, 'dic_id3': {'foo': 'bar3'}, 'dic_id4': {'foo': 'bar4'}, 'dic_id5': {'foo': 'bar5'}}
@@ -1460,7 +1355,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._build_product_group_list')
     @patch('dkb_robo.api.Wrapper._build_product_display_settings_dic')
     @patch('dkb_robo.api.Wrapper._build_raw_account_dic')
-    def test_114_build_account_dic(self, mock_raw, mock_dis, mock_grp):
+    def test_108_build_account_dic(self, mock_raw, mock_dis, mock_grp):
         """ test build account dic """
         portfolio_dic = {'product_display': {'data': ['foo']}}
         mock_raw.return_value = {'dic_id1': {'foo': 'bar1'}, 'dic_id2': {'foo': 'bar2'}, 'dic_id3': {'foo': 'bar3'}, 'dic_id4': {'foo': 'bar4'}, 'dic_id5': {'foo': 'bar5'}}
@@ -1472,19 +1367,19 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_dis.called)
         self.assertTrue(mock_grp.called)
 
-    def test_115_get_credit_limits(self):
+    def test_109_get_credit_limits(self):
         """ teest _get_credit_limits() """
         self.dkb.account_dic = {0: {'limit': 1000, 'iban': 'iban'}, 1: {'limit': 2000, 'maskedpan': 'maskedpan'}}
         result_dic = {'iban': 1000, 'maskedpan': 2000}
         self.assertEqual(result_dic, self.dkb.get_credit_limits())
 
-    def test_116_get_credit_limits(self):
+    def test_110_get_credit_limits(self):
         """ teest get_credit_limits() """
         self.dkb.account_dic = {'foo': 'bar'}
         self.assertFalse(self.dkb.get_credit_limits())
 
     @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_117___get_standing_orders(self, mock_filter):
+    def test_111___get_standing_orders(self, mock_filter):
         """ test _get_standing_orders() """
         with self.assertRaises(Exception) as err:
             self.assertFalse(self.dkb.get_standing_orders())
@@ -1492,7 +1387,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_118___get_standing_orders(self, mock_filter):
+    def test_112___get_standing_orders(self, mock_filter):
         """ test _get_standing_orders() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 400
@@ -1501,7 +1396,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_119___get_standing_orders(self, mock_filter):
+    def test_113___get_standing_orders(self, mock_filter):
         """ test _get_standing_orders() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
@@ -1510,12 +1405,12 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('mock_filter', self.dkb.get_standing_orders(uid='uid'))
         self.assertTrue(mock_filter.called)
 
-    def test_120__filter_standing_orders(self):
+    def test_114__filter_standing_orders(self):
         """ test _filter_standing_orders() """
         full_list = {}
         self.assertFalse(self.dkb._filter_standing_orders(full_list))
 
-    def test_121__filter_standing_orders(self):
+    def test_115__filter_standing_orders(self):
         """ test _filter_standing_orders() """
         full_list = {
             "data": [
@@ -1544,77 +1439,77 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
         self.assertEqual(result, self.dkb._filter_standing_orders(full_list))
 
-    def test_122_add_cardlimit(self):
+    def test_116_add_cardlimit(self):
         """ test _add_cardlimit() """
         card = {'attributes': {'expiryDate': 'expiryDate', 'limit': {'value': 'value', 'foo': 'bar'}}}
         result = {'expirydate': 'expiryDate', 'limit': 'value'}
         self.assertEqual(result, self.dkb._add_cardlimit(card))
 
-    def test_123_filter_standing_orders(self):
+    def test_117_filter_standing_orders(self):
         """ e2e get_standing_orders() """
         so_list = json_load(self.dir_path + '/mocks/so.json')
         result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description1', 'recpipient': 'name1', 'creditoraccount': {'iban': 'iban1', 'bic': 'bic1'}, 'interval': {'from': '2022-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-01'}}, {'amount': 200.0, 'currencycode': 'EUR', 'purpose': 'description2', 'recpipient': 'name2', 'creditoraccount': {'iban': 'iban2', 'bic': 'bic2'}, 'interval': {'from': '2022-02-01', 'until': '2025-12-02', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-02'}}, {'amount': 300.0, 'currencycode': 'EUR', 'purpose': 'description3', 'recpipient': 'name3', 'creditoraccount': {'iban': 'iban3', 'bic': 'bic3'}, 'interval': {'from': '2022-03-01', 'until': '2025-03-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-03-01'}}]
         self.assertEqual(result, self.dkb._filter_standing_orders(so_list))
 
-    def test_124_logout(self):
+    def test_118_logout(self):
         """ test logout """
         self.assertFalse(self.dkb.logout())
 
-    def test_125__get_document_name(self):
+    def test_119__get_document_name(self):
         """ test _get_document_name() """
         self.assertEqual('foofoo', self.dkb._get_document_name('foofoo'))
 
-    def test_126__get_document_name(self):
+    def test_120__get_document_name(self):
         """ test _get_document_name() """
         self.assertEqual('foo foo', self.dkb._get_document_name('foo foo'))
 
-    def test_127__get_document_name(self):
+    def test_121__get_document_name(self):
         """ test _get_document_name() """
         self.assertEqual('foo foo', self.dkb._get_document_name('foo  foo'))
 
-    def test_128__get_document_name(self):
+    def test_122__get_document_name(self):
         """ test _get_document_name() """
         self.assertEqual('foo foo', self.dkb._get_document_name('foo   foo'))
 
-    def test_129__get_document_type(self):
+    def test_123__get_document_type(self):
         """ test _get_document_type() """
         self.assertEqual('foo', self.dkb._get_document_type('foo'))
 
-    def test_130__get_document_type(self):
+    def test_124__get_document_type(self):
         """ test _get_document_type() """
         self.assertEqual('Kontoauszüge', self.dkb._get_document_type('bankAccountStatement'))
 
-    def test_131__get_document_type(self):
+    def test_125__get_document_type(self):
         """ test _get_document_type() """
         self.assertEqual('Kreditkartenabrechnungen', self.dkb._get_document_type('creditCardStatement'))
 
     @patch('dkb_robo.api.Wrapper._get_document_name')
-    def test_132__objectname_lookup(self, mock_doc):
+    def test_126__objectname_lookup(self, mock_doc):
         """ test _objectname_lookup() """
         document = {'attributes': {'metadata': {'subject': 'subject'}}}
         mock_doc.return_value = 'no cardid'
         self.assertEqual('no cardid', self.dkb._objectname_lookup(document))
 
-    def test_133__objectname_lookup(self):
+    def test_127__objectname_lookup(self):
         """ test _objectname_lookup() """
         document = {'attributes': {'metadata': {'cardId': 'cardId', 'subject': 'subject'}}}
         self.dkb.account_dic = {0: {'id': 'cardId', 'foo': 'bar', 'account': 'account'}}
         self.assertEqual('subject account', self.dkb._objectname_lookup(document))
 
-    def test_134__objectname_lookup(self):
+    def test_128__objectname_lookup(self):
         """ test _objectname_lookup() """
         document = {'attributes': {'metadata': {'cardId': 'cardId1', 'subject': 'subject'}, 'fileName': 'boo_foo_bar'}}
         self.dkb.account_dic = {0: {'id': 'cardId', 'foo': 'bar', 'account': 'account'}}
         self.assertEqual('subject foo', self.dkb._objectname_lookup(document))
 
     @patch('dkb_robo.legacy.Wrapper.get_exemption_order')
-    def test_135_get_exemption_order(self, mock_exo):
+    def test_129_get_exemption_order(self, mock_exo):
         """ test get_exemption_order() """
         mock_exo.return_value = 'mock_exo'
         self.assertEqual('mock_exo', self.dkb.get_exemption_order())
 
     @patch('dkb_robo.api.Wrapper._filter_postbox')
-    def test_136_scan_postbox(self, mock_filter):
+    def test_130_scan_postbox(self, mock_filter):
         """ test scan_postbox() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.side_effects = [400, 400]
@@ -1623,7 +1518,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.api.Wrapper._filter_postbox')
-    def test_137_scan_postbox(self, mock_filter):
+    def test_131_scan_postbox(self, mock_filter):
         """ test scan_postbox() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.side_effects = [400, 200]
@@ -1632,7 +1527,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.api.Wrapper._filter_postbox')
-    def test_138_scan_postbox(self, mock_filter):
+    def test_132_scan_postbox(self, mock_filter):
         """ test scan_postbox() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.side_effects = [200, 400]
@@ -1641,7 +1536,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.api.Wrapper._filter_postbox')
-    def test_139_scan_postbox(self, mock_filter):
+    def test_133_scan_postbox(self, mock_filter):
         """ test scan_postbox() """
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
@@ -1654,7 +1549,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_140__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_134__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': False, 'archived': False}}]}
@@ -1671,7 +1566,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_141__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_135__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': True, 'archived': False}}]}
@@ -1688,7 +1583,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_142__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_136__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': True, 'archived': False}}]}
@@ -1705,7 +1600,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_143__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_137__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': True, 'archived': False}}]}
@@ -1722,7 +1617,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_144__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_138__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read1': True, 'archived': False}}]}
@@ -1741,7 +1636,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_145__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_139__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename2', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': True, 'archived': False}}]}
@@ -1758,7 +1653,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('dkb_robo.api.Wrapper._download_document')
     @patch('dkb_robo.api.Wrapper._get_document_type')
     @patch('dkb_robo.api.Wrapper._objectname_lookup')
-    def test_146__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
+    def test_140__filter_postbox(self, mock_lookup, mock_type, mock_download, mock_sleep):
         """ _filter_postbox() """
         pb_dic = {'data': [{'id': 'id1', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType1', 'metadata':{'statementDate': 'statementDate1'}}}, {'id': 'id2', 'attributes': {'fileName': 'filename1', 'contentType': 'contentType2', 'metadata':{'statementDate': 'statementDate2'}}}]}
         msg_dic = {'data': [{'id': 'id1', 'attributes': {'documentType': 'documentType1', 'read': False, 'archived': False}}, {'id': 'id2', 'attributes': {'documentType': 'documentType2', 'read': True, 'archived': False}}]}
@@ -1775,7 +1670,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('time.sleep')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_147__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
+    def test_141__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
         """ _get_document() """
         mock_exists.return_value = False
         self.dkb.client = Mock()
@@ -1792,7 +1687,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('time.sleep')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_148__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
+    def test_142__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
         """ _get_document() """
         mock_exists.return_value = False
         self.dkb.client = Mock()
@@ -1809,7 +1704,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch('time.sleep')
     @patch('os.makedirs')
     @patch('os.path.exists')
-    def test_149__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
+    def test_143__download_document(self, mock_exists, mock_makedir, mock_sleep, mock_open):
         """ _get_document() """
         mock_exists.return_value = False
         self.dkb.client = Mock()
@@ -1824,7 +1719,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(self.dkb.client.patch.called)
         self.assertTrue(mock_open.called)
 
-    def test_150_sort_mfa_devices(self):
+    def test_144_sort_mfa_devices(self):
         """ test sort_mfa_devices() """
         mfa_dic = {
             'data': [
@@ -1843,7 +1738,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
 
 
-    def test_151_sort_mfa_devices(self):
+    def test_145_sort_mfa_devices(self):
         """ test sort_mfa_devices() """
         mfa_dic = {
             'data': [
@@ -1862,7 +1757,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
 
 
-    def test_152_sort_mfa_devices(self):
+    def test_146_sort_mfa_devices(self):
         """ test sort_mfa_devices() """
         mfa_dic = {
             'data': [
@@ -1880,22 +1775,22 @@ class TestDKBRobo(unittest.TestCase):
         }
         self.assertEqual(expected_result, self.dkb._sort_mfa_devices(mfa_dic))
 
-    def test_153__docdate_lookup(self):
+    def test_147__docdate_lookup(self):
         """ test _docdate_lookup() """
         input_dic = {'attributes': {'metadata': {'statementDate': 'statementDate'}}}
         self.assertEqual('statementDate', self.dkb._docdate_lookup(input_dic))
 
-    def test_154__docdate_lookup(self):
+    def test_148__docdate_lookup(self):
         """ test _docdate_lookup() """
         input_dic = {'attributes': {'metadata': {'creationDate': 'creationDate'}}}
         self.assertEqual('creationDate', self.dkb._docdate_lookup(input_dic))
 
-    def test_155__docdate_lookup(self):
+    def test_149__docdate_lookup(self):
         """ test _docdate_lookup() """
         input_dic = {'attributes': {'metadata': {'fooDate': 'creationDate'}}}
         self.assertEqual('unknown', self.dkb._docdate_lookup(input_dic))
 
-    def test_156_get_transaction_list(self):
+    def test_150_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 400
@@ -1904,27 +1799,235 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual({'data': []}, self.dkb._get_transaction_list('transaction_url'))
         self.assertIn('ERROR:dkb_robo:api.Wrapper._get_transactions(): RC is not 200 but 400', lcm.output)
 
-    def test_157_get_transaction_list(self):
+    def test_151_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         self.assertEqual({'data': []}, self.dkb._get_transaction_list('transaction_url'))
 
-    def test_158_get_transaction_list(self):
+    def test_152_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}]}
         self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}]}, self.dkb._get_transaction_list('transaction_url'))
 
-    def test_159_get_transaction_list(self):
+    def test_153_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.side_effect = [{'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}], 'links': {'next': 'next_url'}}, {'data': [{'foo3': 'bar3'}, {'foo4': 'bar4'}], 'links': {'foo': 'bar'}}]
         self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}, {'foo3': 'bar3'}, {'foo4': 'bar4'}]}, self.dkb._get_transaction_list('transaction_url'))
 
+    def test_154_init(self):
+        """ test init() """
+        self.dkb.__init__()
+        self.assertEqual('seal_one', self.dkb.mfa_method)
+
+    def test_155_init(self):
+        """ test init() """
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb.__init__(logger=self.logger, chip_tan=True)
+        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+        self.assertEqual('chip_tan_manual', self.dkb.mfa_method)
+
+    @patch('dkb_robo.api.Wrapper._complete_ctm_2fa')
+    @patch('dkb_robo.api.Wrapper._complete_app_2fa')
+    @patch('dkb_robo.api.Wrapper._get_challenge_id')
+    def test_156_complete_2fa(self, mock_cid, mock_app, mock_ctm):
+        """ test _complete_2fa() """
+        mock_cid.return_value = 'cid'
+        mock_app.return_value = 'app'
+        mock_ctm.return_value = 'ctm'
+        self.dkb.mfa_method = 'seal_one'
+        self.assertEqual('app', self.dkb._complete_2fa('challenge_dic', 'device_name'))
+        self.assertTrue(mock_cid.called)
+        self.assertTrue(mock_app.called)
+        self.assertFalse(mock_ctm.called)
+
+    @patch('dkb_robo.api.Wrapper._complete_ctm_2fa')
+    @patch('dkb_robo.api.Wrapper._complete_app_2fa')
+    @patch('dkb_robo.api.Wrapper._get_challenge_id')
+    def test_157_complete_2fa(self, mock_cid, mock_app, mock_ctm):
+        """ test _complete_2fa() """
+        mock_cid.return_value = 'cid'
+        mock_app.return_value = 'app'
+        mock_ctm.return_value = 'ctm'
+        self.dkb.mfa_method = 'chip_tan_manual'
+        self.assertEqual('ctm', self.dkb._complete_2fa('challenge_dic', 'device_name'))
+        self.assertTrue(mock_cid.called)
+        self.assertFalse(mock_app.called)
+        self.assertTrue(mock_ctm.called)
+
+    @patch('dkb_robo.api.Wrapper._complete_ctm_2fa')
+    @patch('dkb_robo.api.Wrapper._complete_app_2fa')
+    @patch('dkb_robo.api.Wrapper._get_challenge_id')
+    def test_158_complete_2fa(self, mock_cid, mock_app, mock_ctm):
+        """ test _complete_2fa() """
+        mock_cid.return_value = 'cid'
+        mock_app.return_value = 'app'
+        mock_ctm.return_value = 'ctm'
+        self.dkb.mfa_method = 'other_method'
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb._complete_2fa('challenge_dic', 'device_name'))
+        self.assertEqual('Login failed: unknown 2fa method: other_method', str(err.exception))
+        self.assertTrue(mock_cid.called)
+        self.assertFalse(mock_app.called)
+        self.assertFalse(mock_ctm.called)
+
+    @patch('requests.session')
+    def test_159_get_challenge_id(self, mock_session):
+        """ test _get_challenge_id() """
+        mfa_dic = {}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb._get_challenge_id(mfa_dic))
+        self.assertEqual('Login failed: challenge response format is other than expected: {}', str(err.exception))
+
+    @patch('requests.session')
+    def test_160_get_challenge_id(self, mock_session):
+        """ test _get_challenge_id() """
+        mfa_dic = {'data': {'id': 'id', 'type': 'type'}}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb._get_challenge_id(mfa_dic))
+        self.assertEqual("Login failed:: wrong challenge type: {'data': {'id': 'id', 'type': 'type'}}", str(err.exception))
+
+    @patch('requests.session')
+    def test_161_get_challenge_id(self, mock_session):
+        """ test _get_challenge_id() """
+        mfa_dic = {'data': {'id': 'id', 'type': 'mfa-challenge'}}
+        self.assertEqual('id', self.dkb._get_challenge_id(mfa_dic))
+
+    @patch('requests.session')
+    def test_162_get_mfa_challenge_dic(self, mock_session):
+        """ test _get_mfa_challenge_id() """
+        mfa_dic = {}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(({}, None), self.dkb._get_mfa_challenge_dic(mfa_dic, 1))
+        self.assertIn('ERROR:dkb_robo:api.Wrapper._get_mfa_challenge_dic(): mfa_dic has an unexpected data structure', lcm.output)
+
+    @patch('requests.session')
+    def test_163_get_mfa_challenge_dic(self, mock_session):
+        """ test _get_mfa_challenge_id() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.client.headers = {'foo': 'bar'}
+        self.dkb.mfa_method = 'seal_one'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        mfa_dic = {'data': {1: {'id': 'id', 'attributes': {'deviceName': 'deviceName'}}}}
+        self.assertEqual(({'data': {'id': 'id', 'type': 'mfa-challenge'}}, 'deviceName'), self.dkb._get_mfa_challenge_dic(mfa_dic, 1))
+
+    @patch('requests.session')
+    def test_164_get_mfa_challenge_dic(self, mock_session):
+        """ test _get_mfa_challenge_id() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.client.headers = {'foo': 'bar'}
+        self.dkb.mfa_method = 'seal_one'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        mfa_dic = {'data': {1: {'id': 'id', 'attributes': {'deviceName': 'deviceName'}}}}
+        with self.assertRaises(Exception) as err:
+            self.assertEqual(({'data': {'id': 'id', 'type': 'mfa-challenge'}}, 'deviceName'), self.dkb._get_mfa_challenge_dic(mfa_dic, 1))
+        self.assertEqual('Login failed: post request to get the mfa challenges failed. RC: 400', str(err.exception))
+
+    @patch('requests.session')
+    def test_165_get_mfa_challenge_dic(self, mock_session):
+        """ test _get_mfa_challenge_id() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'type': 'mfa-challenge', 'id': 'id'}}
+        self.dkb.client.headers = {'foo': 'bar'}
+        self.dkb.mfa_method = 'seal_one'
+        self.dkb.token_dic = {'mfa_id': 'mfa_id'}
+        mfa_dic = {'data': {1: {'id': 'id', 'attributes': {'foo': 'bar'}}}}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(({'data': {'id': 'id', 'type': 'mfa-challenge'}}, None), self.dkb._get_mfa_challenge_dic(mfa_dic, 1))
+        self.assertIn('ERROR:dkb_robo:api.Wrapper._get_mfa_challenge_dic(): unable to get deviceName', lcm.output)
+
+    @patch('time.sleep', return_value=None)
+    @patch('dkb_robo.api.Wrapper._check_processing_status')
+    @patch('dkb_robo.api.Wrapper._print_app_2fa_confirmation')
+    def test_166__complete_app_2fa(self, mock_confirm, mock_status, _mock_sleep):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'bump'}}}]
+        mock_status.side_effects = [False, True]
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertTrue(self.dkb._complete_app_2fa('challengeid', 'devicename'))
+        self.assertIn("ERROR:dkb_robo:api.Wrapper._complete_app_2fa(): error parsing polling response: {'foo1': 'bar1'}", lcm.output)
+        self.assertTrue(mock_confirm.called)
+
+    @patch('time.sleep', return_value=None)
+    @patch('dkb_robo.api.Wrapper._check_processing_status')
+    @patch('dkb_robo.api.Wrapper._print_app_2fa_confirmation')
+    def test_167__complete_app_2fa(self, mock_confirm, mock_status, _mock_sleep):
+        """ test _complete_2fa() """
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.get.return_value.status_code = 400
+        self.dkb.client.get.return_value.json.side_effect = [{'foo1': 'bar1'}, {'data': {'attributes': {'verificationStatus': 'bump'}}}]
+        mock_status.return_value = False
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.dkb._complete_app_2fa('challengeid', 'devicename'))
+        self.assertIn('ERROR:dkb_robo:api.Wrapper._complete_app_2fa(): polling request failed. RC: 400', lcm.output)
+        self.assertTrue(mock_confirm.called)
+
+    @patch('dkb_robo.api.Wrapper._print_ctan_instructions')
+    def test_168_complete_ctm_2fa(self, mock_ctan):
+        """ test _complete_ctm_2fa()"""
+        mock_ctan.return_value = 'ctan'
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'attributes': {'verificationStatus': 'authorized'}}}
+        challenge_dic = {'foo': 'bar'}
+        self.assertTrue(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
+
+    @patch('dkb_robo.api.Wrapper._print_ctan_instructions')
+    def test_169_complete_ctm_2fa(self, mock_ctan):
+        """ test _complete_ctm_2fa()"""
+        mock_ctan.return_value = 'ctan'
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 200
+        self.dkb.client.post.return_value.json.return_value = {'data': {'attributes': {'verificationStatus': 'foo'}}}
+        challenge_dic = {'foo': 'bar'}
+        self.assertFalse(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
+
+    @patch('dkb_robo.api.Wrapper._print_ctan_instructions')
+    def test_170_complete_ctm_2fa(self, mock_ctan):
+        """ test _complete_ctm_2fa()"""
+        mock_ctan.return_value = 'ctan'
+        self.dkb.client = Mock()
+        self.dkb.client.headers = {}
+        self.dkb.client.post.return_value.status_code = 400
+        self.dkb.client.post.return_value.json.return_value = {'data': {'attributes': {'verificationStatus': 'foo'}}}
+        self.dkb.client.post.return_value.text = 'bump'
+        challenge_dic = {'foo': 'bar'}
+        with self.assertRaises(Exception) as err:
+            self.assertFalse(self.dkb._complete_ctm_2fa('challengeid', challenge_dic))
+        self.assertEqual('Login failed: 2fa failed. RC: 400 text: bump', str(err.exception))
+
+    def test_171__print_ctan_instructions(self):
+        """ test _print_ctan_instructions()"""
+        challenge_dic = {}
+        self.assertFalse(self.dkb._print_ctan_instructions(challenge_dic))
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('builtins.input')
+    def test_172__print_ctan_instructions(self, mock_input, mock_stdout):
+        """ test _print_ctan_instructions()"""
+        challenge_dic = {'data': {'attributes': {'chipTan': {'headline': 'headline', 'instructions': ['in1', 'in2', 'in3']}}}}
+        mock_input.return_value=1234
+        self.assertEqual(1234, self.dkb._print_ctan_instructions(challenge_dic))
+        self.assertIn("headline\n\n1. in1\n\n2. in2\n\n3. in3\n\n", mock_stdout.getvalue())
 
 if __name__ == '__main__':
 
