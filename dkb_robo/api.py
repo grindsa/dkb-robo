@@ -45,7 +45,7 @@ class Wrapper(object):
         self.logger = logger
         if chip_tan:
             self.logger.info('Using to chip_tan to login')
-            if chip_tan in ('qr', 'chip_tan_qr'):
+            if chip_tan.lower() in ('qr', 'chip_tan_qr'):
                 self.mfa_method = 'chip_tan_qr'
             else:
                 self.mfa_method = 'chip_tan_manual'
@@ -632,6 +632,7 @@ class Wrapper(object):
         """ show qr code """
         self.logger.debug('api.Wrapper._show_image()\n')
 
+        # pylint: disable=c0415
         from PIL import Image
         qr_data = qr_data.replace('data:image/png;base64,', '')
         qr_data = qr_data.replace(' ', '+')

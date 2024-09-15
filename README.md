@@ -87,7 +87,7 @@ create a new DKBRobo context handler and login to DKB portal
 
 - dbk_user: username to access the dkb portal
 - dkb_password: corresponding login password
-- chip_tan: (True/**False**) TAN usage - dbk-robo will ask for a TAN during login. So far this library only supports ["chipTAN manuell"](https://www.dkb.de/fragen-antworten/was-ist-das-chiptan-verfahren)
+- chip_tan: (True/**False**/qr) TAN usage - when not "False" dbk-robo will ask for a TAN during login. So far this library only supports ["chipTAN manuell" and "chipTAN QR](https://www.dkb.de/fragen-antworten/was-ist-das-chiptan-verfahren). "qr" foces the usage of "chipTAN QR" all other values will trigger the usage of "chipTAN Manuell"
 - mfa_device: ('m'/Integer) optional - preselect MFA device to be used for 2nd factor - 'm' - main device, otherwise number from device-list
 - debug: (True/**False**) Debug mode
 
@@ -346,7 +346,7 @@ Usage: dkb [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -d, --debug                     Show additional debugging
-  -t, --chip-tan                  use ChipTAN for login
+  -t, --chip-tan TEXT             use [ChipTan](https://www.dkb.de/fragen-antworten/was-ist-das-chiptan-verfahren) for login ("qr" for chipTan-QR "manual" for chipTan-manuell)
   -u, --username TEXT             username to access the dkb portal
                                   [required]
   -p, --password TEXT             corresponding login password
