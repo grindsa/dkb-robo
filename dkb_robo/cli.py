@@ -34,8 +34,8 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     "--chip-tan",
     "-t",
     default=False,
-    help="use ChipTAN for login",
-    is_flag=True,
+    help='use ChipTAN for login (either "qr" or "manual")',
+    type=str,
     envvar="DKB_CHIP_TAN",
 )
 @click.option(
