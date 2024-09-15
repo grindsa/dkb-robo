@@ -338,6 +338,13 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(True, self.dkb._check_processing_status(polling_dic, 1))
         self.assertEqual('2fa chanceled by user', str(err.exception))
 
+    def test_029_check_check_processing_status(self):
+        """ test _check_processing_status() """
+        polling_dic = {'data': {'attributes': {'verificationStatus': 'processing'}}}
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(False, self.dkb._check_processing_status(polling_dic, 1))
+        self.assertIn('INFO:dkb_robo:Status: processing. Waiting for confirmation', lcm.output)
+
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     def test_029_print_app_2fa_confirmation(self, mock_stdout):
         """ test _print_app_2fa_confirmation()"""
@@ -1832,6 +1839,25 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
         self.assertEqual('chip_tan_manual', self.dkb.mfa_method)
 
+    def test_156_init(self):
+        """ test init() """
+        self.dkb.__init__(logger=self.logger, chip_tan=False)
+        self.assertEqual('seal_one', self.dkb.mfa_method)
+
+    def test_157_init(self):
+        """ test init() """
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb.__init__(logger=self.logger, chip_tan='qr')
+        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+        self.assertEqual('chip_tan_qr', self.dkb.mfa_method)
+
+    def test_158_init(self):
+        """ test init() """
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb.__init__(logger=self.logger, chip_tan='chip_tan_qr')
+        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+        self.assertEqual('chip_tan_qr', self.dkb.mfa_method)
+
     @patch('dkb_robo.api.Wrapper._complete_ctm_2fa')
     @patch('dkb_robo.api.Wrapper._complete_app_2fa')
     @patch('dkb_robo.api.Wrapper._get_challenge_id')
@@ -2018,19 +2044,40 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual('Login failed: 2fa failed. RC: 400 text: bump', str(err.exception))
         self.assertTrue(mock_ctan.called)
 
-    def test_171__print_ctan_instructions(self):
+    @patch('dkb_robo.api.Wrapper._show_image')
+    def test_171__print_ctan_instructions(self, mock_show):
         """ test _print_ctan_instructions()"""
         challenge_dic = {}
         self.assertFalse(self.dkb._print_ctan_instructions(challenge_dic))
+        self.assertFalse(mock_show.called)
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('dkb_robo.api.Wrapper._show_image')
     @patch('builtins.input')
-    def test_172__print_ctan_instructions(self, mock_input, mock_stdout):
+    def test_172__print_ctan_instructions(self, mock_input, mock_show, mock_stdout):
         """ test _print_ctan_instructions()"""
         challenge_dic = {'data': {'attributes': {'chipTan': {'headline': 'headline', 'instructions': ['in1', 'in2', 'in3']}}}}
         mock_input.return_value=1234
         self.assertEqual(1234, self.dkb._print_ctan_instructions(challenge_dic))
         self.assertIn("headline\n\n1. in1\n\n2. in2\n\n3. in3\n\n", mock_stdout.getvalue())
+        self.assertFalse(mock_show.called)
+
+    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+    @patch('dkb_robo.api.Wrapper._show_image')
+    @patch('builtins.input')
+    def test_173__print_ctan_instructions(self, mock_input, mock_show, mock_stdout):
+        """ test _print_ctan_instructions()"""
+        challenge_dic = {'data': {'attributes': {'chipTan': {'qrData': 'qrData', 'headline': 'headline', 'instructions': ['in1', 'in2', 'in3']}}}}
+        mock_input.return_value=1234
+        self.assertEqual(1234, self.dkb._print_ctan_instructions(challenge_dic))
+        self.assertIn("headline\n\n1. in1\n\n2. in2\n\n3. in3\n\n", mock_stdout.getvalue())
+        self.assertTrue(mock_show.called)
+
+    @patch("PIL.Image.open")
+    def test_171__print_ctan_instructions(self, mock_open):
+        """ test _print_ctan_instructions()"""
+        self.assertFalse(self.dkb._show_image('cXJEYXRh'))
+        self.assertTrue(mock_open.called)
 
 if __name__ == '__main__':
 

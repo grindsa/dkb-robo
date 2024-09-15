@@ -45,7 +45,7 @@ class Wrapper(object):
         self.logger = logger
         if chip_tan:
             self.logger.info('Using to chip_tan to login')
-            if chip_tan.lower() in ('qr', 'chip_tan_qr'):
+            if chip_tan in ('qr', 'chip_tan_qr'):
                 self.mfa_method = 'chip_tan_qr'
             else:
                 self.mfa_method = 'chip_tan_manual'
