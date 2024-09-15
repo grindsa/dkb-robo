@@ -82,7 +82,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, legacy_login=True|False, mfa_device=<m|int>, debug=True|False) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
