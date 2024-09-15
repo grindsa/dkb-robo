@@ -6,6 +6,9 @@ import datetime
 import time
 import logging
 import json
+import base64
+import io
+import threading
 from typing import Dict, List, Tuple
 import requests
 from dkb_robo.utilities import get_dateformat
@@ -42,7 +45,10 @@ class Wrapper(object):
         self.logger = logger
         if chip_tan:
             self.logger.info('Using to chip_tan to login')
-            self.mfa_method = 'chip_tan_manual'
+            if chip_tan in ('qr', 'chip_tan_qr'):
+                self.mfa_method = 'chip_tan_qr'
+            else:
+                self.mfa_method = 'chip_tan_manual'
         try:
             self.mfa_device = int(mfa_device)
         except (ValueError, TypeError):
@@ -578,6 +584,12 @@ class Wrapper(object):
         """ print instructions for chip tan """
         self.logger.debug('api.Wrapper._print_ctan_instructions()\n')
 
+        if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes'] and 'qrData' in challenge_dic['data']['attributes']['chipTan']:
+            my_thread = threading.Thread(target=self._show_image, args=(challenge_dic['data']['attributes']['chipTan']['qrData'], ))
+            my_thread.daemon = True
+            my_thread.start()
+            my_thread.join(timeout=0.5)
+
         tan = None
         if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes']:
             if 'headline' in challenge_dic['data']['attributes']['chipTan']:
@@ -616,6 +628,21 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._complete_ctm_2fa() ended with %s\n', mfa_completed)
         return mfa_completed
 
+    def _show_image(self, qr_data: str) -> None:
+        """ show qr code """
+        self.logger.debug('api.Wrapper._show_image()\n')
+
+        from PIL import Image
+        qr_data = qr_data.replace('data:image/png;base64,', '')
+        qr_data = qr_data.replace(' ', '+')
+        qr_data = base64.b64decode(qr_data)
+        data = io.BytesIO()
+        data.write(qr_data)
+        img = Image.open(data)
+        img.show()
+
+        self.logger.debug('api.Wrapper._show_image() ended\n')
+
     def _complete_2fa(self, challenge_dic: Dict[str, str], devicename: str) -> bool:
         """ wait for confirmation for the 2nd factor """
         self.logger.debug('api.Wrapper._complete_2fa()\n')
@@ -624,7 +651,7 @@ class Wrapper(object):
 
         if self.mfa_method == 'seal_one':
             mfa_completed = self._complete_app_2fa(challenge_id, devicename)
-        elif self.mfa_method == 'chip_tan_manual':
+        elif self.mfa_method in ('chip_tan_manual', 'chip_tan_qr'):
             mfa_completed = self._complete_ctm_2fa(challenge_id, challenge_dic)
         else:
             mfa_completed = False
@@ -1358,6 +1385,7 @@ class Wrapper(object):
 
         # get mfa methods
         mfa_dic = self._get_mfa_methods()
+
         if mfa_dic:
             # sort mfa methods
             mfa_dic = self._sort_mfa_devices(mfa_dic)
