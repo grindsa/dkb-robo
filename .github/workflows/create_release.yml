@@ -50,13 +50,13 @@ jobs:
 
       - name: "[ BUILD ] create pypi package"
         id: create_package
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           python3 setup.py sdist
 
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
