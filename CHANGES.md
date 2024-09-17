@@ -3,6 +3,15 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.27
+
+**Improvements**:
+
+- [#58](https://github.com/grindsa/dkb-robo/issues/58) drop support of the old frontent (leagcy_mode)
+- [#56](https://github.com/grindsa/dkb-robo/issues/56) add support for [chipTAN manuell and chipTAN QR]
+- [#48](https://github.com/grindsa/dkb-robo/issues/48) fetch transactions older than one year
+- scan-postbox option in dkb-robo cli
+
 # Changes in 0.26
 
 **Improvements**:
