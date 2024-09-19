@@ -1,0 +1,54 @@
+name: Test and lint
+on:
+  push:
+  pull_request:
+    branches: [ devel ]
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 2 * * 6'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+    name: Test with Python (${{ matrix.python_version }})
+
+    steps:
+    - name: Checkout source code 
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python_version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+    
+    - name: Install package
+      run: python -m pip install -e .[test]
+    
+    - name: Run tests
+      run: python -m pytest
+
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint
+
+    steps:
+      - name: Checkout source code 
+        uses: actions/checkout@v4
+    
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Install package
+        run: python -m pip install -e .[lint]
+
+      - name: Lint with pylint
+        run: |
+          pylint --rcfile=".github/pylintrc" dkb_robo/ || pylint-exit $?
+
+      - name: Lint with pycodestyle
+        run: |
+          pip install pycodestyle
+          pycodestyle --max-line-length=380 dkb_robo/.

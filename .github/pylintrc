@@ -1,4 +1,5 @@
-# plyintrc for acme2certifier CI pipeline
+# plyintrc for dkb-robo CI pipeline
+
 [MESSAGES CONTROL]
 # c0301 - line to long
 # r0205 - useless-object-inheritance
