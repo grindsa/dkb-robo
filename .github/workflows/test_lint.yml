@@ -3,7 +3,6 @@ on:
   push:
   pull_request:
     branches: [ devel ]
-  workflow_dispatch:
   schedule:
     - cron:  '0 2 * * 6'
 
@@ -16,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        # Keep in sync with the Python Trove classifiers in pyproject.toml.
+        python_version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy3.10']
     name: Test with Python (${{ matrix.python_version }})
 
     steps:
