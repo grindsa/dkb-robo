@@ -24,7 +24,7 @@ dependencies = [
     "click",
 ]
 optional-dependencies.test = ["pytest", "pytest-cov", "html5lib"]
-optional-dependencies.lint = ["pylint", "pylint-exit"]
+optional-dependencies.lint = ["pylint", "pylint-exit", "pycodestyle"]
 optional-dependencies.dev = ["build", "dkb_robo[test]", "dkb_robo[lint]"]
 scripts = { dkb = "dkb_robo.cli:main" }
 
