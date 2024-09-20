@@ -8,7 +8,6 @@ readme = "README.md"
 classifiers = [
     # Keep in sync with the Python version matrix in test_lint.yaml GitHub workflow.
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
