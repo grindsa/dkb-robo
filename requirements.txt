@@ -1,5 +1,0 @@
-mechanicalsoup
-tabulate
-click
-requests
-pillow
