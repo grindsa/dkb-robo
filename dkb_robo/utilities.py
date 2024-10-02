@@ -6,6 +6,7 @@ from string import digits, ascii_letters
 from typing import List, Tuple
 from datetime import datetime, timezone
 import time
+import re
 
 
 def get_dateformat():
@@ -43,6 +44,15 @@ def generate_random_string(length: int) -> str:
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
     return ''.join(random.choice(char_set) for _ in range(length))
+
+
+def get_valid_filename(name):
+    """ sanitize filenames """
+    s = str(name).strip().replace(" ", "_")
+    s = re.sub(r"(?u)[^-\w.]", "_", s)
+    if s in {"", ".", ".."}:
+        s = f'{generate_random_string(8)}.pdf'
+    return s
 
 
 def string2float(value: str) -> float:
