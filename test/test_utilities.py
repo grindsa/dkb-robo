@@ -17,13 +17,14 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, get_dateformat
+        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, get_dateformat, get_valid_filename
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
         self.logger_setup = logger_setup
         self._convert_date_format = _convert_date_format
         self.get_dateformat = get_dateformat
+        self.get_valid_filename = get_valid_filename
         self.logger = logging.getLogger('dkb_robo')
 
     @patch('time.time')
@@ -218,7 +219,47 @@ class TestDKBRobo(unittest.TestCase):
         """ test _convert_date_format() no match """
         self.assertEqual('wrong date', self._convert_date_format(self.logger, 'wrong date', ['%Y/%m/%d', '%Y-%m-%d'], '%d.%m.%Y'))
 
+    def test_039__get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = 'test.pdf'
+        self.assertEqual('test.pdf', self.get_valid_filename(filename))
 
+    def test_040__get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = 'test test.pdf'
+        self.assertEqual('test_test.pdf', self.get_valid_filename(filename))
+
+    def test_041__get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = 'testötest.pdf'
+        self.assertEqual('testötest.pdf', self.get_valid_filename(filename))
+
+    def test_042__get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = 'test/test.pdf'
+        self.assertEqual('test_test.pdf', self.get_valid_filename(filename))
+
+    def test_043_get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = 'test\\test.pdf'
+        self.assertEqual('test_test.pdf', self.get_valid_filename(filename))
+
+    def test_044_get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = '.\test.pdf'
+        self.assertEqual('._est.pdf', self.get_valid_filename(filename))
+
+    def test_045_get_valid_filename(self):
+        """ test get_valid_filename """
+        filename = '../test.pdf'
+        self.assertEqual('.._test.pdf', self.get_valid_filename(filename))
+
+    @patch('dkb_robo.utilities.generate_random_string')
+    def test_046_get_valid_filename(self, mock_rand):
+        """ test get_valid_filename """
+        filename = '..'
+        mock_rand.return_value = 'random'
+        self.assertEqual('random.pdf', self.get_valid_filename(filename))
 
 if __name__ == '__main__':
 

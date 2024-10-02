@@ -11,7 +11,7 @@ import io
 import threading
 from typing import Dict, List, Tuple
 import requests
-from dkb_robo.utilities import get_dateformat
+from dkb_robo.utilities import get_dateformat, get_valid_filename
 from dkb_robo.legacy import Wrapper as Legacywrapper
 
 
@@ -707,7 +707,7 @@ class Wrapper(object):
 
             if response.status_code == 200:
                 self.logger.info('Saving %s/%s...', directories[1], document['filename'])
-                with open(f'{directories[1]}/{document["filename"]}', 'wb') as file:
+                with open(f'{directories[1]}/{get_valid_filename(document["filename"])}', 'wb') as file:
                     file.write(response.content)
 
                 if not document['read']:
@@ -777,7 +777,7 @@ class Wrapper(object):
             documentname_list.append(document['filename'])
 
         self.logger.debug('api.Wrapper._process_document() ended\n')
-        return documentname_list, f'{path}/{document["document_type"]}/{document["filename"]}', rcode
+        return documentname_list, f'{path}/{document["document_type"]}/{get_valid_filename(document["filename"])}', rcode
 
     def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
         """ filter postbox """
