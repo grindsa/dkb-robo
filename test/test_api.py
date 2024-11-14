@@ -1803,7 +1803,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.status_code = 400
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual({'data': []}, self.dkb._get_transaction_list('transaction_url'))
+            self.assertEqual({'data': [], 'included': []}, self.dkb._get_transaction_list('transaction_url'))
         self.assertIn('ERROR:dkb_robo:api.Wrapper._get_transactions(): RC is not 200 but 400', lcm.output)
 
     def test_151_get_transaction_list(self):
@@ -1811,21 +1811,28 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        self.assertEqual({'data': []}, self.dkb._get_transaction_list('transaction_url'))
+        self.assertEqual({'data': [], 'included': []}, self.dkb._get_transaction_list('transaction_url'))
 
     def test_152_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.return_value = {'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}]}
-        self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}]}, self.dkb._get_transaction_list('transaction_url'))
+        self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}], 'included': []}, self.dkb._get_transaction_list('transaction_url'))
 
     def test_153_get_transaction_list(self):
         """ test _get_transaction_list()"""
         self.dkb.client = Mock()
         self.dkb.client.get.return_value.status_code = 200
         self.dkb.client.get.return_value.json.side_effect = [{'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}], 'links': {'next': 'next_url'}}, {'data': [{'foo3': 'bar3'}, {'foo4': 'bar4'}], 'links': {'foo': 'bar'}}]
-        self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}, {'foo3': 'bar3'}, {'foo4': 'bar4'}]}, self.dkb._get_transaction_list('transaction_url'))
+        self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}, {'foo3': 'bar3'}, {'foo4': 'bar4'}], 'included': []}, self.dkb._get_transaction_list('transaction_url'))
+
+    def test_154_get_transaction_list(self):
+        """ test _get_transaction_list()"""
+        self.dkb.client = Mock()
+        self.dkb.client.get.return_value.status_code = 200
+        self.dkb.client.get.return_value.json.side_effect = [{'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}], 'links': {'next': 'next_url'}, 'included': ['1']}, {'data': [{'foo3': 'bar3'}, {'foo4': 'bar4'}], 'links': {'foo': 'bar'}, 'included': ['2']}]
+        self.assertEqual({'data': [{'foo1': 'bar1'}, {'foo2': 'bar2'}, {'foo3': 'bar3'}, {'foo4': 'bar4'}], 'included': ['1', '2']}, self.dkb._get_transaction_list('transaction_url'))
 
     def test_154_init(self):
         """ test init() """
