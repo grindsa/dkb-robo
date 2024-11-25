@@ -1017,7 +1017,11 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._get_document_type()\n')
         mapping_dic = {
             'bankAccountStatement': 'Kontoauszüge',
-            'creditCardStatement': 'Kreditkartenabrechnungen'
+            'creditCardStatement': 'Kreditkartenabrechnungen',
+            'dwpRevenueStatement': 'Ertragsabrechnungen',
+            'dwpOrderStatement': 'Depotabrechnungen',
+            'dwpDepotStatement': 'Depotauszüge',
+            'exAnteCostInformation': 'Kosteninformationen'
         }
 
         result = mapping_dic.get(doc_type, doc_type)
