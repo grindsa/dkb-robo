@@ -33,7 +33,7 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
 @click.option(
     "--chip-tan",
     "-t",
-    default=False,
+    default=None,
     help='use ChipTAN for login (either "qr" or "manual")',
     type=str,
     envvar="DKB_CHIP_TAN",
@@ -205,7 +205,7 @@ def standing_orders(ctx):
     "-p",
     type=str,
     help="Path to save the documents to",
-    envvar="PATH",
+    envvar="DKB_DOC_PATH",
 )
 @click.option("--download_all", is_flag=True, show_default=True, default=False, help="Download all documents", envvar="DKB_DOWNLOAD_ALL")
 @click.option("--archive", is_flag=True, show_default=True, default=False, help="Download archive", envvar="DKB_ARCHIVE")
