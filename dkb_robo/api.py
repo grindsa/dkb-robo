@@ -283,6 +283,7 @@ class Wrapper(object):
         output_dic['type'] = 'depot'
         output_dic['id'] = bid
         output_dic['transactions'] = self.base_url + self.api_prefix + f"/broker/brokerage-accounts/{bid}/positions?include=instrument%2Cquote"
+        # output_dic['transactions'] = self.base_url + self.api_prefix + f"/broker/brokerage-accounts/{bid}/positions?include=instrument,quote"
         if 'holderName' in depot['attributes']:
             output_dic['holdername'] = depot['attributes']['holderName']
         if 'depositAccountId' in depot['attributes']:
@@ -410,7 +411,7 @@ class Wrapper(object):
         """ sort products and get details """
         self.logger.debug('api.Wrapper._raw_entry_get()\n')
 
-        if ele['type'] == 'brokerageAccount':
+        if ele['type'] == 'brokerageAccount' or ele['type'] == 'depot':
             result = self._get_brokerage_details(ele['id'], portfolio_dic[product_group])
         elif 'Card' in ele['type']:
             result = self._get_card_details(ele['id'], portfolio_dic[product_group])
@@ -508,8 +509,6 @@ class Wrapper(object):
             for uid, product_value in product_data.items():
                 if 'name' in product_value:
                     uid_dic[uid] = product_value['name']
-                else:
-                    self.logger.error('api.Wrapper._build_product_display_settings_dic(): "name" key not found')
         else:
             self.logger.error('api.Wrapper._build_product_display_settings_dic(): product_data is not of type dic')
 
@@ -887,6 +886,7 @@ class Wrapper(object):
 
         position_list = []
         included_list = self._get_brokerage_includedlist(brokerage_dic)
+
         if 'data' in brokerage_dic:
             for position in brokerage_dic['data']:
                 position_dic = self._get_brokerage_position(position, included_list)
@@ -1321,26 +1321,40 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper.get_standing_orders() ended\n')
         return so_list
 
+    def _get_transaction_url(self, tr_dic):
+        """ get transaction url """
+        self.logger.debug('api.Wrapper._get_transaction_url()\n')
+
+        transaction_url = None
+        if 'links' in tr_dic and 'next' in tr_dic['links']:
+            self.logger.debug('api.Wrapper._get_transactions(): next page: %s', tr_dic['links']['next'])
+            transaction_url = self.base_url + self.api_prefix + '/accounts' + tr_dic['links']['next']
+        else:
+            self.logger.debug('api.Wrapper._get_transactions(): no next page')
+            transaction_url = None
+
+        self.logger.debug('api.Wrapper._get_transaction_url() ended\n')
+        return transaction_url
+
     def _get_transaction_list(self, transaction_url: str) -> Dict[str, str]:
         """ get transaction list"""
-        self.logger.debug('api.Wrapper._get_transaction_list(%s)\n')
+        self.logger.debug('api.Wrapper._get_transaction_list(%s)\n', transaction_url)
 
-        transaction_dic = {'data': []}
+        transaction_dic = {'data': [], 'included': []}
         while transaction_url:
             response = self.client.get(transaction_url)
             if response.status_code == 200:
                 _transaction_dic = response.json()
                 if 'data' in _transaction_dic:
                     transaction_dic['data'].extend(_transaction_dic['data'])
-                    if 'links' in _transaction_dic and 'next' in _transaction_dic['links']:
-                        self.logger.debug('api.Wrapper._get_transactions(): next page: %s', _transaction_dic['links']['next'])
-                        transaction_url = self.base_url + self.api_prefix + '/accounts' + _transaction_dic['links']['next']
-                    else:
-                        self.logger.debug('api.Wrapper._get_transactions(): no next page')
-                        transaction_url = None
+                    transaction_url = self._get_transaction_url(_transaction_dic)    # get next page
+
                 else:
                     self.logger.debug('api.Wrapper._get_transactions(): no data in response')
                     transaction_url = None
+
+                if 'included' in _transaction_dic:
+                    transaction_dic['included'].extend(_transaction_dic['included'])
             else:
                 self.logger.error('api.Wrapper._get_transactions(): RC is not 200 but %s', response.status_code)
                 break
@@ -1354,7 +1368,7 @@ class Wrapper(object):
 
         transaction_list = []
 
-        if transaction_url:
+        if transaction_url and atype != 'depot':
             transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
 
         transaction_dic = self._get_transaction_list(transaction_url)
