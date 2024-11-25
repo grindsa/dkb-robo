@@ -738,6 +738,17 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._docdate_lookup() ended\n')
         return doc_date
 
+    def _docfilename_lookup(self, document: Dict[str, str]) -> str:
+        """ lookup document filename """
+        self.logger.debug('api.Wrapper._docdfilename_lookup()\n')
+        doc_filename = document['attributes']['fileName']
+        # Depot related files don't have meaningful filenames but only contain the document id. Hence, we use subject
+        # instead and rely on the filename sanitization.
+        if 'dwpDocumentId' in document['attributes']['metadata'] and 'subject' in document['attributes']['metadata']:
+            doc_filename = document['attributes']['metadata']['subject']
+        self.logger.debug('api.Wrapper._docdate_lookup() ended with %s.\n', doc_filename)
+        return doc_filename
+
     def _merge_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str]) -> Dict[str, str]:
         """ reformat postbox dictionary from DKB """
         self.logger.debug('api.Wrapper._merge_postbox()\n')
@@ -746,7 +757,7 @@ class Wrapper(object):
         if 'data' in pb_dic:
             for document in pb_dic['data']:
                 message_dic[document['id']] = {
-                    'filename': document['attributes']['fileName'],
+                    'filename': self._docfilename_lookup(document),
                     'contenttype': document['attributes']['contentType'],
                     'date': self._docdate_lookup(document),
                     'name': self._objectname_lookup(document)
