@@ -509,8 +509,6 @@ class Wrapper(object):
             for uid, product_value in product_data.items():
                 if 'name' in product_value:
                     uid_dic[uid] = product_value['name']
-                else:
-                    self.logger.error('api.Wrapper._build_product_display_settings_dic(): "name" key not found')
         else:
             self.logger.error('api.Wrapper._build_product_display_settings_dic(): product_data is not of type dic')
 
