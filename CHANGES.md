@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.28.1
+
+**Bugfixes**:
+
+- [#68](https://github.com/grindsa/dkb-robo/pull/68) - fix merge conflict in .gitattributes
+
 # Changes in 0.28
 
 **Improvements**:
