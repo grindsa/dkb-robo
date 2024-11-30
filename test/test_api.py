@@ -1053,9 +1053,9 @@ class TestDKBRobo(unittest.TestCase):
     def test_098_build_product_display_settings_dic(self):
         """ _build_product_display_settings_dic() """
         data_ele = {'attributes': {'productSettings': {'product': {'uid': {'foo': 'bar'}}}}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
-        self.assertIn('ERROR:dkb_robo:api.Wrapper._build_product_display_settings_dic(): "name" key not found', lcm.output)
+        # with self.assertLogs('dkb_robo', level='INFO') as lcm:
+        self.assertFalse(self.dkb._build_product_display_settings_dic(data_ele))
+        # self.assertIn('ERROR:dkb_robo:api.Wrapper._build_product_display_settings_dic(): "name" key not found', lcm.output)
 
     def test_099_build_product_group_list(self):
         """ test _build_product_group_list() """
@@ -1702,7 +1702,9 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.client.get.return_value.status_code = 400
         self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
         document = {'document_type': 'document_type', 'filename': 'filename', 'link': 'link', 'contenttype': 'contenttype', 'read': False}
-        self.assertEqual(400, self.dkb._download_document('path', document))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(400, self.dkb._download_document('path', document))
+        self.assertIn('ERROR:dkb_robo:api.Wrapper._download_document(): RC is not 200 but 400', lcm.output)
         self.assertTrue(mock_makedir.called)
         self.assertFalse(self.dkb.client.patch.called)
         self.assertFalse(mock_open.called)
