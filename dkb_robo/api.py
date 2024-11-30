@@ -283,7 +283,6 @@ class Wrapper(object):
         output_dic['type'] = 'depot'
         output_dic['id'] = bid
         output_dic['transactions'] = self.base_url + self.api_prefix + f"/broker/brokerage-accounts/{bid}/positions?include=instrument%2Cquote"
-        # output_dic['transactions'] = self.base_url + self.api_prefix + f"/broker/brokerage-accounts/{bid}/positions?include=instrument,quote"
         if 'holderName' in depot['attributes']:
             output_dic['holdername'] = depot['attributes']['holderName']
         if 'depositAccountId' in depot['attributes']:
