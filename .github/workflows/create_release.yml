@@ -1,9 +1,13 @@
+name: Create Release
+
 on:
   push:
     branches:
       - "master"
 
-name: Create Release
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -11,9 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: "[ PREPARE ] install packages"
-        run: |
-          sudo apt-get update && sudo apt-get install -y curl twine python3 python3-mechanicalsoup python3-venv
+      - name: "[ PREPARE ] Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: "[ PREPARE ] Install pypa/build"
+        run: python3 -m pip install build --user
 
       - name: "[ PREPARE ] Get current version"
         uses: oprypin/find-latest-tag@v1
@@ -25,14 +33,16 @@ jobs:
       - name: "[ PREPARE ] Checkout code"
         uses: actions/checkout@v4
 
-      - name: "[ PREPARE ] Retrieve Version from version.py"
+      - name: "[ PREPARE ] Retrieve version"
         run: |
+          python3 -m pip install .
+          echo TAG_NAME=$(python3 -c "import dkb_robo; print(dkb_robo.__version__)") >> $GITHUB_ENV
           echo APP_NAME=$(echo ${{ github.repository }} | awk -F / '{print $2}') >> $GITHUB_ENV
-          echo TAG_NAME=$(cat setup.py | grep -i version | head -n 1 | sed 's/version=//g' | sed s/\'//g | sed 's/\,//g' | sed 's/\ //g') >> $GITHUB_ENV
 
-      - run: echo "Repo is at version ${{ steps.dkb_robo_ver.outputs.tag }}"
-      - run: echo "APP tag is ${{ env.APP_NAME }}"
-      - run: echo "Latest tag is ${{ env.TAG_NAME }}"
+      - run: |
+          echo "Repo is at version ${{ steps.dkb_robo_ver.outputs.tag }}"
+          echo "APP tag is ${{ env.APP_NAME }}"
+          echo "Latest tag is ${{ env.TAG_NAME }}"
 
       - name: "[ BUILD ] Create Release"
         id: create_release
@@ -48,11 +58,10 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: "[ BUILD ] create pypi package"
+      - name: "[ BUILD ] Build a binary wheel and a source tarball"
         id: create_package
         if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
-        run: |
-          python3 setup.py sdist
+        run: python3 -m build
 
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -74,8 +83,8 @@ jobs:
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
-          pip install -r requirements.txt
-          pip freeze > /tmp/requirements_freeze.txt
+          python3 -m pip install .
+          python3 -m pip freeze > /tmp/requirements_freeze.txt
           cat /tmp/requirements_freeze.txt
           deactivate
 
@@ -84,9 +93,9 @@ jobs:
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
-          pip install cyclonedx-bom
-          python3 -m cyclonedx_py requirements -i /tmp/requirements_freeze.txt --of xml -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml
-          python3 -m cyclonedx_py requirements -i /tmp/requirements_freeze.txt --of json -o /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json
+          python3 -m pip install cyclonedx-bom
+          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format xml  --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml  /tmp/dkbroboenv
+          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
       - name: "[ BUILD ] Upload SBOM"
         # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
