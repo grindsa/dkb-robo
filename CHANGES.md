@@ -16,7 +16,6 @@ This is a high-level summary of the most important changes. For a full list of c
 - [#64](https://github.com/grindsa/dkb-robo/pull/64) - CLI - fix non-chip-tan default option
 - [#62](https://github.com/grindsa/dkb-robo/issues/62) - add missing transaction attributes for brokerage account
 
-
 # Changes in 0.27.1
 
 **Improvements**:
