@@ -680,144 +680,6 @@ class Wrapper(object):
         self.dkb_br = legacywrappper._new_instance(clientcookies)
         self.logger.debug('api.Wrapper._do_sso_redirect() ended.\n')
 
-    def _download_document(self, path: str, document: Dict[str, str]) -> str:
-        """ filter standing orders """
-        self.logger.debug('api.Wrapper._download_document()\n')
-
-        rcode = 'unknown'
-        # create directory if not existing
-        directories = [path, f'{path}/{document["document_type"]}']
-        for directory in directories:
-            if not os.path.exists(directory):
-                self.logger.debug('api.Wrapper._download_document(): Create directory %s\n', directory)
-                os.makedirs(directory)
-
-        if 'filename' in document and 'link' in document:
-
-            # modify accept attribute in
-            dlc = self.client
-            dlc.headers['Accept'] = document['contenttype']
-            response = dlc.get(document['link'])
-            rcode = response.status_code
-            if document['contenttype'] == 'application/pdf' and not document['filename'].endswith('pdf'):
-                self.logger.info('api.Wrapper._download_document(): renaming %s', document['filename'])
-                document['filename'] = f'{document["filename"]}.pdf'
-
-            if response.status_code == 200:
-                self.logger.info('Saving %s/%s...', directories[1], document['filename'])
-                with open(f'{directories[1]}/{get_valid_filename(document["filename"])}', 'wb') as file:
-                    file.write(response.content)
-
-                if not document['read']:
-                    # set document status to "read"
-                    self.logger.debug('api.Wrapper._download_document() set docment to "read"\n')
-                    data_dic = {"data": {"attributes": {"read": True}, "type": "message"}}
-                    dlc.headers['Accept'] = JSON_CONTENT_TYPE
-                    dlc.headers['Content-type'] = JSON_CONTENT_TYPE
-                    _response = self.client.patch(document['link'].replace('/documents/', '/messages/'), json=data_dic)
-
-                time.sleep(2)
-            else:
-                self.logger.error('api.Wrapper._download_document(): RC is not 200 but %s', response.status_code)
-
-        self.logger.debug('api.Wrapper._download_document() ended with: %s.\n', rcode)
-        return rcode
-
-    def _docdate_lookup(self, document: Dict[str, str]) -> str:
-        """ lookup document date """
-        self.logger.debug('api.Wrapper._docdate_lookup()\n')
-
-        doc_date = 'unknown'
-        if 'statementDate' in document['attributes']['metadata']:
-            doc_date = document['attributes']['metadata']['statementDate']
-        elif 'creationDate' in document['attributes']['metadata']:
-            doc_date = document['attributes']['metadata']['creationDate']
-
-        self.logger.debug('api.Wrapper._docdate_lookup() ended\n')
-        return doc_date
-
-    def _docfilename_lookup(self, document: Dict[str, str]) -> str:
-        """ lookup document filename """
-        self.logger.debug('api.Wrapper._docdfilename_lookup()\n')
-        doc_filename = document['attributes']['fileName']
-        # Depot related files don't have meaningful filenames but only contain the document id. Hence, we use subject
-        # instead and rely on the filename sanitization.
-        if 'dwpDocumentId' in document['attributes']['metadata'] and 'subject' in document['attributes']['metadata']:
-            doc_filename = document['attributes']['metadata']['subject']
-        self.logger.debug('api.Wrapper._docdate_lookup() ended with %s.\n', doc_filename)
-        return doc_filename
-
-    def _merge_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str]) -> Dict[str, str]:
-        """ reformat postbox dictionary from DKB """
-        self.logger.debug('api.Wrapper._merge_postbox()\n')
-
-        message_dic = {}
-        if 'data' in pb_dic:
-            for document in pb_dic['data']:
-                message_dic[document['id']] = {
-                    'filename': self._docfilename_lookup(document),
-                    'contenttype': document['attributes']['contentType'],
-                    'date': self._docdate_lookup(document),
-                    'name': self._objectname_lookup(document)
-                }
-
-        if 'data' in msg_dic:
-            for message in msg_dic['data']:
-                if message['id'] in message_dic:
-                    message_dic[message['id']]['document_type'] = self._get_document_type(message['attributes']['documentType'])
-                    if 'read' in message['attributes']:
-                        message_dic[message['id']]['read'] = message['attributes']['read']
-                    message_dic[message['id']]['archived'] = message['attributes']['archived']
-                    message_dic[message['id']]['link'] = self.base_url + self.api_prefix + '/documentstorage/documents/' + message['id']
-
-        self.logger.debug('api.Wrapper._merge_postbox() ended\n')
-        return message_dic
-
-    def _process_document(self, path: str, prepend_date: bool, document: Dict[str, str], documentname_list: Dict[str, str]) -> Tuple[List[str], str, str]:
-        """ check for duplicaton and download """
-        self.logger.debug('api.Wrapper._process_document()\n')
-
-        rcode = 'unknown'
-        if path:
-            if prepend_date and document['filename'] in documentname_list:
-                self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
-                document['filename'] = f'{document["date"]}_{document["filename"]}'
-            rcode = self._download_document(path, document)
-            documentname_list.append(document['filename'])
-
-        self.logger.debug('api.Wrapper._process_document() ended\n')
-        return documentname_list, f'{path}/{document["document_type"]}/{get_valid_filename(document["filename"])}', rcode
-
-    def _filter_postbox(self, msg_dic: Dict[str, str], pb_dic: Dict[str, str], path: bool = None, download_all: bool = False, _archive: bool = False, prepend_date: bool = None) -> Dict[str, str]:
-        """ filter postbox """
-        self.logger.debug('api.Wrapper._filter_postbox()\n')
-
-        # merge message dictionaries
-        message_dic = self._merge_postbox(msg_dic, pb_dic)
-
-        # list to store filenames to check for duplicates
-        documentname_list = []
-
-        documents_dic = {}
-        for document in message_dic.values():
-            if 'read' in document:
-                if download_all or not document['read']:
-
-                    # check filenames and download
-                    documentname_list, document_name, rcode = self._process_document(path, prepend_date, document, documentname_list)
-
-                    # store entry in dictionary
-                    document_type = document.pop('document_type')
-                    if document_type not in documents_dic:
-                        documents_dic[document_type] = {}
-                        documents_dic[document_type]['documents'] = {}
-                    documents_dic[document_type]['documents'][document['name']] = {'link': document['link'], 'fname': document_name, 'date': document['date'], 'rcode': rcode}
-            else:
-                self.logger.error('api.Wrapper._filter_postbox(): document_dic incomplete: %s', document)
-
-        self.logger.debug('api.Wrapper._filter_postbox() ended.\n')
-        return documents_dic
-
     def _filter_standing_orders(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
         self.logger.debug('api.Wrapper._filter_standing_orders()\n')
@@ -1018,27 +880,6 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._get_card_details() ended\n')
         return output_dic
 
-    def _get_document_name(self, doc_name: str) -> str:
-        self.logger.debug('api.Wrapper._get_document_name()\n')
-
-        return ' '.join(doc_name.split())
-
-    def _get_document_type(self, doc_type: str) -> str:
-        self.logger.debug('api.Wrapper._get_document_type()\n')
-        mapping_dic = {
-            'bankAccountStatement': 'Kontoauszüge',
-            'creditCardStatement': 'Kreditkartenabrechnungen',
-            'dwpRevenueStatement': 'Ertragsabrechnungen',
-            'dwpOrderStatement': 'Depotabrechnungen',
-            'dwpDepotStatement': 'Depotauszüge',
-            'exAnteCostInformation': 'Kosteninformationen'
-        }
-
-        result = mapping_dic.get(doc_type, doc_type)
-
-        self.logger.debug('api.Wrapper._get_document_type() ended\n')
-        return result
-
     def _get_loans(self) -> Dict[str, str]:
         """ get loands via API """
         self.logger.debug('api.Wrapper._get_loans()\n')
@@ -1190,26 +1031,6 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper._new_session()\n ended')
         return client
-
-    def _objectname_lookup(self, document: Dict[str, str]) -> str:
-        """ lookup object name """
-        self.logger.debug('api.Wrapper._objectname_lookup()\n')
-
-        object_name = None
-
-        if 'cardId' in document['attributes']['metadata']:
-            for _acc_id, acc_data in self.account_dic.items():
-                if acc_data['id'] == document['attributes']['metadata']['cardId']:
-                    object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {acc_data['account']}"
-                    break
-            if not object_name:
-                _sinin, cardnr, _sinin = document['attributes']['fileName'].split('_', 2)
-                object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {cardnr}"
-        else:
-            object_name = self._get_document_name(document['attributes']['metadata']['subject'])
-
-        self.logger.debug('api.Wrapper._objectname_lookup() ended with: %s\n', object_name)
-        return object_name
 
     def _print_app_2fa_confirmation(self, devicename: str):
         """ 2fa confirmation message """
@@ -1470,25 +1291,3 @@ class Wrapper(object):
     def logout(self):
         """ logout function """
         self.logger.debug('api.Wrapper.logout()\n')
-
-    def scan_postbox(self, path: str, download_all: bool, archive: bool, prepend_date: bool) -> Dict[str, str]:
-        """ scans the DKB postbox and creates a dictionary """
-        self.logger.debug('api.Wrapper.scan_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
-
-        documents_dic = {}
-
-        msg_dic = pb_dic = {}
-
-        response = self.client.get(self.base_url + self.api_prefix + '/documentstorage/messages')
-        if response.status_code == 200:
-            msg_dic = response.json()
-
-        response = self.client.get(self.base_url + self.api_prefix + '/documentstorage/documents?page%5Blimit%5D=1000')
-        if response.status_code == 200:
-            pb_dic = response.json()
-
-        if msg_dic and pb_dic:
-            documents_dic = self._filter_postbox(msg_dic, pb_dic, path, download_all, archive, prepend_date)
-
-        self.logger.debug('api.Wrapper.scan_postbox() ended.\n')
-        return documents_dic
