@@ -4,7 +4,7 @@
 
 ## Supported Versions
 
-Only the last version v0.20.x is under support.
+Only the last version is under support. Please keep your environement updated.
 
 ## Reporting a Vulnerability
 
