@@ -3,6 +3,20 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.28
+
+**Improvements**:
+
+- [#66](https://github.com/grindsa/dkb-robo/pull/65) - Special handling of depot related file names
+- [#65](https://github.com/grindsa/dkb-robo/pull/65) - add support for additional document types
+- [#63](https://github.com/grindsa/dkb-robo/pull/63) - CLI - rename `PATH` env variable to `DKB_DOC_PATH`
+
+**Bugfixes**:
+
+- [#64](https://github.com/grindsa/dkb-robo/pull/64) - CLI - fix non-chip-tan default option
+- [#62](https://github.com/grindsa/dkb-robo/issues/62) - add missing transaction attributes for brokerage account
+
+
 # Changes in 0.27.1
 
 **Improvements**:
