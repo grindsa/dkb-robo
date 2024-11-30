@@ -48,7 +48,7 @@ build.targets.sdist.only-packages = true
 [tool.pytest.ini_options]
 addopts = [
     "-ra",
-    "--cov=dkb_robo",
+    # "--cov=dkb_robo",
     "--import-mode=importlib",
     "--strict-config",
     "--strict-markers",
