@@ -222,6 +222,7 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 
+
 @main.command()
 @click.pass_context
 @click.option(
@@ -245,6 +246,7 @@ def download(ctx, path: Path, all: bool, prepend_date: bool, mark_read: bool, us
             ctx.obj["FORMAT"](dkb.download(path=path, download_all=all, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only))
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
+
 
 def _load_format(output_format):
     """ select output format based on cli option """

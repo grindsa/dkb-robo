@@ -98,7 +98,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.scan_postbox()\n')
         return self.download(Path(path) if path is not None else None, download_all, prepend_date)
 
-    def download(self, path: Path, download_all: bool, prepend_date: bool=False, mark_read: bool=True, use_account_folders: bool=False, list_only: bool=False):
+    def download(self, path: Path, download_all: bool, prepend_date: bool = False, mark_read: bool = True, use_account_folders: bool = False, list_only: bool = False):
         """ download postbox documents """
         if path is None:
             list_only = True
@@ -108,7 +108,7 @@ class DKBRobo(object):
         if not download_all:
             # only unread documents
             documents = {id: item for id, item in documents.items()
-                        if item.message and item.message.read is False}
+                         if item.message and item.message.read is False}
 
         accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
         for doc in documents.values():

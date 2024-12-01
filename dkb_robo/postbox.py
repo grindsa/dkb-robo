@@ -12,6 +12,7 @@ from dkb_robo.utilities import get_valid_filename
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Document:
     """ Document data class, roughly based on the JSON API response. """
@@ -25,6 +26,7 @@ class Document:
     metadata: Dict[str, str]
     owner: str
     link: str
+
 
 @dataclass
 class Message:
@@ -84,8 +86,7 @@ class PostboxItem:
             with target_file.open('wb') as file:
                 file.write(resp.content)
             return True
-        else:
-            return False
+        return False
 
     def filename(self) -> str:
         """ Returns a sanitized filename based on the document metadata. """
@@ -109,7 +110,7 @@ class PostboxItem:
         """ Returns the category of the document based on the document type. """
         return PostboxItem.DOCTYPE_MAPPING.get(self.message.documentType, self.message.documentType)
 
-    def account(self, card_lookup:Dict[str, str] = None) -> str:
+    def account(self, card_lookup: Dict[str, str] = None) -> str:
         """ Returns the account number or IBAN based on the document metadata. """
         if card_lookup is None:
             card_lookup = {}
@@ -165,9 +166,9 @@ class PostBox:
             # Merge raw messages and documents from JSON API (left join with documents as base).
             items = {
                 doc['id']: PostboxItem(
-                    id = doc['id'],
-                    document = Document(**doc.get('attributes', {}), link=__fix_link_url(doc['links']['self'])),
-                    message = None
+                    id=doc['id'],
+                    document=Document(**doc.get('attributes', {}), link=__fix_link_url(doc['links']['self'])),
+                    message=None
                 )
                 for doc in documents.get('data', [])
             }
@@ -179,5 +180,4 @@ class PostBox:
                     items[msg_id].message = Message(**msg.get('attributes', {}), link=__fix_link_url(msg['links']['self']))
 
             return items
-        else:
-            raise DKBRoboError("Could not fetch messages/documents.")
+        raise DKBRoboError("Could not fetch messages/documents.")
