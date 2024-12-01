@@ -885,6 +885,8 @@ class Wrapper(object):
             table = soup.find('table', attrs={'id': re.compile('mbo-message-list*')})
         else:
             table = soup.find('table', attrs={'id': 'welcomeMboTable'})
+        if table is None:
+            raise DKBRoboError("Expected table not found in old postbox")
         tbody = table.find('tbody')
 
         if archive:
