@@ -53,6 +53,8 @@ class SessionRefresher:
     default_method: Optional[str] = None
     default_failure_text: Optional[str] = None
 
+    logger: logging.Logger
+
     def __init__(
             self,
             client: requests.Session,
@@ -60,8 +62,10 @@ class SessionRefresher:
             method: Optional[str] = None,
             polling_period: Optional[float] = None,
             failure_text: Optional[str] = None,
+            logger: Optional[logging.Logger] = None,
         ) -> None:
         self.client = client
+        self.logger = logger or logging.getLogger(__name__)
 
         refresh_url = refresh_url or self.default_refresh_url
         if refresh_url is None:
@@ -86,19 +90,24 @@ class SessionRefresher:
 
     def _run(self) -> None:
         """ refresh loop to be run in a thread. """
+        self.logger.debug(
+            f"Starting session refresh loop for {self.refresh_url} "
+            f"every {self.polling_period_seconds} seconds"
+        )
         while not self._stop_event.wait(self.polling_period_seconds):
             self.refresh()
+        self.logger.debug("Session refresh loop finished")
 
     def refresh(self) -> None:
         """ refresh the session a single time """
         try:
             response = self.client.request(self.method, self.refresh_url)
             response.raise_for_status()
-            logging.debug(f"Successfully refreshed session: {response.status_code}")
+            self.logger.debug(f"Successfully refreshed session: {response.status_code}")
         except requests.RequestException as e:
-            logging.error(f"Error occurred while refreshing session: {e}")
+            self.logger.error(f"Error occurred while refreshing session: {e}")
         if self.failure_text and self.failure_text in response.text:
-            logging.error(
+            self.logger.error(
                 f"Session refresh failed because it contains '{self.failure_text}'"
             )
 
