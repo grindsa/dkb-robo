@@ -779,9 +779,12 @@ class Wrapper(object):
 
         rcode = 'unknown'
         if path:
-            if prepend_date and document['filename'] in documentname_list:
-                self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
+            if prepend_date or document['filename'] in documentname_list:
+                if document['filename'] in documentname_list:
+                    self.logger.debug('api.Wrapper._filter_postbox(): duplicate document name. Renaming %s', document['filename'])
                 document['filename'] = f'{document["date"]}_{document["filename"]}'
+                if document['filename'] in documentname_list:
+                    raise DKBRoboError(f"Duplicate document name and date: {document['filename']}")
             rcode = self._download_document(path, document)
             documentname_list.append(document['filename'])
 
