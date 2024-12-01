@@ -353,7 +353,7 @@ class Wrapper(object):
         """ get finanical statement """
         self.logger.debug('legacy.Wrapper._get_financial_statement()\n')
 
-        statement_url = self.base_url + '/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
+        statement_url = self.base_url + '/ssohl/DkbTransactionBanking/content/banking/financialstatus/FinancialComposite/FinancialStatus.xhtml?$event=init'
 
         self.dkb_br.open(statement_url)
         soup = self.dkb_br.get_current_page()
@@ -652,7 +652,7 @@ class Wrapper(object):
         """ create a dictionary of credit limits of the different accounts """
         self.logger.debug('legacy.Wrapper.get_credit_limits()\n')
 
-        limit_url = self.base_url + '/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
+        limit_url = self.base_url + '/ssohl/DkbTransactionBanking/content/service/CreditcardLimit.xhtml'
         self.dkb_br.open(limit_url)
 
         soup = self.dkb_br.get_current_page()
@@ -674,7 +674,7 @@ class Wrapper(object):
         """ returns a dictionary of the stored exemption orders """
         self.logger.debug('legacy.Wrapper.get_exemption_order()\n')
 
-        exo_url = self.base_url + '/DkbTransactionBanking/content/personaldata/ExemptionOrderOverview.xhtml'
+        exo_url = self.base_url + '/ssohl/DkbTransactionBanking/content/personaldata/ExemptionOrderOverview.xhtml'
         self.dkb_br.open(exo_url)
 
         soup = self.dkb_br.get_current_page()
@@ -756,7 +756,7 @@ class Wrapper(object):
         """ get standing orders  """
         self.logger.debug('legacy.Wrapper.get_standing_orders()\n')
 
-        so_url = self.base_url + '/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
+        so_url = self.base_url + '/ssohl/banking/finanzstatus/dauerauftraege?$event=infoStandingOrder'
         self.dkb_br.open(so_url)
 
         so_list = []
@@ -810,7 +810,7 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.login()\n')
 
         # login url
-        login_url = self.base_url + '/' + 'banking'
+        login_url = self.base_url + '/ssohl/' + 'banking'
 
         # create browser and login
         self.dkb_br = self._new_instance()
@@ -866,7 +866,7 @@ class Wrapper(object):
         """ logout from DKB banking area """
         self.logger.debug('legacy.Wrapper.logout()\n')
 
-        logout_url = self.base_url + '/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
+        logout_url = self.base_url + '/ssohl/' + 'DkbTransactionBanking/banner.xhtml?$event=logout'
         if self.dkb_br:
             self.dkb_br.open(logout_url)
         self.logger.debug('legacy.Wrapper.logout() ended\n')
@@ -876,9 +876,9 @@ class Wrapper(object):
         self.logger.debug('legacy.Wrapper.san_postbox() path: %s, download_all: %s, archive: %s, prepend_date: %s\n', path, download_all, archive, prepend_date)
 
         if archive:
-            pb_url = self.base_url + '/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
+            pb_url = self.base_url + '/ssohl/banking/postfach/ordner?$event=gotoFolder&folderNameOrId=archiv'
         else:
-            pb_url = self.base_url + '/banking/postfach'
+            pb_url = self.base_url + '/ssohl/banking/postfach'
         self.dkb_br.open(pb_url)
         soup = self.dkb_br.get_current_page()
         if archive:
