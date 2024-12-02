@@ -1,5 +1,6 @@
 """ Module for handling the DKB postbox. """
 import datetime
+import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -85,6 +86,15 @@ class PostboxItem:
 
             with target_file.open('wb') as file:
                 file.write(resp.content)
+
+            # compare checksums of file with checksum from document metadata
+            if self.document.checksum:
+                with target_file.open('rb') as file:
+                    checksum = hashlib.md5(file.read()).hexdigest()
+                    if checksum != self.document.checksum:
+                        logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
+                        # rename file to indicate checksum mismatch
+                        target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
             return True
         return False
 

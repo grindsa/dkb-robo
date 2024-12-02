@@ -8,6 +8,7 @@ import requests
 from dkb_robo.api import DKBRoboError
 from dkb_robo.postbox import PostboxItem, PostBox, Document, Message
 
+
 class TestPostboxItem(unittest.TestCase):
     """ Tests for the PostboxItem class. """
 
@@ -17,7 +18,7 @@ class TestPostboxItem(unittest.TestCase):
             expirationDate="2023-12-31",
             retentionPeriod="9999-12-31",
             contentType="application/pdf",
-            checksum="abc123",
+            checksum="9473fdd0d880a43c21b7778d34872157",
             fileName="test_document",
             metadata={"statementDate": "2023-01-01"},
             owner="owner",
@@ -81,6 +82,20 @@ class TestPostboxItem(unittest.TestCase):
         result = self.postbox_item.download(mock_client, target_file)
         self.assertFalse(result)
         target_file.unlink()
+
+    @patch("requests.Session")
+    def test_download_checksum_mismatch(self, mock_session):
+        """ Test that the download method renames the downloaded file if the checksum of the downloaded file does not match."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.status_code = 200
+        mock_client.get.return_value.content = b"wrong test content"
+        target_file = Path(tempfile.gettempdir()) / "test_document.pdf"
+        result = self.postbox_item.download(mock_client, target_file, overwrite=True)
+        self.assertTrue(result)
+        self.assertFalse(target_file.exists())
+        mismatched_file = target_file.with_name(target_file.name + ".checksum_mismatch")
+        self.assertTrue(mismatched_file.exists())
+        mismatched_file.unlink()  # Remove the downloaded test file
 
     def test_filename(self):
         """ Test that the filename method returns the correct filename for the postbox item."""
@@ -184,6 +199,7 @@ class TestPostboxItem(unittest.TestCase):
         self.document.metadata = {}
         with self.assertRaises(AttributeError):
             self.postbox_item.date()
+
 
 class TestPostBox(unittest.TestCase):
     """ Tests for the PostBox class. """
