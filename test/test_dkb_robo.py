@@ -191,8 +191,8 @@ class TestDKBRobo(unittest.TestCase):
 
     def test_015_scan_postbox(self):
         """ test get_standing_orders()"""
-        self.dkb.wrapper = Mock()
-        self.dkb.wrapper.scan_postbox.return_value = {'foo': 'bar'}
+        self.dkb.download = Mock()
+        self.dkb.download.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.scan_postbox())
 
 if __name__ == '__main__':

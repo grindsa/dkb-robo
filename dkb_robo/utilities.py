@@ -1,6 +1,7 @@
 """ miscellaneous functions """
 # -*- coding: utf-8 -*-
 import logging
+from pathlib import Path
 import random
 from string import digits, ascii_letters
 from typing import List, Tuple
@@ -48,11 +49,13 @@ def generate_random_string(length: int) -> str:
 
 def get_valid_filename(name):
     """ sanitize filenames """
-    s = str(name).strip().replace(" ", "_")
-    s = re.sub(r"(?u)[^-\w.]", "_", s)
+    s = re.sub(r"(?u)[^-\w.]", " ", str(name))
+    p = Path(s.strip())
+    s = "_".join(p.stem.split())
+
     if s in {"", ".", ".."}:
         s = f'{generate_random_string(8)}.pdf'
-    return s
+    return s + p.suffix
 
 
 def string2float(value: str) -> float:
