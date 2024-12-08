@@ -91,10 +91,10 @@ class PostboxItem:
             if self.document.checksum:
                 with target_file.open('rb') as file:
                     checksum = hashlib.md5(file.read()).hexdigest()
-                    if checksum != self.document.checksum:
-                        logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
-                        # rename file to indicate checksum mismatch
-                        target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
+                if checksum != self.document.checksum:
+                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
+                    # rename file to indicate checksum mismatch
+                    target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
             return True
         return False
 

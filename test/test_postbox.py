@@ -1,10 +1,13 @@
 """Tests for the postbox module."""
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 import requests
+sys.path.insert(0, '.')
+sys.path.insert(0, '..')
 from dkb_robo.api import DKBRoboError
 from dkb_robo.postbox import PostboxItem, PostBox, Document, Message
 
