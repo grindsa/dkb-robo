@@ -62,8 +62,7 @@ class SessionRefresher:
             method: Optional[str] = None,
             polling_period: Optional[float] = None,
             failure_text: Optional[str] = None,
-            logger: Optional[logging.Logger] = None,
-        ) -> None:
+            logger: Optional[logging.Logger] = None) -> None:
         self.client = client
         self.logger = logger or logging.getLogger(__name__)
 
