@@ -2,6 +2,7 @@
 """ dkb_robo cli """
 from datetime import date
 from pprint import pprint
+from typing import Literal, Optional
 import sys
 import csv
 import json
@@ -37,6 +38,7 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     help='use ChipTAN for login (either "qr" or "manual")',
     type=str,
     envvar="DKB_CHIP_TAN",
+    hidden=True,
 )
 @click.option(
     "--username",
@@ -62,8 +64,15 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     help="output format to use",
     envvar="DKB_FORMAT",
 )
+@click.option(
+    "--refresh-session",
+    is_flag=True,
+    default=False,
+    help="Refresh the session to prevent timeouts",
+    envvar="DKB_REFRESH_SESSION",
+)
 @click.pass_context
-def main(ctx, debug, use_tan, chip_tan, username, password, format):  # pragma: no cover
+def main(ctx: click.Context, debug: bool, use_tan: bool, chip_tan, username: str, password: Optional[str], format: Literal["pprint", "table", "csv", "json"], refresh_session: bool):  # pragma: no cover
     """ main fuunction """
 
     if use_tan:
@@ -76,6 +85,7 @@ def main(ctx, debug, use_tan, chip_tan, username, password, format):  # pragma: 
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
+    ctx.obj["REFRESH_SESSION"] = refresh_session
 
 
 @main.command()
@@ -250,5 +260,5 @@ def _load_format(output_format):
 
 def _login(ctx):
     return dkb_robo.DKBRobo(
-        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"]
+        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"], refresh_session=ctx.obj["REFRESH_SESSION"]
     )

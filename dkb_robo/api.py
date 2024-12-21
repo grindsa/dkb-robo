@@ -38,14 +38,16 @@ class Wrapper(object):
     client = None
     token_dic = None
     account_dic = {}
+    refresh_session: bool = False
     session_refresher: BankingSessionRefresher
     old_session_refresher: OldBankingSessionRefresher
 
-    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None, refresh_session: bool = False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.proxies = proxies
         self.logger = logger
+        self.refresh_session = refresh_session
         if chip_tan:
             self.logger.info('Using to chip_tan to login')
             if chip_tan in ('qr', 'chip_tan_qr'):
@@ -1456,10 +1458,11 @@ class Wrapper(object):
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
         # start session refresher
-        self.session_refresher = BankingSessionRefresher(
-            client=self.client, logger=self.logger
-        )
-        self.session_refresher.start()
+        if self.refresh_session:
+            self.session_refresher = BankingSessionRefresher(
+                client=self.client, logger=self.logger
+            )
+            self.session_refresher.start()
 
         # get account overview
         self.account_dic = self._get_overview()
@@ -1468,10 +1471,11 @@ class Wrapper(object):
         self._do_sso_redirect()
 
         # start a session refresher for the legacy login
-        self.old_session_refresher = OldBankingSessionRefresher(
-            client=self.client, logger=self.logger
-        )
-        self.old_session_refresher.start()
+        if self.refresh_session:
+            self.old_session_refresher = OldBankingSessionRefresher(
+                client=self.client, logger=self.logger
+            )
+            self.old_session_refresher.start()
 
         self.logger.debug('api.Wrapper.login() ended\n')
         return self.account_dic, None

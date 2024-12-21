@@ -26,7 +26,7 @@ class DKBRobo(object):
     logger = None
     wrapper = None
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False, refresh_session=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
@@ -34,6 +34,7 @@ class DKBRobo(object):
         self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
+        self.refresh_session = refresh_session
 
     def __enter__(self):
         """ Makes DKBRobo a Context Manager """
@@ -48,7 +49,7 @@ class DKBRobo(object):
         if self.mfa_device == 'm':
             self.mfa_device = 1
 
-        self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, logger=self.logger)
+        self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, logger=self.logger, refresh_session=self.refresh_session)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()
