@@ -49,7 +49,7 @@ class TestRefresher(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
         with patch.object(self.session, 'request', return_value=mock_response) as mock_request:
-            with self.assertLogs('dkb_robo', level='DEBUG') as cm:
+            with self.assertLogs(self.logger, level='DEBUG') as cm:
                 refresher.refresh()
             mock_request.assert_called_once_with('GET', 'https://example.com/refresh')
             self.assertIn('DEBUG:dkb_robo:Successfully refreshed session: 200', cm.output)
@@ -67,7 +67,7 @@ class TestRefresher(unittest.TestCase):
         mock_response.status_code = 500
         mock_response.raise_for_status.side_effect = requests.HTTPError('Internal Server Error')
         with patch.object(self.session, 'request', return_value=mock_response):
-            with self.assertLogs('dkb_robo', level='ERROR') as cm:
+            with self.assertLogs(self.logger, level='ERROR') as cm:
                 refresher.refresh()
             self.assertIn('ERROR:dkb_robo:Error occurred while refreshing session: Internal Server Error', cm.output)
 
@@ -86,7 +86,7 @@ class TestRefresher(unittest.TestCase):
         mock_response.raise_for_status.return_value = None
         mock_response.text = 'Error: Session expired.'
         with patch.object(self.session, 'request', return_value=mock_response):
-            with self.assertLogs('dkb_robo', level='ERROR') as cm:
+            with self.assertLogs(self.logger, level='ERROR') as cm:
                 refresher.refresh()
             self.assertIn("ERROR:dkb_robo:Session refresh failed because it contains 'Session expired'", cm.output)
 
@@ -157,6 +157,61 @@ class TestRefresher(unittest.TestCase):
                 refresher._run()
             self.assertEqual(mock_refresh.call_count, 2)
             refresher._stop_event = original_stop_event  # Restore original stop event
+
+    def test_010_init_missing_refresh_url(self):
+        """ Test that ValueError is raised when refresh_url is missing """
+        with self.assertRaises(ValueError) as context:
+            SessionRefresher(
+                client=self.session,
+                refresh_url=None,
+                method='GET',
+                polling_period=60,
+                logger=self.logger
+            )
+        self.assertEqual(str(context.exception), "refresh_url is required")
+
+    def test_011_init_missing_method(self):
+        """ Test that ValueError is raised when method is missing """
+        with self.assertRaises(ValueError) as context:
+            SessionRefresher(
+                client=self.session,
+                refresh_url='https://example.com/refresh',
+                method=None,
+                polling_period=60,
+                logger=self.logger
+            )
+        self.assertEqual(str(context.exception), "method (GET/POST) is required")
+
+    def test_012_init_missing_polling_period(self):
+        """ Test that ValueError is raised when polling_period is missing """
+        with self.assertRaises(ValueError) as context:
+            SessionRefresher(
+                client=self.session,
+                refresh_url='https://example.com/refresh',
+                method='GET',
+                polling_period=None,
+                logger=self.logger
+            )
+        self.assertEqual(str(context.exception), "polling_period is required")
+
+    def test_013_init_with_defaults(self):
+        """ Test that defaults in subclasses are used when parameters are missing """
+        # Testing BankingSessionRefresher without providing parameters
+        refresher = BankingSessionRefresher(client=self.session)
+        self.assertEqual(refresher.refresh_url, 'https://banking.dkb.de/api/refresh')
+        self.assertEqual(refresher.method, 'POST')
+        self.assertEqual(refresher.polling_period_seconds, 240)
+
+        # Now providing parameters to override defaults
+        refresher = BankingSessionRefresher(
+            client=self.session,
+            refresh_url='https://custom.com/refresh',
+            method='GET',
+            polling_period=120
+        )
+        self.assertEqual(refresher.refresh_url, 'https://custom.com/refresh')
+        self.assertEqual(refresher.method, 'GET')
+        self.assertEqual(refresher.polling_period_seconds, 120)
 
 if __name__ == '__main__':
     unittest.main()
