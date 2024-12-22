@@ -102,7 +102,7 @@ class DKBRobo(object):
         """ download postbox documents """
         if path is None:
             list_only = True
-        postbox = PostBox(self.wrapper.client)
+        postbox = PostBox(client = self.wrapper.client, logger = self.logger)
         documents = postbox.fetch_items()
 
         if not download_all:

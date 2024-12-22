@@ -57,10 +57,11 @@ class PostboxItem:
     id: str
     document: Document
     message: Message
+    logger: logging.Logger
 
     def mark_read(self, client: requests.Session, read: bool):
         """ Marks the document as read or unread. """
-        logger.debug("Set read status of document %s to %s", self.id, read)
+        self.logger.debug('PostboxItem.mark_read(): set document %s to %s', self.id, read)
         resp = client.patch(
             self.message.link,
             json={"data": {"attributes": {"read": read}, "type": "message"}},
@@ -77,6 +78,7 @@ class PostboxItem:
         :param overwrite: Whether to overwrite the file if it already exists.
         :return: True if the file was downloaded and saved, False if the file already exists and overwrite is False.
         """
+        self.logger.debug('PostboxItem.download(): %s to %s', self.id, target_file)
         if not target_file.exists() or overwrite:
             resp = client.get(self.document.link, headers={"Accept": self.document.contentType})
             resp.raise_for_status()
@@ -92,7 +94,7 @@ class PostboxItem:
                 with target_file.open('rb') as file:
                     checksum = hashlib.md5(file.read()).hexdigest()
                 if checksum != self.document.checksum:
-                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
+                    self.logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
                     # rename file to indicate checksum mismatch
                     target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
             return True
@@ -100,8 +102,9 @@ class PostboxItem:
 
     def filename(self) -> str:
         """ Returns a sanitized filename based on the document metadata. """
-        filename = self.document.fileName
+        self.logger.debug('PostboxItem.filename(): Generating filename for document %s', self.id)
 
+        filename = self.document.fileName
         # Depot related files don't have meaningful filenames but only contain the document id. Hence, we use subject
         # instead and rely on the filename sanitization.
         if 'dwpDocumentId' in self.document.metadata and 'subject' in self.document.metadata:
@@ -110,7 +113,9 @@ class PostboxItem:
         if self.document.contentType == 'application/pdf' and not filename.endswith('pdf'):
             filename = f'{filename}.pdf'
 
-        return get_valid_filename(filename)
+        fname = get_valid_filename(filename)
+        self.logger.debug('PostboxItem.filename() for %s ended with %s', self.id, fname)
+        return fname
 
     def subject(self) -> str:
         """ Returns the subject of the message. """
@@ -122,6 +127,7 @@ class PostboxItem:
 
     def account(self, card_lookup: Dict[str, str] = None) -> str:
         """ Returns the account number or IBAN based on the document metadata. """
+        self.logger.debug("PostboxItem.account() fom document %s", self.id)
         if card_lookup is None:
             card_lookup = {}
         account = None
@@ -132,10 +138,12 @@ class PostboxItem:
         elif 'iban' in self.document.metadata:
             account = self.document.metadata['iban']
 
+        self.logger.debug("PostboxItem.account() for document %s ended with %s", self.id, account)
         return account
 
     def date(self) -> str:
         """ Returns the date of the document based on the metadata. """
+        self.logger.debug("PostboxItem.date() for document %s", self.id)
         date = None
         if 'statementDate' in self.document.metadata:
             date = datetime.date.fromisoformat(self.document.metadata['statementDate'])
@@ -147,6 +155,7 @@ class PostboxItem:
         if date is None:
             raise AttributeError("No valid date field found in document metadata.")
 
+        self.logger.debug("PostboxItem.date() for document %s ended with %s", self.id, date)
         return date.strftime('%Y-%m-%d')
 
 
@@ -154,20 +163,23 @@ class PostBox:
     """ Class for handling the DKB postbox. """
     BASE_URL = "https://banking.dkb.de/api/documentstorage/"
 
-    def __init__(self, client: requests.Session):
+    # pylint: disable=w0621
+    def __init__(self, client: requests.Session, logger: logging.Logger):
         self.client = client
+        self.logger = logger
 
     def fetch_items(self) -> Dict[str, PostboxItem]:
         """ Fetches all items from the postbox and merges document and message data. """
+        self.logger.debug("PostBox.fetch_items(): Fetching messages")
+
         def __fix_link_url(url: str) -> str:
             return url.replace("https://api.developer.dkb.de/", PostBox.BASE_URL)
 
-        logger.debug("Fetching messages...")
         response = self.client.get(PostBox.BASE_URL + '/messages')
         response.raise_for_status()
         messages = response.json()
 
-        logger.debug("Fetching documents...")
+        self.logger.debug("PostBox.fetch_items(): Fetching documents")
         response = self.client.get(PostBox.BASE_URL + '/documents?page%5Blimit%5D=1000')
         response.raise_for_status()
         documents = response.json()
@@ -176,6 +188,7 @@ class PostBox:
             # Merge raw messages and documents from JSON API (left join with documents as base).
             items = {
                 doc['id']: PostboxItem(
+                    logger=self.logger,
                     id=doc['id'],
                     document=Document(**doc.get('attributes', {}), link=__fix_link_url(doc['links']['self'])),
                     message=None
