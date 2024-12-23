@@ -25,7 +25,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=60,
+            polling_period_seconds=60,
             failure_text='Session expired',
             logger=self.logger
         )
@@ -42,7 +42,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=60,
+            polling_period_seconds=60,
             logger=self.logger
         )
         mock_response = Mock()
@@ -60,7 +60,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=60,
+            polling_period_seconds=60,
             logger=self.logger
         )
         mock_response = Mock()
@@ -77,7 +77,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=60,
+            polling_period_seconds=60,
             failure_text='Session expired',
             logger=self.logger
         )
@@ -96,7 +96,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=0.1,
+            polling_period_seconds=0.1,
             logger=self.logger
         )
         with patch.object(refresher, 'refresh') as mock_refresh:
@@ -131,7 +131,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=0.1,
+            polling_period_seconds=0.1,
             logger=self.logger
         )
         with patch.object(refresher, '_run'):
@@ -146,7 +146,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://example.com/refresh',
             method='GET',
-            polling_period=0.1,
+            polling_period_seconds=0.1,
             logger=self.logger
         )
         with patch.object(refresher, 'refresh') as mock_refresh:
@@ -165,7 +165,7 @@ class TestRefresher(unittest.TestCase):
                 client=self.session,
                 refresh_url=None,
                 method='GET',
-                polling_period=60,
+                polling_period_seconds=60,
                 logger=self.logger
             )
         self.assertEqual(str(context.exception), "refresh_url is required")
@@ -177,7 +177,7 @@ class TestRefresher(unittest.TestCase):
                 client=self.session,
                 refresh_url='https://example.com/refresh',
                 method=None,
-                polling_period=60,
+                polling_period_seconds=60,
                 logger=self.logger
             )
         self.assertEqual(str(context.exception), "method (GET/POST) is required")
@@ -189,7 +189,7 @@ class TestRefresher(unittest.TestCase):
                 client=self.session,
                 refresh_url='https://example.com/refresh',
                 method='GET',
-                polling_period=None,
+                polling_period_seconds=None,
                 logger=self.logger
             )
         self.assertEqual(str(context.exception), "polling_period is required")
@@ -207,7 +207,7 @@ class TestRefresher(unittest.TestCase):
             client=self.session,
             refresh_url='https://custom.com/refresh',
             method='GET',
-            polling_period=120
+            polling_period_seconds=120
         )
         self.assertEqual(refresher.refresh_url, 'https://custom.com/refresh')
         self.assertEqual(refresher.method, 'GET')

@@ -48,7 +48,7 @@ class SessionRefresher:
 
     # Default values for attribute initialization used by the constructor.
     # These are meant to be overridden by subclasses.
-    default_polling_period: Optional[float] = None
+    default_polling_period_seconds: Optional[float] = None
     default_refresh_url: Optional[str] = None
     default_method: Optional[str] = None
     default_failure_text: Optional[str] = None
@@ -60,7 +60,7 @@ class SessionRefresher:
             client: requests.Session,
             refresh_url: Optional[str] = None,
             method: Optional[str] = None,
-            polling_period: Optional[float] = None,
+            polling_period_seconds: Optional[float] = None,
             failure_text: Optional[str] = None,
             logger: Optional[logging.Logger] = None) -> None:
         self.client = client
@@ -76,10 +76,10 @@ class SessionRefresher:
             raise ValueError("method (GET/POST) is required")
         self.method = method
 
-        polling_period = polling_period or self.default_polling_period
-        if polling_period is None:
-            raise ValueError("polling_period is required")
-        self.polling_period_seconds = polling_period
+        polling_period_seconds = polling_period_seconds or self.default_polling_period_seconds
+        if polling_period_seconds is None:
+            raise ValueError("polling_period_seconds is required")
+        self.polling_period_seconds = polling_period_seconds
 
         failure_text = failure_text or self.default_failure_text
         self.failure_text = failure_text
@@ -127,7 +127,7 @@ class BankingSessionRefresher(SessionRefresher):
     default_refresh_url: str = "https://banking.dkb.de/api/refresh"
     default_method: str = "POST"
     # Timeout is 5 minutes, so we refresh every 4 minutes
-    default_polling_period: float = 4 * 60
+    default_polling_period_seconds: float = 4 * 60
 
 
 class OldBankingSessionRefresher(SessionRefresher):
@@ -136,4 +136,4 @@ class OldBankingSessionRefresher(SessionRefresher):
     default_method: str = "GET"
     default_failure_text: Optional[str] = "Entdecke dein neues Banking!"
     # Timeout is 2 minutes, so we refresh every 1.5 minutes.
-    default_polling_period: float = 90
+    default_polling_period_seconds: float = 90
