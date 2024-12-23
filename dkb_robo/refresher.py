@@ -146,6 +146,8 @@ class BankingSessionRefresher(SessionRefresher):
     default_method: str = "POST"
     # Timeout is 5 minutes, so we refresh every 4 minutes
     default_polling_period_seconds: float = 4 * 60
+    default_data: Optional[bytes] = b"grant_type=refresh_token&refresh_token="
+    default_content_type: Optional[str] = "application/x-www-form-urlencoded"
 
 
 class OldBankingSessionRefresher(SessionRefresher):
