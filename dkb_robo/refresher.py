@@ -18,8 +18,10 @@ Restarting of the thread is not supported. (Create a new instance instead.)
 
 import logging
 import threading
-import requests
+import time
 from typing import Optional
+
+import requests
 
 
 class SessionRefresher:
@@ -152,8 +154,7 @@ class BankingSessionRefresher(SessionRefresher):
 
 class OldBankingSessionRefresher(SessionRefresher):
     """ agent to periodically refresh the old banking session """
-    default_refresh_url: str = "https://www.ib.dkb.de/ssohl/banking/postfach"
+    default_refresh_url: str = f"https://www.ib.dkb.de/ssohl/DkbTransactionBanking/infobar/UserLoginInfo.xhtml?$event=currentSessionInfo&_={int(time.time() * 1000)}"
     default_method: str = "GET"
-    default_failure_text: Optional[str] = "Entdecke dein neues Banking!"
-    # Timeout is 2 minutes, so we refresh every 1.5 minutes.
-    default_polling_period_seconds: float = 90
+    default_failure_text: Optional[str] = '"publicSession":true'
+    default_polling_period_seconds: float = 45
