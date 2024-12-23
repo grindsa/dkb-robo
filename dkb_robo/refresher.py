@@ -101,14 +101,19 @@ class SessionRefresher:
         """ refresh the session a single time """
         try:
             response = self.client.request(self.method, self.refresh_url)
-            response.raise_for_status()
-            self.logger.debug(f"Successfully refreshed session: {response.status_code}")
         except requests.RequestException as e:
-            self.logger.error(f"Error occurred while refreshing session: {e}")
+            self.logger.error(f"Error in sending refresh request: {e}")
+            return None
+        try:
+            response.raise_for_status()
+        except requests.RequestException as e:
+            self.logger.error(f"Error in refresh request status code: {e}")
         if self.failure_text and self.failure_text in response.text:
             self.logger.error(
                 f"Session refresh failed because it contains '{self.failure_text}'"
             )
+        else:
+            self.logger.debug(f"Successfully refreshed session: {response.status_code}")
 
     def start(self) -> None:
         """ start the refresh loop in a thread """
