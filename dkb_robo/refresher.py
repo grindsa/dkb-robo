@@ -97,7 +97,7 @@ class SessionRefresher:
             self.refresh()
         self.logger.debug("Session refresh loop finished")
 
-    def refresh(self) -> None:
+    def refresh(self) -> Optional[requests.Response]:
         """ refresh the session a single time """
         try:
             response = self.client.request(self.method, self.refresh_url)
@@ -114,6 +114,7 @@ class SessionRefresher:
             )
         else:
             self.logger.debug(f"Successfully refreshed session: {response.status_code}")
+        return response
 
     def start(self) -> None:
         """ start the refresh loop in a thread """
