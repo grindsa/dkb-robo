@@ -225,5 +225,43 @@ class TestRefresher(unittest.TestCase):
         self.assertEqual(refresher.method, 'GET')
         self.assertEqual(refresher.polling_period_seconds, 120)
 
+    def test_014_content_type_header(self):
+        """ Test that content_type is set correctly in the headers """
+        refresher = SessionRefresher(
+            client=self.session,
+            refresh_url='https://example.com/refresh',
+            method='POST',
+            polling_period_seconds=60,
+            content_type='application/json',
+            logger=self.logger
+        )
+        mock_response = Mock()
+        mock_response.status_code = 200
+        with patch.object(self.session, 'request', return_value=mock_response) as mock_request:
+            refresher.refresh()
+            mock_request.assert_called_once_with(
+                'POST',
+                'https://example.com/refresh',
+                data=None,
+                headers={'Content-Type': 'application/json'}
+            )
+
+    def test_015_error_response_logging(self):
+        """ Test that an error is logged when a network error occurs """
+        refresher = SessionRefresher(
+            client=self.session,
+            refresh_url='https://example.com/refresh',
+            method='GET',
+            polling_period_seconds=60,
+            logger=self.logger
+        )
+        with patch.object(self.session, 'request', side_effect=requests.RequestException('Network Error')):
+            with self.assertLogs(self.logger, level='ERROR') as cm:
+                refresher.refresh()
+            self.assertIn(
+                'ERROR:dkb_robo:Error in sending refresh request: Network Error',
+                cm.output
+            )
+
 if __name__ == '__main__':
     unittest.main()
