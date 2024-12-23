@@ -52,6 +52,8 @@ class SessionRefresher:
     default_refresh_url: Optional[str] = None
     default_method: Optional[str] = None
     default_failure_text: Optional[str] = None
+    default_data: Optional[bytes] = None
+    default_content_type: Optional[str] = None
 
     logger: logging.Logger
 
@@ -62,6 +64,8 @@ class SessionRefresher:
             method: Optional[str] = None,
             polling_period_seconds: Optional[float] = None,
             failure_text: Optional[str] = None,
+            data: Optional[bytes] = None,
+            content_type: Optional[str] = None,
             logger: Optional[logging.Logger] = None) -> None:
         self.client = client
         self.logger = logger or logging.getLogger(__name__)
@@ -82,8 +86,8 @@ class SessionRefresher:
         self.polling_period_seconds = polling_period_seconds
 
         self.failure_text = failure_text or self.default_failure_text
-        self.failure_text = failure_text
-
+        self.data = data or self.default_data
+        self.content_type = content_type or self.default_content_type
         self._stop_event: threading.Event = threading.Event()
         self._thread: threading.Thread = threading.Thread(target=self._run, daemon=True)
 
@@ -100,7 +104,15 @@ class SessionRefresher:
     def refresh(self) -> Optional[requests.Response]:
         """ refresh the session a single time """
         try:
-            response = self.client.request(self.method, self.refresh_url)
+            headers = {}
+            if self.content_type:
+                headers["Content-Type"] = self.content_type
+            response = self.client.request(
+                self.method,
+                self.refresh_url,
+                data=self.data,
+                headers=headers,
+            )
         except requests.RequestException as e:
             self.logger.error(f"Error in sending refresh request: {e}")
             return None
