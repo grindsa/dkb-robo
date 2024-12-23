@@ -51,7 +51,12 @@ class TestRefresher(unittest.TestCase):
         with patch.object(self.session, 'request', return_value=mock_response) as mock_request:
             with self.assertLogs(self.logger, level='DEBUG') as cm:
                 refresher.refresh()
-            mock_request.assert_called_once_with('GET', 'https://example.com/refresh')
+            mock_request.assert_called_once_with(
+                'GET',
+                'https://example.com/refresh',
+                data=None,
+                headers={}
+            )
             self.assertIn('DEBUG:dkb_robo:Successfully refreshed session: 200', cm.output)
 
     def test_003_refresh_failure_status(self):
@@ -69,7 +74,10 @@ class TestRefresher(unittest.TestCase):
         with patch.object(self.session, 'request', return_value=mock_response):
             with self.assertLogs(self.logger, level='ERROR') as cm:
                 refresher.refresh()
-            self.assertIn('ERROR:dkb_robo:Error occurred while refreshing session: Internal Server Error', cm.output)
+            self.assertIn(
+                'ERROR:dkb_robo:Error in refresh request status code: Internal Server Error',
+                cm.output
+            )
 
     def test_004_refresh_failure_text(self):
         """ Test refresh method with failure text in response """
@@ -119,10 +127,14 @@ class TestRefresher(unittest.TestCase):
     def test_007_old_banking_session_refresher_defaults(self):
         """ Test OldBankingSessionRefresher default parameters """
         refresher = OldBankingSessionRefresher(client=self.session)
-        self.assertEqual(refresher.refresh_url, 'https://www.ib.dkb.de/ssohl/banking/postfach')
+        url_pattern = (
+            r'^https://www\.ib\.dkb\.de/ssohl/DkbTransactionBanking/infobar/UserLoginInfo\.xhtml'
+            r'\?\$event=currentSessionInfo&_=\d{13}$'
+        )
+        self.assertRegex(refresher.refresh_url, url_pattern)
         self.assertEqual(refresher.method, 'GET')
-        self.assertEqual(refresher.polling_period_seconds, 90)
-        self.assertEqual(refresher.failure_text, 'Entdecke dein neues Banking!')
+        self.assertEqual(refresher.polling_period_seconds, 45)
+        self.assertEqual(refresher.failure_text, '"publicSession":true')
         self.assertIs(refresher.client, self.session)
 
     def test_008_cannot_restart_thread(self):
@@ -192,7 +204,7 @@ class TestRefresher(unittest.TestCase):
                 polling_period_seconds=None,
                 logger=self.logger
             )
-        self.assertEqual(str(context.exception), "polling_period is required")
+        self.assertEqual(str(context.exception), "polling_period_seconds is required")
 
     def test_013_init_with_defaults(self):
         """ Test that defaults in subclasses are used when parameters are missing """
