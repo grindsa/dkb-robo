@@ -1472,10 +1472,18 @@ class Wrapper(object):
 
         # start a session refresher for the legacy login
         if self.refresh_session:
-            self.old_session_refresher = OldBankingSessionRefresher(
-                client=self.client, logger=self.logger
-            )
-            self.old_session_refresher.start()
+            try:
+                # We need to access this page once to initialize a private session with
+                # the old banking area. Otherwise, the session is classified as public.
+                old_banking = self.client.get("https://www.ib.dkb.de/ssohl/banking/postfach")
+                old_banking.raise_for_status()
+                # Now we can start the session refresher.
+                self.old_session_refresher = OldBankingSessionRefresher(
+                    client=self.client, logger=self.logger
+                )
+                self.old_session_refresher.start()
+            except requests.RequestException as e:
+                self.logger.error(f"Error in old banking session refresh: {e}")
 
         self.logger.debug('api.Wrapper.login() ended\n')
         return self.account_dic, None
