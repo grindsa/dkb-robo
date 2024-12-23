@@ -81,7 +81,7 @@ class SessionRefresher:
             raise ValueError("polling_period_seconds is required")
         self.polling_period_seconds = polling_period_seconds
 
-        failure_text = failure_text or self.default_failure_text
+        self.failure_text = failure_text or self.default_failure_text
         self.failure_text = failure_text
 
         self._stop_event: threading.Event = threading.Event()
