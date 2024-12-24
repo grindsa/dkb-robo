@@ -7,7 +7,7 @@ This is a high-level summary of the most important changes. For a full list of c
 
 **Bugfixes**:
 
-- [#74](https://github.com/grindsa/dkb-robo/pull/74) - fix CLI transcation command - CSV output
+- [#74](https://github.com/grindsa/dkb-robo/pull/74) - fix CLI transaction command - CSV output
 
 # Changes in 0.28.1
 
