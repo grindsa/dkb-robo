@@ -262,7 +262,7 @@ def _load_format(output_format):
         def formatter(data):  # pragma: no cover
             if len(data) == 0:
                 return
-            writer = csv.DictWriter(sys.stdout, data[0].keys())
+            writer = csv.DictWriter(sys.stdout, fieldnames=max(data, key=len).keys())
             writer.writeheader()
             writer.writerows(data)
 
