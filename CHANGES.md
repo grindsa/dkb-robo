@@ -3,6 +3,12 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.28.2
+
+**Bugfixes**:
+
+- [#74](https://github.com/grindsa/dkb-robo/pull/74) - fix CLI transcation command - CSV output
+
 # Changes in 0.28.1
 
 **Bugfixes**:
