@@ -1,6 +1,9 @@
 # pylint: disable=c0415, r0913
 """ dkb internet banking automation library """
 # -*- coding: utf-8 -*-
+from pathlib import Path
+import time
+from dkb_robo.postbox import PostBox
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 from dkb_robo.api import Wrapper
 
@@ -94,4 +97,35 @@ class DKBRobo(object):
     def scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
         """ scan posbox and return document dictionary """
         self.logger.debug('DKBRobo.scan_postbox()\n')
-        return self.wrapper.scan_postbox(path, download_all, archive, prepend_date)
+        return self.download(Path(path) if path is not None else None, download_all, prepend_date)
+
+    def download(self, path: Path, download_all: bool, prepend_date: bool = False, mark_read: bool = True, use_account_folders: bool = False, list_only: bool = False):
+        """ download postbox documents """
+        if path is None:
+            list_only = True
+        postbox = PostBox(client = self.wrapper.client, logger = self.logger)
+        documents = postbox.fetch_items()
+
+        if not download_all:
+            # only unread documents
+            documents = {id: item for id, item in documents.items()
+                         if item.message and item.message.read is False}
+
+        accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
+        for doc in documents.values():
+            target = path / doc.category()
+
+            if use_account_folders:
+                target = target / doc.account(card_lookup=accounts_by_id)
+
+            filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+
+            if not list_only:
+                self.logger.info("Downloading %s to %s...", doc.subject(), target)
+                if doc.download(self.wrapper.client, target/filename):
+                    if mark_read:
+                        doc.mark_read(self.wrapper.client, True)
+                    time.sleep(.5)
+                else:
+                    self.logger.info("File already exists. Skipping %s.", filename)
+        return documents

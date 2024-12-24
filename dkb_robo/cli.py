@@ -1,6 +1,8 @@
 # pylint: disable=c3001, e1101, r0913, w0108, w0622
 """ dkb_robo cli """
 from datetime import date
+from pathlib import Path
+import pathlib
 from pprint import pprint
 from typing import Literal, Optional
 import sys
@@ -23,6 +25,14 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     help="Show additional debugging",
     is_flag=True,
     envvar="DKB_DEBUG",
+)
+@click.option(
+    "--mfa-device",
+    "-m",
+    default=None,
+    help='MFA device used for login ("1", "2" ...)',
+    type=int,
+    envvar="MFA_DEVICE",
 )
 @click.option(
     "--use-tan",
@@ -72,16 +82,16 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     envvar="DKB_REFRESH_SESSION",
 )
 @click.pass_context
-def main(ctx: click.Context, debug: bool, use_tan: bool, chip_tan, username: str, password: Optional[str], format: Literal["pprint", "table", "csv", "json"], refresh_session: bool):  # pragma: no cover
+def main(ctx: click.Context, debug: bool, mfa_device: int, use_tan: bool, chip_tan, username: str, password: Optional[str], format: Literal["pprint", "table", "csv", "json"], refresh_session: bool):  # pragma: no cover
     """ main fuunction """
 
     if use_tan:
         click.echo("The --use-tan option is deprecated and will be removed in a future release. Please use the --chip-tan option", err=True)
         chip_tan = True
-
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
     ctx.obj["CHIP_TAN"] = chip_tan
+    ctx.obj["MFA_DEVICE"] = mfa_device
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
@@ -231,6 +241,31 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
         click.echo(_err.args[0], err=True)
 
 
+@main.command()
+@click.pass_context
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(writable=True, path_type=pathlib.Path),
+    help="Path to save the documents to",
+    envvar="DKB_DOC_PATH",
+)
+@click.option("--all", "-A", is_flag=True, show_default=True, default=False, help="Download all documents", envvar="DKB_DOWNLOAD_ALL")
+@click.option("--prepend-date", is_flag=True, show_default=True, default=False, help="Prepend date to filename", envvar="DKB_PREPEND_DATE")
+@click.option("--mark-read", is_flag=True, show_default=True, default=True, help="Mark downloaded files read", envvar="DKB_MARK_READ")
+@click.option("--use-account-folders", is_flag=True, show_default=True, default=False, help="Store files in separate folders per account/depot", envvar="DKB_ACCOUNT_FOLDERS")
+@click.option("--list-only", is_flag=True, show_default=True, default=False, help="Only list documents, do not download", envvar="DKB_LIST_ONLY")
+def download(ctx, path: Path, all: bool, prepend_date: bool, mark_read: bool, use_account_folders: bool, list_only: bool):
+    """ download document """
+    if path is None:
+        list_only = True
+    try:
+        with _login(ctx) as dkb:
+            ctx.obj["FORMAT"](dkb.download(path=path, download_all=all, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only))
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
+
+
 def _load_format(output_format):
     """ select output format based on cli option """
     if output_format == "pprint":
@@ -245,7 +280,7 @@ def _load_format(output_format):
         def formatter(data):  # pragma: no cover
             if len(data) == 0:
                 return
-            writer = csv.DictWriter(sys.stdout, data[0].keys())
+            writer = csv.DictWriter(sys.stdout, fieldnames=max(data, key=len).keys())
             writer.writeheader()
             writer.writerows(data)
 
@@ -260,5 +295,5 @@ def _load_format(output_format):
 
 def _login(ctx):
     return dkb_robo.DKBRobo(
-        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"], refresh_session=ctx.obj["REFRESH_SESSION"]
+        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"],  mfa_device=ctx.obj["MFA_DEVICE"], refresh_session=ctx.obj["REFRESH_SESSION"]
     )
