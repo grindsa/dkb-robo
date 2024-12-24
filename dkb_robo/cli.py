@@ -26,6 +26,14 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     envvar="DKB_DEBUG",
 )
 @click.option(
+    "--mfa-device",
+    "-m",
+    default=None,
+    help='MFA device used for login ("1", "2" ...)',
+    type=int,
+    envvar="MFA_DEVICE",
+)
+@click.option(
     "--use-tan",
     default=False,
     is_flag=True,
@@ -65,16 +73,16 @@ DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
     envvar="DKB_FORMAT",
 )
 @click.pass_context
-def main(ctx, debug, use_tan, chip_tan, username, password, format):  # pragma: no cover
+def main(ctx, debug, mfa_device, use_tan, chip_tan, username, password, format):  # pragma: no cover
     """ main fuunction """
 
     if use_tan:
         click.echo("The --use-tan option is deprecated and will be removed in a future release. Please use the --chip-tan option", err=True)
         chip_tan = True
-
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
     ctx.obj["CHIP_TAN"] = chip_tan
+    ctx.obj["MFA_DEVICE"] = mfa_device
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
@@ -277,5 +285,5 @@ def _load_format(output_format):
 
 def _login(ctx):
     return dkb_robo.DKBRobo(
-        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"]
+        dkb_user=ctx.obj["USERNAME"], dkb_password=ctx.obj["PASSWORD"], chip_tan=ctx.obj["CHIP_TAN"], debug=ctx.obj["DEBUG"], mfa_device=ctx.obj["MFA_DEVICE"]
     )
