@@ -3,6 +3,7 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
 import time
+from dkb_robo.standingorder import StandingOrder
 from dkb_robo.postbox import PostBox
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 from dkb_robo.api import Wrapper
@@ -80,7 +81,8 @@ class DKBRobo(object):
     def get_standing_orders(self, uid=None):
         """ get standing orders """
         self.logger.debug('DKBRobo.get_standing_orders()\n')
-        return self.wrapper.get_standing_orders(uid)
+        standingorder = StandingOrder(client=self.wrapper.client, logger=self.logger)
+        return standingorder.fetch(uid)
 
     def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
         """ exported method to get transactions """

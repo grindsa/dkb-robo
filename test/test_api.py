@@ -1385,78 +1385,11 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.account_dic = {'foo': 'bar'}
         self.assertFalse(self.dkb.get_credit_limits())
 
-    @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_112___get_standing_orders(self, mock_filter):
-        """ test _get_standing_orders() """
-        with self.assertRaises(Exception) as err:
-            self.assertFalse(self.dkb.get_standing_orders())
-        self.assertEqual('get_standing_orders(): account-id is required', str(err.exception))
-        self.assertFalse(mock_filter.called)
-
-    @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_113___get_standing_orders(self, mock_filter):
-        """ test _get_standing_orders() """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 400
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        self.assertFalse(self.dkb.get_standing_orders(uid='uid'))
-        self.assertFalse(mock_filter.called)
-
-    @patch('dkb_robo.api.Wrapper._filter_standing_orders')
-    def test_114___get_standing_orders(self, mock_filter):
-        """ test _get_standing_orders() """
-        self.dkb.client = Mock()
-        self.dkb.client.get.return_value.status_code = 200
-        self.dkb.client.get.return_value.json.return_value = {'foo': 'bar'}
-        mock_filter.return_value = 'mock_filter'
-        self.assertEqual('mock_filter', self.dkb.get_standing_orders(uid='uid'))
-        self.assertTrue(mock_filter.called)
-
-    def test_115__filter_standing_orders(self):
-        """ test _filter_standing_orders() """
-        full_list = {}
-        self.assertFalse(self.dkb._filter_standing_orders(full_list))
-
-    def test_116__filter_standing_orders(self):
-        """ test _filter_standing_orders() """
-        full_list = {
-            "data": [
-                {
-                    "attributes": {
-                        "description": "description",
-                        "amount": {
-                            "currencyCode": "EUR",
-                            "value": "100.00"
-                        },
-                        "creditor": {
-                            "name": "cardname",
-                            "creditorAccount": {
-                                "iban": "crediban",
-                                "bic": "credbic"
-                            }
-                        },
-                        "recurrence": {
-                            "from": "2020-01-01",
-                            "until": "2025-12-01",
-                            "frequency": "monthly",
-                            "nextExecutionAt": "2020-02-01"
-                        }
-                    }
-                }]}
-        result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
-        self.assertEqual(result, self.dkb._filter_standing_orders(full_list))
-
     def test_117_add_cardlimit(self):
         """ test _add_cardlimit() """
         card = {'attributes': {'expiryDate': 'expiryDate', 'limit': {'value': 'value', 'foo': 'bar'}}}
         result = {'expirydate': 'expiryDate', 'limit': 'value'}
         self.assertEqual(result, self.dkb._add_cardlimit(card))
-
-    def test_118_filter_standing_orders(self):
-        """ e2e get_standing_orders() """
-        so_list = json_load(self.dir_path + '/mocks/so.json')
-        result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description1', 'recpipient': 'name1', 'creditoraccount': {'iban': 'iban1', 'bic': 'bic1'}, 'interval': {'from': '2022-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-01'}}, {'amount': 200.0, 'currencycode': 'EUR', 'purpose': 'description2', 'recpipient': 'name2', 'creditoraccount': {'iban': 'iban2', 'bic': 'bic2'}, 'interval': {'from': '2022-02-01', 'until': '2025-12-02', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-02'}}, {'amount': 300.0, 'currencycode': 'EUR', 'purpose': 'description3', 'recpipient': 'name3', 'creditoraccount': {'iban': 'iban3', 'bic': 'bic3'}, 'interval': {'from': '2022-03-01', 'until': '2025-03-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-03-01'}}]
-        self.assertEqual(result, self.dkb._filter_standing_orders(so_list))
 
     def test_119_logout(self):
         """ test logout """

@@ -680,24 +680,7 @@ class Wrapper(object):
         self.dkb_br = legacywrappper._new_instance(clientcookies)
         self.logger.debug('api.Wrapper._do_sso_redirect() ended.\n')
 
-    def _filter_standing_orders(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
-        """ filter standing orders """
-        self.logger.debug('api.Wrapper._filter_standing_orders()\n')
 
-        so_list = []
-        if 'data' in full_list:
-            for ele in full_list['data']:
-                _tmp_dic = {
-                    'amount': float(ele['attributes']['amount']['value']),
-                    'currencycode': ele['attributes']['amount']['currencyCode'],
-                    'purpose': ele['attributes']['description'],
-                    'recpipient': ele['attributes']['creditor']['name'],
-                    'creditoraccount': ele['attributes']['creditor']['creditorAccount'],
-                    'interval': ele['attributes']['recurrence']}
-                so_list.append(_tmp_dic)
-
-        self.logger.debug('api.Wrapper._filter_standing_orders() ended\n')
-        return so_list
 
     def _filter_transactions(self, transaction_list: List[Dict[str, str]], date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
         """ filter transaction by date """
@@ -1139,22 +1122,6 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper.get_credit_limits() ended\n')
         return limit_dic
-
-    def get_standing_orders(self, uid: str = None):
-        """ get standing orders """
-        self.logger.debug('api.Wrapper.get_standing_orders()\n')
-
-        so_list = []
-        if uid:
-            response = self.client.get(self.base_url + self.api_prefix + '/accounts/payments/recurring-credit-transfers' + '?accountId=' + uid)
-            if response.status_code == 200:
-                _so_list = response.json()
-                so_list = self._filter_standing_orders(_so_list)
-        else:
-            raise DKBRoboError('get_standing_orders(): account-id is required')
-
-        self.logger.debug('api.Wrapper.get_standing_orders() ended\n')
-        return so_list
 
     def _get_transaction_url(self, tr_dic):
         """ get transaction url """
