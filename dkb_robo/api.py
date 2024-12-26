@@ -54,94 +54,6 @@ class Wrapper(object):
         except (ValueError, TypeError):
             self.mfa_device = 0
 
-    def _add_account_transactionamount(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """ add amount from accont transaction """
-        self.logger.debug('api.Wrapper._add_account_transactionamount()\n')
-
-        output_dic = {}
-        if 'amount' in transaction['attributes']:
-            if 'value' in transaction['attributes']['amount']:
-                output_dic['amount'] = float(transaction['attributes']['amount']['value'])
-            if 'currencyCode' in transaction['attributes']['amount']:
-                output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
-
-        self.logger.debug('api.Wrapper._add_account_transactionamount() ended\n')
-        return output_dic
-
-    def _add_account_transaction_creditorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """ we need creditor information for outgoing payments"""
-        self.logger.debug('api.Wrapper._add_account_transaction_creditorinfo()\n')
-
-        output_dic = {}
-        if 'creditor' in transaction['attributes']:
-            if 'creditorAccount' in transaction['attributes']['creditor'] and 'iban' in transaction['attributes']['creditor']['creditorAccount']:
-                output_dic['peeraccount'] = transaction['attributes']['creditor']['creditorAccount']['iban']
-            if 'agent' in transaction['attributes']['creditor'] and 'bic' in transaction['attributes']['creditor']['agent']:
-                output_dic['peerbic'] = transaction['attributes']['creditor']['agent']['bic']
-            if 'name' in transaction['attributes']['creditor']:
-                output_dic['peer'] = transaction['attributes']['creditor']['name']
-            if 'id' in transaction['attributes']['creditor']:
-                output_dic['peerid'] = transaction['attributes']['creditor']['id']
-            else:
-                output_dic['peerid'] = ''
-
-        self.logger.debug('api.Wrapper._add_account_transaction_creditorinfo() ended\n')
-        return output_dic
-
-    def _add_account_transaction_debtorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """we need debitor information for incoming payments """
-        self.logger.debug('api.Wrapper._add_account_transaction_debtorinfo()\n')
-
-        output_dic = {}
-        if 'debtor' in transaction['attributes']:
-            if 'debtorAccount' in transaction['attributes']['debtor'] and 'iban' in transaction['attributes']['debtor']['debtorAccount']:
-                output_dic['peeraccount'] = transaction['attributes']['debtor']['debtorAccount']['iban']
-            if 'agent' in transaction['attributes']['debtor'] and 'bic' in transaction['attributes']['debtor']['agent']:
-                output_dic['peerbic'] = transaction['attributes']['debtor']['agent']['bic']
-            if 'intermediaryName' in transaction['attributes']['debtor'] and transaction['attributes']['debtor']['intermediaryName']:
-                output_dic['peer'] = transaction['attributes']['debtor']['intermediaryName']
-            else:
-                if 'name' in transaction['attributes']['debtor']:
-                    output_dic['peer'] = transaction['attributes']['debtor']['name']
-
-            # add perrid
-            output_dic['peerid'] = self._add_account_transaction_debtorpeerid(transaction)
-
-        self.logger.debug('api.Wrapper._add_account_transaction_debtorinfo() ended\n')
-        return output_dic
-
-    def _add_account_transaction_debtorpeerid(self, transaction: Dict[str, str]) -> str:
-        """ lookup peerid """
-        self.logger.debug('api.Wrapper._add_account_transaction_debtorpeerid()\n')
-        peer_id = ''
-        if 'id' in transaction['attributes']['debtor']:
-            peer_id = transaction['attributes']['debtor']['id']
-
-        self.logger.debug('api.Wrapper._add_account_transaction_debtorpeerid()\n')
-        return peer_id
-
-    def _add_account_transactioninformation(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """ add infromation from accont transaction """
-        self.logger.debug('api.Wrapper._add_account_transactioninformation()\n')
-
-        output_dic = {}
-        if 'bookingDate' in transaction['attributes']:
-            output_dic['date'] = transaction['attributes']['bookingDate']
-            output_dic['bdate'] = transaction['attributes']['bookingDate']
-        if 'valueDate' in transaction['attributes']:
-            output_dic['vdate'] = transaction['attributes']['valueDate']
-        if 'endToEndId' in transaction['attributes']:
-            output_dic['customerreference'] = transaction['attributes']['endToEndId']
-        if 'mandateId' in transaction['attributes']:
-            output_dic['mandatereference'] = transaction['attributes']['mandateId']
-        if 'transactionType' in transaction['attributes']:
-            output_dic['postingtext'] = transaction['attributes']['transactionType']
-        if 'description' in transaction['attributes']:
-            output_dic['reasonforpayment'] = transaction['attributes']['description']
-
-        self.logger.debug('api.Wrapper._add_account_transactioninformation() ended\n')
-        return output_dic
-
     def _get_account_details(self, aid, accounts_dic: Dict[str, str]) -> Dict[str, str]:
         """ get credit account details from cc json """
         self.logger.debug('api.Wrapper._get_account_details(%s)\n', aid)
@@ -207,64 +119,6 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._add_accountname() ended\n')
         return output_dic
 
-    def _add_brokerage_informationy(self, position: Dict[str, str]) -> Dict[str, str]:
-        """ add lastorder date and value """
-        self.logger.debug('api.Wrapper._add_brokerage_informationy()\n')
-
-        output_dic = {}
-        if 'lastOrderDate' in position['attributes']:
-            output_dic['lastorderdate'] = position['attributes']['lastOrderDate']
-
-        if 'performance' in position['attributes'] and 'currentValue' in position['attributes']['performance'] and 'value' in position['attributes']['performance']['currentValue']:
-            output_dic['price_euro'] = position['attributes']['performance']['currentValue']['value']
-
-        self.logger.debug('api.Wrapper._add_brokerage_informationy() ended\n')
-        return output_dic
-
-    def _add_brokerage_instrumentinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
-        """ add instrument information """
-        self.logger.debug('api.Wrapper._add_brokerage_instrumentinformation()\n')
-
-        output_dic = {}
-        if 'attributes' in ele:
-            if 'name' in ele['attributes'] and 'short' in ele['attributes']['name']:
-                output_dic['text'] = ele['attributes']['name']['short']
-            if 'identifiers' in ele['attributes']:
-                for identifier in ele['attributes']['identifiers']:
-                    if identifier['identifier'] == 'isin':
-                        output_dic['isin_wkn'] = identifier['value']
-                        break
-
-        self.logger.debug('api.Wrapper._add_brokerage_instrumentinformation() ended\n')
-        return output_dic
-
-    def _add_brokerage_quoteinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
-        """ add quote information """
-        self.logger.debug('api.Wrapper._add_brokerage_quoteinformation()\n')
-
-        output_dic = {}
-        if 'attributes' in ele and 'price' in ele['attributes']:
-            if 'value' in ele['attributes']['price']:
-                output_dic['price'] = float(ele['attributes']['price']['value'])
-            if 'currencyCode' in ele['attributes']['price']:
-                output_dic['currencycode'] = ele['attributes']['price']['currencyCode']
-            if 'market' in ele['attributes']:
-                output_dic['market'] = ele['attributes']['market']
-
-        self.logger.debug('api.Wrapper._add_brokerage_quoteinformation() ended\n')
-        return output_dic
-
-    def _add_brokerage_quantity(self, position: Dict[str, str]) -> Dict[str, str]:
-        """ add quantity information """
-        self.logger.debug('api.Wrapper._add_brokerage_quantity()\n')
-        output_dic = {}
-        if 'quantity' in position['attributes']:
-            output_dic['shares'] = position['attributes']['quantity']['value']
-            output_dic['quantity'] = float(position['attributes']['quantity']['value'])
-            output_dic['shares_unit'] = position['attributes']['quantity']['unit']
-
-        self.logger.debug('api.Wrapper._add_brokerage_quantity() ended\n')
-        return output_dic
 
     def _add_brokerageholder(self, depot: Dict[str, str]) -> Dict[str, str]:
         """ add card holder information """
@@ -305,18 +159,7 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._add_brokerageperformance() ended\n')
         return output_dic
 
-    def _add_card_transactionamount(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """ add amount from card transaction """
-        self.logger.debug('api.Wrapper._add_card_transactionamount()\n')
-        output_dic = {}
-        if 'amount' in transaction['attributes']:
-            if 'value' in transaction['attributes']['amount']:
-                output_dic['amount'] = float(transaction['attributes']['amount']['value'])
-            if 'currencyCode' in transaction['attributes']['amount']:
-                output_dic['currencycode'] = transaction['attributes']['amount']['currencyCode']
 
-        self.logger.debug('api.Wrapper._add_card_transactionamount() ended\n')
-        return output_dic
 
     def _add_cardbalance(self, card: Dict[str, str]) -> Dict[str, str]:
         """ add card balance to dictionary """
@@ -382,19 +225,6 @@ class Wrapper(object):
             output_dic['limit'] = card['attributes']['limit']['value']
 
         self.logger.debug('api.Wrapper._add_cardlimit() ended\n')
-        return output_dic
-
-    def _add_card_transactioninformation(self, transaction: Dict[str, str]) -> Dict[str, str]:
-        """ add card transaction infromatoin """
-        self.logger.debug('api.Wrapper._add_card_transactioninformation()\n')
-        output_dic = {}
-        if 'bookingDate' in transaction['attributes']:
-            output_dic['bdate'] = transaction['attributes']['bookingDate']
-            output_dic['vdate'] = transaction['attributes']['bookingDate']
-        if 'description' in transaction['attributes']:
-            output_dic['text'] = transaction['attributes']['description']
-
-        self.logger.debug('api.Wrapper._add_card_transactioninformation() ended\n')
         return output_dic
 
     def _add_cardname(self, card: Dict[str, str]) -> Dict[str, str]:
@@ -682,88 +512,6 @@ class Wrapper(object):
 
 
 
-    def _filter_transactions(self, transaction_list: List[Dict[str, str]], date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
-        """ filter transaction by date """
-        self.logger.debug('api.Wrapper._filter_transactions()\n')
-
-        # support transation type 'reserved' for backwards compatibility
-        transaction_type = 'pending' if transaction_type == 'reserved' else transaction_type
-
-        try:
-            date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, LEGACY_DATE_FORMAT).timetuple()))
-        except ValueError:
-            date_from_uts = int(time.mktime(datetime.datetime.strptime(date_from, API_DATE_FORMAT).timetuple()))
-
-        try:
-            date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, LEGACY_DATE_FORMAT).timetuple()))
-        except ValueError:
-            date_to_uts = int(time.mktime(datetime.datetime.strptime(date_to, API_DATE_FORMAT).timetuple()))
-
-        filtered_transaction_list = []
-        for transaction in transaction_list:
-            if 'attributes' in transaction and 'status' in transaction['attributes'] and 'bookingDate' in transaction['attributes']:
-                if transaction['attributes']['status'] == transaction_type:
-                    bookingdate_uts = int(time.mktime(datetime.datetime.strptime(transaction['attributes']['bookingDate'], API_DATE_FORMAT).timetuple()))
-                    if date_from_uts <= bookingdate_uts <= date_to_uts:
-                        filtered_transaction_list.append(transaction)
-
-        self.logger.debug('api.Wrapper._filter_transactions() ended\n')
-        return filtered_transaction_list
-
-    def _format_account_transactions(self, transaction_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """ format transactions """
-        self.logger.debug('api.Wrapper._format_transactions()\n')
-
-        format_transaction_list = []
-        for transaction in transaction_list:
-            if 'attributes' in transaction:
-                transaction_dic = {**self._add_account_transactionamount(transaction), **self._add_account_transactioninformation(transaction)}
-
-                if transaction_dic['amount'] > 0:
-                    # incoming payment - collect debitor information
-                    transaction_dic = {**transaction_dic, **self._add_account_transaction_debtorinfo(transaction)}
-                else:
-                    # outgoing payment - collect creditor information
-                    transaction_dic = {**transaction_dic, **self._add_account_transaction_creditorinfo(transaction)}
-
-                # add posting test for backwards compability
-                if 'postingtext' in transaction_dic and 'peer' in transaction_dic and 'reasonforpayment' in transaction_dic:
-                    transaction_dic['text'] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
-
-                format_transaction_list.append(transaction_dic)
-
-        self.logger.debug('api.Wrapper._format_account_transactions() ended\n')
-        return format_transaction_list
-
-    def _format_brokerage_account(self, brokerage_dic: Dict[str, str]) -> List[Dict[str, str]]:
-        """ format brokerage dictionary """
-        self.logger.debug('api.Wrapper._format_brokerage_account(%s)\n', len(brokerage_dic))
-
-        position_list = []
-        included_list = self._get_brokerage_includedlist(brokerage_dic)
-
-        if 'data' in brokerage_dic:
-            for position in brokerage_dic['data']:
-                position_dic = self._get_brokerage_position(position, included_list)
-                if position_dic:
-                    position_list.append(position_dic)
-
-        self.logger.debug('api.Wrapper._format_brokerage_account() ended\n')
-        return position_list
-
-    def _format_card_transactions(self, transaction_list: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """ format credit card transactions """
-        self.logger.debug('api.Wrapper._format_card_transactions(%s)\n', len(transaction_list))
-
-        format_transaction_list = []
-        for transaction in transaction_list:
-            if 'attributes' in transaction:
-                transaction_dic = {**self._add_card_transactionamount(transaction), **self._add_card_transactioninformation(transaction)}
-                format_transaction_list.append(transaction_dic)
-
-        self.logger.debug('api.Wrapper._format_card_transactions() ended\n')
-        return format_transaction_list
-
     def _get_accounts(self) -> Dict[str, str]:
         """ get accounts via API """
         self.logger.debug('api.Wrapper._get_accounts()\n')
@@ -806,33 +554,6 @@ class Wrapper(object):
         self.logger.debug('api.Wrapper._get_brokerage_details() ended\n')
         return output_dic
 
-    def _get_brokerage_includedlist(self, brokerage_dic: Dict[str, str]) -> Dict[str, str]:
-        """ get include list from brokerage_account dictionary"""
-        self.logger.debug('api.Wrapper._get_brokerage_includedlist()\n')
-
-        included_list = []
-        if 'included' in brokerage_dic:
-            included_list = brokerage_dic['included']
-
-        self.logger.debug('api.Wrapper._get_brokerage_includedlist() ended\n')
-        return included_list
-
-    def _get_brokerage_position(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
-        """ get information on a single position witin a brokerage account """
-        self.logger.debug('api.Wrapper._get_brokerage_position()\n')
-        (_instrument_id, _quote_id) = self._get_relationship_ids(position)
-
-        position_dic = {}
-        if 'attributes' in position:
-            position_dic = {**self._add_brokerage_quantity(position), **self._add_brokerage_informationy(position)}
-            for ele in included_list:
-                if 'id' in ele and ele['id'] == _instrument_id:
-                    position_dic = {**position_dic, **self._add_brokerage_instrumentinformation(ele)}
-                if 'id' in ele and ele['id'] == _quote_id:
-                    position_dic = {**position_dic, **self._add_brokerage_quoteinformation(ele)}
-
-        self.logger.debug('api.Wrapper._get_brokerage_position() ended\n')
-        return position_dic
 
     def _get_cards(self) -> Dict[str, str]:
         """ get cards via API """
@@ -951,21 +672,6 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper._get_overview() ended\n')
         return self._build_account_dic(portfolio_dic)
-
-    def _get_relationship_ids(self, position: Dict[str, str]) -> Tuple[str, str]:
-        """ get relationship ids from depot position """
-        self.logger.debug('api.Wrapper._get_relationship_ids()\n')
-
-        instrument_id = None
-        quote_id = None
-        if 'relationships' in position:
-            if 'instrument' in position['relationships'] and 'data' in position['relationships']['instrument'] and 'id' in position['relationships']['instrument']['data']:
-                instrument_id = position['relationships']['instrument']['data']['id']
-            if 'quote' in position['relationships'] and 'data' in position['relationships']['quote'] and 'id' in position['relationships']['quote']['data']:
-                quote_id = position['relationships']['quote']['data']['id']
-
-        self.logger.debug('api.Wrapper._get_relationship_ids()\n')
-        return instrument_id, quote_id
 
     def _get_token(self):
         """ get access token """
@@ -1122,71 +828,6 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper.get_credit_limits() ended\n')
         return limit_dic
-
-    def _get_transaction_url(self, tr_dic):
-        """ get transaction url """
-        self.logger.debug('api.Wrapper._get_transaction_url()\n')
-
-        transaction_url = None
-        if 'links' in tr_dic and 'next' in tr_dic['links']:
-            self.logger.debug('api.Wrapper._get_transactions(): next page: %s', tr_dic['links']['next'])
-            transaction_url = self.base_url + self.api_prefix + '/accounts' + tr_dic['links']['next']
-        else:
-            self.logger.debug('api.Wrapper._get_transactions(): no next page')
-            transaction_url = None
-
-        self.logger.debug('api.Wrapper._get_transaction_url() ended\n')
-        return transaction_url
-
-    def _get_transaction_list(self, transaction_url: str) -> Dict[str, str]:
-        """ get transaction list"""
-        self.logger.debug('api.Wrapper._get_transaction_list(%s)\n', transaction_url)
-
-        transaction_dic = {'data': [], 'included': []}
-        while transaction_url:
-            response = self.client.get(transaction_url)
-            if response.status_code == 200:
-                _transaction_dic = response.json()
-                if 'data' in _transaction_dic:
-                    transaction_dic['data'].extend(_transaction_dic['data'])
-                    transaction_url = self._get_transaction_url(_transaction_dic)    # get next page
-
-                else:
-                    self.logger.debug('api.Wrapper._get_transactions(): no data in response')
-                    transaction_url = None
-
-                if 'included' in _transaction_dic:
-                    transaction_dic['included'].extend(_transaction_dic['included'])
-            else:
-                self.logger.error('api.Wrapper._get_transactions(): RC is not 200 but %s', response.status_code)
-                break
-
-        self.logger.debug('api.Wrapper._get_transaction_list() ended with %s entries\n', len(transaction_dic['data']))
-        return transaction_dic
-
-    def get_transactions(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
-        """ get transactions via API """
-        self.logger.debug('api.Wrapper.get_transactions(%s, %s)\n', atype, transaction_type)
-
-        transaction_list = []
-
-        if transaction_url and atype != 'depot':
-            transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
-
-        transaction_dic = self._get_transaction_list(transaction_url)
-
-        if transaction_dic and 'data' in transaction_dic and len(transaction_dic['data']) > 0:
-            if atype == 'account':
-                transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
-                transaction_list = self._format_account_transactions(transaction_list)
-            elif atype == 'creditcard':
-                transaction_list = self._filter_transactions(transaction_dic['data'], date_from, date_to, transaction_type)
-                transaction_list = self._format_card_transactions(transaction_list)
-            elif atype == 'depot':
-                transaction_list = self._format_brokerage_account(transaction_dic)
-
-        self.logger.debug('api.Wrapper.get_transactions() ended\n')
-        return transaction_list
 
     def login(self) -> Tuple[Dict, None]:
         """ login into DKB banking area and perform an sso redirect """

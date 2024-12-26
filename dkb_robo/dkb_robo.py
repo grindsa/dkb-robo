@@ -3,8 +3,9 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
 import time
-from dkb_robo.standingorder import StandingOrder
 from dkb_robo.postbox import PostBox
+from dkb_robo.standingorder import StandingOrder
+from dkb_robo.transaction import Transaction
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 from dkb_robo.api import Wrapper
 
@@ -89,8 +90,8 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
-
-        transaction_list = self.wrapper.get_transactions(transaction_url, atype, date_from, date_to, transaction_type)
+        transaction = Transaction(client=self.wrapper.client, logger=self.logger)
+        transaction_list = transaction.get(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))
         return transaction_list
@@ -104,7 +105,7 @@ class DKBRobo(object):
         """ download postbox documents """
         if path is None:
             list_only = True
-        postbox = PostBox(client = self.wrapper.client, logger = self.logger)
+        postbox = PostBox(client=self.wrapper.client, logger=self.logger)
         documents = postbox.fetch_items()
 
         if not download_all:
@@ -123,7 +124,7 @@ class DKBRobo(object):
 
             if not list_only:
                 self.logger.info("Downloading %s to %s...", doc.subject(), target)
-                if doc.download(self.wrapper.client, target/filename):
+                if doc.download(self.wrapper.client, target / filename):
                     if mark_read:
                         doc.mark_read(self.wrapper.client, True)
                     time.sleep(.5)

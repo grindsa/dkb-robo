@@ -15,7 +15,7 @@ class StandingOrder:
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
-        self.logger.debug('api.StandingOrder._filter()\n')
+        self.logger.debug('standing.StandingOrder._filter()\n')
 
         so_list = []
         if 'data' in full_list:
@@ -36,12 +36,12 @@ class StandingOrder:
                     'interval': ele.get('attributes', {}).get('recurrence', None)}
                 so_list.append(_tmp_dic)
 
-        self.logger.debug('api.StandingOrder._filter() ended with: %s entries.', len(so_list))
+        self.logger.debug('standing.StandingOrder._filter() ended with: %s entries.', len(so_list))
         return so_list
 
     def fetch(self, uid) -> Dict:
         """ fetch standing orders """
-        self.logger.debug('api.Standorder.get()\n')
+        self.logger.debug('standing.StandingOrder.fetch()\n')
 
         so_list = []
         if uid:
@@ -50,7 +50,7 @@ class StandingOrder:
                 _so_list = response.json()
                 so_list = self._filter(_so_list)
         else:
-            raise DKBRoboError('get_standing_orders(): account-id is required')
+            raise DKBRoboError('account-id is required to fetch standing orders')
 
-        self.logger.debug('api.Wrapper.get_standing_orders() ended\n')
+        self.logger.debug('standing.StandingOrder.fetch() ended\n')
         return so_list

@@ -264,7 +264,7 @@ class TestPostBox(unittest.TestCase):
                 },
             ),
         ]
-        return PostBox(mock_client)
+        return PostBox(client=mock_client, logger=MagicMock())
 
     @patch("requests.Session")
     def test_024_fetch_items(self, mock_session):
@@ -299,7 +299,7 @@ class TestPostBox(unittest.TestCase):
             MagicMock(status_code=200, json=lambda: {}),
         ]
         with self.assertRaises(DKBRoboError):
-            PostBox(mock_client).fetch_items()
+            PostBox(client=mock_client, logger=MagicMock()).fetch_items()
 
     @patch("requests.Session")
     def test_027_fetch_url_fixing(self, mock_session):
@@ -317,7 +317,7 @@ class TestPostBox(unittest.TestCase):
         mock_client = mock_session.return_value
         mock_client.get.side_effect = requests.HTTPError()
         with self.assertRaises(requests.HTTPError):
-            PostBox(mock_client).fetch_items()
+            PostBox(client=mock_client, logger=MagicMock()).fetch_items()
 
 
 if __name__ == "__main__":

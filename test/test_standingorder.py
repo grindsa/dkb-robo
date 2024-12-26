@@ -42,7 +42,7 @@ class TestDKBRobo(unittest.TestCase):
 
         with self.assertRaises(Exception) as err:
             self.assertFalse(self.dkb.fetch(None))
-        self.assertEqual('get_standing_orders(): account-id is required', str(err.exception))
+        self.assertEqual('account-id is required to fetch standing orders', str(err.exception))
         self.assertFalse(mock_filter.called)
 
     @patch('dkb_robo.standingorder.StandingOrder._filter')

@@ -146,22 +146,24 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb.__exit__())
         self.assertTrue(self.dkb.wrapper.logout.called)
 
+    @patch('dkb_robo.transaction.Transaction.get')
     @patch('dkb_robo.dkb_robo.validate_dates')
-    def test_009_get_transactions(self, mock_date):
+    def test_009_get_transactions(self, mock_date, mock_transaction):
         """ test get_transactions() """
         self.dkb.legacy_login = True
         mock_date.return_value = ('from', 'to')
         self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_transactions.return_value = {'foo': 'bar'}
-        self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'atype', 'from', 'to', 'btype'))
+        mock_transaction.return_value = {'foo': 'bar'}
+        self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'account', 'from', 'to', 'btype'))
 
+    @patch('dkb_robo.transaction.Transaction.get')
     @patch('dkb_robo.dkb_robo.validate_dates')
-    def test_010_get_transactions(self, mock_date):
+    def test_010_get_transactions(self, mock_date, mock_transaction):
         """ test get_transactions() """
         self.dkb.legacy_login = False
         mock_date.return_value = ('from', 'to')
         self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_transactions.return_value = {'foo': 'bar'}
+        mock_transaction.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'atype', 'from', 'to', 'btype'))
 
     def test_011_get_points(self):
@@ -183,10 +185,11 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.wrapper.get_credit_limits.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_credit_limits())
 
-    def test_014_get_standing_orders(self):
+    @patch('dkb_robo.standingorder.StandingOrder.fetch')
+    def test_014_get_standing_orders(self, mock_fetch):
         """ test get_standing_orders()"""
         self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_standing_orders.return_value = {'foo': 'bar'}
+        mock_fetch.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_standing_orders())
 
     def test_015_scan_postbox(self):
