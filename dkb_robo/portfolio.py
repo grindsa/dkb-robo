@@ -278,7 +278,7 @@ class Card:
             'status': card.get('attributes', {}).get('status', None),
             'name': card.get('attributes', {}).get('product', {}).get('displayName', None),
             'expirydate': card.get('attributes', {}).get('expiryDate', None),
-            'holdername': f'{card.get('attributes', {}).get('holder', {}).get('person', {}).get('firstName', '')} {card.get('attributes', {}).get('holder', {}).get('person', {}).get('lastName', '')}'
+            'holdername': f"{card.get('attributes', {}).get('holder', {}).get('person', {}).get('firstName', '')} {card.get('attributes', {}).get('holder', {}).get('person', {}).get('lastName', '')}"
         }
 
         if card['type'] == 'debitCard':
