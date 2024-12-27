@@ -311,9 +311,7 @@ class TestOverview(unittest.TestCase):
                         'status': {'category': 'active'},
                         'transactions': None,
                         'type': 'debitcard'}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(result, self.overview._sort(data))
-        self.assertIn("ERROR:dkb_robo:limit conversion error: float() argument must be a string or a real number, not 'NoneType'", lcm.output)
+        self.assertEqual(result, self.overview._sort(data))
 
     def test_019__sort(self):
         """ test _sort() """
@@ -423,9 +421,7 @@ class TestOverview(unittest.TestCase):
                         'productgroup': None,
                         'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
                         'type': 'depot'}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(result, self.overview._sort(data))
-        self.assertIn("ERROR:dkb_robo:limit conversion error: float() argument must be a string or a real number, not 'NoneType'", lcm.output)
+        self.assertEqual(result, self.overview._sort(data))
 
 class TestAccount(unittest.TestCase):
     """ test class """
@@ -455,9 +451,7 @@ class TestAccount(unittest.TestCase):
     def test_023__details(self):
         """ test _details() """
         account = {'attributes': {'iban': 'iban', 'bic': 'bic', 'accountNumber': 'accountNumber', 'bankCode': 'bankCode', 'accountType': 'accountType', 'balance': 'balance'}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual({'type': 'account', 'name': None, 'id': 'aid', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions', 'date': None, 'iban': 'iban', 'account': 'iban', 'holdername': None, 'limit': None}, self.account._details(account, 'aid'))
-        self.assertIn("ERROR:dkb_robo:limit conversion error: float() argument must be a string or a real number, not 'NoneType'", lcm.output)
+        self.assertEqual({'type': 'account', 'name': None, 'id': 'aid', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions', 'date': None, 'iban': 'iban', 'account': 'iban', 'holdername': None, 'limit': 0.0}, self.account._details(account, 'aid'))
 
     @patch('dkb_robo.portfolio.Account._balance')
     @patch('dkb_robo.portfolio.Account._details')

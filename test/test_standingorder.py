@@ -126,10 +126,8 @@ class TestDKBRobo(unittest.TestCase):
                         }
                     }
                 }]}
-        result = [{'amount': None, 'currencycode': None, 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(result, self.dkb._filter(full_list))
-        self.assertIn("ERROR:dkb_robo:api.StandingOrder._filter() error: float() argument must be a string or a real number, not 'NoneType'", lcm.output)
+        result = [{'amount': 0.0, 'currencycode': None, 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
+        self.assertEqual(result, self.dkb._filter(full_list))
 
 if __name__ == '__main__':
 

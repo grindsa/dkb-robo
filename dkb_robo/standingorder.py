@@ -22,7 +22,7 @@ class StandingOrder:
             for ele in full_list['data']:
 
                 try:
-                    amount = float(ele.get('attributes', {}).get('amount', {}).get('value', None))
+                    amount = float(ele.get('attributes', {}).get('amount', {}).get('value', 0))
                 except Exception as err:
                     self.logger.error('api.StandingOrder._filter() error: %s', err)
                     amount = None

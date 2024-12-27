@@ -204,7 +204,7 @@ class Account:
         for my_field, dkb_field in mapping_dic.items():
             if my_field == 'limit':
                 try:
-                    output_dic[my_field] = float(account.get('attributes', {}).get(dkb_field, None))
+                    output_dic[my_field] = float(account.get('attributes', {}).get(dkb_field, 0))
                 except Exception as exc:
                     self.logger.error('limit conversion error: %s', exc)
                     output_dic[my_field] = None
@@ -265,7 +265,7 @@ class Card:
         self.logger.debug('portfolio.Card._details()\n')
 
         try:
-            limit = float(card.get('attributes', {}).get('limit', {}).get('value', None))
+            limit = float(card.get('attributes', {}).get('limit', {}).get('value', 0))
         except Exception as exc:
             self.logger.error('limit conversion error: %s', exc)
             limit = None
