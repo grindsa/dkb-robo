@@ -7,6 +7,7 @@ from dkb_robo.utilities import get_dateformat
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
+BASE_URL = 'https://banking.dkb.de/api'
 
 class ProductGroup:
     """ ProductGroup class"""
@@ -58,7 +59,7 @@ class ProductGroup:
 class Overview:
     """ Overview class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL):
         self.client = client
         self.logger = logger
         self.base_url = base_url
@@ -165,7 +166,7 @@ class Overview:
 class Account:
     """ Account class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
         self.logger = logger
         self.base_url = base_url
 
@@ -180,7 +181,7 @@ class Account:
                 try:
                     output_dic[my_field] = float(account.get('attributes', {}).get('balance', {}).get(dkb_field, None))
                 except Exception as exc:
-                    self.logger.error('amount conversion error: %s', exc)
+                    self.logger.error('account amount conversion error: %s', exc)
                     output_dic[my_field] = None
             else:
                 output_dic[my_field] = account.get('attributes', {}).get('balance', {}).get(dkb_field, None)
@@ -206,7 +207,7 @@ class Account:
                 try:
                     output_dic[my_field] = float(account.get('attributes', {}).get(dkb_field, 0))
                 except Exception as exc:
-                    self.logger.error('limit conversion error: %s', exc)
+                    self.logger.error('account limit conversion error: %s', exc)
                     output_dic[my_field] = None
             else:
                 output_dic[my_field] = account.get('attributes', {}).get(dkb_field, None)
@@ -233,7 +234,7 @@ class Account:
 class Card:
     """ Card class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
         self.logger = logger
         self.base_url = base_url
 
@@ -246,7 +247,7 @@ class Card:
             try:
                 amount = float(card.get('attributes', {}).get('balance', {}).get('value', None)) * -1
             except Exception as exc:
-                self.logger.error('amount conversion error: %s', exc)
+                self.logger.error('card amount conversion error: %s', exc)
                 amount = None
 
             output_dic = {
@@ -267,7 +268,7 @@ class Card:
         try:
             limit = float(card.get('attributes', {}).get('limit', {}).get('value', 0))
         except Exception as exc:
-            self.logger.error('limit conversion error: %s', exc)
+            self.logger.error('card limit conversion error: %s', exc)
             limit = None
 
         output_dic = {
@@ -309,7 +310,7 @@ class Card:
 class Depot:
     """ Depot class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
         self.logger = logger
         self.base_url = base_url
 
@@ -320,7 +321,7 @@ class Depot:
         try:
             amount = float(depot.get('attributes', {}).get('brokerageAccountPerformance', {}).get('currentValue', {}).get('value', None))
         except Exception as exc:
-            self.logger.error('amount conversion error: %s', exc)
+            self.logger.error('depot amount conversion error: %s', exc)
             amount = None
 
         output_dic = {

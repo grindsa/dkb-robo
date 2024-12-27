@@ -96,7 +96,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))
         return transaction_list
 
-    def scan_postbox(self, path=None, download_all=False, archive=False, prepend_date=False):
+    def scan_postbox(self, path=None, download_all=False, _archive=False, prepend_date=False):
         """ scan posbox and return document dictionary """
         self.logger.debug('DKBRobo.scan_postbox()\n')
         return self.download(Path(path) if path is not None else None, download_all, prepend_date)

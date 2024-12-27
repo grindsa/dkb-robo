@@ -446,7 +446,7 @@ class TestAccount(unittest.TestCase):
         account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.account._balance(account))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo:account amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_023__details(self):
         """ test _details() """
@@ -509,7 +509,7 @@ class TestCard(unittest.TestCase):
         account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa', 'date': 'date'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR', 'date': 'date'}, self.card._balance(account))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo:card amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_030__details(self):
         """ test _details() """
@@ -529,7 +529,7 @@ class TestCard(unittest.TestCase):
         result = {'id': 'cid', 'type': 'debitcard', 'maskedpan': None, 'account': None, 'status': 'status', 'name': 'displayName', 'expirydate': None, 'holdername': ' ', 'transactions': None}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.card._details(account, 'cid'))
-        self.assertIn("ERROR:dkb_robo:limit conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo:card limit conversion error: could not convert string to float: 'aa'", lcm.output)
 
     @patch('dkb_robo.portfolio.Card._balance')
     @patch('dkb_robo.portfolio.Card._details')
@@ -588,7 +588,7 @@ class TestDepot(unittest.TestCase):
         account = {'attributes': {'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'EUR', 'value': 'aa'}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.depot._balance(account))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo:depot amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_039__details(self):
         """ test _details() """

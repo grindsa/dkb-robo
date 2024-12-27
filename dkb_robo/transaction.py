@@ -107,7 +107,6 @@ class Transaction:
             transaction = DepotTransaction(logger=self.logger)
         else:
             raise DKBRoboError(f'transaction type {atype} is not supported')
-            # transaction = None
 
         transaction_list = []
         if transaction:
