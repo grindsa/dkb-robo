@@ -55,24 +55,12 @@ class Wrapper(object):
         except (ValueError, TypeError):
             self.mfa_device = 0
 
-
-
-
-
-
-
-
-
     def _get_overview(self) -> Dict[str, str]:
         """ get overview """
         self.logger.debug('api.Wrapper._get_overview()\n')
         # this is just a dummy function to keep unittests happy
         self.logger.debug('api.Wrapper._get_overview() ended\n')
         return {'foo': 'bar'}
-
-
-
-
 
     def get_credit_limits(self) -> Dict[str, str]:
         """ get credit limits """
@@ -156,4 +144,3 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper.logout() ended.\n')
         return legacywrappper.get_exemption_order()
-
