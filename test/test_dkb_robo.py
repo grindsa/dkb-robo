@@ -51,7 +51,7 @@ class TestDKBRobo(unittest.TestCase):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.logger = logging.getLogger('dkb_robo')
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_001__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -61,7 +61,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_002__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -72,7 +72,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_003__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -85,7 +85,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_legacy.called)
         self.assertFalse(mock_api.called)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_004__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -100,7 +100,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_005__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -113,7 +113,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_api.called)
         self.assertEqual(1, self.dkb.mfa_device)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_006__enter(self, mock_legacy, mock_api):
         """ test enter """
@@ -126,7 +126,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_api.called)
         self.assertEqual(2, self.dkb.mfa_device)
 
-    @patch('dkb_robo.api.Wrapper.login')
+    @patch('dkb_robo.authentication.Authentication.login')
     @patch('dkb_robo.legacy.Wrapper.login')
     def test_007__enter(self, mock_legacy, mock_api):
         """ test enter """
