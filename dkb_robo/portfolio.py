@@ -6,8 +6,8 @@ import requests
 from dkb_robo.utilities import get_dateformat
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
-
 BASE_URL = 'https://banking.dkb.de/api'
+
 
 class ProductGroup:
     """ ProductGroup class"""

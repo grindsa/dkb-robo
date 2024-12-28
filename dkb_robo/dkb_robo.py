@@ -4,6 +4,7 @@
 from pathlib import Path
 import time
 from dkb_robo.postbox import PostBox
+from dkb_robo.authentication import Authentication
 from dkb_robo.standingorder import StandingOrder
 from dkb_robo.transaction import Transaction
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
@@ -53,7 +54,7 @@ class DKBRobo(object):
         if self.mfa_device == 'm':
             self.mfa_device = 1
 
-        self.wrapper = Wrapper(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, logger=self.logger)
+        self.wrapper = Authentication(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, logger=self.logger)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()
