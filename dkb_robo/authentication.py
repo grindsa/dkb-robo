@@ -14,13 +14,13 @@ from dkb_robo.portfolio import Overview
 
 
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
-
+BASE_URL = 'https://banking.dkb.de/api'
 
 class Authentication:
     """ Authentication class """
 
     account_dic = {}
-    base_url = 'https://banking.dkb.de/api'
+    base_url = BASE_URL
     chip_tan = False
     client = None
     dkb_user = None
@@ -349,7 +349,7 @@ class Authentication:
 class APPAuthentication:
     """ APPAuthentication class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL):
         self.client = client
         self.logger = logger
         self.base_url = base_url
@@ -416,7 +416,7 @@ class APPAuthentication:
 class TANAuthentication:
     """ TANAuthentication class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api', mfa_method: str = 'chip_tan_manual'):
+    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL, mfa_method: str = 'chip_tan_manual'):
         self.client = client
         self.logger = logger
         self.base_url = base_url

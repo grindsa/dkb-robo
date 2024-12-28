@@ -102,6 +102,24 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.scan_postbox()\n')
         return self.download(Path(path) if path is not None else None, download_all, prepend_date)
 
+    def download_doc(self, path: Path, doc, prepend_date: bool = False, mark_read: bool = True, use_account_folders: bool = False, list_only: bool = False, accounts_by_id: dict = None):
+        """ download a single document """
+        target = path / doc.category()
+
+        if use_account_folders:
+            target = target / doc.account(card_lookup=accounts_by_id)
+
+        filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+
+        if not list_only:
+            self.logger.info("Downloading %s to %s...", doc.subject(), target)
+            if doc.download(self.wrapper.client, target / filename):
+                if mark_read:
+                    doc.mark_read(self.wrapper.client, True)
+                time.sleep(.5)
+            else:
+                self.logger.info("File already exists. Skipping %s.", filename)
+
     def download(self, path: Path, download_all: bool, prepend_date: bool = False, mark_read: bool = True, use_account_folders: bool = False, list_only: bool = False):
         """ download postbox documents """
         if path is None:
@@ -116,19 +134,6 @@ class DKBRobo(object):
 
         accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
         for doc in documents.values():
-            target = path / doc.category()
+            self.download_doc(path=path, doc=doc, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only, accounts_by_id=accounts_by_id)
 
-            if use_account_folders:
-                target = target / doc.account(card_lookup=accounts_by_id)
-
-            filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
-
-            if not list_only:
-                self.logger.info("Downloading %s to %s...", doc.subject(), target)
-                if doc.download(self.wrapper.client, target / filename):
-                    if mark_read:
-                        doc.mark_read(self.wrapper.client, True)
-                    time.sleep(.5)
-                else:
-                    self.logger.info("File already exists. Skipping %s.", filename)
         return documents

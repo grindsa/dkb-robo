@@ -64,6 +64,18 @@ class Overview:
         self.logger = logger
         self.base_url = base_url
 
+    def _add_remaining(self, data_dic: Dict[str, str], account_dic: Dict[str, str], account_cnt: int) -> Dict[str, str]:
+        """ add remaining products """
+        self.logger.debug('portfolio.Overview._add_remaining()\n')
+
+        for product_data in data_dic.values():
+            account_dic[account_cnt] = product_data
+            account_dic[account_cnt]['productgroup'] = None
+            account_cnt += 1
+
+        self.logger.debug('portfolio.Overview._add_remaining() ended\n')
+        return account_dic
+
     def _fetch(self, url_path) -> Dict[str, str]:
         """ fetch data via API """
         self.logger.debug('portfolio.Overview._fetch()\n')
@@ -111,10 +123,7 @@ class Overview:
                         account_cnt += 1
 
         # add products without productgroup
-        for product_data in data_dic.values():
-            account_dic[account_cnt] = product_data
-            account_dic[account_cnt]['productgroup'] = None
-            account_cnt += 1
+        account_dic = self._add_remaining(data_dic, account_dic, account_cnt)
 
         self.logger.debug('portfolio.Overview._sort() ended\n')
         return account_dic
