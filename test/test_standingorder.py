@@ -105,12 +105,15 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, self.dkb._filter(so_list))
 
     def test_007__filter(self):
-        """ test StandingOrder._filter() with incomplete list """
+        """ test StandingOrder._filter() with incomplete list/conversion error """
         full_list = {
             "data": [
                 {
                     "attributes": {
                         "description": "description",
+                        "amount": {
+                            "value": "aa"
+                        },
                         "creditor": {
                             "name": "cardname",
                             "creditorAccount": {
@@ -126,8 +129,10 @@ class TestDKBRobo(unittest.TestCase):
                         }
                     }
                 }]}
-        result = [{'amount': 0.0, 'currencycode': None, 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
-        self.assertEqual(result, self.dkb._filter(full_list))
+        result = [{'amount': None, 'currencycode': None, 'purpose': 'description', 'recpipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01'}}]
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(result, self.dkb._filter(full_list))
+        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
 if __name__ == '__main__':
 

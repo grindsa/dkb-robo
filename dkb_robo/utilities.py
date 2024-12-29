@@ -16,6 +16,11 @@ def get_dateformat():
 
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
+JSON_CONTENT_TYPE = 'application/vnd.api+json'
+
+
+class DKBRoboError(Exception):
+    """ dkb-robo exception class """
 
 
 def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: List[str], output_format: str) -> str:

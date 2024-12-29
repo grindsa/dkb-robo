@@ -8,12 +8,11 @@ import io
 import threading
 import logging
 import requests
-from dkb_robo.api import DKBRoboError
 from dkb_robo.legacy import Wrapper as Legacywrapper
 from dkb_robo.portfolio import Overview
+from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
 
 
-JSON_CONTENT_TYPE = 'application/vnd.api+json'
 BASE_URL = 'https://banking.dkb.de/api'
 
 

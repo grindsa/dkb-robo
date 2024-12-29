@@ -9,7 +9,7 @@ import requests
 import logging
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
-from dkb_robo.api import DKBRoboError
+from dkb_robo.utilities import DKBRoboError
 from dkb_robo.postbox import PostboxItem, PostBox, Document, Message
 
 

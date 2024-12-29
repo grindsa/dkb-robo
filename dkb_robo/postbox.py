@@ -5,11 +5,8 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
-
 import requests
-
-from dkb_robo.api import JSON_CONTENT_TYPE, DKBRoboError
-from dkb_robo.utilities import get_valid_filename
+from dkb_robo.utilities import get_valid_filename, DKBRoboError, JSON_CONTENT_TYPE
 
 logger = logging.getLogger(__name__)
 

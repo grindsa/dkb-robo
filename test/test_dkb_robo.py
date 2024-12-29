@@ -173,17 +173,17 @@ class TestDKBRobo(unittest.TestCase):
             self.dkb.get_points()
         self.assertEqual('Method not supported...', str(err.exception))
 
-    def test_012_get_exemption_order(self):
+    @patch('dkb_robo.exemptionorder.ExemptionOrder.fetch')
+    def test_012_get_exemption_order(self, mock_fetch):
         """ test get_exemption_order()"""
         self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_exemption_order.return_value = {'foo': 'bar'}
+        mock_fetch.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_exemption_order())
 
     def test_013_get_credit_limits(self):
         """ test get_credit_limits()"""
-        self.dkb.wrapper = Mock()
-        self.dkb.wrapper.get_credit_limits.return_value = {'foo': 'bar'}
-        self.assertEqual({'foo': 'bar'}, self.dkb.get_credit_limits())
+        self.dkb.account_dic = {1: {'limit': 1000, 'foo': 'bar', 'iban': 'iban'}, 2: {'limit': 2000, 'foo': 'bar', 'maskedpan': 'maskedpan'}}
+        self.assertEqual({'iban': 1000, 'maskedpan': 2000}, self.dkb.get_credit_limits())
 
     @patch('dkb_robo.standingorder.StandingOrder.fetch')
     def test_014_get_standing_orders(self, mock_fetch):

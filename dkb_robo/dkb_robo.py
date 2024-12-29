@@ -9,7 +9,7 @@ from dkb_robo.exemptionorder import ExemptionOrder
 from dkb_robo.standingorder import StandingOrder
 from dkb_robo.transaction import Transaction
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
-from dkb_robo.api import Wrapper
+
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
@@ -69,7 +69,16 @@ class DKBRobo(object):
     def get_credit_limits(self):
         """ create a dictionary of credit limits of the different accounts """
         self.logger.debug('DKBRobo.get_credit_limits()\n')
-        return self.wrapper.get_credit_limits()
+
+        limit_dic = {}
+        for _aid, account_data in self.account_dic.items():
+            if 'limit' in account_data:
+                if 'iban' in account_data:
+                    limit_dic[account_data['iban']] = account_data['limit']
+                elif 'maskedpan' in account_data:
+                    limit_dic[account_data['maskedpan']] = account_data['limit']
+
+        return limit_dic
 
     def get_exemption_order(self):
         """ get get_exemption_order """

@@ -5,8 +5,7 @@ import time
 from typing import Dict, List
 import logging
 import requests
-from dkb_robo.api import DKBRoboError
-from dkb_robo.utilities import get_dateformat
+from dkb_robo.utilities import get_dateformat, DKBRoboError
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 

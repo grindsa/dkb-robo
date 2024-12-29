@@ -2,7 +2,7 @@
 from typing import Dict, List
 import logging
 import requests
-from dkb_robo.api import DKBRoboError
+from dkb_robo.utilities import DKBRoboError
 
 
 class ExemptionOrder:

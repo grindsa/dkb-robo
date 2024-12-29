@@ -2,7 +2,7 @@
 from typing import Dict, List
 import logging
 import requests
-from dkb_robo.api import DKBRoboError
+from dkb_robo.utilities import DKBRoboError
 
 
 class StandingOrder:
@@ -22,9 +22,9 @@ class StandingOrder:
             for ele in full_list['data']:
 
                 try:
-                    amount = float(ele.get('attributes', {}).get('amount', {}).get('value', 0))
+                    amount = float(ele.get('attributes', {}).get('amount', {}).get('value', None))
                 except Exception as err:
-                    self.logger.error('api.StandingOrder._filter() error: %s', err)
+                    self.logger.error('amount conversion error: %s', err)
                     amount = None
 
                 _tmp_dic = {
