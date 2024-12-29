@@ -64,13 +64,6 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.account_dic = {'foo': 'bar'}
         self.assertFalse(self.dkb.get_credit_limits())
 
-    @patch('dkb_robo.legacy.Wrapper.get_exemption_order')
-    def test_130_get_exemption_order(self, mock_exo):
-        """ test get_exemption_order() """
-        mock_exo.return_value = 'mock_exo'
-        self.assertEqual('mock_exo', self.dkb.get_exemption_order())
-
-
 if __name__ == '__main__':
 
     unittest.main()

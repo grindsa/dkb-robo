@@ -300,11 +300,18 @@ A dictionary similar to the one below will be returned
 
 ```python
 > pprint(exo)
-{1: {'amount': 1602.0,
-     'available': 1602.0,
-     'description': u'Gemeinsam mit XXXX XXXX',
-     'used': 0.0,
-     'validity': u'01.01.2017  unbefristet'}}
+[{'amount': 2000.0,
+  'currencycode': 'EUR',
+  'partner': {'dateofbirth': '1980-01-01',
+              'firstname': 'Jane',
+              'lastname': 'Doe',
+              'salutation': 'Frau',
+              'taxid': '1234567890'},
+  'receivedat': '2017-01-01',
+  'type': 'joint',
+  'used': 567.89,
+  'validfrom': '2020-01-01',
+  'validto': '9999-12-31'}]
 ```
 
 To get the amount of dkb points the below method can be used

@@ -5,6 +5,7 @@ from pathlib import Path
 import time
 from dkb_robo.postbox import PostBox
 from dkb_robo.authentication import Authentication
+from dkb_robo.exemptionorder import ExemptionOrder
 from dkb_robo.standingorder import StandingOrder
 from dkb_robo.transaction import Transaction
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
@@ -73,7 +74,8 @@ class DKBRobo(object):
     def get_exemption_order(self):
         """ get get_exemption_order """
         self.logger.debug('DKBRobo.get_exemption_order()\n')
-        return self.wrapper.get_exemption_order()
+        exemptionorder = ExemptionOrder(client=self.wrapper.client, logger=self.logger)
+        return exemptionorder.fetch()
 
     def get_points(self):
         """ returns the DKB points """

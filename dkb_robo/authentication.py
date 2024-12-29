@@ -16,6 +16,7 @@ from dkb_robo.portfolio import Overview
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
 BASE_URL = 'https://banking.dkb.de/api'
 
+
 class Authentication:
     """ Authentication class """
 

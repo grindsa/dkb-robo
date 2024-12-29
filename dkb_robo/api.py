@@ -55,13 +55,6 @@ class Wrapper(object):
         except (ValueError, TypeError):
             self.mfa_device = 0
 
-    def _get_overview(self) -> Dict[str, str]:
-        """ get overview """
-        self.logger.debug('api.Wrapper._get_overview()\n')
-        # this is just a dummy function to keep unittests happy
-        self.logger.debug('api.Wrapper._get_overview() ended\n')
-        return {'foo': 'bar'}
-
     def get_credit_limits(self) -> Dict[str, str]:
         """ get credit limits """
         self.logger.debug('api.Wrapper.get_credit_limits()\n')
@@ -76,71 +69,3 @@ class Wrapper(object):
 
         self.logger.debug('api.Wrapper.get_credit_limits() ended\n')
         return limit_dic
-
-    def login(self) -> Tuple[Dict, None]:
-        """ login into DKB banking area and perform an sso redirect """
-        self.logger.debug('api.Wrapper.login()\n')
-
-        mfa_dic = {}
-
-        # create new session
-        self.client = self._new_session()
-
-        # get token for 1fa
-        self._get_token()
-
-        # get mfa methods
-        mfa_dic = self._get_mfa_methods()
-
-        if mfa_dic:
-            # sort mfa methods
-            mfa_dic = self._sort_mfa_devices(mfa_dic)
-
-        # pick mfa device from list
-        device_number = self._select_mfa_device(mfa_dic)
-
-        # we need a challege-id for polling so lets try to get it
-        mfa_challenge_dic = None
-        if 'mfa_id' in self.token_dic and 'data' in mfa_dic:
-            mfa_challenge_dic, device_name = self._get_mfa_challenge_dic(mfa_dic, device_number)
-        else:
-            raise DKBRoboError('Login failed: no 1fa access token.')
-
-        # lets complete 2fa
-        mfa_completed = False
-        if mfa_challenge_dic:
-            mfa_completed = self._complete_2fa(mfa_challenge_dic, device_name)
-        else:
-            raise DKBRoboError('Login failed: No challenge id.')
-
-        # update token dictionary
-        if mfa_completed and 'access_token' in self.token_dic:
-            self._update_token()
-        else:
-            raise DKBRoboError('Login failed: mfa did not complete')
-
-        if 'token_factor_type' not in self.token_dic:
-            raise DKBRoboError('Login failed: token_factor_type is missing')
-
-        if 'token_factor_type' in self.token_dic and self.token_dic['token_factor_type'] != '2fa':
-
-            raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
-
-        # get account overview
-        overview = Overview(logger=self.logger, client=self.client)
-        self.account_dic = overview.get()
-
-        # redirect to legacy page
-        self._do_sso_redirect()
-        self.logger.debug('api.Wrapper.login() ended\n')
-        return self.account_dic, None
-
-    def get_exemption_order(self) -> Dict[str, str]:
-        """ get_exemption_order() """
-        self.logger.debug('api.Wrapper.logout()\n')
-
-        legacywrappper = Legacywrapper(logger=self.logger)
-        legacywrappper.dkb_br = self.dkb_br
-
-        self.logger.debug('api.Wrapper.logout() ended.\n')
-        return legacywrappper.get_exemption_order()
