@@ -6,9 +6,12 @@ import random
 from string import digits, ascii_letters
 from typing import List, Tuple
 from datetime import datetime, timezone
-from dataclasses import fields
+from dataclasses import dataclass, fields
 import time
 import re
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_dateformat():
@@ -19,6 +22,19 @@ def get_dateformat():
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
 
+@dataclass
+class Amount:
+    """ Amount data class, roughly based on the JSON API response. """
+    value: float = None
+    currencyCode: str = None
+
+    def __post_init__(self):
+        # convert value to float
+        try:
+            self.value = float(self.value)
+        except Exception as err:
+            logger.error('Account.__post_init: conversion error:  %s', err)
+            self.value = None
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
