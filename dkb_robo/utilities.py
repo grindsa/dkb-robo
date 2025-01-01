@@ -96,7 +96,9 @@ def logger_setup(debug: bool) -> logging.Logger:
 
     # define standard log format
     log_format = None
-    if not debug:
+    if debug:
+        log_format = '%(module)s: %(message)s'
+    else:
         log_format = '%(message)s'
 
     logging.basicConfig(
