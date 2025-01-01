@@ -5,16 +5,18 @@ import requests
 from dkb_robo.utilities import DKBRoboError
 
 
+logger = logging.getLogger(__name__)
+
+
 class ExemptionOrder:
     """ exemption order class """
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
-        self.logger.debug('exemptionorder.ExemptionOrder._filter()\n')
+        logger.debug('ExemptionOrder._filter()\n')
 
         unfiltered_exo_list = full_list.get('data', {}).get('attributes', {}).get('exemptionOrders', [])
         exo_list = []
@@ -22,12 +24,12 @@ class ExemptionOrder:
             try:
                 amount = float(exo.get('exemptionAmount', {}).get('value', None))
             except Exception as err:
-                self.logger.error('amount conversion error: %s', err)
+                logger.error('amount conversion error: %s', err)
                 amount = None
             try:
                 used = float(exo.get('utilizedAmount', {}).get('value', None))
             except Exception as err:
-                self.logger.error('used conversion error: %s', err)
+                logger.error('used conversion error: %s', err)
                 used = None
 
             partner = {k.lower(): v for k, v in exo.get('partner', {}).items()}
@@ -42,12 +44,12 @@ class ExemptionOrder:
                 'partner': partner
             })
 
-        self.logger.debug('exemptionorder.ExemptionOrder._filter() ended with: %s entries.', len(exo_list))
+        logger.debug('ExemptionOrder._filter() ended with: %s entries.', len(exo_list))
         return exo_list
 
     def fetch(self) -> Dict:
         """ fetcg exemption orders from api  """
-        self.logger.debug('exemptionorder.ExemptionOrder.fetch()\n')
+        logger.debug('ExemptionOrder.fetch()\n')
 
         exo_list = []
 
@@ -58,5 +60,5 @@ class ExemptionOrder:
         else:
             raise DKBRoboError(f'fetch exemption orders: http status code is not 200 but {response.status_code}')
 
-        self.logger.debug('exemptionorder.ExemptionOrder.fetch() ended\n')
+        logger.debug('ExemptionOrder.fetch() ended\n')
         return exo_list

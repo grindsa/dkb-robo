@@ -5,17 +5,19 @@ import requests
 from dkb_robo.utilities import DKBRoboError
 
 
+logger = logging.getLogger(__name__)
+
+
 class StandingOrder:
     """ StandingOrder class """
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
         self.uid = None
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
-        self.logger.debug('standing.StandingOrder._filter()\n')
+        logger.debug('StandingOrder._filter()\n')
 
         so_list = []
         if 'data' in full_list:
@@ -24,7 +26,7 @@ class StandingOrder:
                 try:
                     amount = float(ele.get('attributes', {}).get('amount', {}).get('value', None))
                 except Exception as err:
-                    self.logger.error('amount conversion error: %s', err)
+                    logger.error('amount conversion error: %s', err)
                     amount = None
 
                 _tmp_dic = {
@@ -36,12 +38,12 @@ class StandingOrder:
                     'interval': ele.get('attributes', {}).get('recurrence', None)}
                 so_list.append(_tmp_dic)
 
-        self.logger.debug('standing.StandingOrder._filter() ended with: %s entries.', len(so_list))
+        logger.debug('StandingOrder._filter() ended with: %s entries.', len(so_list))
         return so_list
 
     def fetch(self, uid) -> Dict:
         """ fetch standing orders """
-        self.logger.debug('standing.StandingOrder.fetch()\n')
+        logger.debug('StandingOrder.fetch()\n')
 
         so_list = []
         if uid:
@@ -52,5 +54,5 @@ class StandingOrder:
         else:
             raise DKBRoboError('account-id is required to fetch standing orders')
 
-        self.logger.debug('standing.StandingOrder.fetch() ended\n')
+        logger.debug('StandingOrder.fetch() ended\n')
         return so_list

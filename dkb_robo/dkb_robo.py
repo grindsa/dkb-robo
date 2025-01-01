@@ -55,7 +55,7 @@ class DKBRobo(object):
         if self.mfa_device == 'm':
             self.mfa_device = 1
 
-        self.wrapper = Authentication(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, logger=self.logger)
+        self.wrapper = Authentication(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()
@@ -83,7 +83,7 @@ class DKBRobo(object):
     def get_exemption_order(self):
         """ get get_exemption_order """
         self.logger.debug('DKBRobo.get_exemption_order()\n')
-        exemptionorder = ExemptionOrder(client=self.wrapper.client, logger=self.logger)
+        exemptionorder = ExemptionOrder(client=self.wrapper.client)
         return exemptionorder.fetch()
 
     def get_points(self):
@@ -94,7 +94,7 @@ class DKBRobo(object):
     def get_standing_orders(self, uid=None):
         """ get standing orders """
         self.logger.debug('DKBRobo.get_standing_orders()\n')
-        standingorder = StandingOrder(client=self.wrapper.client, logger=self.logger)
+        standingorder = StandingOrder(client=self.wrapper.client)
         return standingorder.fetch(uid)
 
     def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
@@ -102,7 +102,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
-        transaction = Transaction(client=self.wrapper.client, logger=self.logger)
+        transaction = Transaction(client=self.wrapper.client)
         transaction_list = transaction.get(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))
@@ -135,7 +135,7 @@ class DKBRobo(object):
         """ download postbox documents """
         if path is None:
             list_only = True
-        postbox = PostBox(client=self.wrapper.client, logger=self.logger)
+        postbox = PostBox(client=self.wrapper.client)
         documents = postbox.fetch_items()
 
         if not download_all:

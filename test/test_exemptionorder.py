@@ -29,8 +29,7 @@ class TestExemptionOrder(unittest.TestCase):
     @patch("requests.Session")
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.exo = ExemptionOrder(logger=self.logger, client=mock_session)
+        self.exo = ExemptionOrder(client=mock_session)
         self.maxDiff = None
 
     @patch('dkb_robo.exemptionorder.ExemptionOrder._filter')
@@ -110,8 +109,8 @@ class TestExemptionOrder(unittest.TestCase):
         result = [{'amount': None, 'used': None, 'currencycode': 'EUR', 'validfrom': '2020-01-01', 'validto': '9999-12-31', 'receivedat': '2020-01-01', 'type': 'joint', 'partner': {'dateofbirth': '1970-01-01', 'firstname': 'Jane', 'lastname': 'Doe', 'salutation': 'Frau', 'taxid': '1234567890'}}]
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.exo._filter(full_list))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
-        self.assertIn("ERROR:dkb_robo:used conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.exemptionorder:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.exemptionorder:used conversion error: could not convert string to float: 'aa'", lcm.output)
 
 if __name__ == '__main__':
 

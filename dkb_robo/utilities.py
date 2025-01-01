@@ -6,6 +6,7 @@ import random
 from string import digits, ascii_letters
 from typing import List, Tuple
 from datetime import datetime, timezone
+from dataclasses import fields
 import time
 import re
 
@@ -46,6 +47,19 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
     return output_date
 
 
+def filter_unexpected_fields(cls):
+    """ filter undefined fields (not defined as class variable) before import to dataclass"""
+    original_init = cls.__init__
+
+    def new_init(self, *args, **kwargs):
+        expected_fields = {field.name for field in fields(cls)}
+        cleaned_kwargs = {key: value for key, value in kwargs.items() if key in expected_fields}
+        original_init(self, *args, **cleaned_kwargs)
+
+    cls.__init__ = new_init
+    return cls
+
+
 def generate_random_string(length: int) -> str:
     """ generate random string to be used as name """
     char_set = digits + ascii_letters
@@ -81,7 +95,10 @@ def logger_setup(debug: bool) -> logging.Logger:
         log_mode = logging.INFO
 
     # define standard log format
-    log_format = '%(message)s'
+    log_format = None
+    if not debug:
+        log_format = '%(message)s'
+
     logging.basicConfig(
         format=log_format,
         datefmt="%Y-%m-%d %H:%M:%S",

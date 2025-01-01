@@ -14,6 +14,13 @@ from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
 
 
 BASE_URL = 'https://banking.dkb.de/api'
+# log_format = 'dkb_robo - %(message)s'
+# logging.basicConfig(format='authentication - %(message)s')
+
+logger = logging.getLogger(__name__)
+
+for hdlr in logger.handlers[:]:
+    print(hdlr)
 
 
 class Authentication:
@@ -32,15 +39,14 @@ class Authentication:
     proxies = {}
     token_dic = None
 
-    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, logger: logging.Logger = False, mfa_device: int = None):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, mfa_device: int = None):
         """ Constructor """
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
-        self.logger = logger
         self.proxies = proxies
         if chip_tan:
-            self.logger.info('Using to chip_tan to login')
+            logger.info('Using to chip_tan to login')
             if chip_tan in ('qr', 'chip_tan_qr'):
                 self.mfa_method = 'chip_tan_qr'
             else:
@@ -52,16 +58,16 @@ class Authentication:
 
     def _mfa_challenge(self, mfa_dic: Dict[str, str], device_num: int = 0) -> Tuple[str, str]:
         """ get challenge dict with information on the 2nd factor """
-        self.logger.debug('authentication.Authentication._mfa_challenge(): login with device_num: %s\n', device_num)
+        logger.debug('Authentication._mfa_challenge(): login with device_num: %s\n', device_num)
 
         device_name = None
         challenge_dic = {}
         if 'data' in mfa_dic and 'id' in mfa_dic['data'][device_num]:
             try:
                 device_name = mfa_dic['data'][device_num]['attributes']['deviceName']
-                self.logger.debug('api.Wrapper._mfa_challenge(): devicename: %s\n', device_name)
+                logger.debug('api.Wrapper._mfa_challenge(): devicename: %s\n', device_name)
             except Exception as _err:
-                self.logger.error('unable to get mfa-deviceName for device_num: %s', device_num)
+                logger.error('unable to get mfa-deviceName for device_num: %s', device_num)
                 device_name = None
 
             # additional headers needed as this call requires it
@@ -83,14 +89,14 @@ class Authentication:
             self.client.headers.pop('Content-Type')
             self.client.headers.pop('Accept')
         else:
-            self.logger.error('mfa dictionary has an unexpected data structure')
+            logger.error('mfa dictionary has an unexpected data structure')
 
-        self.logger.debug('authentication.Authentication._mfa_challenge() ended\n')
+        logger.debug('Authentication._mfa_challenge() ended\n')
         return challenge_dic, device_name
 
     def _mfa_challenge_id(self, challenge_dic: Dict[str, str]) -> str:
         """ get challenge dict with information on the 2nd factor """
-        self.logger.debug('api.Wrapper._mfa_challenge_id()\n')
+        logger.debug('api.Wrapper._mfa_challenge_id()\n')
         challenge_id = None
 
         if 'data' in challenge_dic and 'id' in challenge_dic['data'] and 'type' in challenge_dic['data']:
@@ -102,19 +108,19 @@ class Authentication:
         else:
             raise DKBRoboError(f'Login failed: challenge response format is other than expected: {challenge_dic}')
 
-        self.logger.debug('api.Wrapper._mfa_challenge_id() ended with: %s\n', challenge_id)
+        logger.debug('api.Wrapper._mfa_challenge_id() ended with: %s\n', challenge_id)
         return challenge_id
 
     def _mfa_finalize(self, challenge_dic: Dict[str, str], devicename: str) -> bool:
         """ wait for confirmation for the 2nd factor """
-        self.logger.debug('authentication.Authentication._mfa_finalize()\n')
+        logger.debug('Authentication._mfa_finalize()\n')
 
         challenge_id = self._mfa_challenge_id(challenge_dic)
 
         if self.mfa_method == 'seal_one':
-            mfa_auth = APPAuthentication(client=self.client, logger=self.logger, base_url=self.base_url)
+            mfa_auth = APPAuthentication(client=self.client, base_url=self.base_url)
         elif self.mfa_method in ('chip_tan_manual', 'chip_tan_qr'):
-            mfa_auth = TANAuthentication(client=self.client, logger=self.logger, base_url=self.base_url, mfa_method=self.mfa_method)
+            mfa_auth = TANAuthentication(client=self.client, base_url=self.base_url, mfa_method=self.mfa_method)
         else:
             raise DKBRoboError(f'Login failed: unknown mfa method: {self.mfa_method}')
 
@@ -122,12 +128,12 @@ class Authentication:
         if mfa_auth:
             mfa_completed = mfa_auth.finalize(challenge_id, challenge_dic, devicename)
 
-        self.logger.debug('authentication.Authentication._mfa_finalize() ended with %s\n', mfa_completed)
+        logger.debug('Authentication._mfa_finalize() ended with %s\n', mfa_completed)
         return mfa_completed
 
     def _mfa_get(self) -> Dict[str, str]:
         """ get mfa methods """
-        self.logger.debug('authentication.Authentication._mfa_get()\n')
+        logger.debug('Authentication._mfa_get()\n')
         mfa_dic = {}
 
         # check for access_token and get mfa_methods
@@ -140,11 +146,11 @@ class Authentication:
         else:
             raise DKBRoboError('Login failed: no 1fa access token.')
 
-        self.logger.debug('authentication.Authentication._mfa_get() ended\n')
+        logger.debug('Authentication._mfa_get() ended\n')
         return mfa_dic
 
     def _mfa_process(self, device_num: int, device_list: List[int], _tmp_device_num: str, deviceselection_completed: bool) -> Tuple[int, bool]:
-        self.logger.debug('authentication.Authentication._mfa_process(%s)', _tmp_device_num)
+        logger.debug('Authentication._mfa_process(%s)', _tmp_device_num)
         try:
             # we are referring to an index in a list thus we need to lower the user input by 1
             if int(_tmp_device_num) - 1 in device_list:
@@ -155,22 +161,22 @@ class Authentication:
         except Exception:
             print('\nInvalid input!')
 
-        self.logger.debug('authentication.Authentication._mfa_process()\n ended')
+        logger.debug('Authentication._mfa_process()\n ended')
         return device_num, deviceselection_completed
 
     def _mfa_select(self, mfa_dic: Dict[str, str]) -> int:
         """ pick mfa_device from dictionary """
-        self.logger.debug('authentication.Authentication._mfa_select()')
+        logger.debug('Authentication._mfa_select()')
         device_num = 0
 
         # adjust self.mfa_device if the user input is too high
         if 'data' in mfa_dic and len(mfa_dic['data']) < self.mfa_device:
-            self.logger.warning('User submitted mfa_device number is invalid. Ingoring...')
+            logger.warning('User submitted mfa_device number is invalid. Ingoring...')
             self.mfa_device = 0
 
         if self.mfa_device > 0:
             # we need to lower by one as we refer to an index in a list
-            self.logger.debug('api.Wrapper._mfa_select(): using user submitted mfa_device number: %s', self.mfa_device)
+            logger.debug('api.Wrapper._mfa_select(): using user submitted mfa_device number: %s', self.mfa_device)
             device_num = self.mfa_device - 1
 
         elif 'data' in mfa_dic and len(mfa_dic['data']) > 1:
@@ -188,23 +194,23 @@ class Authentication:
 
                 device_num, deviceselection_completed = self._mfa_process(device_num, device_list, _tmp_device_num, deviceselection_completed)
 
-        self.logger.debug('authentication.Authentication._mfa_select() ended with: %s', device_num)
+        logger.debug('Authentication._mfa_select() ended with: %s', device_num)
         return device_num
 
     def _mfa_sort(self, mfa_dic):
         """ sort mfa methods """
-        self.logger.debug('authentication.Authentication._mfa_sort()')
+        logger.debug('Authentication._mfa_sort()')
 
         mfa_list = mfa_dic['data']
         if self.mfa_method == 'seal_one':
             mfa_list.sort(key=lambda x: (-x['attributes']['preferredDevice'], x['attributes']['enrolledAt']))
 
-        self.logger.debug('authentication.Authentication._mfa_sort() ended with: %s elements', len(mfa_list))
+        logger.debug('Authentication._mfa_sort() ended with: %s elements', len(mfa_list))
         return {'data': mfa_list}
 
     def _session_new(self):
         """ new request session for the api calls """
-        self.logger.debug('authentication.Authentication._session_new()\n')
+        logger.debug('Authentication._session_new()\n')
 
         headers = {
             'Accept-Language': 'en-US,en;q=0.5',
@@ -235,12 +241,12 @@ class Authentication:
             headers['x-xsrf-token'] = client.cookies['__Host-xsrf']
             client.headers = headers
 
-        self.logger.debug('authentication.Authentication._session_new() ended\n')
+        logger.debug('Authentication._session_new() ended\n')
         return client
 
     def _sso_redirect(self):
         """  redirect to access legacy page """
-        self.logger.debug('authentication.Authentication._sso_redirect()\n')
+        logger.debug('Authentication._sso_redirect()\n')
 
         data_dic = {'data': {'cookieDomain': '.dkb.de'}}
         self.client.headers['Content-Type'] = 'application/json'
@@ -251,17 +257,17 @@ class Authentication:
         response = self.client.post(self.base_url + '/sso-redirect', data=json.dumps(data_dic))
 
         if response.status_code != 200 or response.text != 'OK':
-            self.logger.error('SSO redirect failed. RC: %s text: %s', response.status_code, response.text)
+            logger.error('SSO redirect failed. RC: %s text: %s', response.status_code, response.text)
         clientcookies = self.client.cookies
 
-        legacywrappper = Legacywrapper(logger=self.logger)
+        legacywrappper = Legacywrapper()
         # pylint: disable=w0212
         self.dkb_br = legacywrappper._new_instance(clientcookies)
-        self.logger.debug('authentication.Authentication._sso_redirect() ended.\n')
+        logger.debug('Authentication._sso_redirect() ended.\n')
 
     def _token_get(self):
         """ get access token """
-        self.logger.debug('authentication.Authentication._token_get()\n')
+        logger.debug('Authentication._token_get()\n')
 
         # login via API
         data_dic = {'grant_type': 'banking_user_sca', 'username': self.dkb_user, 'password': self.dkb_password, 'sca_type': 'web-login'}
@@ -270,11 +276,11 @@ class Authentication:
             self.token_dic = response.json()
         else:
             raise DKBRoboError(f'Login failed: 1st factor authentication failed. RC: {response.status_code}')
-        self.logger.debug('authentication.Authentication._token_get() ended\n')
+        logger.debug('Authentication._token_get() ended\n')
 
     def _token_update(self):
         """ update token information with 2fa iformation """
-        self.logger.debug('authentication.Authentication._token_update()\n')
+        logger.debug('Authentication._token_update()\n')
 
         data_dic = {'grant_type': 'banking_user_mfa', 'mfa_id': self.token_dic['mfa_id'], 'access_token': self.token_dic['access_token']}
         response = self.client.post(self.base_url + '/token', data=data_dic)
@@ -285,7 +291,7 @@ class Authentication:
 
     def login(self) -> Tuple[Dict, None]:
         """ login into DKB banking area and perform an sso redirect """
-        self.logger.debug('authentication.Authentication.login()\n')
+        logger.debug('Authentication.login()\n')
 
         mfa_dic = {}
 
@@ -333,52 +339,51 @@ class Authentication:
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
         # get account overview
-        overview = Overview(logger=self.logger, client=self.client)
+        overview = Overview(client=self.client)
         self.account_dic = overview.get()
 
         # redirect to legacy page
         self._sso_redirect()
-        self.logger.debug('authentication.Authentication.login() ended\n')
+        logger.debug('Authentication.login() ended\n')
         return self.account_dic, None
 
     def logout(self):
         """ logout function """
-        self.logger.debug('authentication.Authentication.logout()\n')
+        logger.debug('Authentication.logout()\n')
 
 
 class APPAuthentication:
     """ APPAuthentication class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL):
+    def __init__(self, client: requests.Session, base_url: str = BASE_URL):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
 
     def _check(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
-        self.logger.debug('authentication.APPAuthentication._check()\n')
+        logger.debug('APPAuthentication._check()\n')
 
         if 'data' in polling_dic and 'attributes' in polling_dic['data'] and 'verificationStatus' in polling_dic['data']['attributes']:
 
-            self.logger.debug('authentication.APPAuthentication._check: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
+            logger.debug('APPAuthentication._check: cnt %s got %s flag', cnt, polling_dic['data']['attributes']['verificationStatus'])
 
             mfa_completed = False
             if (polling_dic['data']['attributes']['verificationStatus']) == 'processed':
                 mfa_completed = True
             elif (polling_dic['data']['attributes']['verificationStatus']) == 'processing':
-                self.logger.info('Status: %s. Waiting for confirmation', polling_dic['data']['attributes']['verificationStatus'])
+                logger.info('Status: %s. Waiting for confirmation', polling_dic['data']['attributes']['verificationStatus'])
             elif (polling_dic['data']['attributes']['verificationStatus']) == 'canceled':
                 raise DKBRoboError('2fa chanceled by user')
             else:
-                self.logger.info('Unknown processing status: %s', polling_dic['data']['attributes']['verificationStatus'])
+                logger.info('Unknown processing status: %s', polling_dic['data']['attributes']['verificationStatus'])
         else:
             raise DKBRoboError('Login failed: processing status format is other than expected')
 
-        self.logger.debug('authentication.APPAuthentication._check() ended with: %s\n', mfa_completed)
+        logger.debug('APPAuthentication._check() ended with: %s\n', mfa_completed)
         return mfa_completed
 
     def _print(self, devicename: str):
         """ 2fa confirmation message """
-        self.logger.debug('api.Wrapper._print()\n')
+        logger.debug('api.Wrapper._print()\n')
         if devicename:
             print(f'check your banking app on "{devicename}" and confirm login...')
         else:
@@ -386,7 +391,7 @@ class APPAuthentication:
 
     def finalize(self, challenge_id: str, _challenge_dic: Dict[str, str], devicename: str) -> bool:
         """ wait for confirmation for the 2nd factor """
-        self.logger.debug('authentication.APPAuthentication.finalize()\n')
+        logger.debug('APPAuthentication.finalize()\n')
 
         self._print(devicename)
 
@@ -404,27 +409,26 @@ class APPAuthentication:
                     if mfa_completed:
                         break
                 else:
-                    self.logger.error('error parsing polling response: %s', polling_dic)
+                    logger.error('error parsing polling response: %s', polling_dic)
             else:
-                self.logger.error('Polling request failed. RC: %s', response.status_code)
+                logger.error('Polling request failed. RC: %s', response.status_code)
             time.sleep(5)
 
-        self.logger.debug('authentication.APPAuthentication.finalize(): %s\n', mfa_completed)
+        logger.debug('APPAuthentication.finalize(): %s\n', mfa_completed)
         return mfa_completed
 
 
 class TANAuthentication:
     """ TANAuthentication class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL, mfa_method: str = 'chip_tan_manual'):
+    def __init__(self, client: requests.Session, base_url: str = BASE_URL, mfa_method: str = 'chip_tan_manual'):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
         self.mfa_method = mfa_method
 
     def _image(self, qr_data: str) -> None:
         """ show qr code """
-        self.logger.debug('authentication.TANAuthentication._image()\n')
+        logger.debug('TANAuthentication._image()\n')
 
         # pylint: disable=c0415
         from PIL import Image
@@ -436,11 +440,11 @@ class TANAuthentication:
         img = Image.open(data)
         img.show()
 
-        self.logger.debug('authentication.TANAuthentication._image() ended\n')
+        logger.debug('TANAuthentication._image() ended\n')
 
     def _print(self, challenge_dic: Dict[str, str]) -> str:
         """ print instructions for chip tan """
-        self.logger.debug('authentication.TANAuthentication._print()\n')
+        logger.debug('TANAuthentication._print()\n')
 
         if 'data' in challenge_dic and 'attributes' in challenge_dic['data'] and 'chipTan' in challenge_dic['data']['attributes'] and 'qrData' in challenge_dic['data']['attributes']['chipTan']:
             my_thread = threading.Thread(target=self._image, args=(challenge_dic['data']['attributes']['chipTan']['qrData'], ))
@@ -458,12 +462,12 @@ class TANAuthentication:
 
             tan = input("TAN: ")
 
-        self.logger.debug('authentication.TANAuthentication._print() ended\n')
+        logger.debug('TANAuthentication._print() ended\n')
         return tan
 
     def finalize(self, challenge_id: str, challenge_dic: Dict[str, str], _device_name: str = None) -> bool:
         """ complete 2fa with chip tan manual """
-        self.logger.debug('authentication.TANAuthentication.finalize()\n')
+        logger.debug('TANAuthentication.finalize()\n')
 
         tan = self._print(challenge_dic)
 
@@ -483,5 +487,5 @@ class TANAuthentication:
         self.client.headers.pop('Content-Type')
         self.client.headers.pop('Accept')
 
-        self.logger.debug('authentication.TANAuthentication.finalize() ended with %s\n', mfa_completed)
+        logger.debug('TANAuthentication.finalize() ended with %s\n', mfa_completed)
         return mfa_completed

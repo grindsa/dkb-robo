@@ -50,8 +50,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.wrapper = Wrapper(logger=self.logger)
+        self.wrapper = Wrapper()
 
     def test_001_get_cc_limit(self, mock_browser):
         """ test Legacy._get_credit_limits() method """
@@ -71,7 +70,7 @@ class TestDKBRobo(unittest.TestCase):
         e_result = {'DE01 1111 1111 1111 1111 11': 1000.00, 'DE02 1111 1111 1111 1111 12': 2000.00}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(e_result, self.wrapper.get_credit_limits())
-        self.assertIn("ERROR:dkb_robo:legacy.Wrapper.get_credit_limits() get credit card limits: 'NoneType' object has no attribute 'find'\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Wrapper.get_credit_limits() get credit card limits: 'NoneType' object has no attribute 'find'\n", lcm.output)
 
     def test_003_get_cc_limit(self, mock_browser):
         """ test legacy.get_credit_limits() no limits """
@@ -119,7 +118,7 @@ class TestDKBRobo(unittest.TestCase):
         e_result = {1: {}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(self.wrapper.get_exemption_order(), e_result)
-        self.assertIn('ERROR:dkb_robo:legacy.Wrapper.get_exemption_order(): list index out of range\n', lcm.output)
+        self.assertIn('ERROR:dkb_robo.legacy:Wrapper.get_exemption_order(): list index out of range\n', lcm.output)
 
     def test_008_new_instance(self, _unused):
         """ test legacy._new_instance() method """
@@ -442,7 +441,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
-        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() convert amount: could not convert string to float: 'aaa'\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Wrapper._parse_overview() convert amount: could not convert string to float: 'aaa'\n", lcm.output)
 
     def test_022_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception detail link"""
@@ -497,7 +496,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'account'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')), e_result)
-        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Wrapper._parse_overview() get link: 'NoneType' object is not subscriptable\n", lcm.output)
 
     def test_023_parse_overview(self, _unused):
         """ test DKBRobo._parse_overview() exception depot """
@@ -552,7 +551,7 @@ class TestDKBRobo(unittest.TestCase):
                         'type': 'depot'}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(e_result, self.wrapper._parse_overview(BeautifulSoup(html, 'html5lib')))
-        self.assertIn("ERROR:dkb_robo:legacy.Wrapper._parse_overview() parse depot: 'NoneType' object is not subscriptable\n", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Wrapper._parse_overview() parse depot: 'NoneType' object is not subscriptable\n", lcm.output)
 
     def test_024_parse_overview_mbank(self, _unused):
         """ test DKBRobo._parse_overview() method for accounts from other banks"""
@@ -1111,7 +1110,7 @@ class TestDKBRobo(unittest.TestCase):
         result = (doc_dic, [''])
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.wrapper._download_document('folder_url', 'path', class_filter, 'link_name', table, True))
-        self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
     def test_079__get_formatted_date(self, _ununsed):
         """ test _get_formatted_date() prepend True """
@@ -1131,7 +1130,7 @@ class TestDKBRobo(unittest.TestCase):
         table = BeautifulSoup(html, 'html5lib')
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual('', self.wrapper._get_formatted_date(True, table))
-        self.assertIn("ERROR:dkb_robo:Can't parse date, this could i.e. be for archived documents.", lcm.output)
+        self.assertIn("ERROR:dkb_robo.legacy:Can't parse date, this could i.e. be for archived documents.", lcm.output)
 
     def test_082_logout(self, _unused):
         """" test logout """

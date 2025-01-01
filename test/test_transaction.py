@@ -30,8 +30,7 @@ class TestTransaction(unittest.TestCase):
     @patch("requests.Session")
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.transaction = Transaction(logger=self.logger, client=mock_session)
+        self.transaction = Transaction(client=mock_session)
 
     def test_001__fetch(self):
         """ test Transaction._fetch() returning error """
@@ -40,7 +39,7 @@ class TestTransaction(unittest.TestCase):
         self.transaction.client.get.return_value.json.return_value = {'foo': 'bar'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'data': [], 'included': []}, self.transaction._fetch('transaction_url'))
-        self.assertIn('ERROR:dkb_robo:fetch transactions: http status code is not 200 but 400', lcm.output)
+        self.assertIn('ERROR:dkb_robo.transaction:fetch transactions: http status code is not 200 but 400', lcm.output)
 
     def test_002__fetch(self):
         """ test _get_transaction_list() with wrong response"""
@@ -212,8 +211,7 @@ class TestAccountTransaction(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.account_transaction = AccountTransaction(logger=self.logger)
+        self.account_transaction = AccountTransaction()
 
     def test_001__debitorinfo(self):
         """ test _debitorinfo complete """
@@ -274,7 +272,7 @@ class TestAccountTransaction(unittest.TestCase):
         result = {'amount': None, 'currencycode': 'currencyCode', 'date': '2023-01-01', 'vdate': '2023-01-02', 'customerreference': 'endToEndId', 'mandateId': 'mandateId', 'postingtext': 'transactionType', 'reasonforpayment': 'description'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.account_transaction._details(transaction))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.transaction:amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_012_format(self):
         """ test format() e2e for creditor transaction"""
@@ -298,8 +296,7 @@ class TestCreditCardTransaction(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.card_transaction = CreditCardTransaction(logger=self.logger)
+        self.card_transaction = CreditCardTransaction()
 
     def test_001_format(self):
         """ test format() with empty transaction """
@@ -342,15 +339,14 @@ class TestCreditCardTransaction(unittest.TestCase):
         result = {'amount': None, 'currencycode': 'CC', 'bdate': '2023-01-01', 'vdate': '2023-01-01', 'text': 'description'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.card_transaction._details(transaction_list))
-        self.assertIn("ERROR:dkb_robo:amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.transaction:amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
 class TestDepotTransaction(unittest.TestCase):
     """ AccountTransaction test class """
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.depot_transaction = DepotTransaction(logger=self.logger)
+        self.depot_transaction = DepotTransaction()
 
     @patch('dkb_robo.transaction.DepotTransaction._quoteinformation')
     @patch('dkb_robo.transaction.DepotTransaction._instrumentinformation')
@@ -402,7 +398,7 @@ class TestDepotTransaction(unittest.TestCase):
         result = {'shares': 'aa', 'quantity': None, 'lastorderdate': '2020-01-01', 'price_euro': 1000, 'mock_ii': 'mock_ii', 'shares_unit': 'unit'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.depot_transaction._details(data_dic, included_list))
-        self.assertIn("ERROR:dkb_robo:quantity conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.transaction:quantity conversion error: could not convert string to float: 'aa'", lcm.output)
         self.assertTrue(mock_ii.called)
         self.assertFalse(mock_qui.called)
 
@@ -426,7 +422,7 @@ class TestDepotTransaction(unittest.TestCase):
         quote = {'attributes': {'market': 'market', 'price': {'value': 'aaa', 'currencyCode': 'currencyCode'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'currencycode': 'currencyCode', 'market': 'market', 'price': None}, self.depot_transaction._quoteinformation(quote))
-        self.assertIn("ERROR:dkb_robo:price conversion error: could not convert string to float: 'aaa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.transaction:price conversion error: could not convert string to float: 'aaa'", lcm.output)
 
     def test_009_format(self):
         """ test _format_brokerage_account() """

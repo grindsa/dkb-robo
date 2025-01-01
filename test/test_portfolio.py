@@ -29,8 +29,7 @@ class TestProductGroup(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.productgroup = ProductGroup(logger=self.logger)
+        self.productgroup = ProductGroup()
 
     def test_001__uid2names(self):
         """ test uid2names one item"""
@@ -52,7 +51,7 @@ class TestProductGroup(unittest.TestCase):
         data_ele = {'attributes': {'productSettings': {'foo': 'bar'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertFalse({}, self.productgroup._uid2names(data_ele))
-        self.assertIn('WARNING:dkb_robo:uid2name mapping failed. product data are not in dictionary format', lcm.output)
+        self.assertIn('WARNING:dkb_robo.portfolio:uid2name mapping failed. product data are not in dictionary format', lcm.output)
 
     def test_005__uid2names(self):
         """ test uid2names malformed input """
@@ -118,8 +117,7 @@ class TestOverview(unittest.TestCase):
     @patch('requests.Session')
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.overview = Overview(logger=self.logger,  client=mock_session)
+        self.overview = Overview(client=mock_session)
         # self.maxDiff = None
 
     def test_011__fetch(self):
@@ -137,7 +135,7 @@ class TestOverview(unittest.TestCase):
         self.overview.client.get.return_value.json.return_value = {'foo': 'bar'}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertFalse(self.overview._fetch('url'))
-        self.assertIn('ERROR:dkb_robo:fetch url: RC is not 200 but 400', lcm.output)
+        self.assertIn('ERROR:dkb_robo.portfolio:fetch url: RC is not 200 but 400', lcm.output)
         self.assertTrue(self.overview.client.get.called)
 
     @patch('dkb_robo.portfolio.Overview._sort')
@@ -428,8 +426,7 @@ class TestAccount(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.account = Account(logger=self.logger)
+        self.account = Account()
 
     def test_020__balance(self):
         """ test _balance() """
@@ -446,7 +443,7 @@ class TestAccount(unittest.TestCase):
         account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.account._balance(account))
-        self.assertIn("ERROR:dkb_robo:account amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.portfolio:account amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_023__details(self):
         """ test _details() """
@@ -491,8 +488,7 @@ class TestCard(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.card = Card(logger=self.logger)
+        self.card = Card()
 
     def test_027__balance(self):
         """ test _balance() """
@@ -509,7 +505,7 @@ class TestCard(unittest.TestCase):
         account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa', 'date': 'date'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR', 'date': 'date'}, self.card._balance(account))
-        self.assertIn("ERROR:dkb_robo:card amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.portfolio:card amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_030__details(self):
         """ test _details() """
@@ -529,7 +525,7 @@ class TestCard(unittest.TestCase):
         result = {'id': 'cid', 'type': 'debitcard', 'maskedpan': None, 'account': None, 'status': 'status', 'name': 'displayName', 'expirydate': None, 'holdername': ' ', 'transactions': None}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.card._details(account, 'cid'))
-        self.assertIn("ERROR:dkb_robo:card limit conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.portfolio:card limit conversion error: could not convert string to float: 'aa'", lcm.output)
 
     @patch('dkb_robo.portfolio.Card._balance')
     @patch('dkb_robo.portfolio.Card._details')
@@ -570,8 +566,7 @@ class TestDepot(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.depot = Depot(logger=self.logger)
+        self.depot = Depot()
 
     def test_036__balance(self):
         """ test _balance() """
@@ -588,7 +583,7 @@ class TestDepot(unittest.TestCase):
         account = {'attributes': {'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'EUR', 'value': 'aa'}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.depot._balance(account))
-        self.assertIn("ERROR:dkb_robo:depot amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.portfolio:depot amount conversion error: could not convert string to float: 'aa'", lcm.output)
 
     def test_039__details(self):
         """ test _details() """

@@ -7,17 +7,15 @@ from dkb_robo.utilities import get_dateformat
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 BASE_URL = 'https://banking.dkb.de/api'
+logger = logging.getLogger(__name__)
 
 
 class ProductGroup:
     """ ProductGroup class"""
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-
     def _uid2names(self, data_ele: Dict[str, str]) -> Dict[str, str]:
         """ create a dictionary containing id to product-name mapping """
-        self.logger.debug('portfolio.ProductGroup._uid2names()\n')
+        logger.debug('ProductGroup._uid2names()\n')
 
         product_settings_dic = {}
         portfolio_dic = data_ele.get('attributes', {}).get('productSettings', {})
@@ -27,14 +25,14 @@ class ProductGroup:
                     if 'name' in product_value:
                         product_settings_dic[uid] = product_value['name']
             else:
-                self.logger.warning('uid2name mapping failed. product data are not in dictionary format')
+                logger.warning('uid2name mapping failed. product data are not in dictionary format')
 
-        self.logger.debug('portfolio.ProductGroup._uid2names() ended\n')
+        logger.debug('ProductGroup._uid2names() ended\n')
         return product_settings_dic
 
     def _group(self, data_ele: Dict[str, str]) -> List[str]:
         """ create a list of products per group """
-        self.logger.debug('portfolio.ProductGroup._group()\n')
+        logger.debug('ProductGroup._group()\n')
 
         product_group_list = []
         portfolio_dic = data_ele.get('attributes', {}).get('productGroups', {})
@@ -45,12 +43,12 @@ class ProductGroup:
                     id_dic[_id_dic[uid]['index']] = uid
             product_group_list.append({'name': product_group['name'], 'product_list': id_dic})
 
-        self.logger.debug('portfolio.ProductGroup._group()\n')
+        logger.debug('ProductGroup._group()\n')
         return product_group_list
 
     def map(self, data_ele: Dict[str, str]) -> Tuple[Dict[str, str], Dict[str, str], int]:
         """ fetch data """
-        self.logger.debug('portfolio.ProductGroup.map()\n')
+        logger.debug('ProductGroup.map()\n')
 
         # crate uid-name mapping and items per product group needed to sort the productgroup
         return self._uid2names(data_ele), self._group(data_ele)
@@ -59,40 +57,39 @@ class ProductGroup:
 class Overview:
     """ Overview class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = BASE_URL):
+    def __init__(self, client: requests.Session, base_url: str = BASE_URL):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
 
     def _add_remaining(self, data_dic: Dict[str, str], account_dic: Dict[str, str], account_cnt: int) -> Dict[str, str]:
         """ add remaining products """
-        self.logger.debug('portfolio.Overview._add_remaining()\n')
+        logger.debug('Overview._add_remaining()\n')
 
         for product_data in data_dic.values():
             account_dic[account_cnt] = product_data
             account_dic[account_cnt]['productgroup'] = None
             account_cnt += 1
 
-        self.logger.debug('portfolio.Overview._add_remaining() ended\n')
+        logger.debug('Overview._add_remaining() ended\n')
         return account_dic
 
     def _fetch(self, url_path) -> Dict[str, str]:
         """ fetch data via API """
-        self.logger.debug('portfolio.Overview._fetch()\n')
+        logger.debug('Overview._fetch()\n')
 
         response = self.client.get(self.base_url + url_path)
         if response.status_code == 200:
             response_dic = response.json()
         else:
-            self.logger.error('fetch %s: RC is not 200 but %s', url_path, response.status_code)
+            logger.error('fetch %s: RC is not 200 but %s', url_path, response.status_code)
             response_dic = {}
 
-        self.logger.debug('portfolio.Overview._fetch() ended\n')
+        logger.debug('Overview._fetch() ended\n')
         return response_dic
 
     def _sort(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
         """ format and sort data """
-        self.logger.debug('portfolio.Overview._sort()\n')
+        logger.debug('Overview._sort()\n')
 
         account_dic = {}
         account_cnt = 0
@@ -100,7 +97,7 @@ class Overview:
         data_dic = self._itemize(portfolio_dic)
 
         display_settings_dic = portfolio_dic.get('product_display', {}).get('data', {})
-        productgroup = ProductGroup(logger=self.logger)
+        productgroup = ProductGroup()
         for portfolio in display_settings_dic:
             # get id/name mapping and productlist per group
             product_display_dic, product_group_list = productgroup.map(portfolio)
@@ -108,14 +105,14 @@ class Overview:
                 # dic_id is a uid of the product
                 for dic_id in sorted(product_group['product_list']):
                     if product_group['product_list'][dic_id] in data_dic:
-                        self.logger.debug('portfolio.Overview._sort(): assign productgroup "%s" to product %s', product_group['name'], product_group['product_list'][dic_id])
+                        logger.debug('Overview._sort(): assign productgroup "%s" to product %s', product_group['name'], product_group['product_list'][dic_id])
                         # add product data to account_dic
                         account_dic[account_cnt] = data_dic[product_group['product_list'][dic_id]]
                         # add productgroup name to account_dic
                         account_dic[account_cnt]['productgroup'] = product_group['name']
 
                         if product_group['product_list'][dic_id] in product_display_dic:
-                            self.logger.debug('portfolio.Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
+                            logger.debug('Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
                             # overwrite product name with display name
                             account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
 
@@ -125,19 +122,19 @@ class Overview:
         # add products without productgroup
         account_dic = self._add_remaining(data_dic, account_dic, account_cnt)
 
-        self.logger.debug('portfolio.Overview._sort() ended\n')
+        logger.debug('Overview._sort() ended\n')
         return account_dic
 
     def _itemize(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
         """ raw data """
-        self.logger.debug('portfolio.Overview._itemize()\n')
+        logger.debug('Overview._itemize()\n')
 
         product_dic = {}
 
         product_group_dic = {
-            'accounts': Account(self.logger),
-            'cards': Card(self.logger),
-            'depots': Depot(self.logger)
+            'accounts': Account(self.base_url),
+            'cards': Card(self.base_url),
+            'depots': Depot(self.base_url)
         }
         for product_group in sorted(product_group_dic.keys()):
             if product_group in portfolio_dic and 'data' in portfolio_dic[product_group]:
@@ -146,12 +143,12 @@ class Overview:
                     if 'id' in item and 'type' in item:
                         product_dic[item['id']] = product_group_object.get(item['id'], portfolio_dic[product_group])
 
-        self.logger.debug('portfolio.Overview._itemize() ended\n')
+        logger.debug('Overview._itemize() ended\n')
         return product_dic
 
     def get(self):
         """ Get overview """
-        self.logger.debug('portfolio.Overview.get()')
+        logger.debug('Overview.get()')
 
         # we calm the IDS system of DKB with two calls without sense
         # self._fetch('/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
@@ -168,20 +165,19 @@ class Overview:
         else:
             portfolio_dic = {}
 
-        self.logger.debug('portfolio.Overview.get() ended\n')
+        logger.debug('Overview.get() ended\n')
         return self._sort(portfolio_dic)
 
 
 class Account:
     """ Account class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
-        self.logger = logger
+    def __init__(self, base_url: str = BASE_URL):
         self.base_url = base_url
 
     def _balance(self, account: Dict[str, str]) -> Dict[str, str]:
         """ add balance to dictionary """
-        self.logger.debug('portfolio.Account._balance()\n')
+        logger.debug('Account._balance()\n')
 
         output_dic = {}
         mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
@@ -190,17 +186,17 @@ class Account:
                 try:
                     output_dic[my_field] = float(account.get('attributes', {}).get('balance', {}).get(dkb_field, None))
                 except Exception as exc:
-                    self.logger.error('account amount conversion error: %s', exc)
+                    logger.error('account amount conversion error: %s', exc)
                     output_dic[my_field] = None
             else:
                 output_dic[my_field] = account.get('attributes', {}).get('balance', {}).get(dkb_field, None)
 
-        self.logger.debug('portfolio.Account._balance() ended\n')
+        logger.debug('Account._balance() ended\n')
         return output_dic
 
     def _details(self, account: Dict[str, str], aid: str) -> Dict[str, str]:
         """ add general account information """
-        self.logger.debug('portfolio.Account._details()\n')
+        logger.debug('Account._details()\n')
 
         output_dic = {
             'type': 'account',
@@ -216,17 +212,17 @@ class Account:
                 try:
                     output_dic[my_field] = float(account.get('attributes', {}).get(dkb_field, 0))
                 except Exception as exc:
-                    self.logger.error('account limit conversion error: %s', exc)
+                    logger.error('account limit conversion error: %s', exc)
                     output_dic[my_field] = None
             else:
                 output_dic[my_field] = account.get('attributes', {}).get(dkb_field, None)
 
-        self.logger.debug('portfolio.Account._details() ended\n')
+        logger.debug('Account._details() ended\n')
         return output_dic
 
     def get(self, aid: str, accounts_dic: Dict[str, str]) -> Dict[str, str]:
         """ get account """
-        self.logger.debug('portfolio.Account.get(%s)', aid)
+        logger.debug('Account.get(%s)', aid)
 
         output_dic = {}
         if 'data' in accounts_dic:
@@ -236,27 +232,26 @@ class Account:
                     output_dic = {**self._details(account, aid), **self._balance(account)}
                     break
 
-        self.logger.debug('portfolio.Account.get() ended\n')
+        logger.debug('Account.get() ended\n')
         return output_dic
 
 
 class Card:
     """ Card class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
-        self.logger = logger
+    def __init__(self, base_url: str = BASE_URL):
         self.base_url = base_url
 
     def _balance(self, card: Dict[str, str]) -> Dict[str, str]:
         """ add card balance to dictionary """
-        self.logger.debug('portfolio.Card._balance()\n')
+        logger.debug('Card._balance()\n')
 
         if 'balance' in card['attributes']:
             # DKB shows card balance in a weired way
             try:
                 amount = float(card.get('attributes', {}).get('balance', {}).get('value', None)) * -1
             except Exception as exc:
-                self.logger.error('card amount conversion error: %s', exc)
+                logger.error('card amount conversion error: %s', exc)
                 amount = None
 
             output_dic = {
@@ -267,17 +262,17 @@ class Card:
         else:
             output_dic = {}
 
-        self.logger.debug('portfolio.Card._balance() ended\n')
+        logger.debug('Card._balance() ended\n')
         return output_dic
 
     def _details(self, card: Dict[str, str], cid: str) -> Dict[str, str]:
         """ add general information of card """
-        self.logger.debug('portfolio.Card._details()\n')
+        logger.debug('Card._details()\n')
 
         try:
             limit = float(card.get('attributes', {}).get('limit', {}).get('value', 0))
         except Exception as exc:
-            self.logger.error('card limit conversion error: %s', exc)
+            logger.error('card limit conversion error: %s', exc)
             limit = None
 
         output_dic = {
@@ -297,12 +292,12 @@ class Card:
             output_dic['transactions'] = self.base_url + f"/credit-card/cards/{cid}/transactions"
             output_dic['limit'] = limit
 
-        self.logger.debug('portfolio.Card._details() ended\n')
+        logger.debug('Card._details() ended\n')
         return output_dic
 
     def get(self, cid: str, cards_dic: Dict[str, str]) -> Dict[str, str]:
         """ get credit card """
-        self.logger.debug('portfolio.Card.get(%s)', cid)
+        logger.debug('Card.get(%s)', cid)
 
         output_dic = {}
         if 'data' in cards_dic:
@@ -312,25 +307,24 @@ class Card:
                     output_dic = {**self._details(card, cid), **self._balance(card)}
                     break
 
-        self.logger.debug('portfolio.Card.get() ended\n')
+        logger.debug('Card.get() ended\n')
         return output_dic
 
 
 class Depot:
     """ Depot class """
 
-    def __init__(self, logger: logging.Logger, base_url: str = BASE_URL):
-        self.logger = logger
+    def __init__(self, base_url: str = BASE_URL):
         self.base_url = base_url
 
     def _balance(self, depot: Dict[str, str]) -> Dict[str, str]:
         """ add depot value and currentcy """
-        self.logger.debug('portfolio.Depot._balance()\n')
+        logger.debug('Depot._balance()\n')
 
         try:
             amount = float(depot.get('attributes', {}).get('brokerageAccountPerformance', {}).get('currentValue', {}).get('value', None))
         except Exception as exc:
-            self.logger.error('depot amount conversion error: %s', exc)
+            logger.error('depot amount conversion error: %s', exc)
             amount = None
 
         output_dic = {
@@ -338,12 +332,12 @@ class Depot:
             'currencycode': depot.get('attributes', {}).get('brokerageAccountPerformance', {}).get('currentValue', {}).get('currencyCode', None)
         }
 
-        self.logger.debug('portfolio.Depot._balance() ended\n')
+        logger.debug('Depot._balance() ended\n')
         return output_dic
 
     def _details(self, depot: Dict[str, str], did: str) -> Dict[str, str]:
         """ add depot information """
-        self.logger.debug('portfolio.Depot._details()\n')
+        logger.debug('Depot._details()\n')
 
         output_dic = {
             'type': 'depot',
@@ -354,12 +348,12 @@ class Depot:
             'name': depot.get('attributes', {}).get('holderName', None),
         }
 
-        self.logger.debug('portfolio.Depot._details() ended\n')
+        logger.debug('Depot._details() ended\n')
         return output_dic
 
     def get(self, did: str, depots_dic: Dict[str, str]) -> Dict[str, str]:
         """ get depot """
-        self.logger.debug('portfolio.Depot.get(%s)', did)
+        logger.debug('Depot.get(%s)', did)
 
         output_dic = {}
         if 'data' in depots_dic:
@@ -368,5 +362,5 @@ class Depot:
                     output_dic = {**self._details(depot, did), **self._balance(depot)}
                     break
 
-        self.logger.debug('portfolio.Depot.get() ended\n')
+        logger.debug('Depot.get() ended\n')
         return output_dic

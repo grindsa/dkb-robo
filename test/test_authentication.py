@@ -30,7 +30,7 @@ class TestAuthentication(unittest.TestCase):
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.logger = logging.getLogger('dkb_robo')
-        self.auth = Authentication(logger=self.logger)
+        self.auth = Authentication()
         self.maxDiff = None
 
     def test_001_init(self):
@@ -41,27 +41,27 @@ class TestAuthentication(unittest.TestCase):
     def test_002_init(self):
         """ test init() """
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.auth.__init__(logger=self.logger, chip_tan=True)
-        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+            self.auth.__init__(chip_tan=True)
+        self.assertIn('INFO:dkb_robo.authentication:Using to chip_tan to login', lcm.output)
         self.assertEqual('chip_tan_manual', self.auth.mfa_method)
 
     def test_003_init(self):
         """ test init() """
-        self.auth.__init__(logger=self.logger, chip_tan=False)
+        self.auth.__init__(chip_tan=False)
         self.assertEqual('seal_one', self.auth.mfa_method)
 
     def test_004_init(self):
         """ test init() """
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.auth.__init__(logger=self.logger, chip_tan='qr')
-        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+            self.auth.__init__(chip_tan='qr')
+        self.assertIn('INFO:dkb_robo.authentication:Using to chip_tan to login', lcm.output)
         self.assertEqual('chip_tan_qr', self.auth.mfa_method)
 
     def test_005_init(self):
         """ test init() """
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.auth.__init__(logger=self.logger, chip_tan='chip_tan_qr')
-        self.assertIn('INFO:dkb_robo:Using to chip_tan to login', lcm.output)
+            self.auth.__init__(chip_tan='chip_tan_qr')
+        self.assertIn('INFO:dkb_robo.authentication:Using to chip_tan to login', lcm.output)
         self.assertEqual('chip_tan_qr', self.auth.mfa_method)
 
     @patch('requests.session')
@@ -228,7 +228,7 @@ class TestAuthentication(unittest.TestCase):
         mfa_dic = {'data': [{'attributes': {'deviceName': 'device-1'}}, {'attributes': {'deviceName': 'device-2'}}]}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(0, self.auth._mfa_select(mfa_dic))
-        self.assertIn('WARNING:dkb_robo:User submitted mfa_device number is invalid. Ingoring...', lcm.output)
+        self.assertIn('WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ingoring...', lcm.output)
         self.assertIn("\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n", mock_stdout.getvalue())
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
@@ -276,7 +276,7 @@ class TestAuthentication(unittest.TestCase):
         mfa_dic = {}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(({}, None), self.auth._mfa_challenge(mfa_dic, 1))
-        self.assertIn('ERROR:dkb_robo:mfa dictionary has an unexpected data structure', lcm.output)
+        self.assertIn('ERROR:dkb_robo.authentication:mfa dictionary has an unexpected data structure', lcm.output)
 
     @patch('requests.session')
     def test_027__mfa_challenge(self, mock_session):
@@ -319,7 +319,7 @@ class TestAuthentication(unittest.TestCase):
         mfa_dic = {'data': {1: {'id': 'id', 'attributes': {'foo': 'bar'}}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(({'data': {'id': 'id', 'type': 'mfa-challenge'}}, None), self.auth._mfa_challenge(mfa_dic, 1))
-        self.assertIn('ERROR:dkb_robo:unable to get mfa-deviceName for device_num: 1', lcm.output)
+        self.assertIn('ERROR:dkb_robo.authentication:unable to get mfa-deviceName for device_num: 1', lcm.output)
 
     @patch('dkb_robo.authentication.TANAuthentication.finalize')
     @patch('dkb_robo.authentication.APPAuthentication.finalize')
@@ -426,7 +426,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth.client.post.return_value.text = 'NOK'
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.auth._sso_redirect()
-        self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 200 text: NOK', lcm.output)
+        self.assertIn('ERROR:dkb_robo.authentication:SSO redirect failed. RC: 200 text: NOK', lcm.output)
         self.assertTrue(mock_instance.called)
 
     @patch('dkb_robo.legacy.Wrapper._new_instance')
@@ -438,7 +438,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth.client.post.return_value.text = 'OK'
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.auth._sso_redirect()
-        self.assertIn('ERROR:dkb_robo:SSO redirect failed. RC: 400 text: OK', lcm.output)
+        self.assertIn('ERROR:dkb_robo.authentication:SSO redirect failed. RC: 400 text: OK', lcm.output)
         self.assertTrue(mock_instance.called)
 
     @patch('dkb_robo.authentication.Authentication._mfa_sort')
@@ -655,8 +655,7 @@ class TestAPPAuthentication(unittest.TestCase):
     @patch("requests.Session")
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.appauth = APPAuthentication(logger=self.logger, client=mock_session)
+        self.appauth = APPAuthentication(client=mock_session)
         # self.maxDiff = None
 
     def test_001__check(self):
@@ -671,7 +670,7 @@ class TestAPPAuthentication(unittest.TestCase):
         polling_dic = {'data': {'attributes': {'verificationStatus': 'foo'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(False, self.appauth._check(polling_dic, 1))
-        self.assertIn('INFO:dkb_robo:Unknown processing status: foo', lcm.output)
+        self.assertIn('INFO:dkb_robo.authentication:Unknown processing status: foo', lcm.output)
 
     def test_0003__check(self):
         """ test _check_processing_status() """
@@ -690,7 +689,7 @@ class TestAPPAuthentication(unittest.TestCase):
         polling_dic = {'data': {'attributes': {'verificationStatus': 'processing'}}}
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(False, self.appauth._check(polling_dic, 1))
-        self.assertIn('INFO:dkb_robo:Status: processing. Waiting for confirmation', lcm.output)
+        self.assertIn('INFO:dkb_robo.authentication:Status: processing. Waiting for confirmation', lcm.output)
 
     @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
     def test_006__print(self, mock_stdout):
@@ -716,7 +715,7 @@ class TestAPPAuthentication(unittest.TestCase):
         mock_status.side_effects = [False, True]
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertTrue(self.appauth.finalize('challengeid', {'foo': 'bar'}, 'devicename'))
-        self.assertIn("ERROR:dkb_robo:error parsing polling response: {'foo1': 'bar1'}", lcm.output)
+        self.assertIn("ERROR:dkb_robo.authentication:error parsing polling response: {'foo1': 'bar1'}", lcm.output)
         self.assertTrue(mock_confirm.called)
 
     @patch('time.sleep', return_value=None)
@@ -731,7 +730,7 @@ class TestAPPAuthentication(unittest.TestCase):
         mock_status.return_value = False
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertFalse(self.appauth.finalize('challengeid', {'foo': 'bar'}, 'devicename'))
-        self.assertIn('ERROR:dkb_robo:Polling request failed. RC: 400', lcm.output)
+        self.assertIn('ERROR:dkb_robo.authentication:Polling request failed. RC: 400', lcm.output)
         self.assertTrue(mock_confirm.called)
 
 class TestTANAuthentication(unittest.TestCase):
@@ -740,8 +739,7 @@ class TestTANAuthentication(unittest.TestCase):
     @patch("requests.Session")
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.logger = logging.getLogger('dkb_robo')
-        self.tanauth = TANAuthentication(logger=self.logger, client=mock_session)
+        self.tanauth = TANAuthentication(client=mock_session)
         # self.maxDiff = None
 
     @patch('dkb_robo.authentication.TANAuthentication._image')

@@ -8,35 +8,35 @@ import requests
 from dkb_robo.utilities import get_dateformat, DKBRoboError
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
+logger = logging.getLogger(__name__)
 
 
 class Transaction:
     """ Transaction class """
 
-    def __init__(self, client: requests.Session, logger: logging.Logger, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
-        self.logger = logger
         self.base_url = base_url
         self.uid = None
 
     def _nextpage_url(self, tr_dic):
         """ get transaction url """
-        self.logger.debug('transaction.Transaction._nextpage_url()\n')
+        logger.debug('Transaction._nextpage_url()\n')
 
         transaction_url = None
         if 'links' in tr_dic and 'next' in tr_dic['links']:
-            self.logger.debug('transaction.Transaction._nextpage_url(): next page: %s', tr_dic['links']['next'])
+            logger.debug('Transaction._nextpage_url(): next page: %s', tr_dic['links']['next'])
             transaction_url = self.base_url + '/accounts' + tr_dic['links']['next']
         else:
-            self.logger.debug('transaction.Transaction._nextpage_url(): no next page')
+            logger.debug('Transaction._nextpage_url(): no next page')
             transaction_url = None
 
-        self.logger.debug('transaction.Transaction._nextpage_url() ended\n')
+        logger.debug('Transaction._nextpage_url() ended\n')
         return transaction_url
 
     def _fetch(self, transaction_url: str) -> Dict[str, str]:
         """ get transaction list"""
-        self.logger.debug('transaction.Transaction.fetch(%s)\n', transaction_url)
+        logger.debug('Transaction.fetch(%s)\n', transaction_url)
 
         transaction_dic = {'data': [], 'included': []}
         while transaction_url:
@@ -47,21 +47,21 @@ class Transaction:
                     transaction_dic['data'].extend(_transaction_dic['data'])
                     transaction_url = self._nextpage_url(_transaction_dic)    # get next page
                 else:
-                    self.logger.debug('fetch transactions: no data in response')
+                    logger.debug('fetch transactions: no data in response')
                     transaction_url = None
 
                 if 'included' in _transaction_dic:
                     transaction_dic['included'].extend(_transaction_dic['included'])
             else:
-                self.logger.error('fetch transactions: http status code is not 200 but %s', response.status_code)
+                logger.error('fetch transactions: http status code is not 200 but %s', response.status_code)
                 break
 
-        self.logger.debug('transaction.Transaction.fetch() ended with %s entries\n', len(transaction_dic['data']))
+        logger.debug('Transaction.fetch() ended with %s entries\n', len(transaction_dic['data']))
         return transaction_dic
 
     def _filter(self, transaction_list: List[Dict[str, str]], date_from: str, date_to: str, transaction_type: str) -> List[Dict[str, str]]:
         """ filter transactions """
-        self.logger.debug('transaction.Transaction._filter()\n')
+        logger.debug('Transaction._filter()\n')
 
         # support transation type 'reserved' for backwards compatibility
         transaction_type = 'pending' if transaction_type == 'reserved' else transaction_type
@@ -85,12 +85,12 @@ class Transaction:
                     if date_from_uts <= bookingdate_uts <= date_to_uts:
                         filtered_transaction_list.append(transaction)
 
-        self.logger.debug('transaction.Transaction._filter() ended with %s entries\n', len(filtered_transaction_list))
+        logger.debug('Transaction._filter() ended with %s entries\n', len(filtered_transaction_list))
         return filtered_transaction_list
 
     def get(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str = 'booked'):
         """ fetch transactions """
-        self.logger.debug('transaction.Transaction.get()\n')
+        logger.debug('Transaction.get()\n')
 
         if transaction_url and atype != 'depot':
             transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
@@ -98,12 +98,12 @@ class Transaction:
         transaction_dic = self._fetch(transaction_url)
         if atype == 'account':
             raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], transaction_type=transaction_type, date_from=date_from, date_to=date_to)
-            transaction = AccountTransaction(logger=self.logger)
+            transaction = AccountTransaction()
         elif atype == 'creditcard':
             raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], transaction_type=transaction_type, date_from=date_from, date_to=date_to)
-            transaction = CreditCardTransaction(logger=self.logger)
+            transaction = CreditCardTransaction()
         elif atype == 'depot':
-            transaction = DepotTransaction(logger=self.logger)
+            transaction = DepotTransaction()
         else:
             raise DKBRoboError(f'transaction type {atype} is not supported')
 
@@ -116,19 +116,16 @@ class Transaction:
             else:
                 transaction_list = transaction.format(transaction_dic)
 
-        self.logger.debug('transaction.Transaction.get() ended\n')
+        logger.debug('Transaction.get() ended\n')
         return transaction_list
 
 
 class AccountTransaction:
     """ AccountTransaction class """
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-
     def _debitorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
         """we need debitor information for incoming payments """
-        self.logger.debug('transaction.AccountTransaction._debitorinfo()\n')
+        logger.debug('AccountTransaction._debitorinfo()\n')
 
         output_dic = {
             'peeraccount': transaction.get('attributes', {}).get('debtor', {}).get('debtorAccount', {}).get('iban', None),
@@ -142,12 +139,12 @@ class AccountTransaction:
             else:
                 output_dic['peer'] = transaction.get('attributes', {}).get('debtor', {}).get('name', None)
 
-        self.logger.debug('transaction.AccountTransaction._debitorinfo() ended\n')
+        logger.debug('AccountTransaction._debitorinfo() ended\n')
         return output_dic
 
     def _creditorinfo(self, transaction: Dict[str, str]) -> Dict[str, str]:
         """ we need creditor information for outgoing payments"""
-        self.logger.debug('transaction.AccountTransaction._creditorinfo()\n')
+        logger.debug('AccountTransaction._creditorinfo()\n')
 
         output_dic = {
             'peeraccount': transaction.get('attributes', {}).get('creditor', {}).get('creditorAccount', {}).get('iban', None),
@@ -156,17 +153,17 @@ class AccountTransaction:
             'peer': transaction.get('attributes', {}).get('creditor', {}).get('name', None)
         }
 
-        self.logger.debug('transaction.AccountTransaction._creditorinfo() ended.\n')
+        logger.debug('AccountTransaction._creditorinfo() ended.\n')
         return output_dic
 
     def _details(self, transaction: Dict[str, str]) -> Dict[str, str]:
         """ add infromation from accont transaction """
-        self.logger.debug('transaction.AccountTransaction._details()\n')
+        logger.debug('AccountTransaction._details()\n')
 
         try:
             amount = float(transaction.get('attributes', {}).get('amount', {}).get('value', None))
         except Exception as err:
-            self.logger.error('amount conversion error: %s', err)
+            logger.error('amount conversion error: %s', err)
             amount = None
 
         output_dic = {
@@ -180,12 +177,12 @@ class AccountTransaction:
             'reasonforpayment': transaction.get('attributes', {}).get('description', None)
         }
 
-        self.logger.debug('transaction.AccountTransaction._details() ended\n')
+        logger.debug('AccountTransaction._details() ended\n')
         return output_dic
 
     def format(self, transaction):
         """ format format transaction list ot a useful output """
-        self.logger.debug('transaction.AccountTransaction.format()\n')
+        logger.debug('AccountTransaction.format()\n')
 
         if 'attributes' in transaction:
             transaction_dic = self._details(transaction)
@@ -203,25 +200,22 @@ class AccountTransaction:
         else:
             transaction_dic = {}
 
-        self.logger.debug('transaction.AccountTransaction.format() ended\n')
+        logger.debug('AccountTransaction.format() ended\n')
         return transaction_dic
 
 
 class CreditCardTransaction:
     """ CreditCardTransaction class """
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-
     def _details(self, transaction):
         """ add details from card transaction """
-        self.logger.debug('transaction.CreditCardTransaction._details()\n')
+        logger.debug('CreditCardTransaction._details()\n')
 
         if 'attributes' in transaction:
             try:
                 amount = float(transaction.get('attributes', {}).get('amount', {}).get('value', None))
             except Exception as err:
-                self.logger.error('amount conversion error: %s', err)
+                logger.error('amount conversion error: %s', err)
                 amount = None
 
             output_dic = {
@@ -234,31 +228,28 @@ class CreditCardTransaction:
         else:
             output_dic = {}
 
-        self.logger.debug('transaction.CreditCardTransaction._details() ended\n')
+        logger.debug('CreditCardTransaction._details() ended\n')
         return output_dic
 
     def format(self, transaction):
         """ format format transaction list ot a useful output """
-        self.logger.debug('transaction.CreditCardTransaction.format()\n')
+        logger.debug('CreditCardTransaction.format()\n')
 
         if 'attributes' in transaction:
             transaction_dic = self._details(transaction)
         else:
             transaction_dic = {}
 
-        self.logger.debug('transaction.CreditCardTransaction.format() ended\n')
+        logger.debug('CreditCardTransaction.format() ended\n')
         return transaction_dic
 
 
 class DepotTransaction:
     """ DepotTransaction class """
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-
     def _details(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
         """ add details from depot transaction """
-        self.logger.debug('transaction.DepotTransaction._details()\n')
+        logger.debug('DepotTransaction._details()\n')
 
         instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
         quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
@@ -266,7 +257,7 @@ class DepotTransaction:
         try:
             quantity = float(position.get('attributes', {}).get('quantity', {}).get('value', None))
         except Exception as err:
-            self.logger.error('quantity conversion error: %s', err)
+            logger.error('quantity conversion error: %s', err)
             quantity = None
 
         output_dic = {
@@ -283,17 +274,17 @@ class DepotTransaction:
             if 'id' in ele and ele['id'] == quote_id:
                 output_dic = {**output_dic, **self._quoteinformation(ele)}
 
-        self.logger.debug('transaction.DepotTransaction._details() ended\n')
+        logger.debug('DepotTransaction._details() ended\n')
         return output_dic
 
     def _quoteinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
         """ add quote information """
-        self.logger.debug('transaction.DepotTransaction._quoteinformation()\n')
+        logger.debug('DepotTransaction._quoteinformation()\n')
 
         try:
             price = float(ele.get('attributes', {}).get('price', {}).get('value', None))
         except Exception as err:
-            self.logger.error('price conversion error: %s', err)
+            logger.error('price conversion error: %s', err)
             price = None
 
         output_dic = {
@@ -302,12 +293,12 @@ class DepotTransaction:
             'currencycode': ele.get('attributes', {}).get('price', {}).get('currencyCode', None),
         }
 
-        self.logger.debug('transaction.DepotTransaction._quoteinformation() ended\n')
+        logger.debug('DepotTransaction._quoteinformation() ended\n')
         return output_dic
 
     def _instrumentinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
         """ add instrument information """
-        self.logger.debug('transaction.DepotTransaction._instrumentinformation()\n')
+        logger.debug('DepotTransaction._instrumentinformation()\n')
 
         output_dic = {
             'text': ele.get('attributes', {}).get('name', {}).get('short', None)
@@ -318,12 +309,12 @@ class DepotTransaction:
                     output_dic['isin_wkn'] = identifier['value']
                     break
 
-        self.logger.debug('transaction.DepotTransaction._instrumentinformation() ended\n')
+        logger.debug('DepotTransaction._instrumentinformation() ended\n')
         return output_dic
 
     def format(self, transaction_dic: Dict[str, str]) -> List[Dict[str, str]]:
         """ format format transaction list ot a useful output """
-        self.logger.debug('transaction.DepotTransaction.format()\n')
+        logger.debug('DepotTransaction.format()\n')
 
         if 'included' in transaction_dic:
             included_list = transaction_dic['included']
