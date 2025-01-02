@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import random
 from string import digits, ascii_letters
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from datetime import datetime, timezone
 from dataclasses import dataclass, fields, asdict
 import time
@@ -27,8 +27,8 @@ JSON_CONTENT_TYPE = 'application/vnd.api+json'
 class Amount:
     """ Amount data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    value: float = None
-    currencyCode: str = None
+    value: Optional[float] = None
+    currencyCode: Optional[str] = None
 
     def __post_init__(self):
         # convert value to float

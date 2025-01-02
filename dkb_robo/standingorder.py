@@ -1,5 +1,5 @@
 """ Module for handling dkb standing orders """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
@@ -22,18 +22,20 @@ class CreditorAccount:
 @dataclass
 class DebtorAccount:
     """ class for a single debitor account """
+    # pylint: disable=C0103
     iban: Optional[str] = None
-    accountId: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
+    accountId: Optional[str] = None
 
 
 @filter_unexpected_fields
 @dataclass
 class Recurrence:
     """ class for frequency account """
+    # pylint: disable=C0103
     frm: Optional[str] = None
     frequency: Optional[str] = None
-    holidayExecutionStrategy: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
-    nextExecutionAt: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
+    holidayExecutionStrategy: Optional[str] = None
+    nextExecutionAt: Optional[str] = None
     until: Optional[str] = None
 
 
@@ -41,12 +43,12 @@ class Recurrence:
 @dataclass
 class StandingOrderItem:
     """ class for a single standing order """
-    amount: Optional[Amount] = None
-    creditor: Optional[CreditorAccount] = None
-    debtor: Optional[DebtorAccount] = None
+    amount: Optional[Dict] = None
+    creditor: Optional[Union[Dict, str]] = None
+    debtor: Optional[Union[Dict, str]] = None
     description: Optional[str] = None
     messages: List[str] = field(default_factory=list)
-    recurrence: Optional[Recurrence] = None
+    recurrence: Optional[Union[Dict, str]] = None
     status: Optional[str] = None
 
     def __post_init__(self):
