@@ -1,6 +1,6 @@
 """ Module for handling dkb standing orders """
-from typing import Dict, List
-from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+from dataclasses import dataclass
 import logging
 import requests
 from dkb_robo.utilities import Amount, DKBRoboError, filter_unexpected_fields, object2dictionary
@@ -13,25 +13,28 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PartnerItem:
     """ class for a single partner """
-    dateOfBirth: str = None
-    firstName: str = None
-    lastName: str = None
-    salutation: str = None
-    taxId: str = None
+    # pylint: disable=C0103
+    dateOfBirth: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    salutation: Optional[str] = None
+    taxId: Optional[str] = None
 
 
 @filter_unexpected_fields
 @dataclass
 class ExemptionOrderItem:
     """ class for a single exemption order """
-    exemptionAmount: str = None
-    exemptionOrderType: str = None
-    partner: str = None
-    receivedAt: str = None
-    utilizedAmount: str = None
-    remainingAmount: str = None
-    validFrom: str = None
-    validUntil: str = None
+    # pylint: disable=C0103
+    exemptionAmount: Optional[str] = None
+    exemptionOrderType: Optional[str] = None
+    partner: Optional[str] = None
+    receivedAt: Optional[str] = None
+    utilizedAmount: Optional[str] = None
+    remainingAmount: Optional[str] = None
+    validFrom: Optional[str] = None
+    validUntil: Optional[str] = None
+
     def __post_init__(self):
         self.exemptionAmount = Amount(**self.exemptionAmount)
         self.remainingAmount = Amount(**self.remainingAmount)

@@ -26,6 +26,7 @@ JSON_CONTENT_TYPE = 'application/vnd.api+json'
 @dataclass
 class Amount:
     """ Amount data class, roughly based on the JSON API response. """
+    # pylint: disable=c0103
     value: float = None
     currencyCode: str = None
 
@@ -94,13 +95,13 @@ def get_valid_filename(name):
         s = f'{generate_random_string(8)}.pdf'
     return s + p.suffix
 
-def object2dictionary(obj, key_lc=False, skip_list = []):
+
+def object2dictionary(obj, key_lc=False, skip_list=None):
     """ convert object to dict """
 
     output_dict = {}
-
     for k, v in asdict(obj).items():
-        if k in skip_list:
+        if isinstance(skip_list, list) and k in skip_list:
             continue
         if isinstance(v, dict):
             output_dict[k] = object2dictionary(v, key_lc=key_lc)

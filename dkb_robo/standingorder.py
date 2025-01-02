@@ -13,28 +13,28 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CreditorAccount:
     """ class for a single creditor account """
-    iban: str = None
-    bic: str = None
-    name: str = None
+    iban: Optional[str] = None
+    bic: Optional[str] = None
+    name: Optional[str] = None
 
 
 @filter_unexpected_fields
 @dataclass
 class DebtorAccount:
     """ class for a single debitor account """
-    iban: str = None
-    accountId: str = None  # pylint: disable=C0103 # NOSONAR
+    iban: Optional[str] = None
+    accountId: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
 
 
 @filter_unexpected_fields
 @dataclass
 class Recurrence:
     """ class for frequency account """
-    frm: str = None
-    frequency: str = None
-    holidayExecutionStrategy: str = None  # pylint: disable=C0103 # NOSONAR
-    nextExecutionAt: str = None  # pylint: disable=C0103 # NOSONAR
-    until: str = None
+    frm: Optional[str] = None
+    frequency: Optional[str] = None
+    holidayExecutionStrategy: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
+    nextExecutionAt: Optional[str] = None  # pylint: disable=C0103 # NOSONAR
+    until: Optional[str] = None
 
 
 @filter_unexpected_fields
@@ -44,10 +44,10 @@ class StandingOrderItem:
     amount: Optional[Amount] = None
     creditor: Optional[CreditorAccount] = None
     debtor: Optional[DebtorAccount] = None
-    description: str = None
+    description: Optional[str] = None
     messages: List[str] = field(default_factory=list)
     recurrence: Optional[Recurrence] = None
-    status: str = None
+    status: Optional[str] = None
 
     def __post_init__(self):
         self.amount = Amount(**self.amount)
