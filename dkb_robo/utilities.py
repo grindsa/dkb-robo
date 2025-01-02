@@ -6,7 +6,7 @@ import random
 from string import digits, ascii_letters
 from typing import List, Tuple
 from datetime import datetime, timezone
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, asdict
 import time
 import re
 
@@ -22,6 +22,7 @@ def get_dateformat():
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
 
+
 @dataclass
 class Amount:
     """ Amount data class, roughly based on the JSON API response. """
@@ -35,6 +36,7 @@ class Amount:
         except Exception as err:
             logger.error('Account.__post_init: conversion error:  %s', err)
             self.value = None
+
 
 class DKBRoboError(Exception):
     """ dkb-robo exception class """
@@ -91,6 +93,25 @@ def get_valid_filename(name):
     if s in {"", ".", ".."}:
         s = f'{generate_random_string(8)}.pdf'
     return s + p.suffix
+
+def object2dictionary(obj, key_lc=False, skip_list = []):
+    """ convert object to dict """
+
+    output_dict = {}
+
+    for k, v in asdict(obj).items():
+        if k in skip_list:
+            continue
+        if isinstance(v, dict):
+            output_dict[k] = object2dictionary(v, key_lc=key_lc)
+        elif isinstance(v, list):
+            output_dict[k] = [object2dictionary(i, key_lc=key_lc) for i in v]
+        else:
+            if key_lc:
+                output_dict[k.lower()] = v
+            else:
+                output_dict[k] = v
+    return output_dict
 
 
 def string2float(value: str) -> float:

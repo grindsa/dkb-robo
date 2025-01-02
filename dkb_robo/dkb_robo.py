@@ -5,8 +5,8 @@ from pathlib import Path
 import time
 from dkb_robo.postbox import PostBox
 from dkb_robo.authentication import Authentication
-from dkb_robo.exemptionorder import ExemptionOrder
-from dkb_robo.standingorder import StandingOrder
+from dkb_robo.exemptionorder import ExemptionOrders
+from dkb_robo.standingorder import StandingOrders
 from dkb_robo.transaction import Transaction
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 
@@ -32,9 +32,9 @@ class DKBRobo(object):
     chip_tan = False
     logger = None
     wrapper = None
-    dkb_raw = False
+    unprocessed = False
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False, dkb_raw=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False, unprocessed=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
@@ -42,7 +42,7 @@ class DKBRobo(object):
         self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
-        self.dkb_raw = dkb_raw
+        self.unprocessed = unprocessed
 
     def __enter__(self):
         """ Makes DKBRobo a Context Manager """
@@ -85,7 +85,7 @@ class DKBRobo(object):
     def get_exemption_order(self):
         """ get get_exemption_order """
         self.logger.debug('DKBRobo.get_exemption_order()\n')
-        exemptionorder = ExemptionOrder(client=self.wrapper.client)
+        exemptionorder = ExemptionOrders(client=self.wrapper.client, unprocessed=self.unprocessed)
         return exemptionorder.fetch()
 
     def get_points(self):
@@ -96,7 +96,7 @@ class DKBRobo(object):
     def get_standing_orders(self, uid=None):
         """ get standing orders """
         self.logger.debug('DKBRobo.get_standing_orders()\n')
-        standingorder = StandingOrder(client=self.wrapper.client, dkb_raw=self.dkb_raw)
+        standingorder = StandingOrders(client=self.wrapper.client, unprocessed=self.unprocessed)
         return standingorder.fetch(uid)
 
     def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):

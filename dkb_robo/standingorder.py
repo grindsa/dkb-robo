@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import DKBRoboError, Amount, filter_unexpected_fields
+from dkb_robo.utilities import DKBRoboError, Amount, filter_unexpected_fields, object2dictionary
 
 
 logger = logging.getLogger(__name__)
@@ -60,17 +60,17 @@ class StandingOrderItem:
         self.recurrence = Recurrence(**self.recurrence)
 
 
-class StandingOrder:
-    """ StandingOrder class """
-    def __init__(self, client: requests.Session, dkb_raw: bool = False, base_url: str = 'https://banking.dkb.de/api'):
+class StandingOrders:
+    """ StandingOrders class """
+    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
         self.base_url = base_url
-        self.dkb_raw = dkb_raw
+        self.unprocessed = unprocessed
         self.uid = None
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
-        logger.debug('StandingOrder._filter()\n')
+        logger.debug('StandingOrders._filter()\n')
 
         so_list = []
         if 'data' in full_list:
@@ -78,7 +78,7 @@ class StandingOrder:
 
                 standingorder_obj = StandingOrderItem(**ele['attributes'])
 
-                if self.dkb_raw:
+                if self.unprocessed:
                     so_list.append(standingorder_obj)
                 else:
                     so_list.append({
@@ -86,25 +86,17 @@ class StandingOrder:
                         'currencycode': standingorder_obj.amount.currencyCode,
                         'purpose': standingorder_obj.description,
                         'recipient': standingorder_obj.creditor.name,
-                        'creditoraccount': {
-                            'iban': standingorder_obj.creditor.iban,
-                            'bic': standingorder_obj.creditor.bic
-                        },
-                        'interval': {
-                            'frequency': standingorder_obj.recurrence.frequency,
-                            'from': standingorder_obj.recurrence.frm,
-                            'holidayExecutionStrategy': standingorder_obj.recurrence.holidayExecutionStrategy,
-                            'nextExecutionAt': standingorder_obj.recurrence.nextExecutionAt,
-                            'until': standingorder_obj.recurrence.until
-                        }
+                        'creditoraccount': object2dictionary(standingorder_obj.creditor, skip_list=['name']),
+                        # from got rewritten in dataclase - we need to rewrite it back
+                        'interval': {**object2dictionary(standingorder_obj.recurrence, skip_list=['frm']), 'from': standingorder_obj.recurrence.frm},
                     })
 
-        logger.debug('StandingOrder._filter() ended with: %s entries.', len(so_list))
+        logger.debug('StandingOrders._filter() ended with: %s entries.', len(so_list))
         return so_list
 
     def fetch(self, uid) -> Dict:
         """ fetch standing orders """
-        logger.debug('StandingOrder.fetch()\n')
+        logger.debug('StandingOrders.fetch()\n')
 
         so_list = []
         if uid:
@@ -115,5 +107,5 @@ class StandingOrder:
         else:
             raise DKBRoboError('account-id is required to fetch standing orders')
 
-        logger.debug('StandingOrder.fetch() ended\n')
+        logger.debug('StandingOrders.fetch() ended\n')
         return so_list
