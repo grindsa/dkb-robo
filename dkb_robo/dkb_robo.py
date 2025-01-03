@@ -7,7 +7,7 @@ from dkb_robo.postbox import PostBox
 from dkb_robo.authentication import Authentication
 from dkb_robo.exemptionorder import ExemptionOrders
 from dkb_robo.standingorder import StandingOrders
-from dkb_robo.transaction import Transaction
+from dkb_robo.transaction import Transactions
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 
 
@@ -104,7 +104,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
-        transaction = Transaction(client=self.wrapper.client)
+        transaction = Transactions(client=self.wrapper.client)
         transaction_list = transaction.get(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))

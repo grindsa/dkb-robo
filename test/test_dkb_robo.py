@@ -146,7 +146,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertFalse(self.dkb.__exit__())
         self.assertTrue(self.dkb.wrapper.logout.called)
 
-    @patch('dkb_robo.transaction.Transaction.get')
+    @patch('dkb_robo.transaction.Transactions.get')
     @patch('dkb_robo.dkb_robo.validate_dates')
     def test_009_get_transactions(self, mock_date, mock_transaction):
         """ test get_transactions() """
@@ -156,7 +156,7 @@ class TestDKBRobo(unittest.TestCase):
         mock_transaction.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.get_transactions('url', 'account', 'from', 'to', 'btype'))
 
-    @patch('dkb_robo.transaction.Transaction.get')
+    @patch('dkb_robo.transaction.Transactions.get')
     @patch('dkb_robo.dkb_robo.validate_dates')
     def test_010_get_transactions(self, mock_date, mock_transaction):
         """ test get_transactions() """

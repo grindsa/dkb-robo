@@ -13,7 +13,7 @@ from mechanicalsoup import LinkNotFoundError
 import io
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
-from dkb_robo.transaction import Transaction, AccountTransaction, CreditCardTransaction, DepotTransaction
+from dkb_robo.transaction import Transactions, AccountTransaction, CreditCardTransaction, DepotTransaction
 
 def json_load(fname):
     """ simple json load """
@@ -24,16 +24,16 @@ def json_load(fname):
     return data_dic
 
 
-class TestTransaction(unittest.TestCase):
-    """ Transaction test class """
+class TestTransactions(unittest.TestCase):
+    """ Transactions test class """
 
     @patch("requests.Session")
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.transaction = Transaction(client=mock_session)
+        self.transaction = Transactions(client=mock_session)
 
     def test_001__fetch(self):
-        """ test Transaction._fetch() returning error """
+        """ test Transactions._fetch() returning error """
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 400
         self.transaction.client.get.return_value.json.return_value = {'foo': 'bar'}
@@ -135,8 +135,8 @@ class TestTransaction(unittest.TestCase):
     @patch('dkb_robo.transaction.DepotTransaction.format')
     @patch('dkb_robo.transaction.CreditCardTransaction.format')
     @patch('dkb_robo.transaction.AccountTransaction.format')
-    @patch('dkb_robo.transaction.Transaction._filter')
-    @patch('dkb_robo.transaction.Transaction._fetch')
+    @patch('dkb_robo.transaction.Transactions._filter')
+    @patch('dkb_robo.transaction.Transactions._fetch')
     def test_014_get(self, mock_fetch, mock_filter, mock_aformat, mock_creditformat, mock_depotformat):
         "" " test get() for acount transactions """
         mock_aformat.return_value = 'mock_aformat'
@@ -153,8 +153,8 @@ class TestTransaction(unittest.TestCase):
     @patch('dkb_robo.transaction.DepotTransaction.format')
     @patch('dkb_robo.transaction.CreditCardTransaction.format')
     @patch('dkb_robo.transaction.AccountTransaction.format')
-    @patch('dkb_robo.transaction.Transaction._filter')
-    @patch('dkb_robo.transaction.Transaction._fetch')
+    @patch('dkb_robo.transaction.Transactions._filter')
+    @patch('dkb_robo.transaction.Transactions._fetch')
     def test_015_get(self, mock_fetch, mock_filter, mock_aformat, mock_creditformat, mock_depotformat):
         "" " test get() for creaditcard transactions """
         mock_aformat.return_value = 'mock_aformat'
@@ -171,8 +171,8 @@ class TestTransaction(unittest.TestCase):
     @patch('dkb_robo.transaction.DepotTransaction.format')
     @patch('dkb_robo.transaction.CreditCardTransaction.format')
     @patch('dkb_robo.transaction.AccountTransaction.format')
-    @patch('dkb_robo.transaction.Transaction._filter')
-    @patch('dkb_robo.transaction.Transaction._fetch')
+    @patch('dkb_robo.transaction.Transactions._filter')
+    @patch('dkb_robo.transaction.Transactions._fetch')
     def test_016_get(self, mock_fetch, mock_filter, mock_aformat, mock_creditformat, mock_depotformat):
         "" " test get() for creaditcard transactions """
         mock_aformat.return_value = 'mock_aformat'
@@ -189,8 +189,8 @@ class TestTransaction(unittest.TestCase):
     @patch('dkb_robo.transaction.DepotTransaction.format')
     @patch('dkb_robo.transaction.CreditCardTransaction.format')
     @patch('dkb_robo.transaction.AccountTransaction.format')
-    @patch('dkb_robo.transaction.Transaction._filter')
-    @patch('dkb_robo.transaction.Transaction._fetch')
+    @patch('dkb_robo.transaction.Transactions._filter')
+    @patch('dkb_robo.transaction.Transactions._fetch')
     def test_017_get(self, mock_fetch, mock_filter, mock_aformat, mock_creditformat, mock_depotformat):
         "" " test get() for creaditcard transactions """
         mock_aformat.return_value = 'mock_aformat'
