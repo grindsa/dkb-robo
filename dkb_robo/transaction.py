@@ -1,12 +1,13 @@
 """ Module for handling dkb transactions """
-# pylint: disable=c0415, r0913
+# pylint: disable=c0415, r0913, c0103
 import datetime
 import time
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import Amount, get_dateformat, filter_unexpected_fields, DKBRoboError
+from dkb_robo.utilities import Amount, PerformanceValue, get_dateformat, filter_unexpected_fields
+
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,41 @@ class Transactions:
         self.base_url = base_url
         self.uid = None
         self.unprocessed = unprocessed
+
+    def map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
+        """ add details from depot transaction """
+        logger.debug('DepotTransaction._details()\n')
+
+        instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
+        quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
+
+        for ele in included_list:
+            if 'id' in ele and ele['id'] == instrument_id:
+                position['attributes']['instrument'] = ele['attributes']
+                position['attributes']['instrument']['id'] = ele['id']
+            if 'id' in ele and ele['id'] == quote_id:
+                position['attributes']['quote'] = ele['attributes']
+                position['attributes']['quote']['id'] = ele['id']
+
+        logger.debug('DepotTransaction._details() ended\n')
+        return position
+
+    def _correlate(self, transaction_dic: Dict[str, str]) -> List[Dict[str, str]]:
+        """ correlate transactions """
+        logger.debug('Transactions._correlate()\n')
+
+        if 'included' in transaction_dic:
+            included_list = transaction_dic['included']
+
+        position_list = []
+        if 'data' in transaction_dic:
+            for position in transaction_dic['data']:
+                position_dic = self.map(position, included_list)
+                if position_dic:
+                    position_list.append(position_dic)
+
+        logger.debug('Transactions._correlate() ended with %s entries\n', len(position_list))
+        return position_list
 
     def _nextpage_url(self, tr_dic):
         """ get transaction url """
@@ -96,11 +132,7 @@ class Transactions:
 
         if transaction_url and atype != 'depot':
             transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
-
-        # transaction_dic = self._fetch(transaction_url)
-        import json
-        with open('transaction.json', 'r') as f:
-            transaction_dic = json.load(f)
+        transaction_dic = self._fetch(transaction_url)
 
         mapping_dic = {
             'account': 'AccountTransaction',
@@ -111,39 +143,27 @@ class Transactions:
         if atype in ['account', 'creditcard']:
             raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], date_from=date_from, date_to=date_to, transaction_type=transaction_type)
         else:
-            raw_transaction_list = transaction_dic
-
-        #    raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], transaction_type=transaction_type, date_from=date_from, date_to=date_to)
-        #    transaction = AccountTransaction()
-        #elif atype == 'creditcard':
-        #    raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], transaction_type=transaction_type, date_from=date_from, date_to=date_to)
-        #    transaction = CreditCardTransaction()
-        #elif atype == 'depot':
-        #    transaction = DepotTransaction()
-        #else:
-        #    raise DKBRoboError(f'transaction type {atype} is not supported')
-
-
+            raw_transaction_list = self._correlate(transaction_dic)
 
         transaction_list = []
         if raw_transaction_list:
             for ele in raw_transaction_list:
+                # add id to attributes tree
+                ele['attributes']['id'] = ele['id']
                 transaction = globals()[mapping_dic[atype]](**ele['attributes'])
                 if self.unprocessed:
                     transaction_list.append(transaction)
                 else:
                     transaction_list.append(transaction.format())
 
-        #   else:
-        #        transaction_list = transaction.format(transaction_dic)
-
         logger.debug('Transactions.get() ended\n')
         return transaction_list
+
 
 @filter_unexpected_fields
 @dataclass
 class AccountTransaction:
-    """ dataclass for a single AccountTransaction class """
+    """ dataclass for a single AccountTransaction """
     status: Optional[str] = None
     bookingDate: Optional[str] = None
     valueDate: Optional[str] = None
@@ -164,22 +184,21 @@ class AccountTransaction:
         self.creditor = PeerAccount(**self._peer_information(self.creditor, 'creditorAccount'))
         # regroup debtor for the same reason
         self.debtor = PeerAccount(**self._peer_information(self.debtor, 'debtorAccount'))
+        self.description = " ".join(self.description.split())
 
     def _peer_information(self, peer_dic: Dict[str, str], peer_type: str = None) -> Dict[str, str]:
         """ add peer information """
         logger.debug('AccountTransaction._peer_information(%s)\n', peer_type)
 
-        peer_dic['account'] = peer_dic.pop(peer_type, None)
-        peer_dic['account'] = {
-            'bic': peer_dic.get('agent', {}).get('bic', None),
-            'name': " ".join(peer_dic.pop('name', None).split())
-        }
+        peer_dic[peer_type]['bic'] = peer_dic.get('agent', {}).get('bic', None)
+        peer_dic[peer_type]['id'] = peer_dic.get('id', None)
+        peer_dic[peer_type]['name'] = " ".join(peer_dic.pop('name', None).split())
 
         if peer_dic.get('intermediaryName', None):
-            peer_dic['account']['intermediaryName'] = " ".join(peer_dic.get('intermediaryName', None).split())
+            peer_dic[peer_type]['intermediaryName'] = " ".join(peer_dic.get('intermediaryName', None).split())
 
         logger.debug('AccountTransaction._peer_information() ended\n')
-        return peer_dic['account']
+        return peer_dic[peer_type]
 
     def format(self):
         """ format format transaction list ot a useful output """
@@ -189,9 +208,11 @@ class AccountTransaction:
             'amount': self.amount.value,
             'currencycode': self.amount.currencyCode,
             'date': self.bookingDate,
+            # for backwards compatibility
+            'bdate': self.bookingDate,
             'vdate': self.valueDate,
             'customerreference': self.endToEndId,
-            'mandateid': self.mandateId,
+            'mandatereference': self.mandateId,
             'postingtext': self.transactionType,
             'reasonforpayment': self.description
         }
@@ -200,7 +221,7 @@ class AccountTransaction:
             # incoming transaction
             transaction_dic['peeraccount'] = self.debtor.iban
             transaction_dic['peerbic'] = self.debtor.bic
-            # transaction_dic['peerid'] = self.debtor.id
+            transaction_dic['peerid'] = self.debtor.id
             if self.debtor.intermediaryName:
                 transaction_dic['peer'] = self.debtor.intermediaryName
             else:
@@ -209,150 +230,202 @@ class AccountTransaction:
             # outgoing transaction
             transaction_dic['peeraccount'] = self.creditor.iban
             transaction_dic['peerbic'] = self.creditor.bic
-            # transaction_dic['peerid'] = self.creditor.id
+            transaction_dic['peerid'] = self.creditor.id
             if self.creditor.intermediaryName:
                 transaction_dic['peer'] = self.creditor.intermediaryName
             else:
                 transaction_dic['peer'] = self.creditor.name
 
         # this is for backwards compatibility
-        if 'postingtext' in transaction_dic and 'peer' in transaction_dic and 'reasonforpayment' in transaction_dic:
-            transaction_dic['text'] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
+        transaction_dic['text'] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
 
         logger.debug('AccountTransaction.format() ended\n')
         return transaction_dic
 
+
 @filter_unexpected_fields
 @dataclass
 class PeerAccount:
-    """ dataclass for a single peer account """
+    """ dataclass to build peer account structure """
     iban: Optional[str] = None
     bic: Optional[str] = None
     accountNr: Optional[str] = None
     name: Optional[str] = None
     intermediaryName: Optional[str] = None
+    id: Optional[str] = None
 
 
+@filter_unexpected_fields
+@dataclass
 class CreditCardTransaction:
-    """ CreditCardTransaction class """
+    """ dataclass for a single CreditCardTransaction """
+    amount: Optional[Dict] = None
+    id: Optional[str] = None
+    authorizationDate: Optional[str] = None
+    bonuses: Optional[List] = None
+    bookingDate: Optional[str] = None
+    cardId: Optional[str] = None
+    description: Optional[str] = None
+    merchantAmount: Optional[Dict] = None
+    merchantCategory: Optional[Dict] = field(default_factory=dict)
+    status: Optional[str] = None
+    transactionType: Optional[str] = None
 
-    def _details(self, transaction):
-        """ add details from card transaction """
-        logger.debug('CreditCardTransaction._details()\n')
+    def __post_init__(self):
+        self.amount = Amount(**self.amount)
+        self.merchantAmount = Amount(**self.merchantAmount)
+        self.merchantCategory = MerchantCategory(**self.merchantCategory)
 
-        if 'attributes' in transaction:
-            try:
-                amount = float(transaction.get('attributes', {}).get('amount', {}).get('value', None))
-            except Exception as err:
-                logger.error('amount conversion error: %s', err)
-                amount = None
-
-            output_dic = {
-                'amount': amount,
-                'bdate': transaction.get('attributes', {}).get('bookingDate', None),
-                'vdate': transaction.get('attributes', {}).get('bookingDate', None),
-                'text': transaction.get('attributes', {}).get('description', None),
-                'currencycode': transaction.get('attributes', {}).get('amount', {}).get('currencyCode', None),
-            }
-        else:
-            output_dic = {}
-
-        logger.debug('CreditCardTransaction._details() ended\n')
-        return output_dic
-
-    def format(self, transaction):
+    def format(self):
         """ format format transaction list ot a useful output """
         logger.debug('CreditCardTransaction.format()\n')
 
-        if 'attributes' in transaction:
-            transaction_dic = self._details(transaction)
-        else:
-            transaction_dic = {}
+        transaction_dic = {
+            # fixing strange behaviour of DKB API
+            'amount': self.amount.value,  # * -1,
+            'bdate': self.bookingDate,
+            'currencycode': self.amount.currencyCode,
+            'text': self.description,
+            'vdate': self.authorizationDate,
+        }
 
         logger.debug('CreditCardTransaction.format() ended\n')
         return transaction_dic
 
 
+@filter_unexpected_fields
+@dataclass
+class MerchantCategory:
+    """ dataclass for a single merchantCategory """
+    code: Optional[str] = None
+
+
+@filter_unexpected_fields
+@dataclass
 class DepotTransaction:
     """ DepotTransaction class """
 
-    def _details(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
-        """ add details from depot transaction """
-        logger.debug('DepotTransaction._details()\n')
+    id: Optional[str] = None
+    availableQuantity: Optional[Union[Dict, str]] = None
+    custody: Optional[Union[Dict, str]] = None
+    instrument: Optional[Union[Dict, str]] = None
+    lastOrderDate: Optional[str] = None
+    performance: Optional[Union[Dict, str]] = None
+    quantity: Optional[Union[Dict, str]] = None
+    quote: Optional[Union[Dict, str]] = None
 
-        instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
-        quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
+    @filter_unexpected_fields
+    @dataclass
+    class Custody:
+        """ dataclass for custody """
+        block: Optional[Union[Dict, str]] = None
+        certificateType: Optional[str] = None
+        characteristic: Optional[Union[Dict, str]] = None
+        custodyType: Optional[str] = None
+        custodyTypeId: Optional[str] = None
 
-        try:
-            quantity = float(position.get('attributes', {}).get('quantity', {}).get('value', None))
-        except Exception as err:
-            logger.error('quantity conversion error: %s', err)
-            quantity = None
+        @filter_unexpected_fields
+        @dataclass
+        class Block:
+            """ dataclass for block """
+            blockType: Optional[str] = None
 
-        output_dic = {
-            'shares': position.get('attributes', {}).get('quantity', {}).get('value', None),
-            'quantity': quantity,
-            'shares_unit': position.get('attributes', {}).get('quantity', {}).get('unit', None),
-            'lastorderdate': position.get('attributes', {}).get('lastOrderDate', None),
-            'price_euro': position.get('attributes', {}).get('performance', {}).get('currentValue', {}).get('value', None),
-        }
+        @filter_unexpected_fields
+        @dataclass
+        class Characteristic:
+            """ dataclass for characteristic """
+            characteristicType: Optional[str] = None
 
-        for ele in included_list:
-            if 'id' in ele and ele['id'] == instrument_id:
-                output_dic = {**output_dic, **self._instrumentinformation(ele)}
-            if 'id' in ele and ele['id'] == quote_id:
-                output_dic = {**output_dic, **self._quoteinformation(ele)}
+        def __post_init__(self):
+            self.block = self.Block(**self.block)
+            self.characteristic = self.Characteristic(**self.characteristic)
 
-        logger.debug('DepotTransaction._details() ended\n')
-        return output_dic
+    @filter_unexpected_fields
+    @dataclass
+    class Instrument:
+        """ dataclass for instrument """
+        id: Optional[str] = None
+        identifiers: Optional[List] = field(default_factory=list)
+        name: Optional[Union[Dict, str]] = None
+        unit: Optional[str] = None
 
-    def _quoteinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
-        """ add quote information """
-        logger.debug('DepotTransaction._quoteinformation()\n')
+        @filter_unexpected_fields
+        @dataclass
+        class Identifier:
+            """ dataclass for identifier """
+            identifier: Optional[str] = None
+            value: Optional[str] = None
 
-        try:
-            price = float(ele.get('attributes', {}).get('price', {}).get('value', None))
-        except Exception as err:
-            logger.error('price conversion error: %s', err)
-            price = None
+        @filter_unexpected_fields
+        @dataclass
+        class Name:
+            """ dataclass for name """
+            long: Optional[str] = None
+            short: Optional[str] = None
 
-        output_dic = {
-            'price': price,
-            'market': ele.get('attributes', {}).get('market', None),
-            'currencycode': ele.get('attributes', {}).get('price', {}).get('currencyCode', None),
-        }
+        def __post_init__(self):
+            self.name = self.Name(**self.name)
+            self.identifiers = [self.Identifier(**identifier) for identifier in self.identifiers]
 
-        logger.debug('DepotTransaction._quoteinformation() ended\n')
-        return output_dic
+    @filter_unexpected_fields
+    @dataclass
+    class Performance:
+        """ dataclass for performance """
+        currentValue: Optional[Union[Dict, str]] = None
+        isOutdated: Optional[bool] = False
 
-    def _instrumentinformation(self, ele: Dict[str, str]) -> Dict[str, str]:
-        """ add instrument information """
-        logger.debug('DepotTransaction._instrumentinformation()\n')
+        def __post_init__(self):
+            self.currentValue = PerformanceValue(**self.currentValue)
 
-        output_dic = {
-            'text': ele.get('attributes', {}).get('name', {}).get('short', None)
-        }
-        if 'attributes' in ele and 'identifiers' in ele['attributes']:
-            for identifier in ele['attributes']['identifiers']:
-                if identifier['identifier'] == 'isin':
-                    output_dic['isin_wkn'] = identifier['value']
-                    break
+    @filter_unexpected_fields
+    @dataclass
+    class Quantity:
+        """ dataclass for quantity """
+        unit: Optional[str] = None
+        value: Optional[float] = None
 
-        logger.debug('DepotTransaction._instrumentinformation() ended\n')
-        return output_dic
+        def __post_init__(self):
+            try:
+                self.value = float(self.value)
+            except Exception:
+                self.value = None
 
-    def format(self, transaction_dic: Dict[str, str]) -> List[Dict[str, str]]:
-        """ format format transaction list ot a useful output """
+    @filter_unexpected_fields
+    @dataclass
+    class Quote:
+        """ dataclass for quote """
+        id: Optional[str] = None
+        market: Optional[str] = None
+        price: Optional[Union[Dict, str]] = None
+        timestamp: Optional[str] = None
+
+        def __post_init__(self):
+            self.price = PerformanceValue(**self.price)
+
+    def __post_init__(self):
+        self.availableQuantity = self.Quantity(**self.availableQuantity)
+        self.custody = self.Custody(**self.custody)
+        self.instrument = self.Instrument(**self.instrument)
+        self.performance = self.Performance(**self.performance)
+        self.quantity = self.Quantity(**self.quantity)
+        self.quote = self.Quote(**self.quote)
+
+    def format(self) -> Dict[str, str]:
+        """ format  transaction list ot a useful output """
         logger.debug('DepotTransaction.format()\n')
 
-        if 'included' in transaction_dic:
-            included_list = transaction_dic['included']
-
-        position_list = []
-        if 'data' in transaction_dic:
-            for position in transaction_dic['data']:
-                position_dic = self._details(position, included_list)
-                if position_dic:
-                    position_list.append(position_dic)
-
-        return position_list
+        transaction_dic = {
+            'currencyCode': self.quote.price.currencyCode,
+            'isin_wkn': self.instrument.identifiers[0].value,
+            'lastorderdate': self.lastOrderDate,
+            'market': self.quote.market,
+            'price': self.quote.price.value,
+            'price_euro': self.performance.currentValue.value,
+            'quantity': self.quantity.value,
+            # for backwards compatibility
+            'shares': self.availableQuantity.value,
+            'shares_unit': self.quantity.unit,
+            'text': self.instrument.name.short,
+            'text_long': self.instrument.name.long,
+        }
+        return transaction_dic

@@ -29,7 +29,27 @@ class Amount:
     # pylint: disable=c0103
     value: Optional[float] = None
     currencyCode: Optional[str] = None
+    conversionRate: Optional[float] = None
 
+    def __post_init__(self):
+        # convert value to float
+        try:
+            self.value = float(self.value)
+        except Exception as err:
+            logger.error('Account.__post_init: conversion error:  %s', err)
+            self.value = None
+        if self.conversionRate:
+            try:
+                self.conversionRate = float(self.conversionRate)
+            except Exception as err:
+                logger.error('Account.__post_init: conversion error:  %s', err)
+                self.value = None
+
+@dataclass
+class PerformanceValue:
+    currencyCode: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
     def __post_init__(self):
         # convert value to float
         try:
