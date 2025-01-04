@@ -1204,7 +1204,8 @@ class Wrapper(object):
                     break
             if not object_name:
                 _sinin, cardnr, _sinin = document['attributes']['fileName'].split('_', 2)
-                object_name = f"{self._get_document_name(document['attributes']['metadata']['subject'])} {cardnr}"
+                subject = document.get('attributes', {}).get('metadata', {}).get('subject', document['attributes']['fileName'])
+                object_name = f"{self._get_document_name(subject)} {cardnr}"
         else:
             object_name = self._get_document_name(document['attributes']['metadata']['subject'])
 
