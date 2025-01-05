@@ -3,22 +3,10 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
 import requests
-from dkb_robo.utilities import Amount, DKBRoboError, filter_unexpected_fields, object2dictionary
+from dkb_robo.utilities import Amount, DKBRoboError, Person, filter_unexpected_fields, object2dictionary
 
 
 logger = logging.getLogger(__name__)
-
-
-@filter_unexpected_fields
-@dataclass
-class PartnerItem:
-    """ class for a single partner """
-    # pylint: disable=C0103
-    dateOfBirth: Optional[str] = None
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
-    salutation: Optional[str] = None
-    taxId: Optional[str] = None
 
 
 @filter_unexpected_fields
@@ -39,7 +27,7 @@ class ExemptionOrderItem:
         self.exemptionAmount = Amount(**self.exemptionAmount)
         self.remainingAmount = Amount(**self.remainingAmount)
         self.utilizedAmount = Amount(**self.utilizedAmount)
-        self.partner = PartnerItem(**self.partner)
+        self.partner = Person(**self.partner)
 
 
 class ExemptionOrders:

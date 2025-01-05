@@ -3,40 +3,10 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import DKBRoboError, Amount, filter_unexpected_fields, object2dictionary
+from dkb_robo.utilities import DKBRoboError, Account, Amount, filter_unexpected_fields, object2dictionary
 
 
 logger = logging.getLogger(__name__)
-
-
-@filter_unexpected_fields
-@dataclass
-class CreditorAccount:
-    """ class for a single creditor account """
-    iban: Optional[str] = None
-    bic: Optional[str] = None
-    name: Optional[str] = None
-
-
-@filter_unexpected_fields
-@dataclass
-class DebtorAccount:
-    """ class for a single debitor account """
-    # pylint: disable=C0103
-    iban: Optional[str] = None
-    accountId: Optional[str] = None
-
-
-@filter_unexpected_fields
-@dataclass
-class Recurrence:
-    """ class for frequency account """
-    # pylint: disable=C0103
-    frm: Optional[str] = None
-    frequency: Optional[str] = None
-    holidayExecutionStrategy: Optional[str] = None
-    nextExecutionAt: Optional[str] = None
-    until: Optional[str] = None
 
 
 @filter_unexpected_fields
@@ -54,12 +24,23 @@ class StandingOrderItem:
     def __post_init__(self):
         self.amount = Amount(**self.amount)
         self.creditor['creditorAccount']['name'] = self.creditor.get('name', {})
-        self.creditor = CreditorAccount(**self.creditor['creditorAccount'])
+        self.creditor = Account(**self.creditor['creditorAccount'])
         if self.debtor and 'debtorAccount' in self.debtor:
-            self.debtor = DebtorAccount(**self.debtor['debtorAccount'])
+            self.debtor = Account(**self.debtor['debtorAccount'])
         # rewrite from - field to frm
         self.recurrence['frm'] = self.recurrence.get('from', None)
-        self.recurrence = Recurrence(**self.recurrence)
+        self.recurrence = self.Recurrence(**self.recurrence)
+
+    @filter_unexpected_fields
+    @dataclass
+    class Recurrence:
+        """ class for frequency account """
+        # pylint: disable=C0103
+        frm: Optional[str] = None
+        frequency: Optional[str] = None
+        holidayExecutionStrategy: Optional[str] = None
+        nextExecutionAt: Optional[str] = None
+        until: Optional[str] = None
 
 
 class StandingOrders:

@@ -23,6 +23,35 @@ LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
 
 
+def filter_unexpected_fields(cls):
+    """ filter undefined fields (not defined as class variable) before import to dataclass"""
+    original_init = cls.__init__
+
+    def new_init(self, *args, **kwargs):
+        expected_fields = {field.name for field in fields(cls)}
+        cleaned_kwargs = {key: value for key, value in kwargs.items() if key in expected_fields}
+        original_init(self, *args, **cleaned_kwargs)
+
+    cls.__init__ = new_init
+    return cls
+
+
+@filter_unexpected_fields
+@dataclass
+class Account:
+    """ dataclass to build peer account structure """
+    # pylint: disable=c0103
+    accountNr: Optional[str] = None
+    accountId: Optional[str] = None
+    bic: Optional[str] = None
+    blz: Optional[str] = None
+    iban: Optional[str] = None
+    id: Optional[str] = None
+    intermediaryName: Optional[str] = None
+    name: Optional[str] = None
+
+
+@filter_unexpected_fields
 @dataclass
 class Amount:
     """ Amount data class, roughly based on the JSON API response. """
@@ -30,6 +59,8 @@ class Amount:
     value: Optional[float] = None
     currencyCode: Optional[str] = None
     conversionRate: Optional[float] = None
+    date: Optional[str] = None
+    unit: Optional[str] = None
 
     def __post_init__(self):
         # convert value to float
@@ -45,11 +76,16 @@ class Amount:
                 logger.error('Account.__post_init: conversion error:  %s', err)
                 self.value = None
 
+
+@filter_unexpected_fields
 @dataclass
 class PerformanceValue:
+    """ PerformanceValue data class, roughly based on the JSON API response. """
+    # pylint: disable=c0103
     currencyCode: Optional[str] = None
     value: Optional[float] = None
     unit: Optional[str] = None
+
     def __post_init__(self):
         # convert value to float
         try:
@@ -57,6 +93,19 @@ class PerformanceValue:
         except Exception as err:
             logger.error('Account.__post_init: conversion error:  %s', err)
             self.value = None
+
+
+@filter_unexpected_fields
+@dataclass
+class Person:
+    """ Person class """
+    # pylint: disable=c0103
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    title: Optional[str] = None
+    salutation: Optional[str] = None
+    dateOfBirth: Optional[str] = None
+    taxId: Optional[str] = None
 
 
 class DKBRoboError(Exception):
@@ -84,19 +133,6 @@ def _convert_date_format(logger: logging.Logger, input_date: str, input_format_l
 
     logger.debug('_convert_date_format() ended with: %s', output_date)
     return output_date
-
-
-def filter_unexpected_fields(cls):
-    """ filter undefined fields (not defined as class variable) before import to dataclass"""
-    original_init = cls.__init__
-
-    def new_init(self, *args, **kwargs):
-        expected_fields = {field.name for field in fields(cls)}
-        cleaned_kwargs = {key: value for key, value in kwargs.items() if key in expected_fields}
-        original_init(self, *args, **cleaned_kwargs)
-
-    cls.__init__ = new_init
-    return cls
 
 
 def generate_random_string(length: int) -> str:

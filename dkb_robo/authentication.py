@@ -37,13 +37,15 @@ class Authentication:
     mfa_device = 0
     proxies = {}
     token_dic = None
+    unprocessed = False
 
-    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, mfa_device: int = None):
+    def __init__(self, dkb_user: str = None, dkb_password: str = None, chip_tan: bool = False, proxies: Dict[str, str] = None, mfa_device: int = None, unprocessed: bool = False):
         """ Constructor """
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.proxies = proxies
+        self.unprocessed = unprocessed
         if chip_tan:
             logger.info('Using to chip_tan to login')
             if chip_tan in ('qr', 'chip_tan_qr'):
@@ -338,7 +340,7 @@ class Authentication:
             raise DKBRoboError('Login failed: 2nd factor authentication did not complete')
 
         # get account overview
-        overview = Overview(client=self.client)
+        overview = Overview(client=self.client, unprocessed=self.unprocessed)
         self.account_dic = overview.get()
 
         # redirect to legacy page

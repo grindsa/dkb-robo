@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import Amount, PerformanceValue, get_dateformat, filter_unexpected_fields
+from dkb_robo.utilities import Account, Amount, PerformanceValue, get_dateformat, filter_unexpected_fields
 
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
@@ -135,9 +135,9 @@ class Transactions:
         transaction_dic = self._fetch(transaction_url)
 
         mapping_dic = {
-            'account': 'AccountTransaction',
-            'creditcard': 'CreditCardTransaction',
-            'depot': 'DepotTransaction'
+            'account': 'AccountTransactionItem',
+            'creditcard': 'CreditCardTransactionItem',
+            'depot': 'DepotTransactionItem'
         }
 
         if atype in ['account', 'creditcard']:
@@ -162,7 +162,7 @@ class Transactions:
 
 @filter_unexpected_fields
 @dataclass
-class AccountTransaction:
+class AccountTransactionItem:
     """ dataclass for a single AccountTransaction """
     status: Optional[str] = None
     bookingDate: Optional[str] = None
@@ -181,9 +181,9 @@ class AccountTransaction:
     def __post_init__(self):
         self.amount = Amount(**self.amount)
         # regroup creditor information allowing simpler access
-        self.creditor = PeerAccount(**self._peer_information(self.creditor, 'creditorAccount'))
+        self.creditor = Account(**self._peer_information(self.creditor, 'creditorAccount'))
         # regroup debtor for the same reason
-        self.debtor = PeerAccount(**self._peer_information(self.debtor, 'debtorAccount'))
+        self.debtor = Account(**self._peer_information(self.debtor, 'debtorAccount'))
         self.description = " ".join(self.description.split())
 
     def _peer_information(self, peer_dic: Dict[str, str], peer_type: str = None) -> Dict[str, str]:
@@ -245,19 +245,7 @@ class AccountTransaction:
 
 @filter_unexpected_fields
 @dataclass
-class PeerAccount:
-    """ dataclass to build peer account structure """
-    iban: Optional[str] = None
-    bic: Optional[str] = None
-    accountNr: Optional[str] = None
-    name: Optional[str] = None
-    intermediaryName: Optional[str] = None
-    id: Optional[str] = None
-
-
-@filter_unexpected_fields
-@dataclass
-class CreditCardTransaction:
+class CreditCardTransactionItem:
     """ dataclass for a single CreditCardTransaction """
     amount: Optional[Dict] = None
     id: Optional[str] = None
@@ -274,7 +262,13 @@ class CreditCardTransaction:
     def __post_init__(self):
         self.amount = Amount(**self.amount)
         self.merchantAmount = Amount(**self.merchantAmount)
-        self.merchantCategory = MerchantCategory(**self.merchantCategory)
+        self.merchantCategory = self.MerchantCategory(**self.merchantCategory)
+
+    @filter_unexpected_fields
+    @dataclass
+    class MerchantCategory:
+        """ dataclass for a single merchantCategory """
+        code: Optional[str] = None
 
     def format(self):
         """ format format transaction list ot a useful output """
@@ -295,14 +289,7 @@ class CreditCardTransaction:
 
 @filter_unexpected_fields
 @dataclass
-class MerchantCategory:
-    """ dataclass for a single merchantCategory """
-    code: Optional[str] = None
-
-
-@filter_unexpected_fields
-@dataclass
-class DepotTransaction:
+class DepotTransactionItem:
     """ DepotTransaction class """
 
     id: Optional[str] = None
@@ -313,6 +300,15 @@ class DepotTransaction:
     performance: Optional[Union[Dict, str]] = None
     quantity: Optional[Union[Dict, str]] = None
     quote: Optional[Union[Dict, str]] = None
+
+    def __post_init__(self):
+        self.availableQuantity = self.Quantity(**self.availableQuantity)
+        self.custody = self.Custody(**self.custody)
+        self.instrument = self.Instrument(**self.instrument)
+        self.performance = self.Performance(**self.performance)
+        self.quantity = self.Quantity(**self.quantity)
+        if self.quote:
+            self.quote = self.Quote(**self.quote)
 
     @filter_unexpected_fields
     @dataclass
@@ -349,9 +345,13 @@ class DepotTransaction:
         name: Optional[Union[Dict, str]] = None
         unit: Optional[str] = None
 
+        def __post_init__(self):
+            self.name = self.Name(**self.name)
+            self.identifiers = [self.IdentifierItem(**identifier) for identifier in self.identifiers]
+
         @filter_unexpected_fields
         @dataclass
-        class Identifier:
+        class IdentifierItem:
             """ dataclass for identifier """
             identifier: Optional[str] = None
             value: Optional[str] = None
@@ -362,10 +362,6 @@ class DepotTransaction:
             """ dataclass for name """
             long: Optional[str] = None
             short: Optional[str] = None
-
-        def __post_init__(self):
-            self.name = self.Name(**self.name)
-            self.identifiers = [self.Identifier(**identifier) for identifier in self.identifiers]
 
     @filter_unexpected_fields
     @dataclass
@@ -402,24 +398,13 @@ class DepotTransaction:
         def __post_init__(self):
             self.price = PerformanceValue(**self.price)
 
-    def __post_init__(self):
-        self.availableQuantity = self.Quantity(**self.availableQuantity)
-        self.custody = self.Custody(**self.custody)
-        self.instrument = self.Instrument(**self.instrument)
-        self.performance = self.Performance(**self.performance)
-        self.quantity = self.Quantity(**self.quantity)
-        self.quote = self.Quote(**self.quote)
-
     def format(self) -> Dict[str, str]:
         """ format  transaction list ot a useful output """
         logger.debug('DepotTransaction.format()\n')
 
         transaction_dic = {
-            'currencyCode': self.quote.price.currencyCode,
             'isin_wkn': self.instrument.identifiers[0].value,
             'lastorderdate': self.lastOrderDate,
-            'market': self.quote.market,
-            'price': self.quote.price.value,
             'price_euro': self.performance.currentValue.value,
             'quantity': self.quantity.value,
             # for backwards compatibility
@@ -428,4 +413,10 @@ class DepotTransaction:
             'text': self.instrument.name.short,
             'text_long': self.instrument.name.long,
         }
+
+        if self.quote:
+            transaction_dic['currencyCode'] = self.quote.price.currencyCode
+            transaction_dic['market'] = self.quote.market
+            transaction_dic['price'] = self.quote.price.value
+
         return transaction_dic

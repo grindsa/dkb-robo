@@ -1,9 +1,10 @@
 """ Module for handling dkb transactions """
-# pylint: disable=c0415, r0913
-from typing import Dict, List, Tuple
+# pylint: disable=c0415, r0913, c0103
+from typing import Dict, List, Tuple, Optional, Union
+from dataclasses import dataclass, asdict
 import logging
 import requests
-from dkb_robo.utilities import get_dateformat
+from dkb_robo.utilities import Amount, Person, get_dateformat, filter_unexpected_fields
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 BASE_URL = 'https://banking.dkb.de/api'
@@ -57,9 +58,10 @@ class ProductGroup:
 class Overview:
     """ Overview class """
 
-    def __init__(self, client: requests.Session, base_url: str = BASE_URL):
+    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = BASE_URL):
         self.client = client
         self.base_url = base_url
+        self.unprocessed = unprocessed
 
     def _add_remaining(self, data_dic: Dict[str, str], account_dic: Dict[str, str], account_cnt: int) -> Dict[str, str]:
         """ add remaining products """
@@ -67,7 +69,10 @@ class Overview:
 
         for product_data in data_dic.values():
             account_dic[account_cnt] = product_data
-            account_dic[account_cnt]['productgroup'] = None
+            if self.unprocessed:
+                account_dic[account_cnt].productGroup = None
+            else:
+                account_dic[account_cnt]['productgroup'] = None
             account_cnt += 1
 
         logger.debug('Overview._add_remaining() ended\n')
@@ -109,12 +114,18 @@ class Overview:
                         # add product data to account_dic
                         account_dic[account_cnt] = data_dic[product_group['product_list'][dic_id]]
                         # add productgroup name to account_dic
-                        account_dic[account_cnt]['productgroup'] = product_group['name']
+                        if self.unprocessed:
+                            account_dic[account_cnt].productGroup = product_group['name']
+                        else:
+                            account_dic[account_cnt]['productgroup'] = product_group['name']
 
                         if product_group['product_list'][dic_id] in product_display_dic:
                             logger.debug('Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
                             # overwrite product name with display name
-                            account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
+                            if self.unprocessed:
+                                account_dic[account_cnt].displayName = product_display_dic[product_group['product_list'][dic_id]]
+                            else:
+                                account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
 
                         del data_dic[product_group['product_list'][dic_id]]
                         account_cnt += 1
@@ -132,16 +143,21 @@ class Overview:
         product_dic = {}
 
         product_group_dic = {
-            'accounts': Account(self.base_url),
-            'cards': Card(self.base_url),
-            'depots': Depot(self.base_url)
+            'accounts': 'AccountItem',
+            'cards': 'CardItem',
+            'depots': 'DepotItem'
         }
         for product_group in sorted(product_group_dic.keys()):
             if product_group in portfolio_dic and 'data' in portfolio_dic[product_group]:
-                product_group_object = product_group_dic[product_group]
                 for item in portfolio_dic[product_group]['data']:
-                    if 'id' in item and 'type' in item:
-                        product_dic[item['id']] = product_group_object.get(item['id'], portfolio_dic[product_group])
+                    item['attributes']['id'] = item.get('id', None)
+                    item['attributes']['type'] = item.get('type', None)
+                    product = globals()[product_group_dic[product_group]](**item['attributes'])
+
+                    if self.unprocessed:
+                        product_dic[item['id']] = product
+                    else:
+                        product_dic[item['id']] = product.format()
 
         logger.debug('Overview._itemize() ended\n')
         return product_dic
@@ -153,7 +169,6 @@ class Overview:
         # we calm the IDS system of DKB with two calls without sense
         # self._fetch('/terms-consent/consent-requests??filter%5Bportfolio%5D=DKB')
         product_display_dic = self._fetch('/config/users/me/product-display-settings')
-
         if product_display_dic:
             portfolio_dic = {
                 'product_display': product_display_dic,
@@ -169,198 +184,324 @@ class Overview:
         return self._sort(portfolio_dic)
 
 
-class Account:
-    """ Account class """
+@filter_unexpected_fields
+@dataclass
+class AccountItem:
+    """ Account dataclass """
+    availableBalance: Optional[Union[Dict, str]] = None
+    balance: Optional[Union[Dict, str]] = None
+    currencyCode: Optional[str] = None
+    displayName: Optional[str] = None
+    holderName: Optional[str] = None
+    id: Optional[str] = None
+    iban: Optional[str] = None
+    interestRate: Optional[Union[Dict, str]] = None
+    interests: Optional[List] = None
+    lastAccountStatementDate: Optional[str] = None
+    nearTimeBalance: Optional[Union[Dict, str]] = None
+    openingDate: Optional[str] = None
+    overdraftLimit: Optional[Union[Dict, str]] = None
+    permissions: Optional[List] = None
+    product: Optional[Dict] = None
+    productGroup: Optional[str] = None
+    state: Optional[str] = None
+    type: Optional[str] = None
+    unauthorizedOverdraftInterestRate: Optional[Union[Dict, str]] = None
+    updatedAt: Optional[str] = None
 
-    def __init__(self, base_url: str = BASE_URL):
-        self.base_url = base_url
-
-    def _balance(self, account: Dict[str, str]) -> Dict[str, str]:
-        """ add balance to dictionary """
-        logger.debug('Account._balance()\n')
-
-        output_dic = {}
-        mapping_dic = {'amount': 'value', 'currencycode': 'currencyCode'}
-        for my_field, dkb_field in mapping_dic.items():
-            if my_field == 'amount':
-                try:
-                    output_dic[my_field] = float(account.get('attributes', {}).get('balance', {}).get(dkb_field, None))
-                except Exception as exc:
-                    logger.error('account amount conversion error: %s', exc)
-                    output_dic[my_field] = None
-            else:
-                output_dic[my_field] = account.get('attributes', {}).get('balance', {}).get(dkb_field, None)
-
-        logger.debug('Account._balance() ended\n')
-        return output_dic
-
-    def _details(self, account: Dict[str, str], aid: str) -> Dict[str, str]:
-        """ add general account information """
-        logger.debug('Account._details()\n')
-
-        output_dic = {
-            'type': 'account',
-            'name': account.get('attributes', {}).get('product', {}).get('displayName', None),
-            'id': aid,
-            'transactions': self.base_url + f"/accounts/accounts/{aid}/transactions",
-            'date': account.get('attributes', {}).get('updatedAt', None)
-        }
-
-        mapping_dic = {'iban': 'iban', 'account': 'iban', 'holdername': 'holderName', 'limit': 'overdraftLimit'}
-        for my_field, dkb_field in mapping_dic.items():
-            if my_field == 'limit':
-                try:
-                    output_dic[my_field] = float(account.get('attributes', {}).get(dkb_field, 0))
-                except Exception as exc:
-                    logger.error('account limit conversion error: %s', exc)
-                    output_dic[my_field] = None
-            else:
-                output_dic[my_field] = account.get('attributes', {}).get(dkb_field, None)
-
-        logger.debug('Account._details() ended\n')
-        return output_dic
-
-    def get(self, aid: str, accounts_dic: Dict[str, str]) -> Dict[str, str]:
-        """ get account """
-        logger.debug('Account.get(%s)', aid)
-
-        output_dic = {}
-        if 'data' in accounts_dic:
-            for account in accounts_dic['data']:
-                if account['id'] == aid and 'attributes' in account:
-                    # build dictionary with account information
-                    output_dic = {**self._details(account, aid), **self._balance(account)}
-                    break
-
-        logger.debug('Account.get() ended\n')
-        return output_dic
-
-
-class Card:
-    """ Card class """
-
-    def __init__(self, base_url: str = BASE_URL):
-        self.base_url = base_url
-
-    def _balance(self, card: Dict[str, str]) -> Dict[str, str]:
-        """ add card balance to dictionary """
-        logger.debug('Card._balance()\n')
-
-        if 'balance' in card['attributes']:
-            # DKB shows card balance in a weired way
-            try:
-                amount = float(card.get('attributes', {}).get('balance', {}).get('value', None)) * -1
-            except Exception as exc:
-                logger.error('card amount conversion error: %s', exc)
-                amount = None
-
-            output_dic = {
-                'amount': amount,
-                'currencycode': card.get('attributes', {}).get('balance', {}).get('currencyCode', None),
-                'date': card.get('attributes', {}).get('balance', {}).get('date', None)
-            }
-        else:
-            output_dic = {}
-
-        logger.debug('Card._balance() ended\n')
-        return output_dic
-
-    def _details(self, card: Dict[str, str], cid: str) -> Dict[str, str]:
-        """ add general information of card """
-        logger.debug('Card._details()\n')
-
+    def __post_init__(self):
+        self.availableBalance = Amount(**self.availableBalance)
+        self.balance = Amount(**self.balance)
+        self.interests = [self.InterestsItem(**interest) for interest in self.interests]
+        self.nearTimeBalance = Amount(**self.nearTimeBalance)
+        self.product = self.Product(**self.product)
         try:
-            limit = float(card.get('attributes', {}).get('limit', {}).get('value', 0))
-        except Exception as exc:
-            logger.error('card limit conversion error: %s', exc)
-            limit = None
+            self.overdraftLimit = float(self.overdraftLimit)
+        except Exception:
+            self.overdraftLimit = None
+
+    @filter_unexpected_fields
+    @dataclass
+    class InterestsItem:
+        """ interests class """
+        details: Optional[List] = None
+        method: Optional[str] = None
+        type: Optional[str] = None
+
+        def __post_init__(self):
+            self.details = [self.DetailsItem(**detail) for detail in self.details]
+
+        @filter_unexpected_fields
+        @dataclass
+        class DetailsItem:
+            """ details class """
+            condition: Optional[Union[Dict, str]] = None
+            interestRate: Optional[float] = None
+
+            def __post_init__(self):
+                self.condition = self.Condition(**self.condition)
+
+            @filter_unexpected_fields
+            @dataclass
+            class Condition:
+                """ condition class """
+                currency: Optional[str] = None
+                maximumAmount: Optional[float] = None
+                minimumAmount: Optional[float] = None
+
+                def __post_init__(self):
+                    if self.minimumAmount:
+                        try:
+                            self.minimumAmount = float(self.minimumAmount)
+                        except Exception:
+                            self.maximumAmount = None
+                    if self.maximumAmount:
+                        try:
+                            self.maximumAmount = float(self.minimumAmount)
+                        except Exception:
+                            self.maximumAmount = None
+
+    @filter_unexpected_fields
+    @dataclass
+    class Product:
+        """ Product class """
+        id: Optional[str] = None
+        type: Optional[str] = None
+        displayName: Optional[str] = None
+
+    def format(self) -> Dict[str, str]:
+        """ format account """
+        logger.debug('Account.format()\n')
 
         output_dic = {
-            'id': cid,
-            'type': card.get('type', 'unknown').lower(),
-            'maskedpan': card.get('attributes', {}).get('maskedPan', None),
-            'account': card.get('attributes', {}).get('maskedPan', None),
-            'status': card.get('attributes', {}).get('status', None),
-            'name': card.get('attributes', {}).get('product', {}).get('displayName', None),
-            'expirydate': card.get('attributes', {}).get('expiryDate', None),
-            'holdername': f"{card.get('attributes', {}).get('holder', {}).get('person', {}).get('firstName', '')} {card.get('attributes', {}).get('holder', {}).get('person', {}).get('lastName', '')}"
+            # for backward compatibility
+            'account': self.iban,
+            'amount': self.balance.value,
+            'currencyCode': self.currencyCode,
+            'date': self.updatedAt,
+            'holderName': self.holderName,
+            'iban': self.iban,
+            'id': self.id,
+            'limit': self.overdraftLimit,
+            'name': self.product.displayName,
+            'transactions': BASE_URL + f"/accounts/accounts/{self.id}/transactions",
+            'type': self.type,
         }
 
-        if card['type'] == 'debitCard':
-            output_dic['transactions'] = None
+        logger.debug('Account.format() ended\n')
+        return output_dic
+
+
+@filter_unexpected_fields
+@dataclass
+class CardItem:
+    """ Card class """
+    activationDate: Optional[str] = None
+    authorizedAmount: Optional[Union[Dict, str]] = None
+    availableLimit: Optional[Union[Dict, str]] = None
+    balance: Optional[Union[Dict, str]] = None
+    billingDetails: Optional[Union[Dict, str]] = None
+    blockedSince: Optional[str] = None
+    creationDate: Optional[str] = None
+    engravedLine1: Optional[str] = None
+    engravedLine2: Optional[str] = None
+    expiryDate: Optional[str] = None
+    failedPinAttempts: Optional[int] = None
+    followUpCardId: Optional[str] = None
+    holder: Optional[Union[Dict, str]] = None
+    id: Optional[str] = None
+    limit: Optional[Union[Dict, str]] = None
+    maskedPan: Optional[str] = None
+    network: Optional[str] = None
+    owner: Optional[Union[Dict, str]] = None
+    product: Optional[Union[Dict, str]] = None
+    referenceAccount: Optional[str] = None
+    state: Optional[str] = None
+    status: Optional[Union[Dict, str]] = None
+    type: Optional[str] = None
+
+    def __post_init__(self):
+        if self.balance:
+            self.balance = Amount(**self.balance)
+        if self.owner:
+            self.owner = Person(**self.owner)
+        if self.availableLimit:
+            self.availableLimit = Amount(**self.availableLimit)
+        if self.authorizedAmount:
+            self.authorizedAmount = Amount(**self.authorizedAmount)
+        if self.referenceAccount:
+            self.referenceAccount = self.Account(**self.referenceAccount)
+        if self.billingDetails:
+            self.billingDetails = self.BillingDetails(**self.billingDetails)
+        self.limit = self.Limit(**self.limit)
+        self.product = self.Product(**self.product)
+        self.status = self.Status(**self.status)
+        self.holder = self.Holder(**self.holder)
+
+    @filter_unexpected_fields
+    @dataclass
+    class Account:
+        """ Account class """
+        iban: Optional[str] = None
+        bic: Optional[str] = None
+
+    @filter_unexpected_fields
+    @dataclass
+    class BillingDetails:
+        """ BillingDetails class """
+        days: Optional[List] = None
+        calendarType: Optional[str] = None
+        cycle: Optional[str] = None
+
+    @filter_unexpected_fields
+    @dataclass
+    class Holder:
+        """ Holder class """
+        person: Optional[Dict] = None
+
+        def __post_init__(self):
+            if self.person:
+                self.person = Person(**self.person)
+
+    @filter_unexpected_fields
+    @dataclass
+    class Limit:
+        """ Limit class """
+        value: Optional[float] = None
+        currencyCode: Optional[str] = None
+        identifier: Optional[str] = None
+        categories: Optional[List] = None
+
+        def __post_init__(self):
+            if self.value:
+                try:
+                    self.value = float(self.value)
+                except Exception:
+                    self.value = None
+            if self.categories:
+                self.categories = [self.CategoryItem(**category) for category in self.categories]
+
+        @filter_unexpected_fields
+        @dataclass
+        class CategoryItem:
+            """ Category class """
+            amount: Optional[float] = None
+            name: Optional[str] = None
+
+            def __post_init__(self):
+                if self.amount:
+                    self.amount = Amount(**self.amount)
+
+    @filter_unexpected_fields
+    @dataclass
+    class Product:
+        """ Product class """
+        superProductId: Optional[str] = None
+        displayName: Optional[str] = None
+        institute: Optional[str] = None
+        productType: Optional[str] = None
+        ownerType: Optional[str] = None
+        id: Optional[str] = None
+        type: Optional[str] = None
+
+    @filter_unexpected_fields
+    @dataclass
+    class Status:
+        """ Status class """
+        category: Optional[str] = None
+        since: Optional[str] = None
+        reason: Optional[str] = None
+        final: Optional[bool] = None
+        limitationsFor: Optional[List] = None
+
+    def format(self) -> Dict[str, str]:
+        """ format card """
+        logger.debug('Card.format()\n')
+
+        output_dic = {
+            'account': self.maskedPan,
+            'expirydate': self.expiryDate,
+            'holdername:': self.holder.person.firstName + ' ' + self.holder.person.lastName,
+            'id': self.id,
+            'name': self.product.displayName,
+            'limit': self.limit.value,
+            'maskedpan': self.maskedPan,
+            'status': asdict(self.status),
+            'type': self.type.lower(),
+
+        }
+        if self.type == 'creditCard':
+            output_dic['transactions'] = BASE_URL + f"/credit-card/cards/{self.id}/transactions"
+            # dkb does some weird stuff with the balance. we need to flip it
+            output_dic['amount'] = self.balance.value * -1
+            output_dic['currencycode'] = self.balance.currencyCode
+            output_dic['date'] = self.balance.date
         else:
-            output_dic['transactions'] = self.base_url + f"/credit-card/cards/{cid}/transactions"
-            output_dic['limit'] = limit
+            output_dic['transactions'] = None
 
-        logger.debug('Card._details() ended\n')
-        return output_dic
-
-    def get(self, cid: str, cards_dic: Dict[str, str]) -> Dict[str, str]:
-        """ get credit card """
-        logger.debug('Card.get(%s)', cid)
-
-        output_dic = {}
-        if 'data' in cards_dic:
-            for card in cards_dic['data']:
-                if card['id'] == cid and 'attributes' in card:
-                    # build dictionary with card information
-                    output_dic = {**self._details(card, cid), **self._balance(card)}
-                    break
-
-        logger.debug('Card.get() ended\n')
+        logger.debug('Card.format() ended\n')
         return output_dic
 
 
-class Depot:
+@filter_unexpected_fields
+@dataclass
+class DepotItem:
     """ Depot class """
 
-    def __init__(self, base_url: str = BASE_URL):
-        self.base_url = base_url
+    brokerageAccountPerformance: Optional[Union[Dict, str]] = None
+    depositAccountId: Optional[str] = None
+    holder: Optional[Union[Dict, str]] = None
+    holderName: Optional[str] = None
+    id: Optional[str] = None
+    referenceAccounts: Optional[List] = None
+    riskClasses: Optional[List] = None
+    tradingEnabled: Optional[bool] = None
+    type: Optional[str] = None
 
-    def _balance(self, depot: Dict[str, str]) -> Dict[str, str]:
-        """ add depot value and currentcy """
-        logger.debug('Depot._balance()\n')
+    def __post_init__(self):
+        self.brokerageAccountPerformance = self.BrokerageAccountPerformance(**self.brokerageAccountPerformance)
+        self.holder = Person(**self.holder)
+        self.referenceAccounts = [self.ReferenceAccountItem(**reference_account) for reference_account in self.referenceAccounts]
 
-        try:
-            amount = float(depot.get('attributes', {}).get('brokerageAccountPerformance', {}).get('currentValue', {}).get('value', None))
-        except Exception as exc:
-            logger.error('depot amount conversion error: %s', exc)
-            amount = None
+    @filter_unexpected_fields
+    @dataclass
+    class BrokerageAccountPerformance:
+        """ BrokerageAccountPerformance class """
+        currentValue: Optional[Union[Dict, str]] = None
+        averagePrice: Optional[Union[Dict, str]] = None
+        overallAbsolute: Optional[Union[Dict, str]] = None
+        overallRelative: Optional[str] = None
+        isOutdated: bool = False
+
+        def __post_init__(self):
+            self.currentValue = Amount(**self.currentValue)
+            self.averagePrice = Amount(**self.averagePrice)
+            self.overallAbsolute = Amount(**self.overallAbsolute)
+
+    @filter_unexpected_fields
+    @dataclass
+    class ReferenceAccountItem:
+        """ ReferenceAccount class """
+        internalReferenceAccounts: bool = False
+        accountType: Optional[str] = None
+        accountNumber: Optional[str] = None
+        bankCode: Optional[str] = None
+        holderName: Optional[str] = None
+
+    def format(self) -> Dict[str, str]:
+        """ format depot """
+        logger.debug('Depot.format()\n')
 
         output_dic = {
-            'amount': amount,
-            'currencycode': depot.get('attributes', {}).get('brokerageAccountPerformance', {}).get('currentValue', {}).get('currencyCode', None)
-        }
-
-        logger.debug('Depot._balance() ended\n')
-        return output_dic
-
-    def _details(self, depot: Dict[str, str], did: str) -> Dict[str, str]:
-        """ add depot information """
-        logger.debug('Depot._details()\n')
-
-        output_dic = {
+            'account': self.depositAccountId,
+            'amount': self.brokerageAccountPerformance.currentValue.value,
+            'currencyCode': self.brokerageAccountPerformance.currentValue.currencyCode,
+            'holderName': self.holderName,
+            'id': self.id,
+            'name': self.holderName,
             'type': 'depot',
-            'id': did,
-            'transactions': self.base_url + f"/broker/brokerage-accounts/{did}/positions?include=instrument%2Cquote",
-            'holdername': depot.get('attributes', {}).get('holderName', None),
-            'account': depot.get('attributes', {}).get('depositAccountId', None),
-            'name': depot.get('attributes', {}).get('holderName', None),
+            'transactions': BASE_URL + f"/broker/brokerage-accounts/{self.id}/positions?include=instrument%2Cquote'",
         }
 
-        logger.debug('Depot._details() ended\n')
-        return output_dic
-
-    def get(self, did: str, depots_dic: Dict[str, str]) -> Dict[str, str]:
-        """ get depot """
-        logger.debug('Depot.get(%s)', did)
-
-        output_dic = {}
-        if 'data' in depots_dic:
-            for depot in depots_dic['data']:
-                if depot['id'] == did and 'attributes' in depot:
-                    output_dic = {**self._details(depot, did), **self._balance(depot)}
-                    break
-
-        logger.debug('Depot.get() ended\n')
+        logger.debug('Depot.format() ended\n')
         return output_dic
