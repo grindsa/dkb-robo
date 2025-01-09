@@ -11,7 +11,8 @@ on:
 
 jobs:
   markdown-link-check:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@master
     - uses: umbrelladocs/action-linkspector@v1
