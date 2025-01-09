@@ -3,7 +3,7 @@ authors = [{ name = "grindsa", email = "grindelsack@gmail.com" }]
 name = "dkb_robo"
 description = "Download transactions from the website of Deutsche Kreditbak AG"
 keywords = ["Deutsche Kreditbank", "DKB"]
-version = "0.28.2"
+version = "0.28.3"
 readme = "README.md"
 classifiers = [
     # Keep in sync with the Python version matrix in test_lint.yaml GitHub workflow.
