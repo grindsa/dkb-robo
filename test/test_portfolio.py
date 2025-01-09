@@ -13,7 +13,7 @@ from mechanicalsoup import LinkNotFoundError
 import io
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
-from dkb_robo.portfolio import ProductGroup, Account, Card, Depot, Overview
+from dkb_robo.portfolio import ProductGroup, AccountItem, CardItem, DepotItem, Overview
 
 def json_load(fname):
     """ simple json load """
@@ -158,471 +158,112 @@ class TestOverview(unittest.TestCase):
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_sort.called)
 
-    @patch('dkb_robo.portfolio.Depot.get')
-    @patch('dkb_robo.portfolio.Card.get')
-    @patch('dkb_robo.portfolio.Account.get')
-    def test_015__itemize(self, mock_account, mock_card, mock_depot):
-        """ test _itemize() """
-        mock_account.side_effect = ['account1', 'account2']
-        data_dic = {
-            'accounts': {'data': [{'id': 'id1', 'type': 'type1'}, {'id': 'id2', 'type': 'type2'}]}
+    @patch('dkb_robo.portfolio.AccountItem', autospec=True)
+    @patch('dkb_robo.portfolio.CardItem', autospec=True)
+    @patch('dkb_robo.portfolio.DepotItem', autospec=True)
+    def test_015_itemize(self, mock_depot, mock_card, mock_account):
+        portfolio_dic = {
+            'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
+            'cards': {'data': [{'id': 'card1', 'attributes': {'limit': 500}}]},
+            'depots': {'data': [{'id': 'depot1', 'attributes': {'value': 1000}}]}
         }
-        self.assertEqual({'id1': 'account1', 'id2': 'account2'}, self.overview._itemize(data_dic))
-        self.assertTrue(mock_account.called)
-        self.assertFalse(mock_card.called)
-        self.assertFalse(mock_depot.called)
 
-    @patch('dkb_robo.portfolio.Depot.get')
-    @patch('dkb_robo.portfolio.Card.get')
-    @patch('dkb_robo.portfolio.Account.get')
-    def test_016__itemize(self, mock_account, mock_card, mock_depot):
-        """ test _itemize() """
-        mock_account.side_effect = ['account1', 'account2']
-        mock_card.side_effect = ['card1', 'card2']
-        data_dic = {
-            'accounts': {'data': [{'id': 'id1', 'type': 'type1'}, {'id': 'id2', 'type': 'type2'}]},
-            'cards': {'data': [{'id': 'id3', 'type': 'type3'}, {'id': 'id4', 'type': 'type4'}]},
+        mock_account.return_value.format.return_value = 'formatted_account'
+        mock_card.return_value.format.return_value = 'formatted_card'
+        mock_depot.return_value.format.return_value = 'formatted_depot'
+
+        result = self.overview._itemize(portfolio_dic)
+
+        self.assertEqual(result, {
+            'acc1': 'formatted_account',
+            'card1': 'formatted_card',
+            'depot1': 'formatted_depot'
+        })
+
+    @patch('dkb_robo.portfolio.AccountItem', autospec=True)
+    @patch('dkb_robo.portfolio.CardItem', autospec=True)
+    @patch('dkb_robo.portfolio.DepotItem', autospec=True)
+    def test_016_itemize(self, mock_depot, mock_card, mock_account):
+        portfolio_dic = {
+            'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
+            'cards': {'data': [{'id': 'card1', 'attributes': {'limit': 500}}]},
+            'depots': {'data': [{'id': 'depot1', 'attributes': {'value': 1000}}]}
         }
-        self.assertEqual({'id1': 'account1', 'id2': 'account2', 'id3': 'card1', 'id4': 'card2'}, self.overview._itemize(data_dic))
-        self.assertTrue(mock_account.called)
-        self.assertTrue(mock_card.called)
-        self.assertFalse(mock_depot.called)
 
-    @patch('dkb_robo.portfolio.Depot.get')
-    @patch('dkb_robo.portfolio.Card.get')
-    @patch('dkb_robo.portfolio.Account.get')
-    def test_017__itemize(self, mock_account, mock_card, mock_depot):
-        """ test _itemize() """
-        mock_account.side_effect = ['account1', 'account2']
-        mock_card.side_effect = ['card1', 'card2']
-        mock_depot.side_effect = ['depot1', 'depot2']
-        data_dic = {
-            'accounts': {'data': [{'id': 'id1', 'type': 'type1'}, {'id': 'id2', 'type': 'type2'}]},
-            'cards': {'data': [{'id': 'id3', 'type': 'type3'}, {'id': 'id4', 'type': 'type4'}]},
-            'depots': {'data': [{'id': 'id5', 'type': 'type5'}, {'id': 'id6', 'type': 'type6'}]},
+        mock_account.return_value = 'unprocessed_account'
+        mock_card.return_value = 'unprocessed_card'
+        mock_depot.return_value = 'unprocessed_depot'
+        self.overview.unprocessed = True
+        result = self.overview._itemize(portfolio_dic)
+
+        self.assertEqual(result, {
+            'acc1': 'unprocessed_account',
+            'card1': 'unprocessed_card',
+            'depot1': 'unprocessed_depot'
+        })
+
+    @patch('dkb_robo.portfolio.ProductGroup', autospec=True)
+    @patch('dkb_robo.portfolio.Overview._itemize', autospec=True)
+    @patch('dkb_robo.portfolio.Overview._add_remaining', autospec=True)
+    def test_017_sort(self, mock_add, mock_itemize, mock_pgrp):
+        portfolio_dic = {
+            'product_display': {'data': [{'id': 'display1'}]},
+            'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
+            'cards': {'data': [{'id': 'card1', 'attributes': {'limit': 500}}]},
+            'depots': {'data': [{'id': 'depot1', 'attributes': {'value': 1000}}]}
         }
-        self.assertEqual({'id1': 'account1', 'id2': 'account2', 'id3': 'card1', 'id4': 'card2', 'id5': 'depot1', 'id6': 'depot2'}, self.overview._itemize(data_dic))
-        self.assertTrue(mock_account.called)
-        self.assertTrue(mock_card.called)
-        self.assertTrue(mock_depot.called)
 
-    def test_018__sort(self):
-        """ test _sort() """
-        data = {
-            'accounts': json_load(self.dir_path + '/mocks/accounts.json'),
-            'cards': json_load(self.dir_path + '/mocks/cards.json'),
-            'depots': json_load(self.dir_path + '/mocks/brokerage.json'),
-            'product_display': json_load(self.dir_path + '/mocks/pd.json')}
-        result = {0: {'account': '987654321',
-                        'amount': 1234.56,
-                        'currencycode': 'EUR',
-                        'holdername': 'HolderName1',
-                        'id': 'baccountid1',
-                        'name': 'pdsettings brokeraage baccountid1',
-                        'productgroup': 'productGroup name 1',
-                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
-                        'type': 'depot'},
-                    1: {'account': 'AccountIBAN3',
-                        'amount': -1000.22,
-                        'currencycode': 'EUR',
-                        'date': '2020-03-01',
-                        'holdername': 'Account HolderName 3',
-                        'iban': 'AccountIBAN3',
-                        'id': 'accountid3',
-                        'limit': 2500.00,
-                        'name': 'pdsettings accoutname accountid3',
-                        'productgroup': 'productGroup name 1',
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
-                        'type': 'account'},
-                    2: {'account': 'maskedPan1',
-                        'amount': -1234.56,
-                        'currencycode': 'EUR',
-                        'date': '2020-01-03',
-                        'expirydate': '2020-01-02',
-                        'holdername': 'holderfirstName holderlastName',
-                        'id': 'cardid1',
-                        'limit': 1000.00,
-                        'maskedpan': 'maskedPan1',
-                        'name': 'pdsettings cardname cardid1',
-                        'productgroup': 'productGroup name 1',
-                        'status': {'category': 'active', 'limitationsFor': []},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
-                        'type': 'creditcard'},
-                    3: {'account': 'maskedPan2',
-                        'amount': 12345.67,
-                        'currencycode': 'EUR',
-                        'date': '2020-02-07',
-                        'holdername': 'holderfirstName2 holderlastName2',
-                        'expirydate': '2020-02-02',
-                        'id': 'cardid2',
-                        'limit': 0.00,
-                        'maskedpan': 'maskedPan2',
-                        'name': 'displayName2',
-                        'productgroup': 'productGroup name 1',
-                        'status': {'category': 'active', 'limitationsFor': []},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
-                        'type': 'creditcard'},
-                    4: {'account': 'AccountIBAN2',
-                        'amount': 1284.56,
-                        'currencycode': 'EUR',
-                        'date': '2020-02-01',
-                        'holdername': 'Account HolderName 2',
-                        'iban': 'AccountIBAN2',
-                        'id': 'accountid2',
-                        'limit': 0.00,
-                        'name': 'pdsettings accoutname accountid2',
-                        'productgroup': 'productGroup name 2',
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid2/transactions',
-                        'type': 'account'},
-                    5: {'account': 'AccountIBAN1',
-                        'amount': 12345.67,
-                        'currencycode': 'EUR',
-                        'date': '2020-01-01',
-                        'holdername': 'Account HolderName 1',
-                        'iban': 'AccountIBAN1',
-                        'id': 'accountid1',
-                        'limit': 1000.00,
-                        'name': 'Account DisplayName 1',
-                        'productgroup': None,
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid1/transactions',
-                        'type': 'account'},
-                    6: {'account': 'maskedPan3',
-                        'holdername': 'holderfirstName3 holderlastName3',
-                        'id': 'cardid3',
-                        'expirydate': '2020-04-04',
-                        'maskedpan': 'maskedPan3',
-                        'name': 'Visa Debitkarte',
-                        'productgroup': None,
-                        'status': {'category': 'blocked',
-                                    'final': True,
-                                    'reason': 'cancellation-of-product-by-customer',
-                                    'since': '2020-03-01'},
-                        'transactions': None,
-                        'type': 'debitcard'},
-                    7: {'account': 'maskedPan4',
-                        'holdername': 'holderfirstName4 holderlastName4',
-                        'id': 'cardid4',
-                        'expirydate': '2020-04-03',
-                        'maskedpan': 'maskedPan4',
-                        'name': 'Visa Debitkarte',
-                        'productgroup': None,
-                        'status': {'category': 'active'},
-                        'transactions': None,
-                        'type': 'debitcard'}}
-        self.assertEqual(result, self.overview._sort(data))
+        mock_itemize.return_value = {
+            'acc1': {'amount': 100},
+            'card1': {'limit': 500},
+            'depot1': {'value': 1000}
+        }
 
-    def test_019__sort(self):
-        """ test _sort() """
+        mock_product_group = MagicMock()
+        mock_product_group.map.return_value = ({'acc1': 'Account'}, [{'name': 'Group1', 'product_list': {'acc1': 'acc1'}}])
+        mock_pgrp.return_value = mock_product_group
 
-        data = {
-            'accounts': json_load(self.dir_path + '/mocks/accounts.json'),
-            'cards': json_load(self.dir_path + '/mocks/cards.json'),
-            'depots': json_load(self.dir_path + '/mocks/brokerage.json'),
-            'product_display': json_load(self.dir_path + '/mocks/pd.json')}
+        mock_add.return_value = {
+            0: {'amount': 100, 'productgroup': 'Group1'}
+        }
 
-        # empty display dic
-        data['product_display']['data'][0]['attributes']['productGroups'] = {}
+        result = self.overview._sort(portfolio_dic)
 
-        result = {0: {'account': 'AccountIBAN1',
-                        'amount': 12345.67,
-                        'currencycode': 'EUR',
-                        'date': '2020-01-01',
-                        'holdername': 'Account HolderName 1',
-                        'iban': 'AccountIBAN1',
-                        'id': 'accountid1',
-                        'limit': 1000.00,
-                        'name': 'Account DisplayName 1',
-                        'productgroup': None,
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid1/transactions',
-                        'type': 'account'},
-                    1: {'account': 'AccountIBAN2',
-                        'amount': 1284.56,
-                        'currencycode': 'EUR',
-                        'date': '2020-02-01',
-                        'holdername': 'Account HolderName 2',
-                        'iban': 'AccountIBAN2',
-                        'id': 'accountid2',
-                        'limit': 0.00,
-                        'name': 'Account DisplayName 2',
-                        'productgroup': None,
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid2/transactions',
-                        'type': 'account'},
-                    2: {'account': 'AccountIBAN3',
-                        'amount': -1000.22,
-                        'currencycode': 'EUR',
-                        'date': '2020-03-01',
-                        'holdername': 'Account HolderName 3',
-                        'iban': 'AccountIBAN3',
-                        'id': 'accountid3',
-                        'limit': 2500.00,
-                        'name': 'Account DisplayName 3',
-                        'productgroup': None,
-                        'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
-                        'type': 'account'},
-                    3: {'account': 'maskedPan1',
-                        'amount': -1234.56,
-                        'currencycode': 'EUR',
-                        'date': '2020-01-03',
-                        'holdername': 'holderfirstName holderlastName',
-                        'id': 'cardid1',
-                        'limit': 1000.00,
-                        'maskedpan': 'maskedPan1',
-                        'name': 'displayName1',
-                        'productgroup': None,
-                        'expirydate': '2020-01-02',
-                        'status': {'category': 'active', 'limitationsFor': []},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid1/transactions',
-                        'type': 'creditcard'},
-                    4: {'account': 'maskedPan2',
-                        'amount': 12345.67,
-                        'currencycode': 'EUR',
-                        'date': '2020-02-07',
-                        'holdername': 'holderfirstName2 holderlastName2',
-                        'id': 'cardid2',
-                        'limit': 0.00,
-                        'maskedpan': 'maskedPan2',
-                        'name': 'displayName2',
-                        'productgroup': None,
-                        'expirydate': '2020-02-02',
-                        'status': {'category': 'active', 'limitationsFor': []},
-                        'transactions': 'https://banking.dkb.de/api/credit-card/cards/cardid2/transactions',
-                        'type': 'creditcard'},
-                    5: {'account': 'maskedPan3',
-                        'holdername': 'holderfirstName3 holderlastName3',
-                        'id': 'cardid3',
-                        'maskedpan': 'maskedPan3',
-                        'name': 'Visa Debitkarte',
-                        'productgroup': None,
-                        'expirydate': '2020-04-04',
-                        'status': {'category': 'blocked',
-                                    'final': True,
-                                    'reason': 'cancellation-of-product-by-customer',
-                                    'since': '2020-03-01'},
-                        'transactions': None,
-                        'type': 'debitcard'},
-                    6: {'account': 'maskedPan4',
-                        'holdername': 'holderfirstName4 holderlastName4',
-                        'id': 'cardid4',
-                        'maskedpan': 'maskedPan4',
-                        'name': 'Visa Debitkarte',
-                        'productgroup': None,
-                        'status': {'category': 'active'},
-                        'transactions': None,
-                        'expirydate': '2020-04-03',
-                        'type': 'debitcard'},
-                    7: {'account': '987654321',
-                        'amount': 1234.56,
-                        'currencycode': 'EUR',
-                        'holdername': 'HolderName1',
-                        'id': 'baccountid1',
-                        'name': 'HolderName1',
-                        'productgroup': None,
-                        'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
-                        'type': 'depot'}}
-        self.assertEqual(result, self.overview._sort(data))
+        self.assertEqual(result, {
+            0: {'amount': 100, 'productgroup': 'Group1'}
+        })
 
-class TestAccount(unittest.TestCase):
-    """ test class """
+    @patch('dkb_robo.portfolio.ProductGroup', autospec=True)
+    @patch('dkb_robo.portfolio.Overview._itemize', autospec=True)
+    @patch('dkb_robo.portfolio.Overview._add_remaining', autospec=True)
+    def test_018_sort(self, mock_add, mock_itemize, mock_pgrp):
+        portfolio_dic = {
+            'product_display': {'data': [{'id': 'display1'}]},
+            'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
+            'cards': {'data': [{'id': 'card1', 'attributes': {'limit': 500}}]},
+            'depots': {'data': [{'id': 'depot1', 'attributes': {'value': 1000}}]}
+        }
 
-    def setUp(self):
-        self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.account = Account()
+        mock_itemize.return_value = {
+            'acc1': {'amount': 100},
+            'card1': {'limit': 500},
+            'depot1': {'value': 1000}
+        }
 
-    def test_020__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': '100.45'}}}
-        self.assertEqual({'amount': 100.45, 'currencycode': 'EUR'}, self.account._balance(account))
+        mock_product_group = MagicMock()
+        mock_product_group.map.return_value = ({'acc1': 'Account'}, [{'name': 'Group1', 'product_list': {'acc1': 'acc1'}}])
+        mock_pgrp.return_value = mock_product_group
 
-    def test_021__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 100.45}}}
-        self.assertEqual({'amount': 100.45, 'currencycode': 'EUR'}, self.account._balance(account))
+        mock_add.return_value = {
+            0: {'amount': 100, 'productgroup': 'Group1'}
+        }
 
-    def test_022__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa'}}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.account._balance(account))
-        self.assertIn("ERROR:dkb_robo.portfolio:account amount conversion error: could not convert string to float: 'aa'", lcm.output)
+        self.overview.unprocessed = True
+        result = self.overview._sort(portfolio_dic)
 
-    def test_023__details(self):
-        """ test _details() """
-        account = {'attributes': {'iban': 'iban', 'bic': 'bic', 'accountNumber': 'accountNumber', 'bankCode': 'bankCode', 'accountType': 'accountType', 'balance': 'balance'}}
-        self.assertEqual({'type': 'account', 'name': None, 'id': 'aid', 'transactions': 'https://banking.dkb.de/api/accounts/accounts/aid/transactions', 'date': None, 'iban': 'iban', 'account': 'iban', 'holdername': None, 'limit': 0.0}, self.account._details(account, 'aid'))
-
-    @patch('dkb_robo.portfolio.Account._balance')
-    @patch('dkb_robo.portfolio.Account._details')
-    def test_024_get(self, mock_details, mock_balance):
-        """ test get() ok """
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertEqual({'mock_balance': 'mock_balance', 'mock_details': 'mock_details'}, self.account.get('aid', data_dic))
-        self.assertTrue(mock_details.called)
-        self.assertTrue(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Account._balance')
-    @patch('dkb_robo.portfolio.Account._details')
-    def test_025_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.account.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Account._balance')
-    @patch('dkb_robo.portfolio.Account._details')
-    def test_026_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data1': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.account.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
-
-class TestCard(unittest.TestCase):
-    """ test class """
-
-    def setUp(self):
-        self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.card = Card()
-
-    def test_027__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': '100.45', 'date': 'date'}}}
-        self.assertEqual({'amount': -100.45, 'currencycode': 'EUR', 'date': 'date'}, self.card._balance(account))
-
-    def test_028__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 100.45, 'date': 'date'}}}
-        self.assertEqual({'amount': -100.45, 'currencycode': 'EUR', 'date': 'date'}, self.card._balance(account))
-
-    def test_029__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'balance': {'currencyCode': 'EUR', 'value': 'aa', 'date': 'date'}}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual({'amount': None, 'currencycode': 'EUR', 'date': 'date'}, self.card._balance(account))
-        self.assertIn("ERROR:dkb_robo.portfolio:card amount conversion error: could not convert string to float: 'aa'", lcm.output)
-
-    def test_030__details(self):
-        """ test _details() """
-        account = {'type': 'type', 'attributes': {'limit': {'value': '1000'}, 'maskedpan': 'maskedpan', 'status': 'status', 'expirydate': 'expirydate', 'product': {'displayName': 'displayName'}, 'holder': {'person': {'firstName': 'firstName', 'lastName': 'lastName'}}}}
-        result = {'id': 'cid', 'type': 'type', 'maskedpan': None, 'account': None, 'status': 'status', 'name': 'displayName', 'expirydate': None, 'holdername': 'firstName lastName', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions', 'limit': 1000}
-        self.assertEqual(result, self.card._details(account, 'cid'))
-
-    def test_031__details(self):
-        """ test _details() """
-        account = {'type': 'type', 'attributes': {'limit': {'value': '100'}, 'maskedpan': 'maskedpan', 'status': 'status', 'expirydate': 'expirydate', 'product': {'displayName': 'displayName'}, 'holder': {'person': {'firstName': 'firstName'}}}}
-        result = {'id': 'cid', 'type': 'type', 'maskedpan': None, 'account': None, 'status': 'status', 'name': 'displayName', 'expirydate': None, 'holdername': 'firstName ', 'transactions': 'https://banking.dkb.de/api/credit-card/cards/cid/transactions', 'limit': 100.0}
-        self.assertEqual(result, self.card._details(account, 'cid'))
-
-    def test_032__details(self):
-        """ test _details() """
-        account = {'type': 'debitCard', 'attributes': {'limit': {'value': 'aa'}, 'maskedpan': 'maskedpan', 'status': 'status', 'expirydate': 'expirydate', 'product': {'displayName': 'displayName'}}}
-        result = {'id': 'cid', 'type': 'debitcard', 'maskedpan': None, 'account': None, 'status': 'status', 'name': 'displayName', 'expirydate': None, 'holdername': ' ', 'transactions': None}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual(result, self.card._details(account, 'cid'))
-        self.assertIn("ERROR:dkb_robo.portfolio:card limit conversion error: could not convert string to float: 'aa'", lcm.output)
-
-    @patch('dkb_robo.portfolio.Card._balance')
-    @patch('dkb_robo.portfolio.Card._details')
-    def test_033_get(self, mock_details, mock_balance):
-        """ test get() ok """
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertEqual({'mock_balance': 'mock_balance', 'mock_details': 'mock_details'}, self.card.get('aid', data_dic))
-        self.assertTrue(mock_details.called)
-        self.assertTrue(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Card._balance')
-    @patch('dkb_robo.portfolio.Card._details')
-    def test_034_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.card.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Card._balance')
-    @patch('dkb_robo.portfolio.Card._details')
-    def test_035_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data1': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.card.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
-
-
-class TestDepot(unittest.TestCase):
-    """ test class """
-
-    def setUp(self):
-        self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.depot = Depot()
-
-    def test_036__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'EUR', 'value': '100.45'}}}}
-        self.assertEqual({'amount': 100.45, 'currencycode': 'EUR'}, self.depot._balance(account))
-
-    def test_037__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'EUR', 'value': 100.45}}}}
-        self.assertEqual({'amount': 100.45, 'currencycode': 'EUR'}, self.depot._balance(account))
-
-    def test_038__balance(self):
-        """ test _balance() """
-        account = {'attributes': {'brokerageAccountPerformance': {'currentValue': {'currencyCode': 'EUR', 'value': 'aa'}}}}
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.assertEqual({'amount': None, 'currencycode': 'EUR'}, self.depot._balance(account))
-        self.assertIn("ERROR:dkb_robo.portfolio:depot amount conversion error: could not convert string to float: 'aa'", lcm.output)
-
-    def test_039__details(self):
-        """ test _details() """
-        account = {'attributes': {'holderName': 'holderName', 'depositAccountId': 'depositAccountId'}}
-        result = {'type': 'depot', 'id': 'did', 'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/did/positions?include=instrument%2Cquote', 'holdername': 'holderName', 'account': 'depositAccountId', 'name': 'holderName'}
-        self.assertEqual(result, self.depot._details(account, 'did'))
-
-    @patch('dkb_robo.portfolio.Depot._balance')
-    @patch('dkb_robo.portfolio.Depot._details')
-    def test_040_get(self, mock_details, mock_balance):
-        """ test get() ok """
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertEqual({'mock_balance': 'mock_balance', 'mock_details': 'mock_details'}, self.depot.get('aid', data_dic))
-        self.assertTrue(mock_details.called)
-        self.assertTrue(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Depot._balance')
-    @patch('dkb_robo.portfolio.Depot._details')
-    def test_041_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.depot.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
-
-    @patch('dkb_robo.portfolio.Depot._balance')
-    @patch('dkb_robo.portfolio.Depot._details')
-    def test_042_get(self, mock_details, mock_balance):
-        """ test get() wrong aid"""
-        mock_details.return_value = {'mock_details': 'mock_details'}
-        mock_balance.return_value = {'mock_balance': 'mock_balance'}
-        data_dic = {'data1': [{'attributes': {'foo': 'bar'}, 'id': 'aid'}]}
-        self.assertFalse(self.depot.get('aid1', data_dic))
-        self.assertFalse(mock_details.called)
-        self.assertFalse(mock_balance.called)
+        self.assertEqual(result, {
+            0: {'amount': 100, 'productgroup': 'Group1'}
+        })
 
 
 if __name__ == '__main__':

@@ -69,7 +69,7 @@ class StandingOrders:
                         'currencycode': standingorder_obj.amount.currencyCode,
                         'purpose': standingorder_obj.description,
                         'recipient': standingorder_obj.creditor.name,
-                        'creditoraccount': object2dictionary(standingorder_obj.creditor, skip_list=['name']),
+                        'creditoraccount': object2dictionary(standingorder_obj.creditor, skip_list=['name', 'accountId', 'accountNr', 'id', 'intermediaryName', 'blz']),
                         # from got rewritten in dataclase - we need to rewrite it back
                         'interval': {**object2dictionary(standingorder_obj.recurrence, skip_list=['frm']), 'from': standingorder_obj.recurrence.frm},
                     })

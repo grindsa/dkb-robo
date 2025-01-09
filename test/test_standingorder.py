@@ -136,6 +136,44 @@ class TestDKBRobo(unittest.TestCase):
             self.assertEqual(result, self.dkb._filter(full_list))
         self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: conversion error:  could not convert string to float: 'aa'", lcm.output)
 
+    def test_008__filter(self):
+        """ test StandingOrders._filter() with incomplete list/conversion error """
+        full_list = {
+            "data": [
+                {
+                    "attributes": {
+                        "description": "description",
+                        "amount": {
+                            "value": "100"
+                        },
+                        "creditor": {
+                            "name": "cardname",
+                            "creditorAccount": {
+                                "iban": "crediban",
+                                "bic": "credbic"
+                            }
+                        },
+                        "recurrence": {
+                            "from": "2020-01-01",
+                            "until": "2025-12-01",
+                            "frequency": "monthly",
+                            "nextExecutionAt": "2020-02-01"
+                        }
+                    }
+                }]}
+        self.dkb.unprocessed = True
+        result = self.dkb._filter(full_list)
+        self.assertEqual(100, result[0].amount.value)
+        self.assertEqual('description', result[0].description)
+        self.assertEqual('cardname', result[0].creditor.name)
+        self.assertEqual('crediban', result[0].creditor.iban)
+        self.assertEqual('credbic', result[0].creditor.bic)
+        self.assertEqual('2020-01-01', result[0].recurrence.frm)
+        self.assertEqual('monthly', result[0].recurrence.frequency)
+        self.assertEqual('2025-12-01', result[0].recurrence.until)
+        self.assertEqual('2020-02-01', result[0].recurrence.nextExecutionAt)
+        self.assertIsNone(result[0].recurrence.holidayExecutionStrategy)
+
 if __name__ == '__main__':
 
     unittest.main()

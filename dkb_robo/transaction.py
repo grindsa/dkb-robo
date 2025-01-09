@@ -22,13 +22,12 @@ class Transactions:
         self.uid = None
         self.unprocessed = unprocessed
 
-    def map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
+    def _map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
         """ add details from depot transaction """
-        logger.debug('DepotTransaction._details()\n')
+        logger.debug('DepotTransaction._map()\n')
 
         instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
         quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
-
         for ele in included_list:
             if 'id' in ele and ele['id'] == instrument_id:
                 position['attributes']['instrument'] = ele['attributes']
@@ -37,7 +36,7 @@ class Transactions:
                 position['attributes']['quote'] = ele['attributes']
                 position['attributes']['quote']['id'] = ele['id']
 
-        logger.debug('DepotTransaction._details() ended\n')
+        logger.debug('DepotTransaction._map() ended\n')
         return position
 
     def _correlate(self, transaction_dic: Dict[str, str]) -> List[Dict[str, str]]:
@@ -46,11 +45,13 @@ class Transactions:
 
         if 'included' in transaction_dic:
             included_list = transaction_dic['included']
+        else:
+            included_list = []
 
         position_list = []
         if 'data' in transaction_dic:
             for position in transaction_dic['data']:
-                position_dic = self.map(position, included_list)
+                position_dic = self._map(position, included_list)
                 if position_dic:
                     position_list.append(position_dic)
 
@@ -148,6 +149,8 @@ class Transactions:
         transaction_list = []
         if raw_transaction_list:
             for ele in raw_transaction_list:
+                if 'attributes' not in ele or 'id' not in ele:
+                    continue
                 # add id to attributes tree
                 ele['attributes']['id'] = ele['id']
                 transaction = globals()[mapping_dic[atype]](**ele['attributes'])
@@ -192,7 +195,11 @@ class AccountTransactionItem:
 
         peer_dic[peer_type]['bic'] = peer_dic.get('agent', {}).get('bic', None)
         peer_dic[peer_type]['id'] = peer_dic.get('id', None)
-        peer_dic[peer_type]['name'] = " ".join(peer_dic.pop('name', None).split())
+
+        try:
+            peer_dic[peer_type]['name'] = " ".join(peer_dic.pop('name', None).split())
+        except Exception:
+            peer_dic[peer_type]['name'] = peer_dic.pop('name', None)
 
         if peer_dic.get('intermediaryName', None):
             peer_dic[peer_type]['intermediaryName'] = " ".join(peer_dic.get('intermediaryName', None).split())

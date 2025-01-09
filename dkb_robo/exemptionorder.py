@@ -57,7 +57,7 @@ class ExemptionOrders:
                     'validto': exemptionorder_obj.validUntil,
                     'receivedat': exemptionorder_obj.receivedAt,
                     'type': exemptionorder_obj.exemptionOrderType,
-                    'partner': object2dictionary(exemptionorder_obj.partner, key_lc=True)
+                    'partner': object2dictionary(exemptionorder_obj.partner, key_lc=True, skip_list=['title'])
                 })
 
         logger.debug('ExemptionOrders._filter() ended with: %s entries.', len(exo_list))

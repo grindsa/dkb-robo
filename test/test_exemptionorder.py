@@ -111,6 +111,45 @@ class TestExemptionOrders(unittest.TestCase):
             self.assertEqual(result, self.exo._filter(full_list))
         self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: conversion error:  could not convert string to float: 'aa'", lcm.output)
 
+    def test_006__filter(self):
+        """ test StandingOrder._filter() with list """
+        full_list = {
+            'data': {'attributes': {'exemptionCertificates': [],
+                         'exemptionOrders': [{'exemptionAmount': {'currencyCode': 'EUR',
+                                                                  'value': '2000.00'},
+                                              'exemptionOrderType': 'joint',
+                                              'partner': {'dateOfBirth': '1970-01-01',
+                                                          'firstName': 'Jane',
+                                                          'lastName': 'Doe',
+                                                          'salutation': 'Frau',
+                                                          'taxId': '1234567890'},
+                                              'receivedAt': '2020-01-01',
+                                              'remainingAmount': {'currencyCode': 'EUR',
+                                                                  'value': '1699.55'},
+                                              'utilizedAmount': {'currencyCode': 'EUR',
+                                                                 'value': '300.50'},
+                                              'validFrom': '2020-01-01',
+                                              'validUntil': '9999-12-31'}]},
+                    'id': 'xxxx',
+                    'type': 'customerTaxExemptions'}}
+
+        self.exo.unprocessed = True
+        result = self.exo._filter(full_list)
+        self.assertEqual('2020-01-01', result[0].receivedAt)
+        self.assertEqual('EUR', result[0].exemptionAmount.currencyCode)
+        self.assertEqual(2000, result[0].exemptionAmount.value)
+        self.assertEqual('EUR', result[0].remainingAmount.currencyCode)
+        self.assertEqual(1699.55, result[0].remainingAmount.value)
+        self.assertEqual('EUR', result[0].utilizedAmount.currencyCode)
+        self.assertEqual(300.5, result[0].utilizedAmount.value)
+        self.assertEqual('joint', result[0].exemptionOrderType)
+        self.assertEqual('2020-01-01', result[0].validFrom)
+        self.assertEqual('9999-12-31', result[0].validUntil)
+        self.assertEqual('1970-01-01', result[0].partner.dateOfBirth)
+        self.assertEqual('Jane', result[0].partner.firstName)
+        self.assertEqual('Doe', result[0].partner.lastName)
+        self.assertEqual('Frau', result[0].partner.salutation)
+        self.assertEqual('1234567890', result[0].partner.taxId)
 
 if __name__ == '__main__':
 
