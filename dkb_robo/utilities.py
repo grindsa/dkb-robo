@@ -21,6 +21,7 @@ def get_dateformat():
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = 'application/vnd.api+json'
+BASE_URL = 'https://banking.dkb.de/api'
 
 
 def filter_unexpected_fields(cls):

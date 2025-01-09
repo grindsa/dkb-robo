@@ -4,10 +4,9 @@ from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass, asdict
 import logging
 import requests
-from dkb_robo.utilities import Amount, Person, get_dateformat, filter_unexpected_fields
+from dkb_robo.utilities import Amount, Person, get_dateformat, filter_unexpected_fields, BASE_URL
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
-BASE_URL = 'https://banking.dkb.de/api'
 logger = logging.getLogger(__name__)
 
 
@@ -101,7 +100,7 @@ class Overview:
 
         data_dic = self._itemize(portfolio_dic)
 
-        display_settings_dic = portfolio_dic.get('product_display', {}).get('data', {})
+        display_settings_dic = portfolio_dic    .get('product_display', {}).get('data', {})
         productgroup = ProductGroup()
         for portfolio in display_settings_dic:
             # get id/name mapping and productlist per group
@@ -254,10 +253,10 @@ class AccountItem:
                         try:
                             self.minimumAmount = float(self.minimumAmount)
                         except Exception:
-                            self.maximumAmount = None
+                            self.minimumAmount = None
                     if self.maximumAmount:
                         try:
-                            self.maximumAmount = float(self.minimumAmount)
+                            self.maximumAmount = float(self.maximumAmount)
                         except Exception:
                             self.maximumAmount = None
 
