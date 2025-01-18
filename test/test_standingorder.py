@@ -134,7 +134,7 @@ class TestDKBRobo(unittest.TestCase):
         result = [{'amount': None, 'currencycode': None, 'purpose': 'description', 'recipient': 'cardname', 'creditoraccount': {'iban': 'crediban', 'bic': 'credbic'}, 'interval': {'from': '2020-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'nextExecutionAt': '2020-02-01', 'holidayExecutionStrategy': None}}]
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.dkb._filter(full_list))
-        self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: conversion error:  could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: value conversion error:  could not convert string to float: 'aa'", lcm.output)
 
     def test_008__filter(self):
         """ test StandingOrders._filter() with incomplete list/conversion error """

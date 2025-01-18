@@ -109,7 +109,7 @@ class TestExemptionOrders(unittest.TestCase):
         result = [{'amount': None, 'used': None, 'currencycode': 'EUR', 'validfrom': '2020-01-01', 'validto': '9999-12-31', 'receivedat': '2020-01-01', 'type': 'joint', 'partner': {'dateofbirth': '1970-01-01', 'firstname': 'Jane', 'lastname': 'Doe', 'salutation': 'Frau', 'taxid': '1234567890'}}]
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             self.assertEqual(result, self.exo._filter(full_list))
-        self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: conversion error:  could not convert string to float: 'aa'", lcm.output)
+        self.assertIn("ERROR:dkb_robo.utilities:Account.__post_init: value conversion error:  could not convert string to float: 'aa'", lcm.output)
 
     def test_006__filter(self):
         """ test StandingOrder._filter() with list """

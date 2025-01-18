@@ -14,12 +14,7 @@ from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
 
 
 BASE_URL = 'https://banking.dkb.de/api'
-
-
 logger = logging.getLogger(__name__)
-
-for hdlr in logger.handlers[:]:
-    print(hdlr)
 
 
 class Authentication:

@@ -4,6 +4,7 @@
 import sys
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import patch, MagicMock, Mock, mock_open
 from bs4 import BeautifulSoup
 from mechanicalsoup import LinkNotFoundError
@@ -197,6 +198,123 @@ class TestDKBRobo(unittest.TestCase):
         self.dkb.download = Mock()
         self.dkb.download.return_value = {'foo': 'bar'}
         self.assertEqual({'foo': 'bar'}, self.dkb.scan_postbox())
+
+    @patch('dkb_robo.postbox.PostBox.fetch_items')
+    @patch('dkb_robo.dkb_robo.DKBRobo.download_doc', autospec=True)
+    def test_016_download(self, mock_download_doc, mock_fetch_items):
+        """ download_all_documents"""
+        path = Path('/some/path')
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {'id1': {'id': 'id1', 'account': 'account1', 'read': False, 'foo': 'bar', 'iban': 'iban'}, 'id2': {'id': 'id2', 'account': 'account2', 'read': True, 'foo': 'bar'}}
+        mock_fetch_items.return_value = {
+            'doc1': 'document1',
+            'doc2': 'document2'
+        }
+
+        documents = self.dkb.download(path=path, download_all=True)
+        self.assertEqual({'doc1': 'document1', 'doc2': 'document2'}, documents)
+        mock_download_doc.assert_any_call(self.dkb, path=path, doc=documents['doc1'], prepend_date=False, mark_read=True, use_account_folders=False, list_only=False, accounts_by_id={'id1': 'account1', 'id2': 'account2'})
+        mock_download_doc.assert_any_call(self.dkb, path=path, doc=documents['doc2'], prepend_date=False, mark_read=True, use_account_folders=False, list_only=False, accounts_by_id={'id1': 'account1', 'id2': 'account2'})
+
+    @patch('dkb_robo.postbox.PostBox.fetch_items')
+    @patch('dkb_robo.dkb_robo.DKBRobo.download_doc', autospec=True)
+    def test_017_download(self, mock_download_doc, mock_fetch_items):
+        """ download_all_documents"""
+        path = Path('/some/path')
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {'id1': {'id': 'id1', 'account': 'account1', 'read': False, 'foo': 'bar', 'iban': 'iban'}, 'id2': {'id': 'id2', 'account': 'account2', 'read': True, 'foo': 'bar'}}
+        unread_doc = MagicMock()
+        unread_doc.message.read = False
+        read_doc = MagicMock()
+        read_doc.message.read = True
+        mock_fetch_items.return_value = {
+            'doc1': unread_doc,
+            'doc2': read_doc
+        }
+        documents = self.dkb.download(path=path, download_all=False)
+        self.assertEqual(1, len(documents))
+        mock_download_doc.assert_any_call(self.dkb, path=path, doc=documents['doc1'], prepend_date=False, mark_read=True, use_account_folders=False, list_only=False, accounts_by_id={'id1': 'account1', 'id2': 'account2'})
+
+    @patch('dkb_robo.postbox.PostBox.fetch_items')
+    @patch('dkb_robo.dkb_robo.DKBRobo.download_doc', autospec=True)
+    def test_018_download(self, mock_download_doc, mock_fetch_items):
+        """ download_all_documents"""
+        path = Path('/some/path')
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {'id1': {'id': 'id1', 'account': 'account1', 'read': False, 'foo': 'bar', 'iban': 'iban'}, 'id2': {'id': 'id2', 'account': 'account2', 'read': True, 'foo': 'bar'}}
+        mock_fetch_items.return_value = {
+            'doc1': 'document1',
+            'doc2': 'document2'
+        }
+
+        documents = self.dkb.download(path=None, download_all=True)
+        self.assertEqual({'doc1': 'document1', 'doc2': 'document2'}, documents)
+        mock_download_doc.assert_not_called()
+
+    @patch('dkb_robo.dkb_robo.time.sleep', autospec=True)
+    def test_019_download_doc(self, mock_sleep):
+        """ download a single document """
+        path = Path('/some/path')
+        doc = MagicMock()
+        doc.category.return_value = 'category'
+        doc.account.return_value = 'account'
+        doc.date.return_value = '2022-01-01'
+        doc.filename.return_value = 'document.pdf'
+        doc.subject.return_value = 'Document Subject'
+        doc.download.return_value = True
+        self.dkb.wrapper = MagicMock()
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.dkb.download_doc(path=path, doc=doc, prepend_date=True, mark_read=True, use_account_folders=True, list_only=False, accounts_by_id={})
+        self.assertIn('INFO:dkb_robo:Downloading Document Subject to \\some\\path\\category\\account...', lcm.output)
+
+        target = path / 'category' / 'account'
+        filename = '2022-01-01_document.pdf'
+        doc.download.assert_called_with(self.dkb.wrapper.client, target / filename)
+        doc.mark_read.assert_called_with(self.dkb.wrapper.client, True)
+        mock_sleep.assert_called_once_with(0.5)
+
+    def test_020_download_doc(self):
+        """ list only   """
+        path = Path('/some/path')
+        doc = MagicMock()
+        doc.category.return_value = 'category'
+        doc.account.return_value = 'account'
+        doc.date.return_value = '2022-01-01'
+        doc.filename.return_value = 'document.pdf'
+        doc.subject.return_value = 'Document Subject'
+        doc.download.return_value = True
+        self.dkb.logger = MagicMock()
+        self.dkb.wrapper = MagicMock()
+        self.dkb.download_doc(path=path, doc=doc, prepend_date=True, mark_read=True, use_account_folders=True, list_only=True, accounts_by_id={})
+        self.dkb.logger.info.assert_not_called()
+        doc.download.assert_not_called()
+        doc.mark_read.assert_not_called()
+
+    @patch('dkb_robo.dkb_robo.time.sleep', autospec=True)
+    def test_021_download_doc(self, mock_sleep):
+        """ test existing file """
+        path = Path('/some/path')
+        doc = MagicMock()
+        doc.category.return_value = 'category'
+        doc.account.return_value = 'account'
+        doc.date.return_value = '2022-01-01'
+        doc.filename.return_value = 'document.pdf'
+        doc.subject.return_value = 'Document Subject'
+        doc.download.return_value = False
+        self.dkb.logger = MagicMock()
+        self.dkb.wrapper = MagicMock()
+        self.dkb.download_doc(path=path, doc=doc, prepend_date=True, mark_read=True, use_account_folders=True, list_only=False, accounts_by_id={})
+        target = path / 'category' / 'account'
+        filename = '2022-01-01_document.pdf'
+        self.dkb.logger.info.assert_called_with("File already exists. Skipping %s.", filename)
+        doc.download.assert_called_with(self.dkb.wrapper.client, target / filename)
+        doc.mark_read.assert_not_called()
+        mock_sleep.assert_not_called()
+
+
 
 if __name__ == '__main__':
 

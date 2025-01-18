@@ -5,10 +5,17 @@ import sys
 import os
 import unittest
 import logging
-from unittest.mock import patch
+from unittest.mock import patch, Mock, MagicMock
+from dataclasses import dataclass, asdict
 sys.path.insert(0, '.')
 sys.path.insert(0, '..')
 
+@dataclass
+class DataclassObject:
+    Attr1: str
+    attr2: int
+    attr3: dict
+    attr4: list
 
 class TestDKBRobo(unittest.TestCase):
     """ test class """
@@ -17,7 +24,7 @@ class TestDKBRobo(unittest.TestCase):
 
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, get_dateformat, get_valid_filename
+        from dkb_robo.utilities import validate_dates, generate_random_string, logger_setup, string2float, _convert_date_format, get_dateformat, get_valid_filename, object2dictionary, logger_setup
         self.validate_dates = validate_dates
         self.string2float = string2float
         self.generate_random_string = generate_random_string
@@ -25,7 +32,9 @@ class TestDKBRobo(unittest.TestCase):
         self._convert_date_format = _convert_date_format
         self.get_dateformat = get_dateformat
         self.get_valid_filename = get_valid_filename
+        self.object2dictionary = object2dictionary
         self.logger = logging.getLogger('dkb_robo')
+        self.logger_setup = logger_setup
 
     @patch('time.time')
     def test_001_validate_dates(self, mock_time):
@@ -260,6 +269,162 @@ class TestDKBRobo(unittest.TestCase):
         filename = '..'
         mock_rand.return_value = 'random'
         self.assertEqual('random.pdf', self.get_valid_filename(filename))
+
+
+    def test_047_object2dictionary(self):
+        """ test object2dictionary """
+
+        nested_obj = DataclassObject(
+            Attr1='nested_value1',
+            attr2=3,
+            attr3='nested_value1',
+            attr4='nested_value2'
+        )
+
+        test_obj = DataclassObject(
+            Attr1='value1',
+            attr2=2,
+            attr3=nested_obj,
+            attr4='foo'
+        )
+
+        expected_output = {
+            'Attr1': 'value1',
+            'attr2': 2,
+            'attr3': {'Attr1': 'nested_value1', 'attr2': 3, 'attr3': 'nested_value1', 'attr4': 'nested_value2'},
+            'attr4': 'foo'
+        }
+
+        result = self.object2dictionary(test_obj)
+        self.assertEqual(result, expected_output)
+
+
+    def test_048_object2dictionary(self):
+        """ test object2dictionary """
+        test_obj = DataclassObject(
+            Attr1='value1',
+            attr2=2,
+            attr3='attr3',
+            attr4='attr4'
+        )
+        expected_output = {
+            'attr1': 'value1',
+            'attr3': 'attr3',
+            'attr4': 'attr4'
+        }
+        result = self.object2dictionary(test_obj, key_lc=True, skip_list=['attr2'])
+        self.assertEqual(result, expected_output)
+
+    def test_049_logger_setup(self):
+        """ logger setup """
+        self.assertTrue(self.logger_setup(False))
+
+    def test_050_logger_setup(self):
+        """ logger setup """
+        self.assertTrue(self.logger_setup(True))
+
+
+class TestAmount(unittest.TestCase):
+    """ test class """
+    def setUp(self):
+        self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        from dkb_robo.utilities import Amount
+        self.Amount = Amount
+
+    @patch('dkb_robo.utilities.logger', autospec=True)
+    def test_047_amount(self, mock_logger):
+        """ test Amount """
+        amount_data = {
+            'value': '1000',
+            'currencyCode': 'USD',
+            'conversionRate': '1.2',
+            'date': '2022-01-01',
+            'unit': 'unit'
+        }
+        amount = self.Amount(**amount_data)
+        self.assertEqual(amount.value, 1000.0)
+        self.assertEqual(amount.currencyCode, 'USD')
+        self.assertEqual(amount.conversionRate, 1.2)
+        self.assertEqual(amount.date, '2022-01-01')
+        self.assertEqual(amount.unit, 'unit')
+        mock_logger.error.assert_not_called()
+
+    @patch('dkb_robo.utilities.logger', autospec=True)
+    def test_049_amount(self, mock_logger):
+        """ test Amount with wrong value """
+        amount_data = {
+            'value': 'invalid',
+            'currencyCode': 'USD',
+            'conversionRate': '1.2',
+            'date': '2022-01-01',
+            'unit': 'unit'
+        }
+        amount = self.Amount(**amount_data)
+        self.assertFalse(amount.value)
+        self.assertEqual(amount.currencyCode, 'USD')
+        self.assertEqual(amount.conversionRate, 1.2)
+        self.assertEqual(amount.date, '2022-01-01')
+        self.assertEqual(amount.unit, 'unit')
+        mock_logger.error.assert_called_with('Account.__post_init: value conversion error:  %s', "could not convert string to float: 'invalid'")
+
+
+    @patch('dkb_robo.utilities.logger', autospec=True)
+    def test_050_amount(self, mock_logger):
+        """ test Amount with wrong conversation rate """
+        amount_data = {
+            'value': '1000',
+            'currencyCode': 'USD',
+            'conversionRate': 'invalid',
+            'date': '2022-01-01',
+            'unit': 'unit'
+        }
+        amount = self.Amount(**amount_data)
+        self.assertEqual(amount.value, 1000)
+        self.assertEqual(amount.currencyCode, 'USD')
+        self.assertFalse(amount.conversionRate)
+        self.assertEqual(amount.date, '2022-01-01')
+        self.assertEqual(amount.unit, 'unit')
+        mock_logger.error.assert_called_with('Account.__post_init: converstionRate conversion error:  %s', "could not convert string to float: 'invalid'")
+
+
+class TestPerformanceValue(unittest.TestCase):
+    def setUp(self):
+        self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        from dkb_robo.utilities import PerformanceValue
+        self.PerformanceValue = PerformanceValue
+
+
+    @patch('dkb_robo.utilities.logger', autospec=True)
+    def test_051_performancevalue(self, mock_logger):
+        performance_value_data = {
+            'currencyCode': 'USD',
+            'value': '1000',
+            'unit': 'unit'
+        }
+
+        performance_value = self.PerformanceValue(**performance_value_data)
+
+        self.assertEqual(performance_value.currencyCode, 'USD')
+        self.assertEqual(performance_value.value, 1000.0)
+        self.assertEqual(performance_value.unit, 'unit')
+        mock_logger.error.assert_not_called()
+
+    @patch('dkb_robo.utilities.logger', autospec=True)
+    def test_052_performancevalue(self, mock_logger):
+        performance_value_data = {
+            'currencyCode': 'USD',
+            'value': 'invalid',
+            'unit': 'unit'
+        }
+
+        performance_value = self.PerformanceValue(**performance_value_data)
+
+        self.assertEqual(performance_value.currencyCode, 'USD')
+        self.assertIsNone(performance_value.value)
+        self.assertEqual(performance_value.unit, 'unit')
+        mock_logger.error.assert_called_with('PerformanceValue.__post_init: conversion error:  %s', "could not convert string to float: 'invalid'")
+
+
 
 if __name__ == '__main__':
 

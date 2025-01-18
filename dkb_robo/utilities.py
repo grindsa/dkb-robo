@@ -6,7 +6,7 @@ import random
 from string import digits, ascii_letters
 from typing import List, Tuple, Optional
 from datetime import datetime, timezone
-from dataclasses import dataclass, fields, asdict
+from dataclasses import dataclass, fields, asdict, is_dataclass
 import time
 import re
 
@@ -68,14 +68,14 @@ class Amount:
         try:
             self.value = float(self.value)
         except Exception as err:
-            logger.error('Account.__post_init: conversion error:  %s', err)
+            logger.error('Account.__post_init: value conversion error:  %s', str(err))
             self.value = None
         if self.conversionRate:
             try:
                 self.conversionRate = float(self.conversionRate)
             except Exception as err:
-                logger.error('Account.__post_init: conversion error:  %s', err)
-                self.value = None
+                logger.error('Account.__post_init: converstionRate conversion error:  %s', str(err))
+                self.conversionRate = None
 
 
 @filter_unexpected_fields
@@ -92,7 +92,7 @@ class PerformanceValue:
         try:
             self.value = float(self.value)
         except Exception as err:
-            logger.error('Account.__post_init: conversion error:  %s', err)
+            logger.error('PerformanceValue.__post_init: conversion error:  %s', str(err))
             self.value = None
 
 
@@ -160,10 +160,8 @@ def object2dictionary(obj, key_lc=False, skip_list=None):
     for k, v in asdict(obj).items():
         if isinstance(skip_list, list) and k in skip_list:
             continue
-        if isinstance(v, dict):
+        if is_dataclass(v):
             output_dict[k] = object2dictionary(v, key_lc=key_lc)
-        elif isinstance(v, list):
-            output_dict[k] = [object2dictionary(i, key_lc=key_lc) for i in v]
         else:
             if key_lc:
                 output_dict[k.lower()] = v

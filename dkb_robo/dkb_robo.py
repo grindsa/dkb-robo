@@ -139,14 +139,14 @@ class DKBRobo(object):
             list_only = True
         postbox = PostBox(client=self.wrapper.client)
         documents = postbox.fetch_items()
-
         if not download_all:
             # only unread documents
             documents = {id: item for id, item in documents.items()
                          if item.message and item.message.read is False}
 
         accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
-        for doc in documents.values():
-            self.download_doc(path=path, doc=doc, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only, accounts_by_id=accounts_by_id)
+        if not list_only:
+            for doc in documents.values():
+                self.download_doc(path=path, doc=doc, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only, accounts_by_id=accounts_by_id)
 
         return documents
