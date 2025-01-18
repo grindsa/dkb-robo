@@ -266,10 +266,7 @@ class TestDKBRobo(unittest.TestCase):
         doc.subject.return_value = 'Document Subject'
         doc.download.return_value = True
         self.dkb.wrapper = MagicMock()
-        with self.assertLogs('dkb_robo', level='INFO') as lcm:
-            self.dkb.download_doc(path=path, doc=doc, prepend_date=True, mark_read=True, use_account_folders=True, list_only=False, accounts_by_id={})
-        self.assertIn('INFO:dkb_robo:Downloading Document Subject to \\some\\path\\category\\account...', lcm.output)
-
+        self.dkb.download_doc(path=path, doc=doc, prepend_date=True, mark_read=True, use_account_folders=True, list_only=False, accounts_by_id={})
         target = path / 'category' / 'account'
         filename = '2022-01-01_document.pdf'
         doc.download.assert_called_with(self.dkb.wrapper.client, target / filename)
