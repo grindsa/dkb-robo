@@ -62,6 +62,29 @@ class Overview:
         self.base_url = base_url
         self.unprocessed = unprocessed
 
+    def _add(self, data_dic: Dict[str, str], product_group: Dict[str, str], dic_id: str, product_display_dic: Dict[str, str]) -> Dict[str, str]:
+        """ add product to account_dic """
+        logger.debug('Overview._add()\n')
+
+        # add product data to account_dic
+        acc_dic = data_dic[product_group['product_list'][dic_id]]
+        # add productgroup name to account_dic
+        if self.unprocessed:
+            acc_dic.productGroup = product_group['name']
+        else:
+            acc_dic['productgroup'] = product_group['name']
+
+        if product_group['product_list'][dic_id] in product_display_dic:
+            logger.debug('Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
+            # overwrite product name with display name
+            if self.unprocessed:
+                acc_dic.displayName = product_display_dic[product_group['product_list'][dic_id]]
+            else:
+                acc_dic['name'] = product_display_dic[product_group['product_list'][dic_id]]
+
+        logger.debug('Overview._add() ended\n')
+        return acc_dic
+
     def _add_remaining(self, data_dic: Dict[str, str], account_dic: Dict[str, str], account_cnt: int) -> Dict[str, str]:
         """ add remaining products """
         logger.debug('Overview._add_remaining()\n')
@@ -110,22 +133,8 @@ class Overview:
                 for dic_id in sorted(product_group['product_list']):
                     if product_group['product_list'][dic_id] in data_dic:
                         logger.debug('Overview._sort(): assign productgroup "%s" to product %s', product_group['name'], product_group['product_list'][dic_id])
-                        # add product data to account_dic
-                        account_dic[account_cnt] = data_dic[product_group['product_list'][dic_id]]
-                        # add productgroup name to account_dic
-                        if self.unprocessed:
-                            account_dic[account_cnt].productGroup = product_group['name']
-                        else:
-                            account_dic[account_cnt]['productgroup'] = product_group['name']
-
-                        if product_group['product_list'][dic_id] in product_display_dic:
-                            logger.debug('Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
-                            # overwrite product name with display name
-                            if self.unprocessed:
-                                account_dic[account_cnt].displayName = product_display_dic[product_group['product_list'][dic_id]]
-                            else:
-                                account_dic[account_cnt]['name'] = product_display_dic[product_group['product_list'][dic_id]]
-
+                        # add to dictionary
+                        account_dic[account_cnt] = self._add(data_dic, product_group, dic_id, product_display_dic)
                         del data_dic[product_group['product_list'][dic_id]]
                         account_cnt += 1
 
