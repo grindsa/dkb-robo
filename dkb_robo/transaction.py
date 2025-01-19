@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 class Transactions:
     """ Transactions class """
 
-    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, unfiltered: bool = False, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
         self.base_url = base_url
         self.uid = None
-        self.unprocessed = unprocessed
+        self.unfiltered = unfiltered
 
     def _map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
         """ add details from depot transaction """
@@ -131,17 +131,19 @@ class Transactions:
         """ fetch transactions """
         logger.debug('Transactions.get()\n')
 
-        if transaction_url and atype != 'depot':
+        if transaction_url and atype not in ['depot', 'brokerageAccount']:
             transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
         transaction_dic = self._fetch(transaction_url)
 
         mapping_dic = {
             'account': 'AccountTransactionItem',
             'creditcard': 'CreditCardTransactionItem',
+            'creditCard': 'CreditCardTransactionItem',
+            'brokerageAccount': 'DepotTransactionItem',
             'depot': 'DepotTransactionItem'
         }
 
-        if atype in ['account', 'creditcard']:
+        if atype in ['account', 'creditcard', 'creditCard']:
             raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], date_from=date_from, date_to=date_to, transaction_type=transaction_type)
         else:
             raw_transaction_list = self._correlate(transaction_dic)
@@ -154,7 +156,7 @@ class Transactions:
                 # add id to attributes tree
                 ele['attributes']['id'] = ele['id']
                 transaction = globals()[mapping_dic[atype]](**ele['attributes'])
-                if self.unprocessed:
+                if self.unfiltered:
                     transaction_list.append(transaction)
                 else:
                     transaction_list.append(transaction.format())
@@ -187,7 +189,8 @@ class AccountTransactionItem:
         self.creditor = Account(**self._peer_information(self.creditor, 'creditorAccount'))
         # regroup debtor for the same reason
         self.debtor = Account(**self._peer_information(self.debtor, 'debtorAccount'))
-        self.description = " ".join(self.description.split())
+        if self.description:
+            self.description = " ".join(self.description.split())
 
     def _peer_information(self, peer_dic: Dict[str, str], peer_type: str = None) -> Dict[str, str]:
         """ add peer information """
@@ -311,9 +314,10 @@ class DepotTransactionItem:
     def __post_init__(self):
         self.availableQuantity = self.Quantity(**self.availableQuantity)
         self.custody = self.Custody(**self.custody)
-        self.instrument = self.Instrument(**self.instrument)
         self.performance = self.Performance(**self.performance)
         self.quantity = self.Quantity(**self.quantity)
+        if self.instrument:
+            self.instrument = self.Instrument(**self.instrument)
         if self.quote:
             self.quote = self.Quote(**self.quote)
 

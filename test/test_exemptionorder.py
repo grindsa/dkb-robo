@@ -133,7 +133,7 @@ class TestExemptionOrders(unittest.TestCase):
                     'id': 'xxxx',
                     'type': 'customerTaxExemptions'}}
 
-        self.exo.unprocessed = True
+        self.exo.unfiltered = True
         result = self.exo._filter(full_list)
         self.assertEqual('2020-01-01', result[0].receivedAt)
         self.assertEqual('EUR', result[0].exemptionAmount.currencyCode)

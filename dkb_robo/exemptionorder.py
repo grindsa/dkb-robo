@@ -32,10 +32,10 @@ class ExemptionOrderItem:
 
 class ExemptionOrders:
     """ exemption order class """
-    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, unfiltered: bool = False, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
         self.base_url = base_url
-        self.unprocessed = unprocessed
+        self.unfiltered = unfiltered
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
         """ filter standing orders """
@@ -46,7 +46,7 @@ class ExemptionOrders:
         for exo in unfiltered_exo_list:
 
             exemptionorder_obj = ExemptionOrderItem(**exo)
-            if self.unprocessed:
+            if self.unfiltered:
                 exo_list.append(exemptionorder_obj)
             else:
                 exo_list.append({

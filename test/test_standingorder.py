@@ -102,7 +102,7 @@ class TestDKBRobo(unittest.TestCase):
     def test_006__filter(self):
         """ test StandingOrders._filter() with list from file """
         so_list = json_load(self.dir_path + '/mocks/so.json')
-        self.dkb.unprocessed = False
+        self.dkb.unfiltered = False
         result = [{'amount': 100.0, 'currencycode': 'EUR', 'purpose': 'description1', 'recipient': 'name1', 'creditoraccount': {'iban': 'iban1', 'bic': 'bic1'}, 'interval': {'from': '2022-01-01', 'until': '2025-12-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-01'}}, {'amount': 200.0, 'currencycode': 'EUR', 'purpose': 'description2', 'recipient': 'name2', 'creditoraccount': {'iban': 'iban2', 'bic': 'bic2'}, 'interval': {'from': '2022-02-01', 'until': '2025-12-02', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-11-02'}}, {'amount': 300.0, 'currencycode': 'EUR', 'purpose': 'description3', 'recipient': 'name3', 'creditoraccount': {'iban': 'iban3', 'bic': 'bic3'}, 'interval': {'from': '2022-03-01', 'until': '2025-03-01', 'frequency': 'monthly', 'holidayExecutionStrategy': 'following', 'nextExecutionAt': '2022-03-01'}}]
         self.assertEqual(result, self.dkb._filter(so_list))
 
@@ -161,7 +161,7 @@ class TestDKBRobo(unittest.TestCase):
                         }
                     }
                 }]}
-        self.dkb.unprocessed = True
+        self.dkb.unfiltered = True
         result = self.dkb._filter(full_list)
         self.assertEqual(100, result[0].amount.value)
         self.assertEqual('description', result[0].description)

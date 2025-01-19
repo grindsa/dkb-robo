@@ -57,10 +57,10 @@ class ProductGroup:
 class Overview:
     """ Overview class """
 
-    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = BASE_URL):
+    def __init__(self, client: requests.Session, unfiltered: bool = False, base_url: str = BASE_URL):
         self.client = client
         self.base_url = base_url
-        self.unprocessed = unprocessed
+        self.unfiltered = unfiltered
 
     def _add(self, data_dic: Dict[str, str], product_group: Dict[str, str], dic_id: str, product_display_dic: Dict[str, str]) -> Dict[str, str]:
         """ add product to account_dic """
@@ -69,7 +69,7 @@ class Overview:
         # add product data to account_dic
         acc_dic = data_dic[product_group['product_list'][dic_id]]
         # add productgroup name to account_dic
-        if self.unprocessed:
+        if self.unfiltered:
             acc_dic.productGroup = product_group['name']
         else:
             acc_dic['productgroup'] = product_group['name']
@@ -77,7 +77,7 @@ class Overview:
         if product_group['product_list'][dic_id] in product_display_dic:
             logger.debug('Overview._sort(): found displayname "%s" for product %s', product_display_dic[product_group['product_list'][dic_id]], product_group['product_list'][dic_id])
             # overwrite product name with display name
-            if self.unprocessed:
+            if self.unfiltered:
                 acc_dic.displayName = product_display_dic[product_group['product_list'][dic_id]]
             else:
                 acc_dic['name'] = product_display_dic[product_group['product_list'][dic_id]]
@@ -91,7 +91,7 @@ class Overview:
 
         for product_data in data_dic.values():
             account_dic[account_cnt] = product_data
-            if self.unprocessed:
+            if self.unfiltered:
                 account_dic[account_cnt].productGroup = None
             else:
                 account_dic[account_cnt]['productgroup'] = None
@@ -162,7 +162,7 @@ class Overview:
                     item['attributes']['type'] = item.get('type', None)
                     product = globals()[product_group_dic[product_group]](**item['attributes'])
 
-                    if self.unprocessed:
+                    if self.unfiltered:
                         product_dic[item['id']] = product
                     else:
                         product_dic[item['id']] = product.format()
@@ -216,6 +216,7 @@ class AccountItem:
     type: Optional[str] = None
     unauthorizedOverdraftInterestRate: Optional[Union[Dict, str]] = None
     updatedAt: Optional[str] = None
+    transactions: Optional[str] = None
 
     def __post_init__(self):
         self.availableBalance = Amount(**self.availableBalance)
@@ -223,6 +224,7 @@ class AccountItem:
         self.interests = [self.InterestsItem(**interest) for interest in self.interests]
         self.nearTimeBalance = Amount(**self.nearTimeBalance)
         self.product = self.Product(**self.product)
+        self.transactions = BASE_URL + f"/accounts/accounts/{self.id}/transactions"
         try:
             self.overdraftLimit = float(self.overdraftLimit)
         except Exception:
@@ -292,7 +294,7 @@ class AccountItem:
             'id': self.id,
             'limit': self.overdraftLimit,
             'name': self.product.displayName,
-            'transactions': BASE_URL + f"/accounts/accounts/{self.id}/transactions",
+            'transactions': self.transactions,
             'type': self.type,
         }
 
@@ -327,6 +329,7 @@ class CardItem:
     state: Optional[str] = None
     status: Optional[Union[Dict, str]] = None
     type: Optional[str] = None
+    transactions: Optional[str] = None
 
     def __post_init__(self):
         if self.balance:
@@ -345,6 +348,8 @@ class CardItem:
         self.product = self.Product(**self.product)
         self.status = self.Status(**self.status)
         self.holder = self.Holder(**self.holder)
+        if self.type:
+            self.transactions = BASE_URL + f"/credit-card/cards/{self.id}/transactions"
 
     @filter_unexpected_fields
     @dataclass
@@ -439,7 +444,7 @@ class CardItem:
 
         }
         if self.type == 'creditCard':
-            output_dic['transactions'] = BASE_URL + f"/credit-card/cards/{self.id}/transactions"
+            output_dic['transactions'] = self.transactions
             # dkb does some weird stuff with the balance. we need to flip it
             output_dic['amount'] = self.balance.value * -1
             output_dic['currencycode'] = self.balance.currencyCode
@@ -465,11 +470,13 @@ class DepotItem:
     riskClasses: Optional[List] = None
     tradingEnabled: Optional[bool] = None
     type: Optional[str] = None
+    transactions: Optional[str] = None
 
     def __post_init__(self):
         self.brokerageAccountPerformance = self.BrokerageAccountPerformance(**self.brokerageAccountPerformance)
         self.holder = Person(**self.holder)
         self.referenceAccounts = [self.ReferenceAccountItem(**reference_account) for reference_account in self.referenceAccounts]
+        self.transactions = BASE_URL + f"/broker/brokerage-accounts/{self.id}/positions?include=instrument%2Cquote"
 
     @filter_unexpected_fields
     @dataclass
@@ -508,7 +515,7 @@ class DepotItem:
             'id': self.id,
             'name': self.holderName,
             'type': 'depot',
-            'transactions': BASE_URL + f"/broker/brokerage-accounts/{self.id}/positions?include=instrument%2Cquote'",
+            'transactions': self.transactions,
         }
 
         logger.debug('Depot.format() ended\n')

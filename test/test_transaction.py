@@ -141,7 +141,7 @@ class TestTransactions(unittest.TestCase):
         mock_aformat.return_value = 'mock_aformat'
         mock_aformat.format.return_value = 'foo'
         mock_filter.return_value = [{'foo': 'bar'}]
-        self.transaction.unprocessed = True
+        self.transaction.unfiltered = True
         self.assertFalse(self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_filter.called)
@@ -176,7 +176,7 @@ class TestTransactions(unittest.TestCase):
         mock_aformat.return_value = 'mock_aformat'
         mock_aformat.format.return_value = 'foo'
         mock_filter.return_value = [{'id': 'id', 'attributes': {'mock_filter': 'mock_filter'}}]
-        self.transaction.unprocessed = True
+        self.transaction.unfiltered = True
         self.assertEqual(['mock_aformat'], self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_filter.called)

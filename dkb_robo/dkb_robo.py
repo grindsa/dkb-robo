@@ -32,9 +32,9 @@ class DKBRobo(object):
     chip_tan = False
     logger = None
     wrapper = None
-    unprocessed = False
+    unfiltered = False
 
-    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False, unprocessed=False):
+    def __init__(self, dkb_user=None, dkb_password=None, tan_insert=False, legacy_login=False, debug=False, mfa_device=None, chip_tan=False, unfiltered=False):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
@@ -42,7 +42,7 @@ class DKBRobo(object):
         self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
-        self.unprocessed = unprocessed
+        self.unfiltered = unfiltered
 
     def __enter__(self):
         """ Makes DKBRobo a Context Manager """
@@ -57,7 +57,7 @@ class DKBRobo(object):
         if self.mfa_device == 'm':
             self.mfa_device = 1
 
-        self.wrapper = Authentication(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, unprocessed=self.unprocessed)
+        self.wrapper = Authentication(dkb_user=self.dkb_user, dkb_password=self.dkb_password, proxies=self.proxies, chip_tan=self.chip_tan, mfa_device=self.mfa_device, unfiltered=self.unfiltered)
 
         # login and get the account overview
         (self.account_dic, self.last_login) = self.wrapper.login()
@@ -85,7 +85,7 @@ class DKBRobo(object):
     def get_exemption_order(self):
         """ get get_exemption_order """
         self.logger.debug('DKBRobo.get_exemption_order()\n')
-        exemptionorder = ExemptionOrders(client=self.wrapper.client, unprocessed=self.unprocessed)
+        exemptionorder = ExemptionOrders(client=self.wrapper.client, unfiltered=self.unfiltered)
         return exemptionorder.fetch()
 
     def get_points(self):
@@ -96,7 +96,7 @@ class DKBRobo(object):
     def get_standing_orders(self, uid=None):
         """ get standing orders """
         self.logger.debug('DKBRobo.get_standing_orders()\n')
-        standingorder = StandingOrders(client=self.wrapper.client, unprocessed=self.unprocessed)
+        standingorder = StandingOrders(client=self.wrapper.client, unfiltered=self.unfiltered)
         return standingorder.fetch(uid)
 
     def get_transactions(self, transaction_url, atype, date_from, date_to, transaction_type='booked'):
@@ -104,7 +104,7 @@ class DKBRobo(object):
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
         (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
-        transaction = Transactions(client=self.wrapper.client, unprocessed=self.unprocessed)
+        transaction = Transactions(client=self.wrapper.client, unfiltered=self.unfiltered)
         transaction_list = transaction.get(transaction_url, atype, date_from, date_to, transaction_type)
 
         self.logger.debug('DKBRobo.get_transactions(): %s transactions returned\n', len(transaction_list))

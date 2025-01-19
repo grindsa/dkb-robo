@@ -45,10 +45,10 @@ class StandingOrderItem:
 
 class StandingOrders:
     """ StandingOrders class """
-    def __init__(self, client: requests.Session, unprocessed: bool = False, base_url: str = 'https://banking.dkb.de/api'):
+    def __init__(self, client: requests.Session, unfiltered: bool = False, base_url: str = 'https://banking.dkb.de/api'):
         self.client = client
         self.base_url = base_url
-        self.unprocessed = unprocessed
+        self.unfiltered = unfiltered
         self.uid = None
 
     def _filter(self, full_list: Dict[str, str]) -> List[Dict[str, str]]:
@@ -61,7 +61,7 @@ class StandingOrders:
 
                 standingorder_obj = StandingOrderItem(**ele['attributes'])
 
-                if self.unprocessed:
+                if self.unfiltered:
                     so_list.append(standingorder_obj)
                 else:
                     so_list.append({

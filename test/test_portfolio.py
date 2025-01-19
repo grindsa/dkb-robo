@@ -186,23 +186,23 @@ class TestOverview(unittest.TestCase):
     @patch('dkb_robo.portfolio.CardItem', autospec=True)
     @patch('dkb_robo.portfolio.DepotItem', autospec=True)
     def test_016_itemize(self, mock_depot, mock_card, mock_account):
-        """ test _itemize() unprocessed """
+        """ test _itemize() unfiltered """
         portfolio_dic = {
             'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
             'cards': {'data': [{'id': 'card1', 'attributes': {'limit': 500}}]},
             'depots': {'data': [{'id': 'depot1', 'attributes': {'value': 1000}}]}
         }
 
-        mock_account.return_value = 'unprocessed_account'
-        mock_card.return_value = 'unprocessed_card'
-        mock_depot.return_value = 'unprocessed_depot'
-        self.overview.unprocessed = True
+        mock_account.return_value = 'unfiltered_account'
+        mock_card.return_value = 'unfiltered_card'
+        mock_depot.return_value = 'unfiltered_depot'
+        self.overview.unfiltered = True
         result = self.overview._itemize(portfolio_dic)
 
         self.assertEqual(result, {
-            'acc1': 'unprocessed_account',
-            'card1': 'unprocessed_card',
-            'depot1': 'unprocessed_depot'
+            'acc1': 'unfiltered_account',
+            'card1': 'unfiltered_card',
+            'depot1': 'unfiltered_depot'
         })
 
     @patch('dkb_robo.portfolio.ProductGroup', autospec=True)
@@ -241,7 +241,7 @@ class TestOverview(unittest.TestCase):
     @patch('dkb_robo.portfolio.Overview._itemize', autospec=True)
     @patch('dkb_robo.portfolio.Overview._add_remaining', autospec=True)
     def test_018_sort(self, mock_add, mock_itemize, mock_pgrp):
-        """ test _sort() unprocessed """
+        """ test _sort() unfiltered """
         portfolio_dic = {
             'product_display': {'data': [{'id': 'display1'}]},
             'accounts': {'data': [{'id': 'acc1', 'attributes': {'amount': 100}}]},
@@ -263,7 +263,7 @@ class TestOverview(unittest.TestCase):
             0: {'amount': 100, 'productgroup': 'Group1'}
         }
 
-        self.overview.unprocessed = True
+        self.overview.unfiltered = True
         result = self.overview._sort(portfolio_dic)
 
         self.assertEqual(result, {
@@ -289,8 +289,8 @@ class TestOverview(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     def test_019_add_remaining(self):
-        """ test _add_remaining() unprocessed """
-        self.overview.unprocessed = True
+        """ test _add_remaining() unfiltered """
+        self.overview.unfiltered = True
         data_dic = {
             'product1': MagicMock(),
             'product2': MagicMock()
