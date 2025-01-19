@@ -117,7 +117,6 @@ class Transactions:
 
         filtered_transaction_list = []
         for transaction in transaction_list:
-            # print(transaction)
             if 'attributes' in transaction and 'status' in transaction['attributes'] and 'bookingDate' in transaction['attributes']:
                 if transaction['attributes']['status'] == transaction_type:
                     bookingdate_uts = int(time.mktime(datetime.datetime.strptime(transaction['attributes']['bookingDate'], API_DATE_FORMAT).timetuple()))

@@ -711,7 +711,7 @@ class TestDepotItem(unittest.TestCase):
             'id': 'depot123',
             'name': 'John Doe',
             'type': 'depot',
-            'transactions': "https://banking.dkb.de/api/broker/brokerage-accounts/depot123/positions?include=instrument%2Cquote'",
+            'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/depot123/positions?include=instrument%2Cquote',
         }
 
         self.assertEqual(formatted_depot, expected_output)
