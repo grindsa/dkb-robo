@@ -68,6 +68,26 @@ class DKBRobo(object):
         """ Close the connection at the end of the context """
         self.wrapper.logout()
 
+    def _accounts_by_id(self):
+        self.logger.debug('DKBRobo._accounts_by_id()\n')
+
+        from pprint import pprint
+        if self.unfiltered:
+            accounts_by_id = {}
+            for acc in self.wrapper.account_dic.values():
+                id = getattr(acc, 'id', None)
+                if getattr(acc, 'iban', None):
+                    accounts_by_id[id] = acc.iban
+                elif getattr(acc, 'maskedPan', None):
+                    accounts_by_id[id] = acc.maskedPan
+                elif getattr(acc, 'depositAccountId', None):
+                    accounts_by_id[id] = acc.depositAccountId
+        else:
+            accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
+
+        self.logger.debug('DKBRobo._accounts_by_id(): returned %s elements\n', len(accounts_by_id.keys()))
+        return accounts_by_id
+
     def get_credit_limits(self):
         """ create a dictionary of credit limits of the different accounts """
         self.logger.debug('DKBRobo.get_credit_limits()\n')
@@ -144,7 +164,8 @@ class DKBRobo(object):
             documents = {id: item for id, item in documents.items()
                          if item.message and item.message.read is False}
 
-        accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
+        accounts_by_id = self._accounts_by_id()
+
         if not list_only:
             for doc in documents.values():
                 self.download_doc(path=path, doc=doc, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only, accounts_by_id=accounts_by_id)
