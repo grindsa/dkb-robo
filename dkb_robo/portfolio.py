@@ -349,7 +349,7 @@ class CardItem:
         self.status = self.Status(**self.status)
         self.holder = self.Holder(**self.holder)
         if self.type:
-            self.transactions = BASE_URL + f"/credit-card/cards/{self.id}/transactions"
+            self.transactions = BASE_URL + f"/card-transactions/creditcard-transactions?cardId={self.id}"
 
     @filter_unexpected_fields
     @dataclass

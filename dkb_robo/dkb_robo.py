@@ -71,17 +71,16 @@ class DKBRobo(object):
     def _accounts_by_id(self):
         self.logger.debug('DKBRobo._accounts_by_id()\n')
 
-        from pprint import pprint
         if self.unfiltered:
             accounts_by_id = {}
             for acc in self.wrapper.account_dic.values():
-                id = getattr(acc, 'id', None)
+                uid = getattr(acc, 'id', None)
                 if getattr(acc, 'iban', None):
-                    accounts_by_id[id] = acc.iban
+                    accounts_by_id[uid] = acc.iban
                 elif getattr(acc, 'maskedPan', None):
-                    accounts_by_id[id] = acc.maskedPan
+                    accounts_by_id[uid] = acc.maskedPan
                 elif getattr(acc, 'depositAccountId', None):
-                    accounts_by_id[id] = acc.depositAccountId
+                    accounts_by_id[uid] = acc.depositAccountId
         else:
             accounts_by_id = {acc['id']: acc['account'] for acc in self.wrapper.account_dic.values()}
 
@@ -145,13 +144,46 @@ class DKBRobo(object):
         filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
 
         if not list_only:
-            self.logger.info("Downloading %s to %s...", doc.subject(), target)
-            if doc.download(self.wrapper.client, target / filename):
+            self.logger.info('Downloading "%s" to %s...', doc.subject(), target)
+
+            download_rcode = doc.download(self.wrapper.client, target / filename)
+            if download_rcode:
                 if mark_read:
                     doc.mark_read(self.wrapper.client, True)
                 time.sleep(.5)
+                doc.rcode = download_rcode
             else:
                 self.logger.info("File already exists. Skipping %s.", filename)
+                doc.rcode = 'skipped'
+
+    def format_doc(self, path, documents, use_account_folders: bool = False, prepend_date: bool = False, accounts_by_id: dict = None):
+        """ format documents """
+
+        document_dic = {}
+        for doc in documents.values():
+            category = doc.category()
+
+            if category not in document_dic:
+                document_dic[category] = {
+                    'documents': {},
+                    'count': 0
+                }
+
+            target = path / category
+            if use_account_folders:
+                target = target / doc.account(card_lookup=accounts_by_id)
+            filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+
+            document_dic[category]['documents'][doc.message.subject] = {
+                'id': doc.id,
+                'date': doc.document.creationDate,
+                'link': doc.document.link,
+                'fname': str(target / filename),
+                'rcode': doc.rcode
+
+            }
+            document_dic[category]['count'] += 1
+        return document_dic
 
     def download(self, path: Path, download_all: bool, prepend_date: bool = False, mark_read: bool = True, use_account_folders: bool = False, list_only: bool = False):
         """ download postbox documents """
@@ -164,10 +196,15 @@ class DKBRobo(object):
             documents = {id: item for id, item in documents.items()
                          if item.message and item.message.read is False}
 
+        # create dictionary to map accounts to their respective iban/maskedpan
         accounts_by_id = self._accounts_by_id()
-
         if not list_only:
+            # download the documents if required
             for doc in documents.values():
                 self.download_doc(path=path, doc=doc, prepend_date=prepend_date, mark_read=mark_read, use_account_folders=use_account_folders, list_only=list_only, accounts_by_id=accounts_by_id)
+
+        # format the documents
+        if not self.unfiltered:
+            documents = self.format_doc(path=path, documents=documents, use_account_folders=use_account_folders, prepend_date=prepend_date, accounts_by_id=accounts_by_id)
 
         return documents

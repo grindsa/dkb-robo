@@ -224,7 +224,6 @@ class TestDKBRobo(unittest.TestCase):
         runner = CliRunner()
         self.assertIn('<Result SystemExit(2)>', str(runner.invoke(self.accounts, [use_tan, username, password, format], obj=obj)))
 
-
     @patch('dkb_robo.cli._account_lookup', autospec=True)
     def test_018_id_lookup(self, mock_account_lookup):
         """ test id look with unfiltered True """
@@ -412,16 +411,20 @@ class TestDKBRobo(unittest.TestCase):
         mock_account_lookup.assert_called_once_with(self.ctx, name, account, account_dic, unfiltered)
         self.assertEqual(result, expected_output)
 
+    @patch('dkb_robo.dkb_robo.DKBRobo.scan_postbox', autospec=True)
     @patch('click.echo')
     @patch('dkb_robo.cli._login')
-    def test_031_scan_postbox(self, mock_login, mock_click):
+    def test_031_scan_postbox(self, mock_login, mock_click, mock_scanpb):
         """ test scan postbox """
+        mock_login.return_value.__enter__.return_value.account_dic = {1: {'details': 'details', 'transactions': 'transactions'}, 2: {'details': 'details', 'transactions': 'transactions'}}
+        mock_scanpb.return_value = {'foo': 'bar'}
         obj = Config()
         obj.FORMAT = Mock()
         obj.UNFILTERED = False
         runner = CliRunner()
         self.assertEqual('<Result okay>', str(runner.invoke(self.scan_postbox, obj=obj)))
         self.assertFalse(mock_click.called)
+        # self.assertTrue(mock_scanpb.called)
 
     @patch('click.echo')
     @patch('dkb_robo.cli._login')
@@ -435,6 +438,23 @@ class TestDKBRobo(unittest.TestCase):
         runner = CliRunner()
         self.assertEqual('<Result okay>', str(runner.invoke(self.scan_postbox, obj=obj)))
         self.assertTrue(mock_click.called)
+
+
+    @patch('dkb_robo.dkb_robo.DKBRobo.scan_postbox', autospec=True)
+    @patch('dkb_robo.cli.object2dictionary')
+    @patch('click.echo')
+    @patch('dkb_robo.cli._login')
+    def test_033_scan_postbox(self, mock_login, mock_click, mock_o2d, mock_scanpb):
+        """ test scan postbox """
+        mock_login.return_value.__enter__.return_value.account_dic = {1: {'details': 'details', 'transactions': 'transactions'}, 2: {'details': 'details', 'transactions': 'transactions'}}
+        mock_scanpb.return_value = {'foo': 'bar'}
+        obj = Config()
+        obj.FORMAT = Mock()
+        obj.UNFILTERED = True
+        runner = CliRunner()
+        self.assertEqual('<Result okay>', str(runner.invoke(self.scan_postbox, obj=obj)))
+        self.assertFalse(mock_click.called)
+        # self.assertTrue(mock_o2d.called)
 
     @patch('click.echo')
     @patch('dkb_robo.cli._login')

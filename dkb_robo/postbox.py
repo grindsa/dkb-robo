@@ -4,7 +4,7 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 import requests
 from dkb_robo.utilities import get_valid_filename, DKBRoboError, JSON_CONTENT_TYPE
 
@@ -24,6 +24,7 @@ class Document:
     metadata: Dict[str, str]
     owner: str
     link: str
+    rcode: Optional[str] = None
 
 
 @dataclass
@@ -93,7 +94,7 @@ class PostboxItem:
                     logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
                     # rename file to indicate checksum mismatch
                     target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
-            return True
+            return resp.status_code
         return False
 
     def filename(self) -> str:

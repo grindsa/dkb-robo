@@ -313,7 +313,14 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
         path = "documents"
     try:
         with _login(ctx) as dkb:
-            ctx.obj["FORMAT"](dkb.scan_postbox(path=path, download_all=download_all, archive=archive, prepend_date=prepend_date))
+            doc_list = dkb.scan_postbox(path=path, download_all=download_all, prepend_date=prepend_date)
+            if ctx.obj["UNFILTERED"]:
+                documents_list = []
+                for doc in doc_list.values():
+                    documents_list.append(object2dictionary(doc))
+            else:
+                documents_list = doc_list
+            ctx.obj["FORMAT"](documents_list)
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 

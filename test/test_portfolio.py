@@ -607,7 +607,7 @@ class TestCardItem(unittest.TestCase):
                 'limitationsFor': []
             },
             'type': 'creditcard',
-            'transactions': "https://banking.dkb.de/api/credit-card/cards/card123/transactions",
+            'transactions': "https://banking.dkb.de/api/card-transactions/creditcard-transactions?cardId=card123",
             'amount': -1000,
             'currencycode': 'USD',
             'date': None  # Assuming balance.date is None

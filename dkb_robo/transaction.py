@@ -131,7 +131,7 @@ class Transactions:
         logger.debug('Transactions.get()\n')
 
         if transaction_url and atype not in ['depot', 'brokerageAccount']:
-            transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
+            transaction_url = transaction_url + '&filter[date][GE]=' + date_from + '&filter[date][LE]=' + date_to + '&expand=Merchant&page[size]=400'
         transaction_dic = self._fetch(transaction_url)
 
         mapping_dic = {
