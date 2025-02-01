@@ -82,7 +82,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
@@ -90,6 +90,7 @@ create a new DKBRobo context handler and login to DKB portal
 - chip_tan: (True/**False**/qr) TAN usage - when not "False" dbk-robo will ask for a TAN during login. So far this library only supports ["chipTAN manuell" and "chipTAN QR](https://www.dkb.de/fragen-antworten/was-ist-das-chiptan-verfahren). "qr" foces the usage of "chipTAN QR" all other values will trigger the usage of "chipTAN Manuell"
 - mfa_device: ('m'/Integer) optional - preselect MFA device to be used for 2nd factor - 'm' - main device, otherwise number from device-list
 - debug: (True/**False**) Debug mode
+- unfiltered: (True/**False**) [Unfiltered mode](doc/unfiltered.md)
 
 After login you can return a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
 
@@ -300,11 +301,18 @@ A dictionary similar to the one below will be returned
 
 ```python
 > pprint(exo)
-{1: {'amount': 1602.0,
-     'available': 1602.0,
-     'description': u'Gemeinsam mit XXXX XXXX',
-     'used': 0.0,
-     'validity': u'01.01.2017  unbefristet'}}
+[{'amount': 2000.0,
+  'currencycode': 'EUR',
+  'partner': {'dateofbirth': '1980-01-01',
+              'firstname': 'Jane',
+              'lastname': 'Doe',
+              'salutation': 'Frau',
+              'taxid': '1234567890'},
+  'receivedat': '2017-01-01',
+  'type': 'joint',
+  'used': 567.89,
+  'validfrom': '2020-01-01',
+  'validto': '9999-12-31'}]
 ```
 
 To get the amount of dkb points the below method can be used
