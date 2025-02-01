@@ -205,7 +205,6 @@ class TestDKBRobo(unittest.TestCase):
         self.assertIn('<Result okay>', str(runner.invoke(self.accounts, obj=obj)))
         self.assertTrue(mock_click.called)
 
-
     @patch('click.option')
     @patch('click.pass_context')
     def test_017_main(self, mock_pass, mock_option):

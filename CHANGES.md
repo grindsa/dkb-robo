@@ -3,6 +3,18 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.29
+
+**Improvements**:
+
+- Refactor library in separate classes to improve understandability and maintainability
+- [unfiltered mode](doc/unfiltered.md)
+
+**Bugfixes**:
+
+- [#72](https://github.com/grindsa/dkb-robo/pull/72) - Update base path of legacy URLs
+- [#71](https://github.com/grindsa/dkb-robo/pull/72) - Fix prepend_date logic
+
 # Changes in 0.28.2
 
 **Bugfixes**:

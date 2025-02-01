@@ -288,7 +288,7 @@ class TestOverview(unittest.TestCase):
 
         self.assertEqual(result, expected_result)
 
-    def test_019_add_remaining(self):
+    def test_020_add_remaining(self):
         """ test _add_remaining() unfiltered """
         self.overview.unfiltered = True
         data_dic = {
