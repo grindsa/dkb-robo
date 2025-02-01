@@ -28,7 +28,7 @@ with DKBRobo(dkb_user=DKB_USER, dkb_password=DKB_PASSWORD, unfiltered=True) as d
 pass the `--unfiltered` flag to your cli command to enable this mode.
 
 ```bash
-dkb  -u DKB_USER -p DKB_PASSWORD -m 1 accounts
+dkb --unfiltered -u DKB_USER -p DKB_PASSWORD -m 1 accounts
 ```
 
 ## Example output
