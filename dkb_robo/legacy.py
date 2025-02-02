@@ -102,7 +102,7 @@ class Wrapper(object):
         # print steps to be done
         olist = soup.find("ol")
         if olist:
-            for li_ in olist.findAll('li'):
+            for li_ in olist.find_all('li'):
                 print(li_.text.strip())
         else:
             print('Please open the TAN2GO app to get a TAN to be inserted below.')
@@ -133,7 +133,7 @@ class Wrapper(object):
         document_name_list = []
 
         tbody = table.find('tbody')
-        for row in tbody.findAll('tr', class_filter):
+        for row in tbody.find_all('tr', class_filter):
             link = row.find('a')
 
             # get formatted date
@@ -184,9 +184,9 @@ class Wrapper(object):
         limit_dic = {}
         table = form.find('table', attrs={'class': 'multiColumn'})
         if table:
-            rows = table.findAll("tr")
+            rows = table.find_all("tr")
             for row in rows:
-                cols = row.findAll("td")
+                cols = row.find_all("td")
                 tmp = row.find("th")
                 if cols:
                     try:
@@ -206,8 +206,8 @@ class Wrapper(object):
         limit_dic = {}
         table = form.find('table', attrs={'class': 'dropdownAnchor'})
         if table:
-            for row in table.findAll("tr"):
-                cols = row.findAll("td")
+            for row in table.find_all("tr"):
+                cols = row.find_all("td")
                 tmp = row.find("th")
                 if cols:
                     limit = tmp.find('span').text.strip()
@@ -593,9 +593,9 @@ class Wrapper(object):
         overview_dic = {}
         counter = 0
         ontop = 0
-        for row in soup.findAll("tr", attrs={'class': 'mainRow'}):
+        for row in soup.find_all("tr", attrs={'class': 'mainRow'}):
             overview_dic[counter] = {}
-            cols = row.findAll("td")
+            cols = row.find_all("td")
 
             # check if we have accounts from other banks in overview
             # in this case we need to shift columns by one
@@ -680,7 +680,7 @@ class Wrapper(object):
 
         soup = self.dkb_br.get_current_page()
 
-        for lbr in soup.findAll("br"):
+        for lbr in soup.find_all("br"):
             lbr.replace_with("")
             # br.replace('<br />', ' ')
 
@@ -689,8 +689,8 @@ class Wrapper(object):
         exo_dic = {}
         if table:
             count = 0
-            for row in table.findAll("tr"):
-                cols = row.findAll("td")
+            for row in table.find_all("tr"):
+                cols = row.find_all("td")
                 if cols:
                     try:
                         count += 1
@@ -729,8 +729,8 @@ class Wrapper(object):
         table = soup.find('table', attrs={'class': 'expandableTable'})
         if table:
             tbody = table.find('tbody')
-            row = tbody.findAll('tr')[0]
-            cols = row.findAll("td")
+            row = tbody.find_all('tr')[0]
+            cols = row.find_all("td")
             # points
             points = re.sub(' +', ' ', cols[1].text.strip())
             points = points.replace('\n', '')
@@ -765,10 +765,10 @@ class Wrapper(object):
         table = soup.find('table', attrs={'class': 'expandableTable'})
         if table:
             tbody = table.find('tbody')
-            rows = tbody.findAll('tr')
+            rows = tbody.find_all('tr')
             for row in rows:
                 tmp_dic = {}
-                cols = row.findAll("td")
+                cols = row.find_all("td")
                 tmp_dic['recipient'] = cols[0].text.strip()
                 amount = cols[1].text.strip()
                 amount = amount.replace('\n', '')
@@ -776,7 +776,7 @@ class Wrapper(object):
                 tmp_dic['amount'] = amount
 
                 interval = cols[2]
-                for brt in interval.findAll('br'):
+                for brt in interval.find_all('br'):
                     brt.unwrap()
 
                 interval = re.sub('\t+', ' ', interval.text.strip())
@@ -896,7 +896,7 @@ class Wrapper(object):
             select_all = download_all
 
         pb_dic = {}
-        for row in tbody.findAll('tr'):
+        for row in tbody.find_all('tr'):
             link = row.find('a')
             link_name = link.contents[0]
             pb_dic[link_name] = {}
