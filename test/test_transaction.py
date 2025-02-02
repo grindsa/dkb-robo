@@ -136,17 +136,18 @@ class TestTransactions(unittest.TestCase):
     @patch('dkb_robo.transaction.AccountTransactionItem')
     @patch('dkb_robo.transaction.Transactions._filter')
     @patch('dkb_robo.transaction.Transactions._fetch')
-    def test_013_get(self, mock_fetch, mock_filter, mock_aformat):
+    def test_014_get(self, mock_fetch, mock_filter, mock_aformat):
         "" " test get() for acount transactions """
         mock_aformat.return_value = 'mock_aformat'
         mock_aformat.format.return_value = 'foo'
         mock_filter.return_value = [{'foo': 'bar'}]
         self.transaction.unfiltered = True
-        self.assertFalse(self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertFalse(self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
+        self.assertIn('INFO:dkb_robo.transaction:fetching account transactions', lcm.output)
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_filter.called)
         self.assertFalse(mock_aformat.called)
-
 
     @patch('dkb_robo.transaction.DepotTransactionItem')
     @patch('dkb_robo.transaction.CreditCardTransactionItem')
@@ -154,13 +155,15 @@ class TestTransactions(unittest.TestCase):
     @patch('dkb_robo.transaction.Transactions._correlate')
     @patch('dkb_robo.transaction.Transactions._filter')
     @patch('dkb_robo.transaction.Transactions._fetch')
-    def test_014_get(self, mock_fetch, mock_filter, mock_correlate, mock_aformat, mock_creditformat, mock_depotformat):
+    def test_015_get(self, mock_fetch, mock_filter, mock_correlate, mock_aformat, mock_creditformat, mock_depotformat):
         "" " test get() for acount transactions """
         mock_aformat.return_value = 'mock_aformat'
         mock_creditformat.return_value = 'mock_creditformat'
         mock_depotformat.return_value = 'mock_depotformat'
         mock_filter.return_value = [{'id': 'id', 'attributes': {'mock_filter': 'mock_filter'}}]
-        self.assertEqual(['mock_aformat'], self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(['mock_aformat'], self.transaction.get('transaction_url', 'account', 'from_date', 'to_date'))
+        self.assertIn('INFO:dkb_robo.transaction:fetching account transactions', lcm.output)
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_filter.called)
         self.assertFalse(mock_correlate.called)
@@ -171,7 +174,7 @@ class TestTransactions(unittest.TestCase):
     @patch('dkb_robo.transaction.AccountTransactionItem')
     @patch('dkb_robo.transaction.Transactions._filter')
     @patch('dkb_robo.transaction.Transactions._fetch')
-    def test_015_get(self, mock_fetch, mock_filter, mock_aformat):
+    def test_016_get(self, mock_fetch, mock_filter, mock_aformat):
         "" " test get() for acount transactions """
         mock_aformat.return_value = 'mock_aformat'
         mock_aformat.format.return_value = 'foo'
@@ -188,20 +191,21 @@ class TestTransactions(unittest.TestCase):
     @patch('dkb_robo.transaction.Transactions._correlate')
     @patch('dkb_robo.transaction.Transactions._filter')
     @patch('dkb_robo.transaction.Transactions._fetch')
-    def test_016_get(self, mock_fetch, mock_filter, mock_correlate, mock_aformat, mock_creditformat, mock_depotformat):
-        "" " test get() for acount transactions """
+    def test_017_get(self, mock_fetch, mock_filter, mock_correlate, mock_aformat, mock_creditformat, mock_depotformat):
+        "" " test get() for card transactions """
         mock_aformat.return_value = 'mock_aformat'
         mock_creditformat.return_value = 'mock_creditformat'
         mock_depotformat.return_value = 'mock_depotformat'
         mock_filter.return_value = [{'id': 'id', 'attributes': {'mock_filter': 'mock_filter'}}]
-        self.assertEqual(['mock_creditformat'], self.transaction.get('transaction_url', 'creditcard', 'from_date', 'to_date'))
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual(['mock_creditformat'], self.transaction.get('transaction_url', 'creditcard', 'from_date', 'to_date'))
+        self.assertIn('INFO:dkb_robo.transaction:fetching card transactions', lcm.output)
         self.assertTrue(mock_fetch.called)
         self.assertTrue(mock_filter.called)
         self.assertFalse(mock_correlate.called)
         self.assertFalse(mock_aformat.called)
         self.assertTrue(mock_creditformat.called)
         self.assertFalse(mock_depotformat.called)
-
 
     @patch('dkb_robo.transaction.DepotTransactionItem')
     @patch('dkb_robo.transaction.CreditCardTransactionItem')
@@ -210,7 +214,7 @@ class TestTransactions(unittest.TestCase):
     @patch('dkb_robo.transaction.Transactions._filter')
     @patch('dkb_robo.transaction.Transactions._fetch')
     def test_018_get(self, mock_fetch, mock_filter, mock_correlate, mock_aformat, mock_creditformat, mock_depotformat):
-        "" " test get() for acount transactions """
+        "" " test get() for depot transactions """
         mock_aformat.return_value = 'mock_aformat'
         mock_creditformat.return_value = 'mock_creditformat'
         mock_depotformat.return_value = 'mock_depotformat'

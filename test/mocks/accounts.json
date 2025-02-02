@@ -35,7 +35,35 @@
 				"overdraftLimit": "1000.00",
 				"interestRate": "1.000",
 				"unauthorizedOverdraftInterestRate": "11.000",
-				"lastAccountStatementDate": "2020-01-03"
+				"lastAccountStatementDate": "2020-01-03",
+				"interests": [
+					{
+						"type": "overdraft",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "12.150",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					},
+					{
+						"type": "credit",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "2.000",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					}
+				]                
 			}
 		},
 		{
@@ -73,7 +101,35 @@
 				"overdraftLimit": "0.00",
 				"interestRate": "2.000",
 				"unauthorizedOverdraftInterestRate": "12.000",
-				"lastAccountStatementDate": "2023-02-04"
+				"lastAccountStatementDate": "2023-02-04",
+				"interests": [
+					{
+						"type": "overdraft",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "12.150",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					},
+					{
+						"type": "credit",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "2.000",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					}
+				]                
 			}
 		},
 		{
@@ -112,7 +168,35 @@
 				"overdraftInterestRate": "1.1234",
 				"interestRate": "1.000",
 				"unauthorizedOverdraftInterestRate": "1.234",
-				"lastAccountStatementDate": "2020-03-04"
+				"lastAccountStatementDate": "2020-03-04",
+				"interests": [
+					{
+						"type": "overdraft",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "12.150",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					},
+					{
+						"type": "credit",
+						"method": "individual-rate",
+						"details": [
+							{
+								"interestRate": "2.000",
+								"condition": {
+									"currency": "EUR",
+									"minimumAmount": "0.00"
+								}
+							}
+						]
+					}
+				]                
 			}
 		}
 	]

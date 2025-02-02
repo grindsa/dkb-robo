@@ -123,7 +123,7 @@ class Overview:
 
         data_dic = self._itemize(portfolio_dic)
 
-        display_settings_dic = portfolio_dic    .get('product_display', {}).get('data', {})
+        display_settings_dic = portfolio_dic.get('product_display', {}).get('data', {})
         productgroup = ProductGroup()
         for portfolio in display_settings_dic:
             # get id/name mapping and productlist per group
