@@ -119,7 +119,7 @@ class TestOverview(unittest.TestCase):
     def setUp(self, mock_session):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.overview = Overview(client=mock_session)
-        # self.maxDiff = None
+        self.maxDiff = None
 
     def test_011__fetch(self):
         """ test _fetch() """
@@ -310,6 +310,129 @@ class TestOverview(unittest.TestCase):
 
         self.assertEqual(result, expected_result)
 
+    @patch('dkb_robo.portfolio.Overview._fetch')
+    def test_021_get(self, mock_fetch):
+        """ test get() e2e """
+        pd_dic = json_load(self.dir_path + '/mocks/pd.json')
+        account_dic = json_load(self.dir_path + '/mocks/accounts.json')
+        card_dic = json_load(self.dir_path + '/mocks/cards.json')
+        depot_dic = json_load(self.dir_path + '/mocks/brokerage.json')
+        mock_fetch.side_effect = [pd_dic, account_dic, card_dic, depot_dic, {'foo': 'bar'}]
+
+        result = {
+                0: {'account': '987654321',
+                    'amount': 1234.56,
+                    'currencyCode': 'EUR',
+                    'holderName': 'HolderName1',
+                    'id': 'baccountid1',
+                    'name': 'pdsettings brokeraage baccountid1',
+                    'productgroup': 'productGroup name 1',
+                    'transactions': 'https://banking.dkb.de/api/broker/brokerage-accounts/baccountid1/positions?include=instrument%2Cquote',
+                    'type': 'depot'},
+                1: {'account': 'AccountIBAN3',
+                    'amount': -1000.22,
+                    'currencyCode': 'EUR',
+                    'date': '2020-03-01',
+                    'holderName': 'Account HolderName 3',
+                    'iban': 'AccountIBAN3',
+                    'id': 'accountid3',
+                    'limit': 2500.0,
+                    'name': 'pdsettings accoutname accountid3',
+                    'productgroup': 'productGroup name 1',
+                    'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid3/transactions',
+                    'type': 'account'},
+                2: {'account': 'maskedPan1',
+                    'amount': -1234.56,
+                    'currencycode': 'EUR',
+                    'date': '2020-01-03',
+                    'expirydate': '2020-01-02',
+                    'holdername:': 'holderfirstName holderlastName',
+                    'id': 'cardid1',
+                    'limit': 1000.0,
+                    'maskedpan': 'maskedPan1',
+                    'name': 'pdsettings cardname cardid1',
+                    'productgroup': 'productGroup name 1',
+                    'status': {'category': 'active',
+                                'final': None,
+                                'limitationsFor': [],
+                                'reason': None,
+                                'since': None},
+                    'transactions': 'https://banking.dkb.de/api/card-transactions/creditcard-transactions?cardId=cardid1',
+                    'type': 'creditcard'},
+                3: {'account': 'maskedPan2',
+                    'amount': 12345.67,
+                    'currencycode': 'EUR',
+                    'date': '2020-02-07',
+                    'expirydate': '2020-02-02',
+                    'holdername:': 'holderfirstName2 holderlastName2',
+                    'id': 'cardid2',
+                    'limit': 0.0,
+                    'maskedpan': 'maskedPan2',
+                    'name': 'displayName2',
+                    'productgroup': 'productGroup name 1',
+                    'status': {'category': 'active',
+                                'final': None,
+                                'limitationsFor': [],
+                                'reason': None,
+                                'since': None},
+                    'transactions': 'https://banking.dkb.de/api/card-transactions/creditcard-transactions?cardId=cardid2',
+                    'type': 'creditcard'},
+                4: {'account': 'AccountIBAN2',
+                    'amount': 1284.56,
+                    'currencyCode': 'EUR',
+                    'date': '2020-02-01',
+                    'holderName': 'Account HolderName 2',
+                    'iban': 'AccountIBAN2',
+                    'id': 'accountid2',
+                    'limit': 0.0,
+                    'name': 'pdsettings accoutname accountid2',
+                    'productgroup': 'productGroup name 2',
+                    'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid2/transactions',
+                    'type': 'account'},
+                5: {'account': 'AccountIBAN1',
+                    'amount': 12345.67,
+                    'currencyCode': 'EUR',
+                    'date': '2020-01-01',
+                    'holderName': 'Account HolderName 1',
+                    'iban': 'AccountIBAN1',
+                    'id': 'accountid1',
+                    'limit': 1000.0,
+                    'name': 'Account DisplayName 1',
+                    'productgroup': None,
+                    'transactions': 'https://banking.dkb.de/api/accounts/accounts/accountid1/transactions',
+                    'type': 'account'},
+                6: {'account': 'maskedPan3',
+                    'expirydate': '2020-04-04',
+                    'holdername:': 'holderfirstName3 holderlastName3',
+                    'id': 'cardid3',
+                    'limit': None,
+                    'maskedpan': 'maskedPan3',
+                    'name': 'Visa Debitkarte',
+                    'productgroup': None,
+                    'status': {'category': 'blocked',
+                                'final': True,
+                                'limitationsFor': None,
+                                'reason': 'cancellation-of-product-by-customer',
+                                'since': '2020-03-01'},
+                    'transactions': None,
+                    'type': 'debitcard'},
+                7: {'account': 'maskedPan4',
+                    'expirydate': '2020-04-03',
+                    'holdername:': 'holderfirstName4 holderlastName4',
+                    'id': 'cardid4',
+                    'limit': None,
+                    'maskedpan': 'maskedPan4',
+                    'name': 'Visa Debitkarte',
+                    'productgroup': None,
+                    'status': {'category': 'active',
+                                'final': None,
+                                'limitationsFor': None,
+                                'reason': None,
+                                'since': None},
+                    'transactions': None,
+                    'type': 'debitcard'}}
+
+        self.assertEqual(result, self.overview.get())
 
 class TestAccountItem(unittest.TestCase):
     """ test class """
@@ -349,7 +472,7 @@ class TestAccountItem(unittest.TestCase):
             'updatedAt': '2022-01-15'
         }
 
-    def test_020_post_init(self):
+    def test_022_post_init(self):
         """ test post init """
         self.maxDiff = None
         account = AccountItem(**self.account_data)
@@ -385,7 +508,7 @@ class TestAccountItem(unittest.TestCase):
         self.assertEqual(account.product.type, 'savings')
         self.assertEqual(account.product.displayName, 'Savings Account')
 
-    def test_021_post_init(self):
+    def test_023_post_init(self):
         """ test post init with invalid data """
         self.maxDiff = None
         self.account_data['overdraftLimit'] = 'aa'
@@ -425,7 +548,7 @@ class TestAccountItem(unittest.TestCase):
         self.assertEqual(account.product.displayName, 'Savings Account')
 
     @patch('dkb_robo.portfolio.logger')
-    def test_022_format(self, mock_logger):
+    def test_024_format(self, mock_logger):
         """ test format() """
         account = AccountItem(**self.account_data)
         formatted_account = account.format()
@@ -482,7 +605,7 @@ class TestCardItem(unittest.TestCase):
             'type': 'creditCard'
         }
 
-    def test_023_post_init(self):
+    def test_025_post_init(self):
         """ test post init """
         card = CardItem(**self.card_data)
         self.assertEqual(card.id, 'card123')
@@ -532,7 +655,7 @@ class TestCardItem(unittest.TestCase):
         self.assertEqual(card.status.limitationsFor, [])
         self.assertEqual(card.type, 'creditCard')
 
-    def test_024_post_init(self):
+    def test_026_post_init(self):
         """ test post init with invalid data """
         self.card_data['limit']['value'] = 'aa'
         self.card_data['limit']['categories'][0]['amount']['value'] = 'aa'
@@ -586,7 +709,7 @@ class TestCardItem(unittest.TestCase):
         self.assertEqual(card.type, 'creditCard')
 
     @patch('dkb_robo.portfolio.logger')
-    def test_025_format(self, mock_logger):
+    def test_027_format(self, mock_logger):
         """ test format() for creditcard """
         card = CardItem(**self.card_data)
         formatted_card = card.format()
@@ -616,7 +739,7 @@ class TestCardItem(unittest.TestCase):
         self.assertEqual(formatted_card, expected_output)
 
     @patch('dkb_robo.portfolio.logger')
-    def test_026_format(self, mock_logger):
+    def test_028_format(self, mock_logger):
         """ test format() for debitcard """
         self.card_data['type'] = 'debitCard'
         card = CardItem(**self.card_data)
@@ -672,7 +795,7 @@ class TestDepotItem(unittest.TestCase):
             'type': 'depot'
         }
 
-    def test_026_post_init(self):
+    def test_029_post_init(self):
         """ test post init """
         depot = DepotItem(**self.depot_data)
         self.assertEqual(depot.id, 'depot123')
@@ -698,7 +821,7 @@ class TestDepotItem(unittest.TestCase):
         self.assertEqual(depot.riskClasses, ['low', 'medium'])
 
     @patch('dkb_robo.portfolio.logger')
-    def test_026_format(self, mock_logger):
+    def test_030_format(self, mock_logger):
         """ test format() """
         depot = DepotItem(**self.depot_data)
         formatted_depot = depot.format()

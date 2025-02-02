@@ -22,23 +22,6 @@ class Transactions:
         self.uid = None
         self.unfiltered = unfiltered
 
-    def _map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
-        """ add details from depot transaction """
-        logger.debug('DepotTransaction._map()\n')
-
-        instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
-        quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
-        for ele in included_list:
-            if 'id' in ele and ele['id'] == instrument_id:
-                position['attributes']['instrument'] = ele['attributes']
-                position['attributes']['instrument']['id'] = ele['id']
-            if 'id' in ele and ele['id'] == quote_id:
-                position['attributes']['quote'] = ele['attributes']
-                position['attributes']['quote']['id'] = ele['id']
-
-        logger.debug('DepotTransaction._map() ended\n')
-        return position
-
     def _correlate(self, transaction_dic: Dict[str, str]) -> List[Dict[str, str]]:
         """ correlate transactions """
         logger.debug('Transactions._correlate()\n')
@@ -57,21 +40,6 @@ class Transactions:
 
         logger.debug('Transactions._correlate() ended with %s entries\n', len(position_list))
         return position_list
-
-    def _nextpage_url(self, tr_dic):
-        """ get transaction url """
-        logger.debug('Transactions._nextpage_url()\n')
-
-        transaction_url = None
-        if 'links' in tr_dic and 'next' in tr_dic['links']:
-            logger.debug('Transactions._nextpage_url(): next page: %s', tr_dic['links']['next'])
-            transaction_url = self.base_url + '/accounts' + tr_dic['links']['next']
-        else:
-            logger.debug('Transactions._nextpage_url(): no next page')
-            transaction_url = None
-
-        logger.debug('Transactions._nextpage_url() ended\n')
-        return transaction_url
 
     def _fetch(self, transaction_url: str) -> Dict[str, str]:
         """ get transaction list"""
@@ -126,13 +94,9 @@ class Transactions:
         logger.debug('Transactions._filter() ended with %s entries\n', len(filtered_transaction_list))
         return filtered_transaction_list
 
-    def get(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str = 'booked'):
-        """ fetch transactions """
-        logger.debug('Transactions.get()\n')
-
-        if transaction_url and atype not in ['depot', 'brokerageAccount']:
-            transaction_url = transaction_url + '&filter[date][GE]=' + date_from + '&filter[date][LE]=' + date_to + '&expand=Merchant&page[size]=400'
-        transaction_dic = self._fetch(transaction_url)
+    def _format(self, raw_transaction_list: List[Dict[str, str]], atype: str) -> List[Dict[str, str]]:
+        """ format transaction list """
+        logger.debug('Transactions._format()\n')
 
         mapping_dic = {
             'account': 'AccountTransactionItem',
@@ -141,11 +105,6 @@ class Transactions:
             'brokerageAccount': 'DepotTransactionItem',
             'depot': 'DepotTransactionItem'
         }
-
-        if atype in ['account', 'creditcard', 'creditCard']:
-            raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], date_from=date_from, date_to=date_to, transaction_type=transaction_type)
-        else:
-            raw_transaction_list = self._correlate(transaction_dic)
 
         transaction_list = []
         if raw_transaction_list:
@@ -159,6 +118,62 @@ class Transactions:
                     transaction_list.append(transaction)
                 else:
                     transaction_list.append(transaction.format())
+
+        logger.debug('Transactions._format() ended with %s entries\n', len(transaction_list))
+        return transaction_list
+
+    def _map(self, position: Dict[str, str], included_list: List[Dict[str, str]]):
+        """ add details from depot transaction """
+        logger.debug('DepotTransaction._map()\n')
+
+        instrument_id = position.get('relationships', {}).get('instrument', {}).get('data', {}).get('id', None)
+        quote_id = position.get('relationships', {}).get('quote', {}).get('data', {}).get('id', None)
+        for ele in included_list:
+            if 'id' in ele and ele['id'] == instrument_id:
+                position['attributes']['instrument'] = ele['attributes']
+                position['attributes']['instrument']['id'] = ele['id']
+            if 'id' in ele and ele['id'] == quote_id:
+                position['attributes']['quote'] = ele['attributes']
+                position['attributes']['quote']['id'] = ele['id']
+
+        logger.debug('DepotTransaction._map() ended\n')
+        return position
+
+    def _nextpage_url(self, tr_dic):
+        """ get transaction url """
+        logger.debug('Transactions._nextpage_url()\n')
+
+        transaction_url = None
+        if 'links' in tr_dic and 'next' in tr_dic['links']:
+            logger.debug('Transactions._nextpage_url(): next page: %s', tr_dic['links']['next'])
+            transaction_url = self.base_url + '/accounts' + tr_dic['links']['next']
+        else:
+            logger.debug('Transactions._nextpage_url(): no next page')
+            transaction_url = None
+
+        logger.debug('Transactions._nextpage_url() ended\n')
+        return transaction_url
+
+    def get(self, transaction_url: str, atype: str, date_from: str, date_to: str, transaction_type: str = 'booked'):
+        """ fetch transactions """
+        logger.debug('Transactions.get()\n')
+
+        if transaction_url:
+            if atype == 'account':
+                logger.info('fetching account transactions')
+                transaction_url = transaction_url + '?filter[bookingDate][GE]=' + date_from + '&filter[bookingDate][LE]=' + date_to + '&expand=Merchant&page[size]=400'
+            elif atype in ['creditcard', 'creditCard']:
+                logger.info('fetching card transactions')
+                transaction_url = transaction_url + '&filter[date][GE]=' + date_from + '&filter[date][LE]=' + date_to + '&expand=Merchant&page[size]=400'
+        transaction_dic = self._fetch(transaction_url)
+
+        if atype in ['account', 'creditcard', 'creditCard']:
+            raw_transaction_list = self._filter(transaction_list=transaction_dic['data'], date_from=date_from, date_to=date_to, transaction_type=transaction_type)
+        else:
+            raw_transaction_list = self._correlate(transaction_dic)
+
+        # format output
+        transaction_list = self._format(raw_transaction_list, atype)
 
         logger.debug('Transactions.get() ended\n')
         return transaction_list
