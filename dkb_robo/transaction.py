@@ -255,7 +255,7 @@ class AccountTransactionItem:
             transaction_dic['peeraccount'] = self.creditor.iban
             transaction_dic['peerbic'] = self.creditor.bic
             transaction_dic['peerid'] = self.creditor.id
-            if self.creditor.intermediaryName:
+            if self.creditor.intermediaryName and self.description.lower() != 'visa debitkartenumsatz':
                 transaction_dic['peer'] = self.creditor.intermediaryName
             else:
                 transaction_dic['peer'] = self.creditor.name
