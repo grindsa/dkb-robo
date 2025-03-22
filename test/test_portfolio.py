@@ -547,6 +547,42 @@ class TestAccountItem(unittest.TestCase):
         self.assertEqual(account.product.type, 'savings')
         self.assertEqual(account.product.displayName, 'Savings Account')
 
+    def test_024_post_init(self):
+        """ test post init """
+        self.maxDiff = None
+        self.account_data['nearTimeBalance'] = None
+        account = AccountItem(**self.account_data)
+        self.assertEqual(account.id, 'acc123')
+        self.assertEqual(account.displayName, 'My Account')
+        self.assertEqual(account.holderName, 'John Doe')
+        self.assertEqual(account.iban, 'DE1234567890')
+        self.assertEqual(account.currencyCode, 'USD')
+        self.assertEqual(account.type, 'checking')
+        self.assertEqual(account.state, 'active')
+        self.assertEqual(account.permissions, ['view', 'edit'])
+        self.assertEqual(account.productGroup, 'group1')
+        self.assertEqual(account.openingDate, '2020-01-01')
+        self.assertEqual(account.lastAccountStatementDate, '2022-01-01')
+        self.assertEqual(account.updatedAt, '2022-01-15')
+        self.assertEqual(account.balance.value, 1000)
+        self.assertEqual(account.balance.currencyCode, 'USD')
+        self.assertEqual(account.availableBalance.value, 1000)
+        self.assertEqual(account.availableBalance.currencyCode, 'USD')
+        self.assertFalse(account.nearTimeBalance)
+        self.assertEqual(account.overdraftLimit, 500.0)
+        self.assertEqual(account.interestRate['value'], 1.5)
+        self.assertEqual(account.interestRate['currencyCode'], 'USD')
+        self.assertEqual(account.interests[0].type, 'savings')
+        self.assertEqual(account.interests[0].method, 'simple')
+        self.assertEqual(account.interests[0].details[0].condition.currency, 'USD')
+        self.assertEqual(account.interests[0].details[0].interestRate, 1.5)
+        self.assertEqual(account.interests[0].details[0].condition.maximumAmount, 5000)
+        self.assertEqual(account.interests[0].details[0].condition.minimumAmount, 1000)
+        self.assertEqual(account.unauthorizedOverdraftInterestRate['value'], 2.5)
+        self.assertEqual(account.product.id, 'prod123')
+        self.assertEqual(account.product.type, 'savings')
+        self.assertEqual(account.product.displayName, 'Savings Account')
+
     @patch('dkb_robo.portfolio.logger')
     def test_024_format(self, mock_logger):
         """ test format() """

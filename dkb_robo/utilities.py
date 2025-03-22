@@ -245,3 +245,10 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tupl
 
     logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
     return date_from, date_to
+
+
+def ulal(mapclass, parameter):
+    """ map parameter """
+    if parameter:
+        return mapclass(**parameter)
+    return None

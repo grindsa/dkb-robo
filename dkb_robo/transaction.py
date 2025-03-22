@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import Account, Amount, PerformanceValue, get_dateformat, filter_unexpected_fields
+from dkb_robo.utilities import Account, Amount, PerformanceValue, get_dateformat, filter_unexpected_fields, ulal
 
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
@@ -198,11 +198,11 @@ class AccountTransactionItem:
     isRevocable: bool = False
 
     def __post_init__(self):
-        self.amount = Amount(**self.amount)
+        self.amount = ulal(Amount, self.amount)
         # regroup creditor information allowing simpler access
-        self.creditor = Account(**self._peer_information(self.creditor, 'creditorAccount'))
+        self.creditor = ulal(Account, self._peer_information(self.creditor, 'creditorAccount'))
         # regroup debtor for the same reason
-        self.debtor = Account(**self._peer_information(self.debtor, 'debtorAccount'))
+        self.debtor = ulal(Account, self._peer_information(self.debtor, 'debtorAccount'))
         if self.description:
             self.description = " ".join(self.description.split())
 
@@ -284,9 +284,9 @@ class CreditCardTransactionItem:
     transactionType: Optional[str] = None
 
     def __post_init__(self):
-        self.amount = Amount(**self.amount)
-        self.merchantAmount = Amount(**self.merchantAmount)
-        self.merchantCategory = self.MerchantCategory(**self.merchantCategory)
+        self.amount = ulal(Amount, self.amount)
+        self.merchantAmount = ulal(Amount, self.merchantAmount)
+        self.merchantCategory = ulal(self.MerchantCategory, self.merchantCategory)
 
     @filter_unexpected_fields
     @dataclass
@@ -326,14 +326,12 @@ class DepotTransactionItem:
     quote: Optional[Union[Dict, str]] = None
 
     def __post_init__(self):
-        self.availableQuantity = self.Quantity(**self.availableQuantity)
-        self.custody = self.Custody(**self.custody)
-        self.performance = self.Performance(**self.performance)
-        self.quantity = self.Quantity(**self.quantity)
-        if self.instrument:
-            self.instrument = self.Instrument(**self.instrument)
-        if self.quote:
-            self.quote = self.Quote(**self.quote)
+        self.availableQuantity = ulal(self.Quantity, self.availableQuantity)
+        self.custody = ulal(self.Custody, self.custody)
+        self.performance = ulal(self.Performance, self.performance)
+        self.quantity = ulal(self.Quantity, self.quantity)
+        self.instrument = ulal(self.Instrument, self.instrument)
+        self.quote = ulal(self.Quote, self.quote)
 
     @filter_unexpected_fields
     @dataclass
@@ -358,8 +356,8 @@ class DepotTransactionItem:
             characteristicType: Optional[str] = None
 
         def __post_init__(self):
-            self.block = self.Block(**self.block)
-            self.characteristic = self.Characteristic(**self.characteristic)
+            self.block = ulal(self.Block, self.block)
+            self.characteristic = ulal(self.Characteristic, self.characteristic)
 
     @filter_unexpected_fields
     @dataclass
@@ -371,7 +369,7 @@ class DepotTransactionItem:
         unit: Optional[str] = None
 
         def __post_init__(self):
-            self.name = self.Name(**self.name)
+            self.name = ulal(self.Name, self.name)
             self.identifiers = [self.IdentifierItem(**identifier) for identifier in self.identifiers]
 
         @filter_unexpected_fields
@@ -396,7 +394,7 @@ class DepotTransactionItem:
         isOutdated: Optional[bool] = False
 
         def __post_init__(self):
-            self.currentValue = PerformanceValue(**self.currentValue)
+            self.currentValue = ulal(PerformanceValue, self.currentValue)
 
     @filter_unexpected_fields
     @dataclass
@@ -421,7 +419,7 @@ class DepotTransactionItem:
         timestamp: Optional[str] = None
 
         def __post_init__(self):
-            self.price = PerformanceValue(**self.price)
+            self.price = ulal(PerformanceValue, self.price)
 
     def format(self) -> Dict[str, str]:
         """ format  transaction list ot a useful output """

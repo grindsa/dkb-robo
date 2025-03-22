@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass, asdict
 import logging
 import requests
-from dkb_robo.utilities import Amount, Person, get_dateformat, filter_unexpected_fields, BASE_URL
+from dkb_robo.utilities import Amount, Person, get_dateformat, filter_unexpected_fields, ulal, BASE_URL
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 logger = logging.getLogger(__name__)
@@ -219,11 +219,11 @@ class AccountItem:
     transactions: Optional[str] = None
 
     def __post_init__(self):
-        self.availableBalance = Amount(**self.availableBalance)
-        self.balance = Amount(**self.balance)
+        self.availableBalance = ulal(Amount, self.availableBalance)
+        self.balance = ulal(Amount, self.balance)
         self.interests = [self.InterestsItem(**interest) for interest in self.interests]
-        self.nearTimeBalance = Amount(**self.nearTimeBalance)
-        self.product = self.Product(**self.product)
+        self.nearTimeBalance = ulal(Amount, self.nearTimeBalance)
+        self.product = ulal(self.Product, self.product)
         self.transactions = BASE_URL + f"/accounts/accounts/{self.id}/transactions"
         try:
             self.overdraftLimit = float(self.overdraftLimit)
@@ -249,7 +249,7 @@ class AccountItem:
             interestRate: Optional[float] = None
 
             def __post_init__(self):
-                self.condition = self.Condition(**self.condition)
+                self.condition = ulal(self.Condition, self.condition)
 
             @filter_unexpected_fields
             @dataclass
@@ -332,22 +332,16 @@ class CardItem:
     transactions: Optional[str] = None
 
     def __post_init__(self):
-        if self.balance:
-            self.balance = Amount(**self.balance)
-        if self.owner:
-            self.owner = Person(**self.owner)
-        if self.availableLimit:
-            self.availableLimit = Amount(**self.availableLimit)
-        if self.authorizedAmount:
-            self.authorizedAmount = Amount(**self.authorizedAmount)
-        if self.referenceAccount:
-            self.referenceAccount = self.Account(**self.referenceAccount)
-        if self.billingDetails:
-            self.billingDetails = self.BillingDetails(**self.billingDetails)
+        self.balance = ulal(Amount, self.balance)
+        self.owner = ulal(Person, self.owner)
+        self.availableLimit = ulal(Amount, self.availableLimit)
+        self.authorizedAmount = ulal(Amount, self.authorizedAmount)
+        self.referenceAccount = ulal(self.Account, self.referenceAccount)
+        self.billingDetails = ulal(self.BillingDetails, self.billingDetails)
         self.limit = self.Limit(**self.limit)
-        self.product = self.Product(**self.product)
-        self.status = self.Status(**self.status)
-        self.holder = self.Holder(**self.holder)
+        self.product = ulal(self.Product, self.product)
+        self.status = ulal(self.Status, self.status)
+        self.holder = ulal(self.Holder, self.holder)
         if self.type:
             self.transactions = BASE_URL + f"/card-transactions/creditcard-transactions?cardId={self.id}"
 
@@ -373,8 +367,7 @@ class CardItem:
         person: Optional[Dict] = None
 
         def __post_init__(self):
-            if self.person:
-                self.person = Person(**self.person)
+            self.person = ulal(Person, self.person)
 
     @filter_unexpected_fields
     @dataclass
@@ -402,8 +395,7 @@ class CardItem:
             name: Optional[str] = None
 
             def __post_init__(self):
-                if self.amount:
-                    self.amount = Amount(**self.amount)
+                self.amount = ulal(Amount, self.amount)
 
     @filter_unexpected_fields
     @dataclass
@@ -473,8 +465,8 @@ class DepotItem:
     transactions: Optional[str] = None
 
     def __post_init__(self):
-        self.brokerageAccountPerformance = self.BrokerageAccountPerformance(**self.brokerageAccountPerformance)
-        self.holder = Person(**self.holder)
+        self.brokerageAccountPerformance = ulal(self.BrokerageAccountPerformance, self.brokerageAccountPerformance)
+        self.holder = ulal(Person, self.holder)
         self.referenceAccounts = [self.ReferenceAccountItem(**reference_account) for reference_account in self.referenceAccounts]
         self.transactions = BASE_URL + f"/broker/brokerage-accounts/{self.id}/positions?include=instrument%2Cquote"
 
@@ -489,9 +481,9 @@ class DepotItem:
         isOutdated: bool = False
 
         def __post_init__(self):
-            self.currentValue = Amount(**self.currentValue)
-            self.averagePrice = Amount(**self.averagePrice)
-            self.overallAbsolute = Amount(**self.overallAbsolute)
+            self.currentValue = ulal(Amount, self.currentValue)
+            self.averagePrice = ulal(Amount, self.averagePrice)
+            self.overallAbsolute = ulal(Amount, self.overallAbsolute)
 
     @filter_unexpected_fields
     @dataclass

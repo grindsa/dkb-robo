@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
 import requests
-from dkb_robo.utilities import Amount, DKBRoboError, Person, filter_unexpected_fields, object2dictionary
+from dkb_robo.utilities import Amount, DKBRoboError, Person, filter_unexpected_fields, object2dictionary, ulal
 
 
 logger = logging.getLogger(__name__)
@@ -24,10 +24,10 @@ class ExemptionOrderItem:
     validUntil: Optional[str] = None
 
     def __post_init__(self):
-        self.exemptionAmount = Amount(**self.exemptionAmount)
-        self.remainingAmount = Amount(**self.remainingAmount)
-        self.utilizedAmount = Amount(**self.utilizedAmount)
-        self.partner = Person(**self.partner)
+        self.exemptionAmount = ulal(Amount, self.exemptionAmount)
+        self.remainingAmount = ulal(Amount, self.remainingAmount)
+        self.utilizedAmount = ulal(Amount, self.utilizedAmount)
+        self.partner = ulal(Person, self.partner)
 
 
 class ExemptionOrders:

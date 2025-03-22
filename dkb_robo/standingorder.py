@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 import logging
 import requests
-from dkb_robo.utilities import DKBRoboError, Account, Amount, filter_unexpected_fields, object2dictionary
+from dkb_robo.utilities import DKBRoboError, Account, Amount, filter_unexpected_fields, object2dictionary, ulal
 
 
 logger = logging.getLogger(__name__)
@@ -22,14 +22,14 @@ class StandingOrderItem:
     status: Optional[str] = None
 
     def __post_init__(self):
-        self.amount = Amount(**self.amount)
+        self.amount = ulal(Amount, self.amount)
         self.creditor['creditorAccount']['name'] = self.creditor.get('name', {})
-        self.creditor = Account(**self.creditor['creditorAccount'])
+        self.creditor = ulal(Account, self.creditor['creditorAccount'])
         if self.debtor and 'debtorAccount' in self.debtor:
-            self.debtor = Account(**self.debtor['debtorAccount'])
+            self.debtor = ulal(Account, self.debtor['debtorAccount'])
         # rewrite from - field to frm
         self.recurrence['frm'] = self.recurrence.get('from', None)
-        self.recurrence = self.Recurrence(**self.recurrence)
+        self.recurrence = ulal(self.Recurrence, self.recurrence)
 
     @filter_unexpected_fields
     @dataclass
