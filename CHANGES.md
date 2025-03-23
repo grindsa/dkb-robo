@@ -7,13 +7,13 @@ This is a high-level summary of the most important changes. For a full list of c
 
 **Bugfixes**:
 
-- [[[#79](https://github.com/grindsa/dkb-robo/issues/79)]] - prevent mapping of **NonType in various dataclasses
+- [#79](https://github.com/grindsa/dkb-robo/issues/79) - prevent mapping of **NonType in various dataclasses
 
 # Changes in 0.29.2
 
 **Bugfixes**:
 
-- [[#78](https://github.com/grindsa/dkb-robo/issues/78)] - Transaction does not return correct peer information
+- [#78](https://github.com/grindsa/dkb-robo/issues/78) - Transaction does not return correct peer information
 
 # Changes in 0.29.1
 
