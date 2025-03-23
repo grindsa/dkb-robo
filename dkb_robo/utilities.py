@@ -113,7 +113,7 @@ class DKBRoboError(Exception):
     """ dkb-robo exception class """
 
 
-def _convert_date_format(logger: logging.Logger, input_date: str, input_format_list: List[str], output_format: str) -> str:
+def _convert_date_format(input_date: str, input_format_list: List[str], output_format: str) -> str:
     """ convert date to a specified output format """
     logger.debug('_convert_date_format(%s)', input_date)
 
@@ -198,11 +198,11 @@ def logger_setup(debug: bool) -> logging.Logger:
         format=log_format,
         datefmt="%Y-%m-%d %H:%M:%S",
         level=log_mode)
-    logger = logging.getLogger('dkb_robo')
-    return logger
+    mylogger = logging.getLogger('dkb_robo')
+    return mylogger
 
 
-def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tuple[str, str]:
+def validate_dates(date_from: str, date_to: str) -> Tuple[str, str]:
     """ correct dates if needed """
     logger.debug('validate_dates()')
 
@@ -240,8 +240,8 @@ def validate_dates(logger: logging.Logger, date_from: str, date_to: str) -> Tupl
         date_to = datetime.fromtimestamp(now_uts, timezone.utc).strftime('%d.%m.%Y')
 
     # this is the new api we need to ensure %Y-%m-%d
-    date_from = _convert_date_format(logger, date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
-    date_to = _convert_date_format(logger, date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+    date_from = _convert_date_format(date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
+    date_to = _convert_date_format(date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT)
 
     logger.debug('validate_dates() returned: %s, %s', date_from, date_to)
     return date_from, date_to

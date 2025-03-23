@@ -122,7 +122,7 @@ class DKBRobo(object):
         """ exported method to get transactions """
         self.logger.debug('DKBRobo.get_transactions(%s/%s: %s/%s)\n', transaction_url, atype, date_from, date_to)
 
-        (date_from, date_to) = validate_dates(self.logger, date_from, date_to)
+        (date_from, date_to) = validate_dates(date_from, date_to)
         transaction = Transactions(client=self.wrapper.client, unfiltered=self.unfiltered)
         transaction_list = transaction.get(transaction_url, atype, date_from, date_to, transaction_type)
 
