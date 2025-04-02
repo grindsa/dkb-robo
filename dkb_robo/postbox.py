@@ -150,7 +150,11 @@ class PostboxItem:
             date = datetime.date.fromisoformat(self.document.metadata['creationDate'])
 
         if date is None:
-            raise AttributeError("No valid date field found in document metadata.")
+            if 'subject' in self.document.metadata:
+                logger.error("\"%s\" is missing a valid date field found in metadata. Using today\'s date as fallback.", self.document.metadata['subject'])
+            else:
+                logger.error("No valid date field found in document metadata. Using today's date as fallback.")
+            date = datetime.date.today()
 
         logger.debug("PostboxItem.date() for document %s ended with %s", self.id, date)
         return date.strftime('%Y-%m-%d')

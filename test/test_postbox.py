@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
-
+from datetime import date
 import requests
 import logging
 sys.path.insert(0, '.')
@@ -198,12 +198,23 @@ class TestPostboxItem(unittest.TestCase):
         self.document.metadata = {"creationDate": "2023-01-01"}
         self.assertEqual(self.postbox_item.date(), "2023-01-01")
 
-    def test_023_date_invalid(self):
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_023_date_invalid(self, mock_today):
         """ Test that the date method raises an exception if no valid date field is found in the metadata."""
         self.document.metadata = {}
-        with self.assertRaises(AttributeError):
-            self.postbox_item.date()
+        mock_today.today.return_value = date(2025, 3, 23)
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual('2025-03-23', self.postbox_item.date())
+        self.assertIn("ERROR:dkb_robo.postbox:No valid date field found in document metadata. Using today's date as fallback.", lcm.output)
 
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_024_date_invalid(self, mock_today):
+        """ Test that the date method raises an exception if no valid date field is found in the metadata."""
+        self.document.metadata = {"subject": "subject"}
+        mock_today.today.return_value = date(2025, 3, 23)
+        with self.assertLogs('dkb_robo', level='INFO') as lcm:
+            self.assertEqual('2025-03-23', self.postbox_item.date())
+        self.assertIn('ERROR:dkb_robo.postbox:"subject" is missing a valid date field found in metadata. Using today\'s date as fallback.', lcm.output)
 
 class TestPostBox(unittest.TestCase):
     """ Tests for the PostBox class. """
