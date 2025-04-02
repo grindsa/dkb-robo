@@ -3,17 +3,23 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
-# Changes in 0.29-3
+# Changes in 0.29.4
 
 **Bugfixes**:
 
-- [[[#79](https://github.com/grindsa/dkb-robo/issues/79)]] - prevent mapping of **NonType in various dataclasses
+- [#80](https://github.com/grindsa/dkb-robo/issues/80) - Download documents without date field in metadata
+
+# Changes in 0.29.3
+
+**Bugfixes**:
+
+- [#79](https://github.com/grindsa/dkb-robo/issues/79) - prevent mapping of **NonType in various dataclasses
 
 # Changes in 0.29.2
 
 **Bugfixes**:
 
-- [[#78](https://github.com/grindsa/dkb-robo/issues/78)] - Transaction does not return correct peer information
+- [#78](https://github.com/grindsa/dkb-robo/issues/78) - Transaction does not return correct peer information
 
 # Changes in 0.29.1
 
