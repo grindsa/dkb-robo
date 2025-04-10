@@ -267,7 +267,7 @@ class TestPostBox(unittest.TestCase):
                                 "owner": "service-documentexchange-api",
                             },
                             "links": {
-                                "self": "https://api.developer.dkb.de/documents/11111111-1111-1111-1111-111111111111"
+                                "self": "https://api.developer.dkb.de/documentstorage/documents/11111111-1111-1111-1111-111111111111"
                             },
                         }
                     ]
