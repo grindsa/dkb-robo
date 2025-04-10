@@ -4,7 +4,7 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 import requests
 from dkb_robo.utilities import get_valid_filename, filter_unexpected_fields, DKBRoboError, JSON_CONTENT_TYPE
 
@@ -16,15 +16,15 @@ logger = logging.getLogger(__name__)
 class Document:
     """ Document data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    creationDate: str = None
-    expirationDate: str = None
-    retentionPeriod: str = None
-    contentType: str = None
-    checksum: str = None
-    fileName: str = None
-    metadata: Dict[str, str] = None
-    owner: str = None
-    link: str = None
+    creationDate: Optional[str] = None
+    expirationDate: Optional[str] = None
+    retentionPeriod: Optional[str] = None
+    contentType: Optional[str] = None
+    checksum: Optional[str] = None
+    fileName: Optional[str] = None
+    metadata: Optional[Union[Dict, str]] = None
+    owner: Optional[str] = None
+    link: Optional[str] = None
     rcode: Optional[str] = None
     documentTypeId: Optional[str] = None
 
@@ -36,11 +36,11 @@ class Message:
     # pylint: disable=c0103
     archived: bool = False
     read: bool = False
-    subject: str = None
-    documentId: str = None
-    documentType: str = None
-    creationDate: str = None
-    link: str = None
+    subject: Optional[str] = None
+    documentId: Optional[str] = None
+    documentType: Optional[str] = None
+    creationDate: Optional[str] = None
+    link: Optional[str] = None
 
 
 @filter_unexpected_fields
