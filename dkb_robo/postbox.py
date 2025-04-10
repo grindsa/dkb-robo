@@ -6,39 +6,44 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional
 import requests
-from dkb_robo.utilities import get_valid_filename, DKBRoboError, JSON_CONTENT_TYPE
+from dkb_robo.utilities import get_valid_filename, filter_unexpected_fields, DKBRoboError, JSON_CONTENT_TYPE
 
 logger = logging.getLogger(__name__)
 
 
+@filter_unexpected_fields
 @dataclass
 class Document:
     """ Document data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    creationDate: str
-    expirationDate: str
-    retentionPeriod: str
-    contentType: str
-    checksum: str
-    fileName: str
-    metadata: Dict[str, str]
-    owner: str
-    link: str
+    creationDate: str = None
+    expirationDate: str = None
+    retentionPeriod: str = None
+    contentType: str = None
+    checksum: str = None
+    fileName: str = None
+    metadata: Dict[str, str] = None
+    owner: str = None
+    link: str = None
     rcode: Optional[str] = None
+    documentTypeId: Optional[str] = None
 
 
+@filter_unexpected_fields
 @dataclass
 class Message:
     """ Message data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    archived: bool
-    read: bool
-    subject: str
-    documentType: str
-    creationDate: str
-    link: str
+    archived: bool = False
+    read: bool = False
+    subject: str = None
+    documentId: str = None
+    documentType: str = None
+    creationDate: str = None
+    link: str = None
 
 
+@filter_unexpected_fields
 @dataclass
 class PostboxItem:
     """ Postbox item data class, merging document and message data and providing download functionality. """
@@ -163,7 +168,7 @@ class PostboxItem:
 class PostBox:
     """ Class for handling the DKB postbox. """
     BASE_URL = "https://banking.dkb.de/api/documentstorage/"
-
+    # BASE_URL = "https://banking.dkb.de/api/"
     # pylint: disable=w0621
     def __init__(self, client: requests.Session):
         self.client = client
@@ -173,7 +178,8 @@ class PostBox:
         logger.debug("PostBox.fetch_items(): Fetching messages")
 
         def __fix_link_url(url: str) -> str:
-            return url.replace("https://api.developer.dkb.de/", PostBox.BASE_URL)
+            # print(f'old: {url}')
+            return url.replace("https://api.developer.dkb.de/documentstorage/", PostBox.BASE_URL)
 
         response = self.client.get(PostBox.BASE_URL + '/messages')
         response.raise_for_status()
