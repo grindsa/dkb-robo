@@ -98,7 +98,13 @@ class PostboxItem:
                 if checksum != self.document.checksum:
                     logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
                     # rename file to indicate checksum mismatch
-                    target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
+                    suffix = '.checksum_mismatch'
+                    if not target_file.with_name(target_file.name + suffix).exists():
+                        # rename file to indicate checksum mismatch
+                        target_file.rename(target_file.with_name(target_file.name + suffix))
+                    else:
+                        logger.warning("File %s%s already exists. Not renaming.", target_file, suffix)
+
             return resp.status_code
         return False
 
@@ -168,7 +174,7 @@ class PostboxItem:
 class PostBox:
     """ Class for handling the DKB postbox. """
     BASE_URL = "https://banking.dkb.de/api/documentstorage/"
-    # BASE_URL = "https://banking.dkb.de/api/"
+
     # pylint: disable=w0621
     def __init__(self, client: requests.Session):
         self.client = client
