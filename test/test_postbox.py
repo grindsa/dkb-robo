@@ -108,14 +108,13 @@ class TestPostboxItem(unittest.TestCase):
         mock_client = mock_session.return_value
         mock_client.get.return_value.status_code = 200
         mock_client.get.return_value.content = b"wrong test content"
-        target_file = Path(tempfile.gettempdir()) / "test_document.pdf"
+        target_file = Path("document.pdf")
         mock_exists.side_effect = [False, True, True]
         with self.assertLogs('dkb_robo', level='INFO') as lcm:
             result = self.postbox_item.download(mock_client, target_file, overwrite=True)
-        self.assertIn('WARNING:dkb_robo.postbox:File C:\\Users\\dems2t18\\AppData\\Local\\Temp\\test_document.pdf.checksum_mismatch already exists. Not renaming.', lcm.output)
+        self.assertIn('WARNING:dkb_robo.postbox:File document.pdf.checksum_mismatch already exists. Not renaming.', lcm.output)
         self.assertTrue(result)
-        # self.assertFalse(target_file.exists())
-        mismatched_file = target_file.with_name(target_file.name + ".checksum_mismatch")
+        target_file.unlink()  # Remove the downloaded test file
 
     def test_007_filename(self):
         """ Test that the filename method returns the correct filename for the postbox item."""
