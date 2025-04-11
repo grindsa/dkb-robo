@@ -94,9 +94,14 @@ class PostboxItem:
             # compare checksums of file with checksum from document metadata
             if self.document.checksum:
                 with target_file.open('rb') as file:
-                    checksum = hashlib.md5(file.read()).hexdigest()
-                if checksum != self.document.checksum:
-                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
+                    if len(self.document.checksum) == 32:
+                        computed_checksum = hashlib.md5(file.read()).hexdigest()
+                    elif len(self.document.checksum) == 128:
+                        computed_checksum = hashlib.sha512(file.read()).hexdigest()
+                    else:
+                        raise DKBRoboError(f"Unsupported checksum length: {len(self.document.checksum)}, {self.document.checksum}")
+                if computed_checksum != self.document.checksum:
+                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, computed_checksum, self.document.checksum)
                     # rename file to indicate checksum mismatch
                     suffix = '.checksum_mismatch'
                     if not target_file.with_name(target_file.name + suffix).exists():
