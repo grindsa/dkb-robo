@@ -28,7 +28,7 @@ jobs:
         with:
           repository: ${{ github.repository }}  # The repository to scan.
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
-        id: dbv_robo_ver  # The step ID to refer to later.
+        id: dkb_robo_ver  # The step ID to refer to later.
 
       - name: "[ PREPARE ] Checkout code"
         uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
 
       - name: "[ BUILD ] Create Release"
         id: create_release
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,18 +60,18 @@ jobs:
 
       - name: "[ BUILD ] Build a binary wheel and a source tarball"
         id: create_package
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: python3 -m build
 
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: "[ PREPARE ] Retrieve SBOM repo"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           git clone https://$GH_SBOM_USER:$GH_SBOM_TOKEN@github.com/$GH_SBOM_USER/sbom /tmp/sbom
         env:
@@ -79,7 +79,7 @@ jobs:
           GH_SBOM_TOKEN: ${{ secrets.GH_SBOM_TOKEN }}
 
       - name: "[ BUILD ] virtual environment"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
@@ -89,7 +89,7 @@ jobs:
           deactivate
 
       - name: "[ BUILD ] create SBOM"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
@@ -98,7 +98,7 @@ jobs:
           python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
       - name: "[ BUILD ] Upload SBOM"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           cd /tmp/sbom
           git config --global user.email "grindelsack@gmail.com"
