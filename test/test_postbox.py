@@ -237,27 +237,28 @@ class TestPostboxItem(unittest.TestCase):
         # Create a SHA-512 checksum (128 characters long)
         sha512_checksum = "a7f06f12bd5e99c59966c13cea8483ece69d27a3bf8d46f836e934f5c1ec0b55a7e22d14360949de102cd8e16a9f74806c9ce1597eefaa379fb40384403c7fd6"
         self.document.checksum = sha512_checksum
-        
+
         # Mock the session and content
         mock_client = mock_session.return_value
         mock_client.get.return_value.status_code = 200
         content = b"test content for SHA-512 verification"
         mock_client.get.return_value.content = content
-        
+
         # Create a target file
         target_file = Path(tempfile.gettempdir()) / "test_sha512_document.pdf"
-        
+
         # Mock the SHA-512 hash computation
         with patch("hashlib.sha512") as mock_sha512:
             mock_sha512.return_value.hexdigest.return_value = sha512_checksum
-            
+
             # Test the download
             result = self.postbox_item.download(mock_client, target_file, overwrite=True)
-            
+
             # Verify the results
             self.assertTrue(result)
             self.assertTrue(target_file.exists())
             mock_sha512.assert_called_once_with(content)
+        target_file.unlink()  # Remove the downloaded test file
 
     @patch("requests.Session")
     def test_032_download_sha512_checksum_mismatch(self, mock_session):
@@ -265,30 +266,31 @@ class TestPostboxItem(unittest.TestCase):
         # Create a SHA-512 checksum (128 characters long)
         sha512_checksum = "a7f06f12bd5e99c59966c13cea8483ece69d27a3bf8d46f836e934f5c1ec0b55a7e22d14360949de102cd8e16a9f74806c9ce1597eefaa379fb40384403c7fd6"
         self.document.checksum = sha512_checksum
-        
+
         # Mock the session and content
         mock_client = mock_session.return_value
         mock_client.get.return_value.status_code = 200
         content = b"test content that will cause a SHA-512 checksum mismatch"
         mock_client.get.return_value.content = content
-        
+
         # Create a target file
         target_file = Path(tempfile.gettempdir()) / "test_sha512_mismatch.pdf"
-        
+
         # Set up a different checksum to be returned by the SHA-512 hash function to simulate a mismatch
         wrong_checksum = "b8f06f12bd5e99c59966c13cea8483ece69d27a3bf8d46f836e934f5c1ec0b55a7e22d14360949de102cd8e16a9f74806c9ce1597eefaa379fb40384403c7fd7"
-        
+
         with patch("hashlib.sha512") as mock_sha512:
             mock_sha512.return_value.hexdigest.return_value = wrong_checksum
-            
+
             # Test the download
             result = self.postbox_item.download(mock_client, target_file, overwrite=True)
-            
+
             # Verify the results
             self.assertTrue(result)
             self.assertFalse(target_file.exists())
             mismatched_file = target_file.with_name(target_file.name + ".checksum_mismatch")
             self.assertTrue(mismatched_file.exists())
+            mismatched_file.unlink()  # Remove the downloaded test file
 
     @patch("requests.Session")
     def test_033_download_unsupported_checksum_length(self, mock_session):
@@ -296,22 +298,22 @@ class TestPostboxItem(unittest.TestCase):
         # Create an unsupported checksum length (e.g., 64 characters)
         unsupported_checksum = "a" * 64
         self.document.checksum = unsupported_checksum
-        
+
         # Mock the session and content
         mock_client = mock_session.return_value
         mock_client.get.return_value.status_code = 200
         mock_client.get.return_value.content = b"test content"
-        
+
         # Create a target file
         target_file = Path(tempfile.gettempdir()) / "test_unsupported_checksum.pdf"
-        
+
         # Test the download function and expect a DKBRoboError
         with self.assertRaises(DKBRoboError) as context:
             self.postbox_item.download(mock_client, target_file, overwrite=True)
-        
+
         # Verify the error message
         self.assertIn(f"Unsupported checksum length: {len(unsupported_checksum)}", str(context.exception))
-
+        target_file.unlink()  # Remove the downloaded test file
 
 class TestPostBox(unittest.TestCase):
     """ Tests for the PostBox class. """

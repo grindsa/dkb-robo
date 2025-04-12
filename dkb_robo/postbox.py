@@ -71,6 +71,25 @@ class PostboxItem:
         )
         resp.raise_for_status()
 
+    def check_checsum(self, target_file: Path):
+        logger.debug('PostboxItem.check_checsum(): %s', self.id)
+        with target_file.open('rb') as file:
+            if len(self.document.checksum) == 32:
+                computed_checksum = hashlib.md5(file.read()).hexdigest()
+            elif len(self.document.checksum) == 128:
+                computed_checksum = hashlib.sha512(file.read()).hexdigest()
+            else:
+                raise DKBRoboError(f"Unsupported checksum length: {len(self.document.checksum)}, {self.document.checksum}")
+        if computed_checksum != self.document.checksum:
+            logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, computed_checksum, self.document.checksum)
+            # rename file to indicate checksum mismatch
+            suffix = '.checksum_mismatch'
+            if not target_file.with_name(target_file.name + suffix).exists():
+                # rename file to indicate checksum mismatch
+                target_file.rename(target_file.with_name(target_file.name + suffix))
+            else:
+                logger.warning("File %s%s already exists. Not renaming.", target_file, suffix)
+
     def download(self, client: requests.Session, target_file: Path, overwrite: bool = False):
         """
         Downloads the document from the provided link and saves it to the target file.
@@ -91,24 +110,9 @@ class PostboxItem:
             with target_file.open('wb') as file:
                 file.write(resp.content)
 
-            # compare checksums of file with checksum from document metadata
             if self.document.checksum:
-                with target_file.open('rb') as file:
-                    if len(self.document.checksum) == 32:
-                        computed_checksum = hashlib.md5(file.read()).hexdigest()
-                    elif len(self.document.checksum) == 128:
-                        computed_checksum = hashlib.sha512(file.read()).hexdigest()
-                    else:
-                        raise DKBRoboError(f"Unsupported checksum length: {len(self.document.checksum)}, {self.document.checksum}")
-                if computed_checksum != self.document.checksum:
-                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, computed_checksum, self.document.checksum)
-                    # rename file to indicate checksum mismatch
-                    suffix = '.checksum_mismatch'
-                    if not target_file.with_name(target_file.name + suffix).exists():
-                        # rename file to indicate checksum mismatch
-                        target_file.rename(target_file.with_name(target_file.name + suffix))
-                    else:
-                        logger.warning("File %s%s already exists. Not renaming.", target_file, suffix)
+                # compare checksums of file with checksum from document metadata
+                self.check_checsum(target_file)
 
             return resp.status_code
         return False
