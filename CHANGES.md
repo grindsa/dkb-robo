@@ -3,6 +3,14 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
+# Changes in 0.30
+
+**Bugfixes**:
+
+- [#82](https://github.com/grindsa/dkb-robo/pull/82) - support of sha512 checksums during postbox download
+- [#80](https://github.com/grindsa/dkb-robo/issues/80#issuecomment-2781317228) - improved handling of checksum mismatches
+- [#80](https://github.com/grindsa/dkb-robo/issues/80#issuecomment-2792808878) - support for additiona keywords in data_classes
+
 # Changes in 0.29.4
 
 **Bugfixes**:

@@ -4,41 +4,46 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 import requests
-from dkb_robo.utilities import get_valid_filename, DKBRoboError, JSON_CONTENT_TYPE
+from dkb_robo.utilities import get_valid_filename, filter_unexpected_fields, DKBRoboError, JSON_CONTENT_TYPE
 
 logger = logging.getLogger(__name__)
 
 
+@filter_unexpected_fields
 @dataclass
 class Document:
     """ Document data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    creationDate: str
-    expirationDate: str
-    retentionPeriod: str
-    contentType: str
-    checksum: str
-    fileName: str
-    metadata: Dict[str, str]
-    owner: str
-    link: str
+    creationDate: Optional[str] = None
+    expirationDate: Optional[str] = None
+    retentionPeriod: Optional[str] = None
+    contentType: Optional[str] = None
+    checksum: Optional[str] = None
+    fileName: Optional[str] = None
+    metadata: Optional[Union[Dict, str]] = None
+    owner: Optional[str] = None
+    link: Optional[str] = None
     rcode: Optional[str] = None
+    documentTypeId: Optional[str] = None
 
 
+@filter_unexpected_fields
 @dataclass
 class Message:
     """ Message data class, roughly based on the JSON API response. """
     # pylint: disable=c0103
-    archived: bool
-    read: bool
-    subject: str
-    documentType: str
-    creationDate: str
-    link: str
+    archived: bool = False
+    read: bool = False
+    subject: Optional[str] = None
+    documentId: Optional[str] = None
+    documentType: Optional[str] = None
+    creationDate: Optional[str] = None
+    link: Optional[str] = None
 
 
+@filter_unexpected_fields
 @dataclass
 class PostboxItem:
     """ Postbox item data class, merging document and message data and providing download functionality. """
@@ -66,6 +71,25 @@ class PostboxItem:
         )
         resp.raise_for_status()
 
+    def check_checsum(self, target_file: Path):
+        logger.debug('PostboxItem.check_checsum(): %s', self.id)
+        with target_file.open('rb') as file:
+            if len(self.document.checksum) == 32:
+                computed_checksum = hashlib.md5(file.read()).hexdigest()
+            elif len(self.document.checksum) == 128:
+                computed_checksum = hashlib.sha512(file.read()).hexdigest()
+            else:
+                raise DKBRoboError(f"Unsupported checksum length: {len(self.document.checksum)}, {self.document.checksum}")
+        if computed_checksum != self.document.checksum:
+            logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, computed_checksum, self.document.checksum)
+            # rename file to indicate checksum mismatch
+            suffix = '.checksum_mismatch'
+            if not target_file.with_name(target_file.name + suffix).exists():
+                # rename file to indicate checksum mismatch
+                target_file.rename(target_file.with_name(target_file.name + suffix))
+            else:
+                logger.warning("File %s%s already exists. Not renaming.", target_file, suffix)
+
     def download(self, client: requests.Session, target_file: Path, overwrite: bool = False):
         """
         Downloads the document from the provided link and saves it to the target file.
@@ -86,14 +110,10 @@ class PostboxItem:
             with target_file.open('wb') as file:
                 file.write(resp.content)
 
-            # compare checksums of file with checksum from document metadata
             if self.document.checksum:
-                with target_file.open('rb') as file:
-                    checksum = hashlib.md5(file.read()).hexdigest()
-                if checksum != self.document.checksum:
-                    logger.warning("Checksum mismatch for %s: %s != %s. Renaming file.", target_file, checksum, self.document.checksum)
-                    # rename file to indicate checksum mismatch
-                    target_file.rename(target_file.with_name(target_file.name + '.checksum_mismatch'))
+                # compare checksums of file with checksum from document metadata
+                self.check_checsum(target_file)
+
             return resp.status_code
         return False
 
@@ -173,7 +193,8 @@ class PostBox:
         logger.debug("PostBox.fetch_items(): Fetching messages")
 
         def __fix_link_url(url: str) -> str:
-            return url.replace("https://api.developer.dkb.de/", PostBox.BASE_URL)
+            # print(f'old: {url}')
+            return url.replace("https://api.developer.dkb.de/documentstorage/", PostBox.BASE_URL)
 
         response = self.client.get(PostBox.BASE_URL + '/messages')
         response.raise_for_status()

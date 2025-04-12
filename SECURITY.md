@@ -8,7 +8,7 @@ Only the last version is under support. Please keep your environement updated.
 
 ## Reporting a Vulnerability
 
-Please report security vulnerabilities directly to grindelsack@gmail.com and provide the following information:
+Please report security vulnerabilities directly to <grindelsack@gmail.com> and provide the following information:
 
 - A summary of the problem
 - Used software version and deployment mode
