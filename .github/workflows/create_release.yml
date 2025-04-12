@@ -71,7 +71,6 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: "[ PREPARE ] Retrieve SBOM repo"
-        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           git clone https://$GH_SBOM_USER:$GH_SBOM_TOKEN@github.com/$GH_SBOM_USER/sbom /tmp/sbom
         env:
@@ -79,7 +78,6 @@ jobs:
           GH_SBOM_TOKEN: ${{ secrets.GH_SBOM_TOKEN }}
 
       - name: "[ BUILD ] virtual environment"
-        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
@@ -89,7 +87,6 @@ jobs:
           deactivate
 
       - name: "[ BUILD ] create SBOM"
-        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
@@ -98,7 +95,6 @@ jobs:
           python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
       - name: "[ BUILD ] Upload SBOM"
-        # if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           cd /tmp/sbom
           git config --global user.email "grindelsack@gmail.com"
