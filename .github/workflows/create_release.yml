@@ -13,6 +13,10 @@ jobs:
   build:
     name: Create and upload release
     runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ env.TAG_NAME }}
+      app_name: ${{ env.APP_NAME }}
+      should_release: ${{ env.SHOULD_RELEASE || 'false' }}
     steps:
 
       - name: "[ PREPARE ] Set up Python"
@@ -39,14 +43,23 @@ jobs:
           echo TAG_NAME=$(python3 -c "import dkb_robo; print(dkb_robo.__version__)") >> $GITHUB_ENV
           echo APP_NAME=$(echo ${{ github.repository }} | awk -F / '{print $2}') >> $GITHUB_ENV
 
+      - name: "[ PREPARE ] Check version difference"
+        run: |
+          if [ "${{ steps.dkb_robo_ver.outputs.tag }}" != "${{ env.TAG_NAME }}" ]; then
+            echo "SHOULD_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "SHOULD_RELEASE=false" >> $GITHUB_ENV
+          fi
+
       - run: |
           echo "Repo is at version ${{ steps.dkb_robo_ver.outputs.tag }}"
           echo "APP tag is ${{ env.APP_NAME }}"
           echo "Latest tag is ${{ env.TAG_NAME }}"
+          echo "should_release is ${{ env.SHOULD_RELEASE }}"
 
       - name: "[ BUILD ] Create Release"
         id: create_release
-        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
+        if: env.SHOULD_RELEASE == 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,11 +73,11 @@ jobs:
 
       - name: "[ BUILD ] Build a binary wheel and a source tarball"
         id: create_package
-        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
+        if: env.SHOULD_RELEASE == 'true'
         run: python3 -m build
 
       - name: "[ UPLOAD ] Upload package artifacts"
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: env.SHOULD_RELEASE == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -73,24 +86,24 @@ jobs:
   upload-to-pypi:
     needs: build
     runs-on: ubuntu-latest
+    if: needs.build.outputs.should_release == 'true'
     steps:
       - name: "[ DOWNLOAD ] Download package artifacts"
         uses: actions/download-artifact@v4
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         with:
           name: dist
           path: dist
 
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
 
   create-sbom:
-    needs: upload-to-pypi
+    needs: [build, upload-to-pypi]
     runs-on: ubuntu-latest
+    if: needs.build.outputs.should_release == 'true'
     steps:
       - name: "[ PREPARE ] Checkout code"
         uses: actions/checkout@v4
