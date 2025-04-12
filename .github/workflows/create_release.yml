@@ -63,12 +63,37 @@ jobs:
         if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         run: python3 -m build
 
+      - name: "[ UPLOAD ] Upload package artifacts"
+        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  upload-to-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[ DOWNLOAD ] Download package artifacts"
+        uses: actions/download-artifact@v4
+        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        with:
+          name: dist
+          path: dist
+
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
         if: steps.dkb_robo_ver.outputs.tag != env.TAG_NAME
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
+
+  create-sbom:
+    needs: upload-to-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[ PREPARE ] Checkout code"
+        uses: actions/checkout@v4
 
       - name: "[ PREPARE ] Retrieve SBOM repo"
         run: |
