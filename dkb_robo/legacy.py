@@ -368,7 +368,7 @@ class Wrapper(object):
                     "Wrapper._get_document(): adding datetime to avoid overrides.\n"
                 )
                 now = datetime.now()
-                fname = f'{now.strftime("%Y-%m-%d-%H-%M-%S")}_{fname}'
+                fname = f"{now.strftime('%Y-%m-%d-%H-%M-%S')}_{fname}"
 
             if formatted_date:
                 fname = f"{formatted_date}{fname}"
