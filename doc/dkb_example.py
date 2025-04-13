@@ -9,17 +9,19 @@ from dkb_robo import DKBRobo
 if sys.version_info > (3, 0):
     import http.cookiejar as cookielib
     import importlib
+
     importlib.reload(sys)
 else:
     import cookielib
+
     reload(sys)
-    sys.setdefaultencoding('utf8')
+    sys.setdefaultencoding("utf8")
 
 
 if __name__ == "__main__":
 
-    DKB_USER = 'xxxxxxx'
-    DKB_PASSWORD = '*****'
+    DKB_USER = "xxxxxxx"
+    DKB_PASSWORD = "*****"
 
     DKB = DKBRobo()
 
@@ -29,10 +31,10 @@ if __name__ == "__main__":
         pprint(dkb.account_dic)
 
         # get transaction
-        LINK = dkb.account_dic[0]['transactions']
-        TYPE = dkb.account_dic[0]['type']
-        DATE_FROM = '01.03.2020'
-        DATE_TO = '31.03.2020'
+        LINK = dkb.account_dic[0]["transactions"]
+        TYPE = dkb.account_dic[0]["type"]
+        DATE_FROM = "01.03.2020"
+        DATE_TO = "31.03.2020"
 
         TRANSACTION_LIST = dkb.get_transactions(LINK, TYPE, DATE_FROM, DATE_TO)
         pprint(TRANSACTION_LIST)
