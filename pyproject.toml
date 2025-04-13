@@ -3,7 +3,7 @@ authors = [{ name = "grindsa", email = "grindelsack@gmail.com" }]
 name = "dkb_robo"
 description = "Download transactions from the website of Deutsche Kreditbak AG"
 keywords = ["Deutsche Kreditbank", "DKB"]
-version = "0.30"
+version = "0.30.1"
 readme = "README.md"
 classifiers = [
     # Keep in sync with the Python version matrix in test_lint.yaml GitHub workflow.
@@ -31,7 +31,7 @@ dependencies = [
     "click",
 ]
 optional-dependencies.test = ["pytest", "pytest-cov", "html5lib"]
-optional-dependencies.dev = ["build", "dkb_robo[test]"]
+optional-dependencies.dev = ["build", "dkb_robo[test]", "pre-commit"]
 scripts = { dkb = "dkb_robo.cli:main" }
 
 [project.urls]

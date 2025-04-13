@@ -9,10 +9,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
 jobs:
   build:
     name: Create and upload release
     runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ env.TAG_NAME }}
+      app_name: ${{ env.APP_NAME }}
+      should_release: ${{ env.SHOULD_RELEASE || 'false' }}
     steps:
 
       - name: "[ PREPARE ] Set up Python"
@@ -28,7 +36,7 @@ jobs:
         with:
           repository: ${{ github.repository }}  # The repository to scan.
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
-        id: dbv_robo_ver  # The step ID to refer to later.
+        id: dkb_robo_ver  # The step ID to refer to later.
 
       - name: "[ PREPARE ] Checkout code"
         uses: actions/checkout@v4
@@ -39,14 +47,23 @@ jobs:
           echo TAG_NAME=$(python3 -c "import dkb_robo; print(dkb_robo.__version__)") >> $GITHUB_ENV
           echo APP_NAME=$(echo ${{ github.repository }} | awk -F / '{print $2}') >> $GITHUB_ENV
 
+      - name: "[ PREPARE ] Check version difference"
+        run: |
+          if [ "${{ steps.dkb_robo_ver.outputs.tag }}" != "${{ env.TAG_NAME }}" ]; then
+            echo "SHOULD_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "SHOULD_RELEASE=false" >> $GITHUB_ENV
+          fi
+
       - run: |
           echo "Repo is at version ${{ steps.dkb_robo_ver.outputs.tag }}"
           echo "APP tag is ${{ env.APP_NAME }}"
           echo "Latest tag is ${{ env.TAG_NAME }}"
+          echo "should_release is ${{ env.SHOULD_RELEASE }}"
 
       - name: "[ BUILD ] Create Release"
         id: create_release
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: env.SHOULD_RELEASE == 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,18 +77,45 @@ jobs:
 
       - name: "[ BUILD ] Build a binary wheel and a source tarball"
         id: create_package
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
+        if: env.SHOULD_RELEASE == 'true'
         run: python3 -m build
+
+      - name: "[ UPLOAD ] Upload package artifacts"
+        if: env.SHOULD_RELEASE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  upload-to-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    if: needs.build.outputs.should_release == 'true'
+    # Restricting the upload to the pypi GitHub environment enforces a security policy
+    # requiring explicit approval of the upload by the maintainer.
+    environment: pypi
+    permissions:
+      # This permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - name: "[ DOWNLOAD ] Download package artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
       - name: "[ UPLOAD ] Publish package"
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+
+  create-sbom:
+    needs: [build, upload-to-pypi]
+    runs-on: ubuntu-latest
+    if: needs.build.outputs.should_release == 'true'
+    steps:
+      - name: "[ PREPARE ] Checkout code"
+        uses: actions/checkout@v4
 
       - name: "[ PREPARE ] Retrieve SBOM repo"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           git clone https://$GH_SBOM_USER:$GH_SBOM_TOKEN@github.com/$GH_SBOM_USER/sbom /tmp/sbom
         env:
@@ -79,7 +123,6 @@ jobs:
           GH_SBOM_TOKEN: ${{ secrets.GH_SBOM_TOKEN }}
 
       - name: "[ BUILD ] virtual environment"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
@@ -89,7 +132,6 @@ jobs:
           deactivate
 
       - name: "[ BUILD ] create SBOM"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
@@ -98,7 +140,6 @@ jobs:
           python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
       - name: "[ BUILD ] Upload SBOM"
-        # if: steps.dbv_robo_ver.outputs.tag != env.TAG_NAME
         run: |
           cd /tmp/sbom
           git config --global user.email "grindelsack@gmail.com"

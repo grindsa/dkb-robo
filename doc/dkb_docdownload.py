@@ -8,17 +8,19 @@ from dkb_robo import DKBRobo
 if sys.version_info > (3, 0):
     import http.cookiejar as cookielib
     import importlib
+
     importlib.reload(sys)
 else:
     import cookielib
+
     reload(sys)
-    sys.setdefaultencoding('utf8')
+    sys.setdefaultencoding("utf8")
 
 
 if __name__ == "__main__":
 
-    DKB_USER = 'xxx'
-    DKB_PASSWORD = 'xxx'
+    DKB_USER = "xxx"
+    DKB_PASSWORD = "xxx"
     try:
         PATH = sys.argv[1]
     except BaseException:
@@ -31,5 +33,5 @@ if __name__ == "__main__":
     with DKBRobo(DKB_USER, DKB_PASSWORD, False, True) as dkb:
         print(dkb.last_login)
 
-        print(f'Writing documents to {PATH}')
+        print(f"Writing documents to {PATH}")
         POSTBOX_DIC = dkb.scan_postbox(PATH)
