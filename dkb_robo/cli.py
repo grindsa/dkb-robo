@@ -440,6 +440,11 @@ def download(
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 
+class DataclassJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if dataclasses.is_dataclass(obj):
+            return dataclasses.asdict(obj)
+        return super().default(obj)
 
 def _load_format(output_format):
     """select output format based on cli option"""
@@ -464,7 +469,7 @@ def _load_format(output_format):
 
     if output_format == "json":
 
-        return lambda data: click.echo(json.dumps(data, indent=2))
+        return lambda data: click.echo(json.dumps(data, indent=2, cls=DataclassJSONEncoder))
 
     raise ValueError(f"Unknown format: {output_format}")
 
