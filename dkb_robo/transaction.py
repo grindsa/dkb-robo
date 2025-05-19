@@ -287,6 +287,7 @@ class Transactions:
 class AccountTransactionItem:
     """dataclass for a single AccountTransaction"""
 
+    id: Optional[str] = None
     status: Optional[str] = None
     bookingDate: Optional[str] = None
     valueDate: Optional[str] = None
