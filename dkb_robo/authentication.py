@@ -293,7 +293,7 @@ class Authentication:
         client.headers = headers
         if self.proxies:
             client.proxies = self.proxies
-            client.verify = False
+            client.verify = False  # NOSONAR
 
         # get cookies
         client.get(self.base_url + "/login")

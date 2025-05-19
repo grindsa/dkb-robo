@@ -136,18 +136,18 @@ class Transactions:
                 "attributes" in transaction
                 and "status" in transaction["attributes"]
                 and "bookingDate" in transaction["attributes"]
+                and transaction["attributes"]["status"] == transaction_type
             ):
-                if transaction["attributes"]["status"] == transaction_type:
-                    bookingdate_uts = int(
-                        time.mktime(
-                            datetime.datetime.strptime(
-                                transaction["attributes"]["bookingDate"],
-                                API_DATE_FORMAT,
-                            ).timetuple()
-                        )
+                bookingdate_uts = int(
+                    time.mktime(
+                        datetime.datetime.strptime(
+                            transaction["attributes"]["bookingDate"],
+                            API_DATE_FORMAT,
+                        ).timetuple()
                     )
-                    if date_from_uts <= bookingdate_uts <= date_to_uts:
-                        filtered_transaction_list.append(transaction)
+                )
+                if date_from_uts <= bookingdate_uts <= date_to_uts:
+                    filtered_transaction_list.append(transaction)
 
         logger.debug(
             "Transactions._filter() ended with %s entries\n",
@@ -287,6 +287,7 @@ class Transactions:
 class AccountTransactionItem:
     """dataclass for a single AccountTransaction"""
 
+    id: Optional[str] = None
     status: Optional[str] = None
     bookingDate: Optional[str] = None
     valueDate: Optional[str] = None
