@@ -674,6 +674,7 @@ class TestAccountTransactionItem(unittest.TestCase):
             "name": "Debtor Name",
         }
         self.transaction_data = {
+            "id": "transaction_id",
             "status": "completed",
             "bookingDate": "2022-01-15",
             "valueDate": "2022-01-16",
