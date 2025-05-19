@@ -378,7 +378,7 @@ class AccountTransactionItem:
         # this is for backwards compatibility
         transaction_dic[
             "text"
-        ] = f'{transaction_dic["postingtext"]} {transaction_dic["peer"]} {transaction_dic["reasonforpayment"]}'
+        ] = f"{transaction_dic['postingtext']} {transaction_dic['peer']} {transaction_dic['reasonforpayment']}"
 
         logger.debug("AccountTransaction.format() ended\n")
         return transaction_dic

@@ -175,7 +175,7 @@ class Authentication:
         if "access_token" in self.token_dic and "mfa_id" in self.token_dic:
             response = self.client.get(
                 self.base_url
-                + f'/mfa/mfa/{self.token_dic["mfa_id"]}/methods?filter%5BmethodType%5D={self.mfa_method}'
+                + f"/mfa/mfa/{self.token_dic['mfa_id']}/methods?filter%5BmethodType%5D={self.mfa_method}"
             )
             if response.status_code == 200:
                 mfa_dic = response.json()
