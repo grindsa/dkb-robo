@@ -366,6 +366,8 @@ Options:
 Commands:
   accounts
   credit-limits
+  download
+  scan-postbox
   last-login
   standing-orders
   transactions
