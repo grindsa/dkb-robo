@@ -84,6 +84,7 @@ celerybeat-schedule
 env/
 venv/
 ENV/
+dkb-robo-venv
 
 # Spyder project settings
 .spyderproject
@@ -110,4 +111,5 @@ ENV/
 foo*/*
 coverage.lcov
 settings.json
+connectedMode.json
 og_weekly.py
