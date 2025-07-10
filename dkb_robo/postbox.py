@@ -237,7 +237,7 @@ class PostBox:
         def __fix_link_url(url: str) -> str:
             # print(f'old: {url}')
             return url.replace(
-                "https://api.developer.dkb.de/documentstorage/", PostBox.BASE_URL
+                "https://api.dkb.de/documentstorage/", PostBox.BASE_URL
             )
 
         response = self.client.get(PostBox.BASE_URL + "/messages")

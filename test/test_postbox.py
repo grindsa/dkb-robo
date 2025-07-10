@@ -356,7 +356,7 @@ class TestPostBox(unittest.TestCase):
                                 "creationDate": "2023-09-26T06:57:34.803691Z",
                             },
                             "links": {
-                                "self": "https://api.developer.dkb.de/messages/11111111-1111-1111-1111-111111111111"
+                                "self": "https://api.dkb.de/messages/11111111-1111-1111-1111-111111111111"
                             },
                         }
                     ]
@@ -387,7 +387,7 @@ class TestPostBox(unittest.TestCase):
                                 "owner": "service-documentexchange-api",
                             },
                             "links": {
-                                "self": "https://api.developer.dkb.de/documentstorage/documents/11111111-1111-1111-1111-111111111111"
+                                "self": "https://api.dkb.de/documentstorage/documents/11111111-1111-1111-1111-111111111111"
                             },
                         }
                     ]
