@@ -3,14 +3,18 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
-# Changes in 0.31
+## Changes in 0.31.1
+
+- [#89](https://github.com/grindsa/dkb-robo/pull/89) - Postbox scan: HTTPError: 401 Client Error: Unauthorized
+
+## Changes in 0.31
 
 **Bugfixes**:
 
 - [#86](https://github.com/grindsa/dkb-robo/pull/86) - Fix unfiltered JSON output format
 - [#87](https://github.com/grindsa/dkb-robo/pull/87) - Add missing id field to AccountTransactionItem
 
-# Changes in 0.30.1
+## Changes in 0.30.1
 
 No functional changes
 
@@ -19,7 +23,7 @@ No functional changes
 - Introduction of [pre-commit](https://pre-commit.com/)
 - Cleanup release workflow/adding a trusted publisher
 
-# Changes in 0.30
+## Changes in 0.30
 
 **Bugfixes**:
 
@@ -27,32 +31,32 @@ No functional changes
 - [#80](https://github.com/grindsa/dkb-robo/issues/80#issuecomment-2781317228) - improved handling of checksum mismatches
 - [#80](https://github.com/grindsa/dkb-robo/issues/80#issuecomment-2792808878) - support for additiona keywords in data_classes
 
-# Changes in 0.29.4
+## Changes in 0.29.4
 
 **Bugfixes**:
 
 - [#80](https://github.com/grindsa/dkb-robo/issues/80) - Download documents without date field in metadata
 
-# Changes in 0.29.3
+## Changes in 0.29.3
 
 **Bugfixes**:
 
 - [#79](https://github.com/grindsa/dkb-robo/issues/79) - prevent mapping of **NonType in various dataclasses
 
-# Changes in 0.29.2
+## Changes in 0.29.2
 
 **Bugfixes**:
 
 - [#78](https://github.com/grindsa/dkb-robo/issues/78) - Transaction does not return correct peer information
 
-# Changes in 0.29.1
+## Changes in 0.29.1
 
 **Bugfixes**:
 
 - [#77](https://github.com/grindsa/dkb-robo/pull/77) - Transaction filter returns no entries
 - replace findAll with find_all in legacy.py
 
-# Changes in 0.29
+## Changes in 0.29
 
 **Improvements**:
 
@@ -64,19 +68,19 @@ No functional changes
 - [#72](https://github.com/grindsa/dkb-robo/pull/72) - Update base path of legacy URLs
 - [#71](https://github.com/grindsa/dkb-robo/pull/72) - Fix prepend_date logic
 
-# Changes in 0.28.2
+## Changes in 0.28.2
 
 **Bugfixes**:
 
 - [#74](https://github.com/grindsa/dkb-robo/pull/74) - fix CLI transaction command - CSV output
 
-# Changes in 0.28.1
+## Changes in 0.28.1
 
 **Bugfixes**:
 
 - [#68](https://github.com/grindsa/dkb-robo/pull/68) - fix merge conflict in .gitattributes
 
-# Changes in 0.28
+## Changes in 0.28
 
 **Improvements**:
 
@@ -89,13 +93,13 @@ No functional changes
 - [#64](https://github.com/grindsa/dkb-robo/pull/64) - CLI - fix non-chip-tan default option
 - [#62](https://github.com/grindsa/dkb-robo/issues/62) - add missing transaction attributes for brokerage account
 
-# Changes in 0.27.1
+## Changes in 0.27.1
 
 **Improvements**:
 
 - [#61](https://github.com/grindsa/dkb-robo/issues/61) filename sanitizing
 
-# Changes in 0.27
+## Changes in 0.27
 
 **Improvements**:
 
@@ -104,26 +108,26 @@ No functional changes
 - [#48](https://github.com/grindsa/dkb-robo/issues/48) fetch transactions older than one year
 - scan-postbox option in dkb-robo cli
 
-# Changes in 0.26
+## Changes in 0.26
 
 **Improvements**:
 
 - sort mfa devices by enrollment date with "main" device listed first
 - allow preselection of mfa device by using the `mfa_device` parameter in context-handler
 
-# Changes in 0.25
+## Changes in 0.25
 
 **Improvements**:
 
 - [#50](https://github.com/grindsa/dkb-robo/issues/50) refactoring for better code readability
 
-# Changes in 0.24.1
+## Changes in 0.24.1
 
 **Bugfixes**:
 
 - [#49](https://github.com/grindsa/dkb-robo/issues/49) - adding Mandatsreferenz to transcation dictionary
 
-# Changes in 0.24
+## Changes in 0.24
 
 **Bugfixes**:
 
@@ -138,13 +142,13 @@ No functional changes
 - show debitcards in DKBRobo.account_dic
 - extend credit/debitcard information by status (blocked/active) and expiry date
 
-# Changes in 0.23.2
+## Changes in 0.23.2
 
 **Bugfixes**:
 
 - #46 - full fix for `tan_insert` option
 
-# Changes in 0.23.1
+## Changes in 0.23.1
 
 **Improvements**:
 
@@ -158,19 +162,19 @@ No functional changes
 - #46 - `tan_insert` option enforces the useage of old frontend
 - CLI option `-l` enforces the useage of old frontend
 
-# Changes in 0.23
+## Changes in 0.23
 
 **Improvements**:
 
 - get_transactions() and get_overview() methods are using the new API
 
-# Changes in 0.22
+## Changes in 0.22
 
 **Bugfixes**:
 
 - [41] - link changes at DKB portal
 
-# Changes in 0.21 - beta
+## Changes in 0.21 - beta
 
 **Improvements**:
 
@@ -181,19 +185,19 @@ with DKBRobo(DKB_USER, DKB_PASSWORD, TAN, legacy_login=False) as dkb:
   ...
 ```
 
-# Chagens in 0.21
+## Changes in 0.21
 
 **Features**:
 
 - [[#39](https://github.com/grindsa/dkb-robo/issues/39) support new DKB frontend]
 
-# Changes in 0.20.1
+## Changes in 0.20.1
 
 **Bugfixes**:
 
 - #38 `long_description` field in PyPI
 
-## Changes in 0.20
+### Changes in 0.20
 
 **Features**:
 
