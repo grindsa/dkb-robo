@@ -99,6 +99,9 @@ dkb-robo-venv
 # mypy
 .mypy_cache/
 
+# apple stuff
+.DS_Store
+
 # mystuff
 /dkb_devel.py
 /dkb_scrap.py
