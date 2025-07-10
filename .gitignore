@@ -84,6 +84,7 @@ celerybeat-schedule
 env/
 venv/
 ENV/
+dkb-robo-venv
 
 # Spyder project settings
 .spyderproject
@@ -98,6 +99,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# apple stuff
+.DS_Store
+
 # mystuff
 /dkb_devel.py
 /dkb_scrap.py
@@ -110,4 +114,5 @@ ENV/
 foo*/*
 coverage.lcov
 settings.json
+connectedMode.json
 og_weekly.py
