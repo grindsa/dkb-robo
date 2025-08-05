@@ -893,6 +893,32 @@ class TestAccountTransactionItem(unittest.TestCase):
         }
         self.assertEqual(expected_transaction, formatted_transaction)
 
+    @patch("dkb_robo.transaction.logger")
+    def test_034_format(self, mock_logger):
+        """do not use intermediaryName name for via debit"""
+        self.transaction_data["amount"] = {"value": -100, "currencyCode": "EUR"}
+        self.transaction_data["description"] = "VISA Debitkartenumsatz in Fremdwährung"
+        transaction = AccountTransactionItem(**self.transaction_data)
+        formatted_transaction = transaction.format()
+
+        expected_transaction = {
+            "amount": -100.0,
+            "currencycode": "EUR",
+            "date": "2022-01-15",
+            "bdate": "2022-01-15",
+            "vdate": "2022-01-16",
+            "customerreference": "endToEnd123",
+            "mandatereference": "mandate123",
+            "postingtext": "credit",
+            "reasonforpayment": "VISA Debitkartenumsatz in Fremdwährung",
+            "peeraccount": "DE1234567890",
+            "peerbic": "BICCODE",
+            "peerid": "creditor_id",
+            "peer": "Creditor Name",
+            "text": "credit Creditor Name VISA Debitkartenumsatz in Fremdwährung",
+        }
+        self.assertEqual(expected_transaction, formatted_transaction)
+
 
 class TestCreditCardTransactionItem(unittest.TestCase):
     def setUp(self):
