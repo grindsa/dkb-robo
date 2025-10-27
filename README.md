@@ -367,6 +367,7 @@ Commands:
   accounts
   credit-limits
   download
+  download-archive
   scan-postbox
   last-login
   standing-orders

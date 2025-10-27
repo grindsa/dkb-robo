@@ -178,7 +178,7 @@ class DKBRobo(object):
     def scan_postbox(
         self, path=None, download_all=False, _archive=False, prepend_date=False
     ):
-        """scan posbox and return document dictionary"""
+        """scan postbox and return document dictionary"""
         self.logger.debug("DKBRobo.scan_postbox()\n")
         return self.download(
             Path(path) if path is not None else None, download_all, prepend_date
@@ -297,3 +297,16 @@ class DKBRobo(object):
             )
 
         return documents
+
+    def download_archive(
+        self,
+        path: Path,
+        prepend_date: bool = False
+    ):
+        """download postbox archive"""
+        postbox = PostBox(client=self.wrapper.client)
+        files = postbox.fetch_archived()
+        for file in files:
+            file.download(self.wrapper.client, path, prepend_date)
+
+        return files

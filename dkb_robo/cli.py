@@ -440,6 +440,33 @@ def download(
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 
+@main.command()
+@click.pass_context
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(writable=True, path_type=pathlib.Path),
+    help="Path to save the documents to",
+    envvar="DKB_DOC_PATH",
+)
+@click.option(
+    "--prepend-date",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Prepend date to filename",
+    envvar="DKB_PREPEND_DATE",
+)
+def download_archive(ctx, path, prepend_date):
+    """download all archived documents from postbox"""
+    if not path:
+        path = Path("documents")
+    try:
+        with _login(ctx) as dkb:
+            dkb.download_archive(path=path, prepend_date=prepend_date)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
+
 
 class DataclassJSONEncoder(json.JSONEncoder):
     def default(self, obj):
