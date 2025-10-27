@@ -220,6 +220,47 @@ class PostboxItem:
         logger.debug("PostboxItem.date() for document %s ended with %s", self.id, date)
         return date.strftime("%Y-%m-%d")
 
+@filter_unexpected_fields
+@dataclass
+class PostboxLegacyFile:
+    id: str
+    subject: str
+    fileName: str
+    creationDate: str
+    path: Optional[Path] = None
+
+    def download(
+        self, client: requests.Session, target_path: Path, prepend_date: bool = False, overwrite: bool = False
+    ):
+        date = datetime.date.fromisoformat(self.creationDate.split("T")[0])
+
+        fileName = f"{date.strftime('%Y-%m-%d')}_{self.fileName}" if prepend_date else self.fileName
+
+        if self.path:
+            target_file = target_path / "Archiv" / self.path / fileName
+        else:
+            target_file = target_path / "Archiv" / fileName
+
+        logger.debug("PostboxLegacyFile.download(): %s to %s", self.id, target_file)
+
+        if not target_file.exists() or overwrite:
+            response = client.get(PostBox.BASE_URL + "/legacy-documents/" + self.id)
+            response.raise_for_status()
+            fileData = response.json()
+
+            if fileData["data"]["attributes"]["contentType"] == "application/pdf":
+                # decrypt base64 content
+                import base64
+                file_content = base64.b64decode(fileData["data"]["attributes"]["content"])
+
+                # create directories if necessary
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+
+                with target_file.open("wb") as file:
+                    file.write(file_content)
+
+            return response.status_code
+        return False
 
 class PostBox:
     """Class for handling the DKB postbox."""
@@ -230,13 +271,14 @@ class PostBox:
     def __init__(self, client: requests.Session):
         self.client = client
 
+    @staticmethod
+    def __fix_link_url(url: str) -> str:
+        # print(f'old: {url}')
+        return url.replace("https://api.dkb.de/documentstorage/", PostBox.BASE_URL)
+
     def fetch_items(self) -> Dict[str, PostboxItem]:
         """Fetches all items from the postbox and merges document and message data."""
         logger.debug("PostBox.fetch_items(): Fetching messages")
-
-        def __fix_link_url(url: str) -> str:
-            # print(f'old: {url}')
-            return url.replace("https://api.dkb.de/documentstorage/", PostBox.BASE_URL)
 
         response = self.client.get(PostBox.BASE_URL + "/messages")
         response.raise_for_status()
@@ -254,7 +296,7 @@ class PostBox:
                     id=doc["id"],
                     document=Document(
                         **doc.get("attributes", {}),
-                        link=__fix_link_url(doc["links"]["self"]),
+                        link=self.__fix_link_url(doc["links"]["self"]),
                     ),
                     message=None,
                 )
@@ -267,8 +309,45 @@ class PostBox:
                 if msg_id in items:
                     items[msg_id].message = Message(
                         **msg.get("attributes", {}),
-                        link=__fix_link_url(msg["links"]["self"]),
+                        link=self.__fix_link_url(msg["links"]["self"]),
                     )
-
             return items
         raise DKBRoboError("Could not fetch messages/documents.")
+
+    def fetch_archived(self) -> Dict[str, PostboxLegacyFile]:
+        """Fetches all items from the postbox archive."""
+        logger.debug("PostBox.fetch_archived(): Fetching folders")
+
+        base_url = PostBox.BASE_URL + "folders"
+
+        response = self.client.get(base_url)
+        response.raise_for_status()
+        folders = response.json()
+
+        files = []
+
+        if folders:
+
+            def __process_folder(folder, parent_path):
+                if folder.get("attributes"):
+                    folder_name = folder["attributes"]["name"]
+                else:
+                    folder_name = folder["name"]
+
+                response = self.client.get(base_url + "/" + folder["id"])
+                response.raise_for_status()
+                folder_contents = response.json()
+                path = parent_path / folder_name
+
+                for file in folder_contents["data"]["attributes"]["files"]:
+                    files.append(PostboxLegacyFile(**{**file, "path": path}))
+
+                for subfolder in folder_contents["data"]["attributes"]["subfolders"]:
+                    __process_folder(subfolder, path)
+
+            for folder in folders["data"]:
+                __process_folder(folder, Path(""))
+
+            return files
+        else:
+            raise DKBRoboError("Could not fetch archived files.")
