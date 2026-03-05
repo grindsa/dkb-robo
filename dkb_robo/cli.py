@@ -116,6 +116,13 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     envvar="MFA_DEVICE",
 )
 @click.option(
+    "--xvfb",
+    default=False,
+    is_flag=True,
+    help="Use Xvfb virtual display for captcha solving (for headless servers)",
+    envvar="DKB_XVFB",
+)
+@click.option(
     "--use-tan",
     default=False,
     is_flag=True,
@@ -156,7 +163,7 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
 )
 @click.pass_context
 def main(
-    ctx, debug, unfiltered, mfa_device, use_tan, chip_tan, username, password, format
+    ctx, debug, unfiltered, mfa_device, xvfb, use_tan, chip_tan, username, password, format
 ):  # pragma: no cover
     """main fuunction"""
 
@@ -171,6 +178,7 @@ def main(
     ctx.obj["UNFILTERED"] = unfiltered
     ctx.obj["CHIP_TAN"] = chip_tan
     ctx.obj["MFA_DEVICE"] = mfa_device
+    ctx.obj["XVFB"] = xvfb
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
@@ -486,4 +494,5 @@ def _login(ctx):
         debug=ctx.obj["DEBUG"],
         unfiltered=ctx.obj["UNFILTERED"],
         mfa_device=ctx.obj["MFA_DEVICE"],
+        xvfb=ctx.obj["XVFB"],
     )

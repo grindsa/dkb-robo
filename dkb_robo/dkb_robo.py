@@ -45,6 +45,7 @@ class DKBRobo(object):
         mfa_device=None,
         chip_tan=False,
         unfiltered=False,
+        xvfb=False,
     ):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
@@ -54,6 +55,7 @@ class DKBRobo(object):
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
+        self.xvfb = xvfb
 
     def __enter__(self):
         """Makes DKBRobo a Context Manager"""
@@ -79,6 +81,7 @@ class DKBRobo(object):
             chip_tan=self.chip_tan,
             mfa_device=self.mfa_device,
             unfiltered=self.unfiltered,
+            xvfb=self.xvfb,
         )
 
         # login and get the account overview

@@ -127,8 +127,15 @@ class TestAuthentication(unittest.TestCase):
         }
         self.assertEqual(exp_headers, client.headers)
 
-    def test_009_token_get(self):
-        """test _token_get() ok"""
+    def test_008b_init_xvfb(self):
+        """test init() with xvfb=True"""
+        self.auth.__init__(xvfb=True)
+        self.assertTrue(self.auth.xvfb)
+
+    @patch("dkb_robo.authentication.get_dkb_redeem_token")
+    def test_009_token_get(self, mock_captcha):
+        """test _token_get() ok - calls get_dkb_redeem_token with xvfb=False by default"""
+        mock_captcha.return_value = "captcha_token"
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
         self.auth.client = Mock()
@@ -136,9 +143,25 @@ class TestAuthentication(unittest.TestCase):
         self.auth.client.post.return_value.json.return_value = {"foo": "bar"}
         self.auth._token_get()
         self.assertEqual({"foo": "bar"}, self.auth.token_dic)
+        mock_captcha.assert_called_once_with(xvfb=False)
 
-    def test_010_token_get(self):
-        """test _token_get() ok"""
+    @patch("dkb_robo.authentication.get_dkb_redeem_token")
+    def test_009b_token_get_xvfb(self, mock_captcha):
+        """test _token_get() passes xvfb=True to get_dkb_redeem_token"""
+        mock_captcha.return_value = "captcha_token"
+        self.auth.dkb_user = "dkb_user"
+        self.auth.dkb_password = "dkb_password"
+        self.auth.xvfb = True
+        self.auth.client = Mock()
+        self.auth.client.post.return_value.status_code = 200
+        self.auth.client.post.return_value.json.return_value = {"foo": "bar"}
+        self.auth._token_get()
+        mock_captcha.assert_called_once_with(xvfb=True)
+
+    @patch("dkb_robo.authentication.get_dkb_redeem_token")
+    def test_010_token_get(self, mock_captcha):
+        """test _token_get() error"""
+        mock_captcha.return_value = "captcha_token"
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
         self.auth.client = Mock()
@@ -249,11 +272,8 @@ class TestAuthentication(unittest.TestCase):
         mfa_dic = {"foo": "bar"}
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_020__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.return_value = 1
+    def test_020__mfa_select(self):
+        """test _mfa_select() - multiple devices, no explicit device set: auto-select first (preferred)"""
         self.auth.mfa_device = 0
         mfa_dic = {
             "data": [
@@ -262,16 +282,9 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_021__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.return_value = 1
+    def test_021__mfa_select(self):
+        """test _mfa_select() - invalid mfa_device resets to 0, auto-selects preferred device"""
         self.auth.mfa_device = 4
         mfa_dic = {
             "data": [
@@ -285,16 +298,9 @@ class TestAuthentication(unittest.TestCase):
             "WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ingoring...",
             lcm.output,
         )
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_022__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.return_value = 1
+    def test_022__mfa_select(self):
+        """test _mfa_select() - multiple devices, default mfa_device: auto-select first (preferred)"""
         mfa_dic = {
             "data": [
                 {"attributes": {"deviceName": "device-1"}},
@@ -302,16 +308,10 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_023__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.return_value = 2
+    def test_023__mfa_select(self):
+        """test _mfa_select() - multiple devices, mfa_device=2: selects second device"""
+        self.auth.mfa_device = 2
         mfa_dic = {
             "data": [
                 {"attributes": {"deviceName": "device-1"}},
@@ -319,16 +319,9 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(1, self.auth._mfa_select(mfa_dic))
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_024__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.side_effect = [4, 1]
+    def test_024__mfa_select(self):
+        """test _mfa_select() - multiple devices, no explicit device: returns 0 without prompting"""
         mfa_dic = {
             "data": [
                 {"attributes": {"deviceName": "device-1"}},
@@ -336,30 +329,16 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
-        self.assertIn("Wrong input!", mock_stdout.getvalue())
 
-    @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    @patch("builtins.input")
-    def test_025__mfa_select(self, mock_input, mock_stdout):
-        """test _mfa_select()"""
-        mock_input.side_effect = ["a", 4, 1]
+    def test_025__mfa_select(self):
+        """test _mfa_select() - multiple devices without deviceName attribute: returns 0"""
         mfa_dic = {
             "data": [
-                {"attributes": {"deviceName": "device-1"}},
-                {"attributes": {"deviceName": "device-2"}},
+                {"id": "dev1"},
+                {"id": "dev2"},
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
-        self.assertIn(
-            "\nPick an authentication device from the below list:\n[1] - device-1\n[2] - device-2\n",
-            mock_stdout.getvalue(),
-        )
-        self.assertIn("Invalid input!", mock_stdout.getvalue())
-        self.assertIn("Wrong input!", mock_stdout.getvalue())
 
     @patch("requests.session")
     def test_026__mfa_challenge(self, mock_session):

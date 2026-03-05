@@ -27,6 +27,7 @@ dependencies = [
     "mechanicalsoup",
     "requests",
     "pillow",
+    "seleniumbase",
     "tabulate",
     "click",
 ]
