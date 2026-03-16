@@ -28,7 +28,7 @@ def _poll_frc_token(sb, timeout=30):
     return False
 
 
-def get_dkb_redeem_token(timeout=30, headless=False, xvfb=False):
+def get_dkb_redeem_token(timeout=120, headless=False, xvfb=False):
     """Open DKB login page, solve Friendly Captcha, return the redeem_token."""
     logger.debug("captcha.get_dkb_redeem_token()")
 
@@ -42,12 +42,26 @@ def get_dkb_redeem_token(timeout=30, headless=False, xvfb=False):
                     "document.querySelector('#usercentrics-cmp-ui')"
                     ".shadowRoot.querySelector('button.uc-deny-button').click()"
                 )
+                logger.debug("captcha: cookie banner dismissed (deny)")
             except Exception:
-                pass
-            # Click the FRC iframe element via CDP (avoids cross-origin switch_to_frame)
+                try:
+                    sb.cdp.evaluate(
+                        "document.querySelector('#usercentrics-cmp-ui')"
+                        ".shadowRoot.querySelector('button.uc-accept-button').click()"
+                    )
+                    logger.debug("captcha: cookie banner dismissed (accept)")
+                except Exception:
+                    pass
+            # Click the FRC captcha checkbox via real mouse click on iframe.
+            # A JS .click() on the iframe element does not propagate into the
+            # cross-origin iframe; mouse_click() dispatches a real mouse event
+            # that reaches the checkbox button inside the iframe.
             try:
-                sb.cdp.find_element("iframe.frc-i-widget").click()
-                logger.debug("captcha: FRC checkbox clicked")
+                elem = sb.cdp.find_element("iframe.frc-i-widget")
+                elem.scroll_into_view()
+                time.sleep(0.5)
+                elem.mouse_click()
+                logger.debug("captcha: FRC checkbox mouse-clicked")
                 break
             except Exception:
                 time.sleep(1)
