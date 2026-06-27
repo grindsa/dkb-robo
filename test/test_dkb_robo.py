@@ -149,6 +149,18 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_api.called)
         self.assertEqual(1, self.dkb.mfa_device)
 
+    @patch("dkb_robo.dkb_robo.Authentication")
+    def test_007a__enter_session_backend(self, mock_authentication):
+        """test enter forwards session_backend to Authentication"""
+        self.dkb.session_backend = "curl-cffi"
+        mock_authentication.return_value.login.return_value = ("api", "foo")
+
+        self.dkb.__enter__()
+
+        self.assertEqual(
+            "curl-cffi", mock_authentication.call_args.kwargs["session_backend"]
+        )
+
     def test_008__exit(self):
         """test enter"""
         self.dkb.wrapper = Mock()

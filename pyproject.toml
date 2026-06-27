@@ -33,6 +33,7 @@ dependencies = [
 ]
 optional-dependencies.test = ["pytest", "pytest-cov", "html5lib"]
 optional-dependencies.dev = ["build", "dkb_robo[test]", "pre-commit"]
+optional-dependencies.curl = ["curl-cffi"]
 scripts = { dkb = "dkb_robo.cli:main" }
 
 [project.urls]

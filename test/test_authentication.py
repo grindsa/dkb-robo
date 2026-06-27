@@ -72,6 +72,36 @@ class TestAuthentication(unittest.TestCase):
         )
         self.assertEqual("chip_tan_qr", self.auth.mfa_method)
 
+    def test_005a_init_session_backend_alias(self):
+        """test session backend alias normalization"""
+        self.auth.__init__(session_backend="curl_cffi")
+        self.assertEqual("curl-cffi", self.auth.session_backend)
+
+    def test_005b_init_invalid_session_backend(self):
+        """test invalid session backend"""
+        with self.assertRaises(Exception) as err:
+            self.auth.__init__(session_backend="foo")
+        self.assertEqual(
+            "Unsupported session backend 'foo'. Use 'requests' or 'curl-cffi'.",
+            str(err.exception),
+        )
+
+    def test_005c__session_new_curl_backend(self):
+        """test _session_new() using curl-cffi backend"""
+        curl_client = Mock()
+        curl_client.cookies = {}
+        curl_requests = Mock()
+        curl_requests.Session.return_value = curl_client
+        curl_module = Mock()
+        curl_module.requests = curl_requests
+
+        with patch.dict(sys.modules, {"curl_cffi": curl_module}):
+            self.auth.__init__(session_backend="curl-cffi")
+            client = self.auth._session_new()
+
+        self.assertEqual(curl_client, client)
+        self.assertTrue(curl_requests.Session.called)
+
     @patch("requests.session")
     def test_006__session_new(self, mock_session):
         """test _session_new()"""

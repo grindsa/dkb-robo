@@ -145,6 +145,7 @@ class Overview:
             logger.error(
                 "fetch %s: RC is not 200 but %s", url_path, response.status_code
             )
+            print(response.text)
             response_dic = {}
 
         logger.debug("Overview._fetch() ended\n")

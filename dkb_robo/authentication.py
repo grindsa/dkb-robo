@@ -12,7 +12,7 @@ from dkb_robo.captcha import get_dkb_redeem_token
 from dkb_robo.legacy import Wrapper as Legacywrapper
 from dkb_robo.portfolio import Overview
 from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
-
+from dkb_robo.captcha import login_via_browser
 
 BASE_URL = "https://banking.dkb.de/api"
 logger = logging.getLogger(__name__)
@@ -35,6 +35,8 @@ class Authentication:
     token_dic = None
     unfiltered = False
     xvfb = False
+    browser_login = False
+    session_backend = "requests"
 
     def __init__(
         self,
@@ -45,6 +47,9 @@ class Authentication:
         mfa_device: int = None,
         unfiltered: bool = False,
         xvfb: bool = False,
+        browser_login: bool = False,
+        session_backend: str = "requests",
+
     ):
         """Constructor"""
         self.chip_tan = chip_tan
@@ -53,6 +58,10 @@ class Authentication:
         self.proxies = proxies
         self.unfiltered = unfiltered
         self.xvfb = xvfb
+        self.browser_login = browser_login
+        self.session_backend = self._normalize_session_backend(session_backend)
+        if browser_login:
+            logger.info("Using browser login")
         if chip_tan:
             logger.info("Using to chip_tan to login")
             if chip_tan in ("qr", "chip_tan_qr"):
@@ -63,6 +72,25 @@ class Authentication:
             self.mfa_device = int(mfa_device)
         except (ValueError, TypeError):
             self.mfa_device = 0
+
+    @staticmethod
+    def _normalize_session_backend(session_backend: str) -> str:
+        """Normalize and validate configured HTTP backend."""
+
+        backend = str(session_backend or "requests").strip().lower()
+        aliases = {
+            "requests": "requests",
+            "curl-cffi": "curl-cffi",
+            "curl_cffi": "curl-cffi",
+            "curl": "curl-cffi",
+        }
+
+        if backend not in aliases:
+            raise DKBRoboError(
+                f"Unsupported session backend '{session_backend}'. Use 'requests' or 'curl-cffi'."
+            )
+
+        return aliases[backend]
 
     def _mfa_challenge(
         self, mfa_dic: Dict[str, str], device_num: int = 0
@@ -178,8 +206,10 @@ class Authentication:
         # check for access_token and get mfa_methods
         if "access_token" in self.token_dic and "mfa_id" in self.token_dic:
             response = self.client.get(
+                # self.base_url
+                # + f"/mfa/mfa/{self.token_dic['mfa_id']}/methods?filter%5BmethodType%5D={self.mfa_method}"
                 self.base_url
-                + f"/mfa/mfa/{self.token_dic['mfa_id']}/methods?filter%5BmethodType%5D={self.mfa_method}"
+                + f"/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}"
             )
             if response.status_code == 200:
                 mfa_dic = response.json()
@@ -244,8 +274,9 @@ class Authentication:
         logger.debug("Authentication._session_new()\n")
 
         headers = {
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
+            "Accept": "application/json, text/plain, */*",
+            "Application-Name": "web-banking",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "DNT": "1",
@@ -256,14 +287,25 @@ class Authentication:
             "te": "trailers",
             "priority": "u=0",
             "sec-gpc": "1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
         }
 
-        client = requests.session()
-        client.headers = headers
+        if self.session_backend == "curl-cffi":
+            logger.debug("Using curl-cffi as session backend")
+            try:
+                from curl_cffi import requests as curl_requests  # type: ignore[import-not-found]
+            except ImportError as err:
+                raise DKBRoboError(
+                    "session_backend='curl-cffi' requires optional dependency 'curl-cffi'."
+                ) from err
+            client = curl_requests.Session(impersonate="chrome")
+        else:
+            client = requests.session()
+            client.headers = headers
+
         if self.proxies:
             client.proxies = self.proxies
-            client.verify = False  # NOSONAR
+        client.verify = False  # NOSONAR
 
         # get cookies
         client.get(self.base_url + "/login")
@@ -322,6 +364,7 @@ class Authentication:
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
+            print(response.text)
             raise DKBRoboError(
                 f"Login failed: 1st factor authentication failed. RC: {response.status_code}"
             )
@@ -334,30 +377,78 @@ class Authentication:
         data_dic = {
             "grant_type": "banking_user_mfa",
             "mfa_id": self.token_dic["mfa_id"],
-            "access_token": self.token_dic["access_token"],
+            # "access_token": self.token_dic["access_token"],
+            "scope": "device_sso"
         }
+        from pprint import pprint
+        pprint(data_dic)
+
         response = self.client.post(self.base_url + "/token", data=data_dic)
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
+            print(response.text)
             raise DKBRoboError(
                 f"Login failed: token update failed. RC: {response.status_code}"
             )
 
-    def login(self) -> Tuple[Dict, None]:
-        """login into DKB banking area and perform an sso redirect"""
+    def _device_data_send(self):
+        """send device data to the server"""
+        logger.debug("Authentication._device_data_send()\n")
+
+        data_dic = {
+            "data": {
+                "type": "webDeviceData",
+                "attributes": {
+                    "mfaId": self.token_dic["mfa_id"],
+                    "deviceInfo": {
+                        "os": "MAC OS",
+                        "localeCode": "de-DE",
+                        "colorDepthBitsCount": 24,
+                        "screenResolution": {"width": 1920, "height": 1080}
+                    },
+                    "browserInfo": {
+                        "browserTypeCode": "standard-browser",
+                        "cookiesEnabled": True,
+                        "timeZone": "Europe/Berlin"
+                    },
+                "requestMetadata": {
+                    "visitorId": "disabled",
+                    "requestId": "disabled",
+                    }
+                }
+            }
+        }
+        self.client.headers["Content-Type"] = JSON_CONTENT_TYPE
+        self.client.headers["Accept"] = "application/vnd.api+json"
+
+        response = self.client.post(
+            self.base_url + "/device-data/web-devices-data", data=json.dumps(data_dic)
+        )
+        if response.status_code != 204:
+            raise DKBRoboError(
+                f"Login failed: sending web-device data failed. RC: {response.status_code}"
+            )
+
+        self.client.headers.pop("Content-Type")
+        self.client.headers.pop("Accept")
+
+        logger.debug("Authentication._device_data_send() ended\n")
+
+    def _rest_login(self) -> None:
+        """login into DKB banking area via REST backend"""
         logger.debug("Authentication.login()\n")
 
         mfa_dic = {}
-
-        # create new session
-        self.client = self._session_new()
 
         # get token for 1fa
         self._token_get()
 
         # get mfa methods
         mfa_dic = self._mfa_get()
+
+        # post web-device data
+        # self._device_data_send()
 
         if mfa_dic:
             # sort mfa methods
@@ -398,12 +489,32 @@ class Authentication:
                 "Login failed: 2nd factor authentication did not complete"
             )
 
+    def login(self) -> Tuple[Dict, None]:
+        """login function"""
+
+        # create new session
+        self.client = self._session_new()
+
+        if self.browser_login:
+            session, _ = login_via_browser(
+                logger=logger,
+                dkb_user=self.dkb_user,
+                dkb_password=self.dkb_password,
+                timeout=300,
+                headless=False,
+                xvfb=self.xvfb,
+                client = self.client
+            )
+            self.client = session
+        else:
+            self._rest_login()
+
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)
         self.account_dic = overview.get()
 
         # redirect to legacy page
-        self._sso_redirect()
+        # self._sso_redirect()
         logger.debug("Authentication.login() ended\n")
         return self.account_dic, None
 

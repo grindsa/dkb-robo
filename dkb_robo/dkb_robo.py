@@ -34,6 +34,8 @@ class DKBRobo(object):
     logger = None
     wrapper = None
     unfiltered = False
+    browser_login = False
+    session_backend = "requests"
 
     def __init__(
         self,
@@ -46,16 +48,20 @@ class DKBRobo(object):
         chip_tan=False,
         unfiltered=False,
         xvfb=False,
+        browser_login=False,
+        session_backend="requests",
     ):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
         self.tan_insert = tan_insert
         self.legacy_login = legacy_login
+        self.browser_login = browser_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
         self.xvfb = xvfb
+        self.session_backend = session_backend
 
     def __enter__(self):
         """Makes DKBRobo a Context Manager"""
@@ -82,6 +88,8 @@ class DKBRobo(object):
             mfa_device=self.mfa_device,
             unfiltered=self.unfiltered,
             xvfb=self.xvfb,
+            browser_login=self.browser_login,
+            session_backend=self.session_backend,
         )
 
         # login and get the account overview

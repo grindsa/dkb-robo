@@ -83,7 +83,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, session_backend=requests|curl-cffi) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
@@ -92,6 +92,7 @@ create a new DKBRobo context handler and login to DKB portal
 - mfa_device: ('m'/Integer) optional - preselect MFA device to be used for 2nd factor - 'm' - main device, otherwise number from device-list
 - debug: (True/**False**) Debug mode
 - unfiltered: (True/**False**) [Unfiltered mode](doc/unfiltered.md)
+- session_backend: ("requests"/**"curl-cffi"**) HTTP backend used to create the login session. Default is "requests". When set to "curl-cffi", install the optional `curl-cffi` package first.
 
 After login you can return a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
 

@@ -7,6 +7,7 @@ from pprint import pprint
 import sys
 import csv
 import json
+import dataclasses
 import tabulate
 import click
 import dkb_robo
@@ -161,9 +162,26 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     help="output format to use",
     envvar="DKB_FORMAT",
 )
+@click.option(
+    "--session-backend",
+    default="requests",
+    type=click.Choice(["requests", "curl-cffi"]),
+    help="HTTP client backend to create login session",
+    envvar="DKB_SESSION_BACKEND",
+)
 @click.pass_context
 def main(
-    ctx, debug, unfiltered, mfa_device, xvfb, use_tan, chip_tan, username, password, format
+    ctx,
+    debug,
+    unfiltered,
+    mfa_device,
+    xvfb,
+    use_tan,
+    chip_tan,
+    username,
+    password,
+    format,
+    session_backend,
 ):  # pragma: no cover
     """main fuunction"""
 
@@ -182,6 +200,7 @@ def main(
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
+    ctx.obj["SESSION_BACKEND"] = session_backend
 
 
 @main.command()
@@ -495,4 +514,5 @@ def _login(ctx):
         unfiltered=ctx.obj["UNFILTERED"],
         mfa_device=ctx.obj["MFA_DEVICE"],
         xvfb=ctx.obj["XVFB"],
+        session_backend=ctx.obj.get("SESSION_BACKEND", "requests"),
     )
