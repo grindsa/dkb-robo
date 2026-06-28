@@ -45,6 +45,7 @@ class DKBRobo(object):
         mfa_device=None,
         chip_tan=False,
         unfiltered=False,
+        proxies=None,
         xvfb=False,
     ):
         self.dkb_user = dkb_user
@@ -55,6 +56,7 @@ class DKBRobo(object):
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
+        self.proxies = proxies
         self.xvfb = xvfb
 
     def __enter__(self):

@@ -244,8 +244,9 @@ class Authentication:
         logger.debug("Authentication._session_new()\n")
 
         headers = {
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
+            "Accept": "application/json, text/plain, */*",
+            "Application-Name": "web-banking",
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "DNT": "1",
@@ -256,14 +257,14 @@ class Authentication:
             "te": "trailers",
             "priority": "u=0",
             "sec-gpc": "1",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
         }
 
         client = requests.session()
         client.headers = headers
         if self.proxies:
             client.proxies = self.proxies
-            client.verify = False  # NOSONAR
+        client.verify = False  # NOSONAR
 
         # get cookies
         client.get(self.base_url + "/login")
