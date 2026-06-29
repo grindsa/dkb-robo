@@ -36,6 +36,7 @@ class DKBRobo(object):
     unfiltered = False
     browser_login = False
     session_backend = "requests"
+    proxies = None
 
     def __init__(
         self,
@@ -50,6 +51,7 @@ class DKBRobo(object):
         xvfb=False,
         browser_login=False,
         session_backend="requests",
+        proxies=None,
     ):
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
@@ -62,6 +64,7 @@ class DKBRobo(object):
         self.unfiltered = unfiltered
         self.xvfb = xvfb
         self.session_backend = session_backend
+        self.proxies = proxies
 
     def __enter__(self):
         """Makes DKBRobo a Context Manager"""

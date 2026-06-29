@@ -135,6 +135,48 @@ class TestGetDkbRedeemToken(unittest.TestCase):
         get_dkb_redeem_token()
         mock_sb_instance.open.assert_called_once_with("https://banking.dkb.de/login")
 
+    @patch("dkb_robo.captcha._poll_frc_token", new_callable=MagicMock)
+    @patch("dkb_robo.captcha.SB")
+    def test_007_applies_headers_via_cdp(self, mock_sb, mock_poll):
+        """get_dkb_redeem_token(headers=...) applies UA and extra headers via CDP"""
+        mock_poll.return_value = "token"
+        mock_sb_instance = MagicMock()
+        mock_sb.return_value.__enter__.return_value = mock_sb_instance
+
+        get_dkb_redeem_token(
+            headers={
+                "User-Agent": "TestAgent/1.0",
+                "Accept-Language": "de-DE",
+                "Connection": "keep-alive",
+            }
+        )
+
+        mock_sb_instance.driver.execute_cdp_cmd.assert_any_call("Network.enable", {})
+        mock_sb_instance.driver.execute_cdp_cmd.assert_any_call(
+            "Network.setUserAgentOverride", {"userAgent": "TestAgent/1.0"}
+        )
+        mock_sb_instance.driver.execute_cdp_cmd.assert_any_call(
+            "Network.setExtraHTTPHeaders", {"headers": {"Accept-Language": "de-DE"}}
+        )
+
+    @patch("dkb_robo.captcha._poll_frc_token", new_callable=MagicMock)
+    @patch("dkb_robo.captcha.SB")
+    def test_008_transfers_browser_state_to_client(self, mock_sb, mock_poll):
+        """get_dkb_redeem_token(client=...) copies cookies and UA to the provided client"""
+        mock_poll.return_value = "token"
+        mock_sb_instance = MagicMock()
+        mock_sb.return_value.__enter__.return_value = mock_sb_instance
+        mock_sb_instance.get_cookies.return_value = [{"name": "foo", "value": "bar"}]
+        mock_sb_instance.cdp.evaluate.return_value = "UA/1.0"
+
+        mock_client = MagicMock()
+        mock_client.headers = {}
+
+        get_dkb_redeem_token(client=mock_client)
+
+        mock_client.cookies.set.assert_called_once_with("foo", "bar")
+        self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
+
 
 if __name__ == "__main__":
     unittest.main()

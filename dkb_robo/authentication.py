@@ -269,38 +269,27 @@ class Authentication:
         )
         return {"data": mfa_list}
 
-    def _session_new(self):
+    def _session_new(self, headers: Dict[str, str] = None) -> requests.Session:
         """new request session for the api calls"""
         logger.debug("Authentication._session_new()\n")
-
-        headers = {
-            "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
-            "Accept": "application/json, text/plain, */*",
-            "Application-Name": "web-banking",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "DNT": "1",
-            "Pragma": "no-cache",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "te": "trailers",
-            "priority": "u=0",
-            "sec-gpc": "1",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
-        }
 
         if self.session_backend == "curl-cffi":
             logger.debug("Using curl-cffi as session backend")
             try:
-                from curl_cffi import requests as curl_requests  # type: ignore[import-not-found]
+                from curl_cffi import (  # type: ignore[import-not-found]
+                    CurlHttpVersion,
+                    requests as curl_requests,
+                )
             except ImportError as err:
                 raise DKBRoboError(
                     "session_backend='curl-cffi' requires optional dependency 'curl-cffi'."
                 ) from err
-            client = curl_requests.Session(impersonate="chrome")
+            client = curl_requests.Session(
+                impersonate="chrome", http_version=CurlHttpVersion.V1_1
+            )
         else:
             client = requests.session()
+        if headers:
             client.headers = headers
 
         if self.proxies:
@@ -312,6 +301,8 @@ class Authentication:
 
         # add csrf token
         if "__Host-xsrf" in client.cookies:
+            if headers is None:
+                headers = {}
             headers["x-xsrf-token"] = client.cookies["__Host-xsrf"]
             client.headers = headers
 
@@ -345,12 +336,18 @@ class Authentication:
         self.dkb_br = legacywrappper._new_instance(clientcookies)
         logger.debug("Authentication._sso_redirect() ended.\n")
 
-    def _token_get(self):
+    def _token_get(self, headers: Dict[str, str] = None):
         """get access token"""
         logger.debug("Authentication._token_get()\n")
 
         # fetch captcha token required since 2025-11-01
-        captcha_token = get_dkb_redeem_token(xvfb=self.xvfb)
+        captcha_kwargs = {"xvfb": self.xvfb, "client": self.client}
+        if headers:
+            captcha_kwargs["headers"] = headers
+        captcha_token = get_dkb_redeem_token(**captcha_kwargs)
+
+        # Keep header and cookie CSRF token in sync after browser-assisted captcha flow.
+        self._sync_csrf_header()
 
         # login via API
         data_dic = {
@@ -361,18 +358,48 @@ class Authentication:
             "sca_type": "web-login",
         }
         response = self.client.post(self.base_url + "/token", data=data_dic)
+        if response.status_code == 403 and "csrf" in response.text.lower():
+            logger.warning(
+                "Authentication._token_get(): CSRF rejected, refreshing login page and retrying once"
+            )
+            self.client.get(self.base_url + "/login")
+            # self._sync_csrf_header()
+            response = self.client.post(self.base_url + "/token", data=data_dic)
+
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            print(response.text)
             raise DKBRoboError(
                 f"Login failed: 1st factor authentication failed. RC: {response.status_code}"
             )
         logger.debug("Authentication._token_get() ended\n")
 
+    def _sync_csrf_header(self):
+        """Sync x-xsrf-token request header from current session cookies."""
+        csrf_token = None
+
+        try:
+            cookies = getattr(self.client, "cookies", None)
+            if cookies is not None:
+                csrf_token = cookies.get("__Host-xsrf") or cookies.get("XSRF-TOKEN")
+        except Exception:
+            csrf_token = None
+
+        if not csrf_token:
+            return
+
+        try:
+            self.client.headers["x-xsrf-token"] = csrf_token
+        except Exception:
+            self.client.headers = {"x-xsrf-token": csrf_token}
+
     def _token_update(self):
         """update token information with 2fa iformation"""
         logger.debug("Authentication._token_update()\n")
+
+        print(self.client.headers)
+        print(self.client.cookies)
+        print(self.client)
 
         data_dic = {
             "grant_type": "banking_user_mfa",
@@ -387,7 +414,7 @@ class Authentication:
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            print(response.text)
+            # print(response.text)
             raise DKBRoboError(
                 f"Login failed: token update failed. RC: {response.status_code}"
             )
@@ -435,14 +462,14 @@ class Authentication:
 
         logger.debug("Authentication._device_data_send() ended\n")
 
-    def _rest_login(self) -> None:
+    def _rest_login(self, headers: Dict[str, str] = None) -> None:
         """login into DKB banking area via REST backend"""
         logger.debug("Authentication.login()\n")
 
         mfa_dic = {}
 
         # get token for 1fa
-        self._token_get()
+        self._token_get(headers=headers)
 
         # get mfa methods
         mfa_dic = self._mfa_get()
@@ -492,8 +519,27 @@ class Authentication:
     def login(self) -> Tuple[Dict, None]:
         """login function"""
 
+
+        headers = {
+            "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
+            "Accept-Encoding": "identity",
+            "Accept": "application/json, text/plain, */*",
+            "Application-Name": "web-banking",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "DNT": "1",
+            "Pragma": "no-cache",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "te": "trailers",
+            "priority": "u=0",
+            "sec-gpc": "1",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+        }
+
         # create new session
-        self.client = self._session_new()
+        self.client = self._session_new(headers)
 
         if self.browser_login:
             session, _ = login_via_browser(
@@ -507,7 +553,7 @@ class Authentication:
             )
             self.client = session
         else:
-            self._rest_login()
+            self._rest_login(headers=headers)
 
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)

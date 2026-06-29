@@ -92,8 +92,11 @@ class TestAuthentication(unittest.TestCase):
         curl_client.cookies = {}
         curl_requests = Mock()
         curl_requests.Session.return_value = curl_client
+        curl_http_version = Mock()
+        curl_http_version.V1_1 = "V1_1"
         curl_module = Mock()
         curl_module.requests = curl_requests
+        curl_module.CurlHttpVersion = curl_http_version
 
         with patch.dict(sys.modules, {"curl_cffi": curl_module}):
             self.auth.__init__(session_backend="curl-cffi")
@@ -173,7 +176,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth.client.post.return_value.json.return_value = {"foo": "bar"}
         self.auth._token_get()
         self.assertEqual({"foo": "bar"}, self.auth.token_dic)
-        mock_captcha.assert_called_once_with(xvfb=False)
+        mock_captcha.assert_called_once_with(xvfb=False, client=self.auth.client)
 
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
     def test_009b_token_get_xvfb(self, mock_captcha):
@@ -186,7 +189,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth.client.post.return_value.status_code = 200
         self.auth.client.post.return_value.json.return_value = {"foo": "bar"}
         self.auth._token_get()
-        mock_captcha.assert_called_once_with(xvfb=True)
+        mock_captcha.assert_called_once_with(xvfb=True, client=self.auth.client)
 
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
     def test_010_token_get(self, mock_captcha):
