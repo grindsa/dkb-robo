@@ -1,5 +1,6 @@
 # pylint: disable=r0913
-""" Module for handling dkb standing orders """
+"""Module for handling dkb standing orders"""
+
 from typing import Dict, List, Tuple
 import time
 import json
@@ -12,31 +13,17 @@ from dkb_robo.captcha import get_dkb_redeem_token
 from dkb_robo.legacy import Wrapper as Legacywrapper
 from dkb_robo.portfolio import Overview
 from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
-from dkb_robo.captcha import login_via_browser
 
 BASE_URL = "https://banking.dkb.de/api"
+JSON_API_CONTENT_TYPE = "application/vnd.api+json"
+TOKEN_ENDPOINT = "/token"
 logger = logging.getLogger(__name__)
 
 
 class Authentication:
     """Authentication class"""
 
-    account_dic = {}
     base_url = BASE_URL
-    chip_tan = False
-    client = None
-    dkb_user = None
-    dkb_password = None
-    dkb_br = None
-    logger = None
-    mfa_method = "seal_one"
-    mfa_device = 0
-    proxies = {}
-    token_dic = None
-    unfiltered = False
-    xvfb = False
-    browser_login = False
-    session_backend = "requests"
 
     def __init__(
         self,
@@ -47,21 +34,24 @@ class Authentication:
         mfa_device: int = None,
         unfiltered: bool = False,
         xvfb: bool = False,
-        browser_login: bool = False,
-        session_backend: str = "requests",
-
+        session_backend: str = "curl-cffi",
+        request_timeout: int = 15,
     ):
         """Constructor"""
+        self.account_dic = {}
+        self.client = None
+        self.dkb_br = None
+
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.proxies = proxies
         self.unfiltered = unfiltered
         self.xvfb = xvfb
-        self.browser_login = browser_login
+        self.mfa_method = "seal_one"
+        self.token_dic = None
         self.session_backend = self._normalize_session_backend(session_backend)
-        if browser_login:
-            logger.info("Using browser login")
+        self.request_timeout = request_timeout
         if chip_tan:
             logger.info("Using to chip_tan to login")
             if chip_tan in ("qr", "chip_tan_qr"):
@@ -73,11 +63,11 @@ class Authentication:
         except (ValueError, TypeError):
             self.mfa_device = 0
 
-    @staticmethod
-    def _normalize_session_backend(session_backend: str) -> str:
+    def _normalize_session_backend(self, session_backend: str) -> str:
         """Normalize and validate configured HTTP backend."""
-
+        logger.debug("Authentication._normalize_session_backend()")
         backend = str(session_backend or "requests").strip().lower()
+        logger.info(f"Using session backend: {backend}")
         aliases = {
             "requests": "requests",
             "curl-cffi": "curl-cffi",
@@ -89,7 +79,10 @@ class Authentication:
             raise DKBRoboError(
                 f"Unsupported session backend '{session_backend}'. Use 'requests' or 'curl-cffi'."
             )
-
+        logger.debug(
+            "Authentication._normalize_session_backend() ended with: %s",
+            aliases[backend],
+        )
         return aliases[backend]
 
     def _mfa_challenge(
@@ -116,7 +109,7 @@ class Authentication:
 
             # additional headers needed as this call requires it
             self.client.headers["Content-Type"] = JSON_CONTENT_TYPE
-            self.client.headers["Accept"] = "application/vnd.api+json"
+            self.client.headers["Accept"] = JSON_API_CONTENT_TYPE
 
             # we are expecting the first method from mfa_dic to be used
             data_dic = {
@@ -130,7 +123,9 @@ class Authentication:
                 }
             }
             response = self.client.post(
-                self.base_url + "/mfa/mfa/challenges", data=json.dumps(data_dic)
+                self.base_url + "/mfa/mfa/challenges",
+                data=json.dumps(data_dic),
+                timeout=self.request_timeout,
             )
 
             # process response
@@ -183,10 +178,17 @@ class Authentication:
         challenge_id = self._mfa_challenge_id(challenge_dic)
 
         if self.mfa_method == "seal_one":
-            mfa_auth = APPAuthentication(client=self.client, base_url=self.base_url)
+            mfa_auth = APPAuthentication(
+                client=self.client,
+                base_url=self.base_url,
+                request_timeout=self.request_timeout,
+            )
         elif self.mfa_method in ("chip_tan_manual", "chip_tan_qr"):
             mfa_auth = TANAuthentication(
-                client=self.client, base_url=self.base_url, mfa_method=self.mfa_method
+                client=self.client,
+                base_url=self.base_url,
+                mfa_method=self.mfa_method,
+                request_timeout=self.request_timeout,
             )
         else:
             raise DKBRoboError(f"Login failed: unknown mfa method: {self.mfa_method}")
@@ -209,7 +211,8 @@ class Authentication:
                 # self.base_url
                 # + f"/mfa/mfa/{self.token_dic['mfa_id']}/methods?filter%5BmethodType%5D={self.mfa_method}"
                 self.base_url
-                + f"/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}"
+                + f"/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}",
+                timeout=self.request_timeout,
             )
             if response.status_code == 200:
                 mfa_dic = response.json()
@@ -273,8 +276,8 @@ class Authentication:
         """new request session for the api calls"""
         logger.debug("Authentication._session_new()\n")
 
+        logger.info("Creating new session with backend: %s", self.session_backend)
         if self.session_backend == "curl-cffi":
-            logger.debug("Using curl-cffi as session backend")
             try:
                 from curl_cffi import (  # type: ignore[import-not-found]
                     CurlHttpVersion,
@@ -285,7 +288,8 @@ class Authentication:
                     "session_backend='curl-cffi' requires optional dependency 'curl-cffi'."
                 ) from err
             client = curl_requests.Session(
-                impersonate="chrome", http_version=CurlHttpVersion.V1_1
+                impersonate="chrome",
+                default_headers=False,  # , http_version=CurlHttpVersion.V1_1
             )
         else:
             client = requests.session()
@@ -294,10 +298,7 @@ class Authentication:
 
         if self.proxies:
             client.proxies = self.proxies
-        client.verify = False  # NOSONAR
-
-        # get cookies
-        client.get(self.base_url + "/login")
+            client.verify = False  # NOSONAR
 
         # add csrf token
         if "__Host-xsrf" in client.cookies:
@@ -320,7 +321,9 @@ class Authentication:
         self.client.headers["Sec-Fetch-Site"] = "same-origin"
 
         response = self.client.post(
-            self.base_url + "/sso-redirect", data=json.dumps(data_dic)
+            self.base_url + "/sso-redirect",
+            data=json.dumps(data_dic),
+            timeout=self.request_timeout,
         )
 
         if response.status_code != 200 or response.text != "OK":
@@ -336,18 +339,9 @@ class Authentication:
         self.dkb_br = legacywrappper._new_instance(clientcookies)
         logger.debug("Authentication._sso_redirect() ended.\n")
 
-    def _token_get(self, headers: Dict[str, str] = None):
+    def _token_get(self, captcha_token: str = None):
         """get access token"""
         logger.debug("Authentication._token_get()\n")
-
-        # fetch captcha token required since 2025-11-01
-        captcha_kwargs = {"xvfb": self.xvfb, "client": self.client}
-        if headers:
-            captcha_kwargs["headers"] = headers
-        captcha_token = get_dkb_redeem_token(**captcha_kwargs)
-
-        # Keep header and cookie CSRF token in sync after browser-assisted captcha flow.
-        self._sync_csrf_header()
 
         # login via API
         data_dic = {
@@ -357,14 +351,21 @@ class Authentication:
             "password": self.dkb_password,
             "sca_type": "web-login",
         }
-        response = self.client.post(self.base_url + "/token", data=data_dic)
+        response = self.client.post(
+            self.base_url + TOKEN_ENDPOINT,
+            data=data_dic,
+            timeout=self.request_timeout,
+        )
         if response.status_code == 403 and "csrf" in response.text.lower():
             logger.warning(
                 "Authentication._token_get(): CSRF rejected, refreshing login page and retrying once"
             )
-            self.client.get(self.base_url + "/login")
-            # self._sync_csrf_header()
-            response = self.client.post(self.base_url + "/token", data=data_dic)
+            self.client.get(self.base_url + "/login", timeout=self.request_timeout)
+            response = self.client.post(
+                self.base_url + TOKEN_ENDPOINT,
+                data=data_dic,
+                timeout=self.request_timeout,
+            )
 
         if response.status_code == 200:
             self.token_dic = response.json()
@@ -397,24 +398,21 @@ class Authentication:
         """update token information with 2fa iformation"""
         logger.debug("Authentication._token_update()\n")
 
-        print(self.client.headers)
-        print(self.client.cookies)
-        print(self.client)
-
         data_dic = {
             "grant_type": "banking_user_mfa",
             "mfa_id": self.token_dic["mfa_id"],
             # "access_token": self.token_dic["access_token"],
-            "scope": "device_sso"
+            "scope": "device_sso",
         }
-        from pprint import pprint
-        pprint(data_dic)
 
-        response = self.client.post(self.base_url + "/token", data=data_dic)
+        response = self.client.post(
+            self.base_url + TOKEN_ENDPOINT,
+            data=data_dic,
+            timeout=self.request_timeout,
+        )
         if response.status_code == 200:
             self.token_dic = response.json()
         else:
-            # print(response.text)
             raise DKBRoboError(
                 f"Login failed: token update failed. RC: {response.status_code}"
             )
@@ -432,25 +430,27 @@ class Authentication:
                         "os": "MAC OS",
                         "localeCode": "de-DE",
                         "colorDepthBitsCount": 24,
-                        "screenResolution": {"width": 1920, "height": 1080}
+                        "screenResolution": {"width": 1920, "height": 1080},
                     },
                     "browserInfo": {
                         "browserTypeCode": "standard-browser",
                         "cookiesEnabled": True,
-                        "timeZone": "Europe/Berlin"
+                        "timeZone": "Europe/Berlin",
                     },
-                "requestMetadata": {
-                    "visitorId": "disabled",
-                    "requestId": "disabled",
-                    }
-                }
+                    "requestMetadata": {
+                        "visitorId": "disabled",
+                        "requestId": "disabled",
+                    },
+                },
             }
         }
         self.client.headers["Content-Type"] = JSON_CONTENT_TYPE
-        self.client.headers["Accept"] = "application/vnd.api+json"
+        self.client.headers["Accept"] = JSON_API_CONTENT_TYPE
 
         response = self.client.post(
-            self.base_url + "/device-data/web-devices-data", data=json.dumps(data_dic)
+            self.base_url + "/device-data/web-devices-data",
+            data=json.dumps(data_dic),
+            timeout=self.request_timeout,
         )
         if response.status_code != 204:
             raise DKBRoboError(
@@ -468,8 +468,18 @@ class Authentication:
 
         mfa_dic = {}
 
+        # fetch captcha token required since 2025-11-01
+        captcha_kwargs = {"xvfb": self.xvfb, "client": self.client}
+        if headers:
+            captcha_kwargs["headers"] = headers
+
+        captcha_token = get_dkb_redeem_token(**captcha_kwargs)
+
+        # Keep header and cookie CSRF token in sync after browser-assisted captcha flow.
+        self._sync_csrf_header()
+
         # get token for 1fa
-        self._token_get(headers=headers)
+        self._token_get(captcha_token=captcha_token)
 
         # get mfa methods
         mfa_dic = self._mfa_get()
@@ -519,41 +529,27 @@ class Authentication:
     def login(self) -> Tuple[Dict, None]:
         """login function"""
 
-
         headers = {
+            "Accept": "application/json, text/plain, */*",
             "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
             "Accept-Encoding": "identity",
-            "Accept": "application/json, text/plain, */*",
             "Application-Name": "web-banking",
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "DNT": "1",
             "Pragma": "no-cache",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "te": "trailers",
-            "priority": "u=0",
+            "DNT": "1",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
             "sec-gpc": "1",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "priority": "u=1, i",
+            "Origin": "https://banking.dkb.de",
+            "Content-Type": "application/x-www-form-urlencoded",
         }
 
         # create new session
         self.client = self._session_new(headers)
 
-        if self.browser_login:
-            session, _ = login_via_browser(
-                logger=logger,
-                dkb_user=self.dkb_user,
-                dkb_password=self.dkb_password,
-                timeout=300,
-                headless=False,
-                xvfb=self.xvfb,
-                client = self.client
-            )
-            self.client = session
-        else:
-            self._rest_login(headers=headers)
+        self._rest_login(headers=headers)
 
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)
@@ -567,14 +563,29 @@ class Authentication:
     def logout(self):
         """logout function"""
         logger.debug("Authentication.logout()\n")
+        if self.client is None:
+            return
+
+        try:
+            self.client.close()
+        except Exception as err:
+            logger.debug("Authentication.logout(): closing client failed: %s", err)
+        finally:
+            self.client = None
 
 
 class APPAuthentication:
     """APPAuthentication class"""
 
-    def __init__(self, client: requests.Session, base_url: str = BASE_URL):
+    def __init__(
+        self,
+        client: requests.Session,
+        base_url: str = BASE_URL,
+        request_timeout: int = 15,
+    ):
         self.client = client
         self.base_url = base_url
+        self.request_timeout = request_timeout
 
     def _check(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
         logger.debug("APPAuthentication._check()\n")
@@ -639,7 +650,8 @@ class APPAuthentication:
         # we give us 50 seconds to press a button on the phone
         while cnt <= 10:
             response = self.client.get(
-                self.base_url + f"/mfa/mfa/challenges/{challenge_id}"
+                self.base_url + f"/mfa/mfa/challenges/{challenge_id}",
+                timeout=self.request_timeout,
             )
             cnt += 1
             if response.status_code == 200:
@@ -671,10 +683,12 @@ class TANAuthentication:
         client: requests.Session,
         base_url: str = BASE_URL,
         mfa_method: str = "chip_tan_manual",
+        request_timeout: int = 15,
     ):
         self.client = client
         self.base_url = base_url
         self.mfa_method = mfa_method
+        self.request_timeout = request_timeout
 
     def _image(self, qr_data: str) -> None:
         """show qr code"""
@@ -746,11 +760,12 @@ class TANAuthentication:
             }
         }
         self.client.headers["Content-Type"] = JSON_CONTENT_TYPE
-        self.client.headers["Accept"] = "application/vnd.api+json"
+        self.client.headers["Accept"] = JSON_API_CONTENT_TYPE
 
         response = self.client.post(
             self.base_url + f"/mfa/mfa/challenges/{challenge_id}",
             data=json.dumps(data_dic),
+            timeout=self.request_timeout,
         )
         mfa_completed = False
         if response.status_code <= 300:

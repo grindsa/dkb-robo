@@ -1,5 +1,6 @@
 # pylint: disable=c0415, r0913
-""" dkb internet banking automation library """
+"""dkb internet banking automation library"""
+
 # -*- coding: utf-8 -*-
 from pathlib import Path
 import time
@@ -10,7 +11,6 @@ from dkb_robo.standingorder import StandingOrders
 from dkb_robo.transaction import Transactions
 from dkb_robo.utilities import logger_setup, validate_dates, get_dateformat
 
-
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 
 
@@ -20,23 +20,6 @@ class DKBRoboError(Exception):
 
 class DKBRobo(object):
     """dkb_robo class"""
-
-    # pylint: disable=R0904
-    legacy_login = False
-    dkb_user = None
-    dkb_password = None
-    proxies = {}
-    last_login = None
-    mfa_device = 0
-    account_dic = {}
-    tan_insert = False
-    chip_tan = False
-    logger = None
-    wrapper = None
-    unfiltered = False
-    browser_login = False
-    session_backend = "requests"
-    proxies = None
 
     def __init__(
         self,
@@ -49,21 +32,25 @@ class DKBRobo(object):
         chip_tan=False,
         unfiltered=False,
         xvfb=False,
-        browser_login=False,
-        session_backend="requests",
+        session_backend="curl-cffi",
+        request_timeout=15,
         proxies=None,
     ):
+        self.last_login = None
+        self.account_dic = {}
+        self.wrapper = None
+
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
         self.tan_insert = tan_insert
         self.legacy_login = legacy_login
-        self.browser_login = browser_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
         self.xvfb = xvfb
         self.session_backend = session_backend
+        self.request_timeout = request_timeout
         self.proxies = proxies
 
     def __enter__(self):
@@ -91,12 +78,12 @@ class DKBRobo(object):
             mfa_device=self.mfa_device,
             unfiltered=self.unfiltered,
             xvfb=self.xvfb,
-            browser_login=self.browser_login,
             session_backend=self.session_backend,
+            request_timeout=self.request_timeout,
         )
 
         # login and get the account overview
-        (self.account_dic, self.last_login) = self.wrapper.login()
+        self.account_dic, self.last_login = self.wrapper.login()
 
         return self
 
@@ -175,7 +162,7 @@ class DKBRobo(object):
             date_to,
         )
 
-        (date_from, date_to) = validate_dates(date_from, date_to)
+        date_from, date_to = validate_dates(date_from, date_to)
         transaction = Transactions(
             client=self.wrapper.client, unfiltered=self.unfiltered
         )

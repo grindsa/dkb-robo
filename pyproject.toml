@@ -26,6 +26,7 @@ dependencies = [
     "bs4",
     "mechanicalsoup",
     "requests",
+    "curl-cffi",
     "pillow",
     "seleniumbase",
     "tabulate",

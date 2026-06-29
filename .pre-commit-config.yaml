@@ -20,6 +20,6 @@ repos:
     -   id: mixed-line-ending
 
 -   repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 26.5.1
     hooks:
     -   id: black

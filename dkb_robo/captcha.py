@@ -1,5 +1,6 @@
 # pylint: disable=broad-except
 """Module to solve DKB Friendly Captcha via SeleniumBase + undetected-chromedriver"""
+
 import logging
 import time
 from seleniumbase import SB
@@ -18,9 +19,7 @@ def _apply_browser_headers(sb, headers=None):
 
     try:
         normalized = {
-            str(key): str(value)
-            for key, value in headers.items()
-            if value is not None
+            str(key): str(value) for key, value in headers.items() if value is not None
         }
     except Exception:
         logger.debug("captcha._apply_browser_headers(): invalid headers payload")
@@ -59,7 +58,9 @@ def _apply_browser_headers(sb, headers=None):
                 "Network.setExtraHTTPHeaders", {"headers": extra_headers}
             )
     except Exception as err:
-        logger.debug("captcha._apply_browser_headers(): unable to apply headers: %s", err)
+        logger.debug(
+            "captcha._apply_browser_headers(): unable to apply headers: %s", err
+        )
 
 
 def _poll_frc_token(sb, timeout=30):
@@ -163,11 +164,13 @@ def get_dkb_redeem_token(
     return token
 
 
-def login_via_browser(logger, dkb_user, dkb_password, timeout=30, headless=False, xvfb=False, client=None):
+# not used yet, but might be useful in the future
+def login_via_browser(
+    logger, dkb_user, dkb_password, timeout=30, headless=False, xvfb=False, client=None
+):
     """Open DKB login page, solve Friendly Captcha, perform login via browser."""
 
-
-    print('login_via_browser: Starting login flow via browser')
+    print("login_via_browser: Starting login flow via browser")
     with SB(uc=True, locale="de", headless=headless, xvfb=xvfb) as sb:
         sb.open(DKB_LOGIN_URL)
 
@@ -175,7 +178,9 @@ def login_via_browser(logger, dkb_user, dkb_password, timeout=30, headless=False
         for _ in range(timeout):
             try:
                 logger.debug("login_via_browser: Checking for cookie banner")
-                if sb.cdp.evaluate("document.querySelector('#usercentrics-cmp-ui') !== null"):
+                if sb.cdp.evaluate(
+                    "document.querySelector('#usercentrics-cmp-ui') !== null"
+                ):
                     sb.cdp.evaluate(
                         "document.querySelector('#usercentrics-cmp-ui')"
                         ".shadowRoot.querySelector('button.uc-deny-button').click()"
@@ -193,7 +198,7 @@ def login_via_browser(logger, dkb_user, dkb_password, timeout=30, headless=False
 
         time.sleep(2)  # Brief pause before clicking captcha
         for _ in range(timeout):
-            print('looping to find captcha checkbox')
+            print("looping to find captcha checkbox")
             try:
                 elem = sb.cdp.find_element("iframe.frc-i-widget")
                 elem.scroll_into_view()
@@ -229,7 +234,7 @@ def login_via_browser(logger, dkb_user, dkb_password, timeout=30, headless=False
         session = client
         # Get cookies from SeleniumBase browser
         cookies = sb.get_cookies()
-        cookie_dict = {c['name']: c['value'] for c in cookies}
+        cookie_dict = {c["name"]: c["value"] for c in cookies}
 
         print("Cookies extracted from browser:")
         print(cookie_dict)
@@ -240,20 +245,19 @@ def login_via_browser(logger, dkb_user, dkb_password, timeout=30, headless=False
         # Extract headers (User-Agent, XSRF tokens, etc.)
         headers = {}
         # User-Agent
-        headers['User-Agent'] = sb.cdp.evaluate('navigator.userAgent')
+        headers["User-Agent"] = sb.cdp.evaluate("navigator.userAgent")
         # XSRF token (if present)
         try:
-            xsrf_token = sb.cdp.evaluate('document.querySelector("input[name=xsrf-token]") ? document.querySelector("input[name=xsrf-token]").value : null')
+            xsrf_token = sb.cdp.evaluate(
+                'document.querySelector("input[name=xsrf-token]") ? document.querySelector("input[name=xsrf-token]").value : null'
+            )
             if xsrf_token:
-                headers['X-XSRF-TOKEN'] = xsrf_token
+                headers["X-XSRF-TOKEN"] = xsrf_token
         except Exception:
             pass
 
         # Dump all session info into a dictionary
-        session_info = {
-            'cookies': cookie_dict,
-            'headers': headers
-        }
+        session_info = {"cookies": cookie_dict, "headers": headers}
 
         time.sleep(20)
         # logger.info(f"Session info: {session_info}")
