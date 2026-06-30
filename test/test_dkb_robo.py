@@ -7,8 +7,6 @@ import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, Mock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
 from datetime import date
 import io
 import json

@@ -23,8 +23,6 @@ classifiers = [
 ]
 requires-python = ">= 3.8"
 dependencies = [
-    "bs4",
-    "mechanicalsoup",
     "requests",
     "curl-cffi",
     "pillow",

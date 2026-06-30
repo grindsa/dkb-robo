@@ -10,8 +10,6 @@ import unittest
 import logging
 import json
 from unittest.mock import patch, Mock, MagicMock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
 import io
 
 sys.path.insert(0, ".")
