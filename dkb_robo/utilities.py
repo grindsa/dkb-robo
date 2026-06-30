@@ -1,4 +1,5 @@
-""" miscellaneous functions """
+"""miscellaneous functions"""
+
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
@@ -9,7 +10,6 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, fields, asdict, is_dataclass
 import time
 import re
-
 
 logger = logging.getLogger(__name__)
 

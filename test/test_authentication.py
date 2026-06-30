@@ -710,7 +710,6 @@ class TestAuthentication(unittest.TestCase):
             str(err.exception),
         )
 
-
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.authentication.Authentication._mfa_get")
     @patch("dkb_robo.authentication.Authentication._token_get")

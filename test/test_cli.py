@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" unittests for dkb_robo """
+"""unittests for dkb_robo"""
+
 import sys
 import os
 import unittest

@@ -1,4 +1,5 @@
-""" Module for handling the DKB postbox. """
+"""Module for handling the DKB postbox."""
+
 import datetime
 import hashlib
 import logging

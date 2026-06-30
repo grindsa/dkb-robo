@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" example script for dkb-robo """
+"""example script for dkb-robo"""
+
 from __future__ import print_function
 import sys
 from pprint import pprint

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=r0904, c0415, c0413, r0913, w0212
-""" unittests for dkb_robo """
+"""unittests for dkb_robo"""
+
 import sys
 import os
 from datetime import date

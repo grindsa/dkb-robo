@@ -62,7 +62,6 @@ class DKBRobo(object):
             )
             self.chip_tan = True
 
-
         if self.mfa_device == "m":
             self.mfa_device = 1
 
