@@ -710,45 +710,6 @@ class TestAuthentication(unittest.TestCase):
             str(err.exception),
         )
 
-    @patch("dkb_robo.legacy.Wrapper._new_instance")
-    def test_054__sso_redirect(self, mock_instance):
-        """test _sso_redirect() ok"""
-        self.auth.client = Mock()
-        self.auth.client.headers = {}
-        self.auth.client.post.return_value.status_code = 200
-        self.auth.client.post.return_value.text = "OK"
-        self.auth._sso_redirect()
-        self.assertTrue(mock_instance.called)
-
-    @patch("dkb_robo.legacy.Wrapper._new_instance")
-    def test_055__sso_redirect(self, mock_instance):
-        """test _sso_redirect() nok"""
-        self.auth.client = Mock()
-        self.auth.client.headers = {}
-        self.auth.client.post.return_value.status_code = 200
-        self.auth.client.post.return_value.text = "NOK"
-        with self.assertLogs("dkb_robo", level="INFO") as lcm:
-            self.auth._sso_redirect()
-        self.assertIn(
-            "ERROR:dkb_robo.authentication:SSO redirect failed. RC: 200 text: NOK",
-            lcm.output,
-        )
-        self.assertTrue(mock_instance.called)
-
-    @patch("dkb_robo.legacy.Wrapper._new_instance")
-    def test_056__sso_redirect(self, mock_instance):
-        """test _sso_redirect() nok"""
-        self.auth.client = Mock()
-        self.auth.client.headers = {}
-        self.auth.client.post.return_value.status_code = 400
-        self.auth.client.post.return_value.text = "OK"
-        with self.assertLogs("dkb_robo", level="INFO") as lcm:
-            self.auth._sso_redirect()
-        self.assertIn(
-            "ERROR:dkb_robo.authentication:SSO redirect failed. RC: 400 text: OK",
-            lcm.output,
-        )
-        self.assertTrue(mock_instance.called)
 
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.authentication.Authentication._mfa_get")
@@ -862,7 +823,6 @@ class TestAuthentication(unittest.TestCase):
 
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.authentication.Authentication._mfa_select")
-    @patch("dkb_robo.authentication.Authentication._sso_redirect")
     @patch("dkb_robo.authentication.Authentication._token_update")
     @patch("dkb_robo.authentication.Authentication._mfa_finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge")
@@ -879,7 +839,6 @@ class TestAuthentication(unittest.TestCase):
         mock_chall,
         mock_2fa,
         mock_upd,
-        mock_redir,
         mock_mfa,
         mock_sort,
     ):
@@ -898,13 +857,11 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(mock_meth.called)
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
-        self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
         self.assertTrue(mock_sort.called)
 
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.authentication.Authentication._mfa_select")
-    @patch("dkb_robo.authentication.Authentication._sso_redirect")
     @patch("dkb_robo.authentication.Authentication._token_update")
     @patch("dkb_robo.authentication.Authentication._mfa_finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge")
@@ -921,7 +878,6 @@ class TestAuthentication(unittest.TestCase):
         mock_chall,
         mock_2fa,
         mock_upd,
-        mock_redir,
         mock_mfa,
         mock_sort,
     ):
@@ -943,13 +899,11 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
         self.assertTrue(mock_upd.called)
-        self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
         self.assertTrue(mock_sort.called)
 
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.authentication.Authentication._mfa_select")
-    @patch("dkb_robo.authentication.Authentication._sso_redirect")
     @patch("dkb_robo.authentication.Authentication._token_update")
     @patch("dkb_robo.authentication.Authentication._mfa_finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge")
@@ -966,7 +920,6 @@ class TestAuthentication(unittest.TestCase):
         mock_chall,
         mock_2fa,
         mock_upd,
-        mock_redir,
         mock_mfa,
         mock_sort,
     ):
@@ -993,14 +946,12 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
         self.assertTrue(mock_upd.called)
-        self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
         self.assertTrue(mock_sort.called)
 
     @patch("dkb_robo.authentication.Authentication._mfa_sort")
     @patch("dkb_robo.portfolio.Overview.get")
     @patch("dkb_robo.authentication.Authentication._mfa_select")
-    @patch("dkb_robo.authentication.Authentication._sso_redirect")
     @patch("dkb_robo.authentication.Authentication._token_update")
     @patch("dkb_robo.authentication.Authentication._mfa_finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge")
@@ -1017,7 +968,6 @@ class TestAuthentication(unittest.TestCase):
         mock_chall,
         mock_2fa,
         mock_upd,
-        mock_redir,
         mock_mfa,
         mock_overview,
         mock_sort,
@@ -1040,7 +990,6 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(mock_chall.called)
         self.assertTrue(mock_2fa.called)
         self.assertTrue(mock_upd.called)
-        self.assertFalse(mock_redir.called)
         self.assertTrue(mock_mfa.called)
         self.assertTrue(mock_overview.called)
 
