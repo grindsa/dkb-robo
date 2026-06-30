@@ -73,6 +73,26 @@ class TestDKBRobo(unittest.TestCase):
         cursor.__iter__.return_value = []
         self.assertTrue(self._login(cursor))
 
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_002a__login_headless(self, mock_dkb_robo):
+        """test _login() forwards HEADLESS option to DKBRobo"""
+        ctx = MagicMock()
+        ctx.obj = {
+            "USERNAME": "user",
+            "PASSWORD": "password",
+            "CHIP_TAN": False,
+            "DEBUG": False,
+            "UNFILTERED": False,
+            "MFA_DEVICE": None,
+            "HEADLESS": True,
+            "XVFB": False,
+            "SESSION_BACKEND": "requests",
+        }
+
+        self._login(ctx)
+
+        self.assertTrue(mock_dkb_robo.call_args.kwargs["headless"])
+
     def test_003__load_format(self):
         """test _load_format()"""
         oformat = "pprint"

@@ -31,6 +31,7 @@ class DKBRobo(object):
         mfa_device=None,
         chip_tan=False,
         unfiltered=False,
+        headless=False,
         xvfb=False,
         session_backend="curl-cffi",
         request_timeout=15,
@@ -48,6 +49,7 @@ class DKBRobo(object):
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
+        self.headless = headless
         self.xvfb = xvfb
         self.session_backend = session_backend
         self.request_timeout = request_timeout
@@ -77,6 +79,7 @@ class DKBRobo(object):
             chip_tan=self.chip_tan,
             mfa_device=self.mfa_device,
             unfiltered=self.unfiltered,
+            headless=self.headless,
             xvfb=self.xvfb,
             session_backend=self.session_backend,
             request_timeout=self.request_timeout,

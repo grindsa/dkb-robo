@@ -164,6 +164,11 @@ class TestAuthentication(unittest.TestCase):
         self.auth.__init__(xvfb=True)
         self.assertTrue(self.auth.xvfb)
 
+    def test_014a_init_headless(self):
+        """test init() with headless=True"""
+        self.auth.__init__(headless=True)
+        self.assertTrue(self.auth.headless)
+
     def test_015_token_get(self):
         """test _token_get() ok"""
         self.auth.dkb_user = "dkb_user"
@@ -305,6 +310,35 @@ class TestAuthentication(unittest.TestCase):
             str(err.exception),
         )
         self.assertFalse(self.auth.token_dic)
+
+    @patch("dkb_robo.authentication.get_dkb_redeem_token")
+    def test_024a_rest_login_forwards_headless_and_xvfb(self, mock_captcha):
+        """test _rest_login() forwards browser mode flags to captcha solver"""
+        self.auth.headless = True
+        self.auth.xvfb = True
+        self.auth.client = Mock()
+        self.auth._sync_csrf_header = Mock()
+        self.auth._token_get = Mock()
+        self.auth._mfa_get = Mock(return_value={})
+        self.auth._mfa_select = Mock(return_value=0)
+        self.auth._mfa_challenge = Mock(return_value=("challenge", "device"))
+        self.auth._mfa_finalize = Mock(return_value=True)
+        self.auth._token_update = Mock(
+            side_effect=lambda: self.auth.token_dic.update({"token_factor_type": "2fa"})
+        )
+        self.auth.token_dic = {"mfa_id": "mfa-id", "access_token": "token"}
+        mock_captcha.return_value = "captcha_token"
+
+        with self.assertRaises(Exception) as err:
+            self.auth._rest_login()
+
+        self.assertEqual("Login failed: no 1fa access token.", str(err.exception))
+
+        mock_captcha.assert_called_once_with(
+            headless=True,
+            xvfb=True,
+            client=self.auth.client,
+        )
 
     def test_025__mfa_get(self):
         """test _mfa_get()"""

@@ -83,7 +83,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, session_backend=requests|curl-cffi) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, headless=True|False, xvfb=True|False, session_backend=requests|curl-cffi) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
@@ -92,6 +92,8 @@ create a new DKBRobo context handler and login to DKB portal
 - mfa_device: ('m'/Integer) optional - preselect MFA device to be used for 2nd factor - 'm' - main device, otherwise number from device-list
 - debug: (True/**False**) Debug mode
 - unfiltered: (True/**False**) [Unfiltered mode](doc/unfiltered.md)
+- headless: (True/**False**) Run the captcha browser in headless mode
+- xvfb: (True/**False**) Use Xvfb virtual display during captcha solving (useful on headless Linux servers)
 - session_backend: ("requests"/**"curl-cffi"**) HTTP backend used to create the login session. Default is "requests". When set to "curl-cffi", install the optional `curl-cffi` package first.
 
 After login you can return a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
@@ -356,6 +358,8 @@ Usage: dkb [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -d, --debug                     Show additional debugging
+  --headless                      Run captcha browser in headless mode
+  --xvfb                          Use Xvfb virtual display for captcha solving (for headless servers)
   -t, --chip-tan TEXT             use [ChipTan](https://www.dkb.de/fragen-antworten/was-ist-das-chiptan-verfahren) for login ("qr" for chipTan-QR "manual" for chipTan-manuell)
   -u, --username TEXT             username to access the dkb portal
                                   [required]

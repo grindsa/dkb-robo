@@ -162,6 +162,16 @@ class TestDKBRobo(unittest.TestCase):
             "curl-cffi", mock_authentication.call_args.kwargs["session_backend"]
         )
 
+    @patch("dkb_robo.dkb_robo.Authentication")
+    def test_007b__enter_headless(self, mock_authentication):
+        """test enter forwards headless to Authentication"""
+        self.dkb.headless = True
+        mock_authentication.return_value.login.return_value = ("api", "foo")
+
+        self.dkb.__enter__()
+
+        self.assertTrue(mock_authentication.call_args.kwargs["headless"])
+
     def test_008__exit(self):
         """test enter"""
         self.dkb.wrapper = Mock()

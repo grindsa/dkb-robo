@@ -33,6 +33,7 @@ class Authentication:
         proxies: Dict[str, str] = None,
         mfa_device: int = None,
         unfiltered: bool = False,
+        headless: bool = False,
         xvfb: bool = False,
         session_backend: str = "curl-cffi",
         request_timeout: int = 15,
@@ -47,6 +48,7 @@ class Authentication:
         self.dkb_password = dkb_password
         self.proxies = proxies
         self.unfiltered = unfiltered
+        self.headless = headless
         self.xvfb = xvfb
         self.mfa_method = "seal_one"
         self.token_dic = None
@@ -469,7 +471,11 @@ class Authentication:
         mfa_dic = {}
 
         # fetch captcha token required since 2025-11-01
-        captcha_kwargs = {"xvfb": self.xvfb, "client": self.client}
+        captcha_kwargs = {
+            "headless": self.headless,
+            "xvfb": self.xvfb,
+            "client": self.client,
+        }
         if headers:
             captcha_kwargs["headers"] = headers
 

@@ -117,6 +117,13 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     envvar="MFA_DEVICE",
 )
 @click.option(
+    "--headless",
+    default=False,
+    is_flag=True,
+    help="Run captcha browser in headless mode",
+    envvar="DKB_HEADLESS",
+)
+@click.option(
     "--xvfb",
     default=False,
     is_flag=True,
@@ -175,6 +182,7 @@ def main(
     debug,
     unfiltered,
     mfa_device,
+    headless,
     xvfb,
     use_tan,
     chip_tan,
@@ -196,6 +204,7 @@ def main(
     ctx.obj["UNFILTERED"] = unfiltered
     ctx.obj["CHIP_TAN"] = chip_tan
     ctx.obj["MFA_DEVICE"] = mfa_device
+    ctx.obj["HEADLESS"] = headless
     ctx.obj["XVFB"] = xvfb
     ctx.obj["USERNAME"] = username
     ctx.obj["PASSWORD"] = password
@@ -513,6 +522,7 @@ def _login(ctx):
         debug=ctx.obj["DEBUG"],
         unfiltered=ctx.obj["UNFILTERED"],
         mfa_device=ctx.obj["MFA_DEVICE"],
+        headless=ctx.obj.get("HEADLESS", False),
         xvfb=ctx.obj["XVFB"],
         session_backend=ctx.obj.get("SESSION_BACKEND", "requests"),
     )
