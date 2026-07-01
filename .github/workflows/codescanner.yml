@@ -37,12 +37,16 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: unittests
 
+      - name: run coverage
+        run: |
+          pip install pytest-cov
+          pytest --cov=./ --cov-report=xml
+
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v3
+        uses: SonarSource/sonarqube-scan-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          # Needed to get PR information, if any.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   codeql:
     name: CodeQL Analysis
