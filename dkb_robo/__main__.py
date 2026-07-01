@@ -1,4 +1,4 @@
-# pylint: disable=c0114, e0401
-import cli  # pragma: no cover
+# pylint: disable=c0114
+from dkb_robo.cli import main  # pragma: no cover
 
-cli.main()  # pragma: no cover
+main()  # pragma: no cover

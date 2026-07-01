@@ -171,7 +171,7 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
 )
 @click.option(
     "--session-backend",
-    default="requests",
+    default="curl-cffi",
     type=click.Choice(["requests", "curl-cffi"]),
     help="HTTP client backend to create login session",
     envvar="DKB_SESSION_BACKEND",
