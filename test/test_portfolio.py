@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=r0904, c0415, c0413, r0913, w0212
-""" unittests for dkb_robo """
+"""unittests for dkb_robo"""
+
 import sys
 import os
 from datetime import date
@@ -8,8 +9,6 @@ import unittest
 import logging
 import json
 from unittest.mock import patch, Mock, MagicMock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
 import io
 
 sys.path.insert(0, ".")

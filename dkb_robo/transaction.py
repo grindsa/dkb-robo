@@ -1,4 +1,5 @@
-""" Module for handling dkb transactions """
+"""Module for handling dkb transactions"""
+
 # pylint: disable=c0415, r0913, c0103
 import datetime
 import time
@@ -14,7 +15,6 @@ from dkb_robo.utilities import (
     filter_unexpected_fields,
     ulal,
 )
-
 
 LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 logger = logging.getLogger(__name__)
@@ -378,9 +378,9 @@ class AccountTransactionItem:
                 transaction_dic["peer"] = self.creditor.name
 
         # this is for backwards compatibility
-        transaction_dic[
-            "text"
-        ] = f"{transaction_dic['postingtext']} {transaction_dic['peer']} {transaction_dic['reasonforpayment']}"
+        transaction_dic["text"] = (
+            f"{transaction_dic['postingtext']} {transaction_dic['peer']} {transaction_dic['reasonforpayment']}"
+        )
 
         logger.debug("AccountTransaction.format() ended\n")
         return transaction_dic

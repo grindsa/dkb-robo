@@ -7,8 +7,6 @@ import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, Mock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
 from datetime import date
 import io
 import json
@@ -57,49 +55,25 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger("dkb_robo")
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_001__enter(self, mock_legacy, mock_api):
+    def test_001__enter(self, mock_api):
         """test enter"""
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         self.assertTrue(self.dkb.__enter__())
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_002__enter(self, mock_legacy, mock_api):
+    def test_002__enter(self, mock_api):
         """test enter"""
         self.dkb.legacy_login = False
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         self.assertTrue(self.dkb.__enter__())
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_003__enter(self, mock_legacy, mock_api):
-        """test enter"""
-        self.dkb.legacy_login = True
-        mock_legacy.return_value = ("legacy", "foo")
-        mock_api.return_value = ("api", "foo")
-        with self.assertRaises(Exception) as err:
-            self.dkb.__enter__()
-        self.assertEqual(
-            "Legacy Login got deprecated. Please do not use this option anymore",
-            str(err.exception),
-        )
-        self.assertFalse(mock_legacy.called)
-        self.assertFalse(mock_api.called)
-
-    @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_004__enter(self, mock_legacy, mock_api):
+    def test_004__enter(self, mock_api):
         """test enter"""
         self.dkb.tan_insert = True
         # self.dkb.wrapper = Mock()
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.dkb.__enter__()
@@ -108,45 +82,35 @@ class TestDKBRobo(unittest.TestCase):
             lcm.output,
         )
         self.assertTrue(self.dkb.chip_tan)
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_005__enter(self, mock_legacy, mock_api):
+    def test_005__enter(self, mock_api):
         """test enter"""
         self.dkb.mfa_device = 1
         # self.dkb.wrapper = Mock()
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         self.assertTrue(self.dkb.__enter__())
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
         self.assertEqual(1, self.dkb.mfa_device)
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_006__enter(self, mock_legacy, mock_api):
+    def test_006__enter(self, mock_api):
         """test enter"""
         self.dkb.mfa_device = 2
         # self.dkb.wrapper = Mock()
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         self.assertTrue(self.dkb.__enter__())
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
         self.assertEqual(2, self.dkb.mfa_device)
 
     @patch("dkb_robo.authentication.Authentication.login")
-    @patch("dkb_robo.legacy.Wrapper.login")
-    def test_007__enter(self, mock_legacy, mock_api):
+    def test_007__enter(self, mock_api):
         """test enter"""
         self.dkb.mfa_device = "m"
         # self.dkb.wrapper = Mock()
-        mock_legacy.return_value = ("legacy", "foo")
         mock_api.return_value = ("api", "foo")
         self.assertTrue(self.dkb.__enter__())
-        self.assertFalse(mock_legacy.called)
         self.assertTrue(mock_api.called)
         self.assertEqual(1, self.dkb.mfa_device)
 

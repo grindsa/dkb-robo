@@ -10,7 +10,6 @@ import threading
 import logging
 import requests
 from dkb_robo.captcha import get_dkb_redeem_token
-from dkb_robo.legacy import Wrapper as Legacywrapper
 from dkb_robo.portfolio import Overview
 from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
 
@@ -41,7 +40,6 @@ class Authentication:
         """Constructor"""
         self.account_dic = {}
         self.client = None
-        self.dkb_br = None
 
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
@@ -312,35 +310,6 @@ class Authentication:
         logger.debug("Authentication._session_new() ended\n")
         return client
 
-    def _sso_redirect(self):
-        """redirect to access legacy page"""
-        logger.debug("Authentication._sso_redirect()\n")
-
-        data_dic = {"data": {"cookieDomain": ".dkb.de"}}
-        self.client.headers["Content-Type"] = "application/json"
-        self.client.headers["Sec-Fetch-Dest"] = "empty"
-        self.client.headers["Sec-Fetch-Mode"] = "cors"
-        self.client.headers["Sec-Fetch-Site"] = "same-origin"
-
-        response = self.client.post(
-            self.base_url + "/sso-redirect",
-            data=json.dumps(data_dic),
-            timeout=self.request_timeout,
-        )
-
-        if response.status_code != 200 or response.text != "OK":
-            logger.error(
-                "SSO redirect failed. RC: %s text: %s",
-                response.status_code,
-                response.text,
-            )
-        clientcookies = self.client.cookies
-
-        legacywrappper = Legacywrapper()
-        # pylint: disable=w0212
-        self.dkb_br = legacywrappper._new_instance(clientcookies)
-        logger.debug("Authentication._sso_redirect() ended.\n")
-
     def _token_get(self, captcha_token: str = None):
         """get access token"""
         logger.debug("Authentication._token_get()\n")
@@ -561,8 +530,6 @@ class Authentication:
         overview = Overview(client=self.client, unfiltered=self.unfiltered)
         self.account_dic = overview.get()
 
-        # redirect to legacy page
-        # self._sso_redirect()
         logger.debug("Authentication.login() ended\n")
         return self.account_dic, None
 

@@ -1,4 +1,5 @@
-""" Module for handling dkb standing orders """
+"""Module for handling dkb standing orders"""
+
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
@@ -11,7 +12,6 @@ from dkb_robo.utilities import (
     object2dictionary,
     ulal,
 )
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,6 @@
 # pylint: disable=c3001, e1101, r0913, w0108, w0622
-""" dkb_robo cli """
+"""dkb_robo cli"""
+
 from datetime import date
 from pathlib import Path
 import pathlib

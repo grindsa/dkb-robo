@@ -26,7 +26,6 @@ class DKBRobo(object):
         dkb_user=None,
         dkb_password=None,
         tan_insert=False,
-        legacy_login=False,
         debug=False,
         mfa_device=None,
         chip_tan=False,
@@ -45,7 +44,6 @@ class DKBRobo(object):
         self.dkb_password = dkb_password
         self.chip_tan = chip_tan
         self.tan_insert = tan_insert
-        self.legacy_login = legacy_login
         self.logger = logger_setup(debug)
         self.mfa_device = mfa_device
         self.unfiltered = unfiltered
@@ -63,11 +61,6 @@ class DKBRobo(object):
                 "tan_insert is a legacy login option and will be disabled soon. Please use chip_tan instead"
             )
             self.chip_tan = True
-
-        if self.legacy_login:
-            raise DKBRoboError(
-                "Legacy Login got deprecated. Please do not use this option anymore"
-            )
 
         if self.mfa_device == "m":
             self.mfa_device = 1

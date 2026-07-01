@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" unittests for dkb_robo """
+"""unittests for dkb_robo"""
+
 import sys
 import os
 import unittest
 from unittest.mock import patch, MagicMock, Mock, mock_open
-from bs4 import BeautifulSoup
-from mechanicalsoup import LinkNotFoundError
 from datetime import date
 import click
 from click.testing import CliRunner

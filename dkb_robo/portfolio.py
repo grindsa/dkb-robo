@@ -1,4 +1,5 @@
-""" Module for handling dkb transactions """
+"""Module for handling dkb transactions"""
+
 # pylint: disable=c0415, r0913, c0103
 from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass, asdict

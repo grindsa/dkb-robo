@@ -1,4 +1,5 @@
 """Tests for the postbox module."""
+
 import sys
 import tempfile
 import unittest
