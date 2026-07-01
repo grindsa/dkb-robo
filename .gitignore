@@ -116,3 +116,4 @@ coverage.lcov
 settings.json
 connectedMode.json
 og_weekly.py
+downloaded_files/*

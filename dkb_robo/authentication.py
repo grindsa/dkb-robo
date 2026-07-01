@@ -18,6 +18,23 @@ JSON_API_CONTENT_TYPE = "application/vnd.api+json"
 TOKEN_ENDPOINT = "/token"
 logger = logging.getLogger(__name__)
 
+HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
+    "Accept-Encoding": "identity",
+    "Application-Name": "web-banking",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "DNT": "1",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+    "sec-gpc": "1",
+    "priority": "u=1, i",
+    "Origin": "https://banking.dkb.de",
+    "Content-Type": "application/x-www-form-urlencoded",
+}
+
 
 class Authentication:
     """Authentication class"""
@@ -49,6 +66,7 @@ class Authentication:
         self.headless = headless
         self.xvfb = xvfb
         self.mfa_method = "seal_one"
+        self.headers = HEADERS
         self.token_dic = None
         self.session_backend = self._normalize_session_backend(session_backend)
         self.request_timeout = request_timeout
@@ -272,7 +290,7 @@ class Authentication:
         )
         return {"data": mfa_list}
 
-    def _session_new(self, headers: Dict[str, str] = None) -> requests.Session:
+    def _session_new(self) -> requests.Session:
         """new request session for the api calls"""
         logger.debug("Authentication._session_new()\n")
 
@@ -293,8 +311,8 @@ class Authentication:
             )
         else:
             client = requests.session()
-        if headers:
-            client.headers = headers
+        if self.headers:
+            client.headers = self.headers
 
         if self.proxies:
             client.proxies = self.proxies
@@ -302,10 +320,10 @@ class Authentication:
 
         # add csrf token
         if "__Host-xsrf" in client.cookies:
-            if headers is None:
-                headers = {}
-            headers["x-xsrf-token"] = client.cookies["__Host-xsrf"]
-            client.headers = headers
+            if self.headers is None:
+                self.headers = {}
+            self.headers["x-xsrf-token"] = client.cookies["__Host-xsrf"]
+            client.headers = self.headers
 
         logger.debug("Authentication._session_new() ended\n")
         return client
@@ -392,13 +410,24 @@ class Authentication:
         """send device data to the server"""
         logger.debug("Authentication._device_data_send()\n")
 
+        logger.debug(f"User-Agent: {self.client.headers.get('User-Agent')}")
+        if "Windows" in self.client.headers.get("User-Agent"):
+            operating_system = "Windows"
+        elif "Linux" in self.client.headers.get("User-Agent"):
+            operating_system = "Linux"
+        elif "Macintosh" in self.client.headers.get("User-Agent"):
+            operating_system = "Mac OS"
+        else:
+            operating_system = "Unknown"
+        logger.debug(f"Detected operating system: {operating_system}")
+
         data_dic = {
             "data": {
                 "type": "webDeviceData",
                 "attributes": {
                     "mfaId": self.token_dic["mfa_id"],
                     "deviceInfo": {
-                        "os": "MAC OS",
+                        "os": operating_system,
                         "localeCode": "de-DE",
                         "colorDepthBitsCount": 24,
                         "screenResolution": {"width": 1920, "height": 1080},
@@ -415,11 +444,16 @@ class Authentication:
                 },
             }
         }
-        self.client.headers["Content-Type"] = JSON_CONTENT_TYPE
-        self.client.headers["Accept"] = JSON_API_CONTENT_TYPE
+
+        # we
+        original_content_type = self.client.headers.get("Content-Type")
+        self.client.headers["Content-Type"] = "application/json"
+
+        origial_accept_header = self.client.headers.get("Accept")
+        self.client.headers["Accept"] = "application/json, text/plain, */*"
 
         response = self.client.post(
-            self.base_url + "/device-data/web-devices-data",
+            self.base_url + "/device-data/web-device-data",
             data=json.dumps(data_dic),
             timeout=self.request_timeout,
         )
@@ -428,12 +462,12 @@ class Authentication:
                 f"Login failed: sending web-device data failed. RC: {response.status_code}"
             )
 
-        self.client.headers.pop("Content-Type")
-        self.client.headers.pop("Accept")
+        self.client.headers["Accept"] = origial_accept_header
+        self.client.headers["Content-Type"] = original_content_type
 
         logger.debug("Authentication._device_data_send() ended\n")
 
-    def _rest_login(self, headers: Dict[str, str] = None) -> None:
+    def _rest_login(self) -> None:
         """login into DKB banking area via REST backend"""
         logger.debug("Authentication.login()\n")
 
@@ -445,8 +479,8 @@ class Authentication:
             "xvfb": self.xvfb,
             "client": self.client,
         }
-        if headers:
-            captcha_kwargs["headers"] = headers
+        if self.headers:
+            captcha_kwargs["headers"] = self.headers
 
         captcha_token = get_dkb_redeem_token(**captcha_kwargs)
 
@@ -460,7 +494,7 @@ class Authentication:
         mfa_dic = self._mfa_get()
 
         # post web-device data
-        # self._device_data_send()
+        self._device_data_send()
 
         if mfa_dic:
             # sort mfa methods
@@ -504,27 +538,10 @@ class Authentication:
     def login(self) -> Tuple[Dict, None]:
         """login function"""
 
-        headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2",
-            "Accept-Encoding": "identity",
-            "Application-Name": "web-banking",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "DNT": "1",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "sec-gpc": "1",
-            "priority": "u=1, i",
-            "Origin": "https://banking.dkb.de",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
         # create new session
-        self.client = self._session_new(headers)
+        self.client = self._session_new()
 
-        self._rest_login(headers=headers)
+        self._rest_login()
 
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)
