@@ -136,6 +136,60 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
 
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_002c_login_proxy(self, mock_dkb_robo):
+        """test _login() maps PROXY option to http/https proxies"""
+        ctx = MagicMock()
+        ctx.obj = {
+            "USERNAME": "user",
+            "PASSWORD": "password",
+            "CHIP_TAN": False,
+            "DEBUG": False,
+            "UNFILTERED": False,
+            "MFA_DEVICE": None,
+            "HEADLESS": False,
+            "XVFB": False,
+            "SESSION_BACKEND": "curl-cffi",
+            "HTTP1_ONLY": False,
+            "PROXY": "http://127.0.0.1:8080",
+        }
+
+        self._login(ctx)
+
+        self.assertEqual(
+            {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"},
+            mock_dkb_robo.call_args.kwargs["proxies"],
+        )
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_002d_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
+        """test main accepts --proxy/--http1-only after subcommand"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            [
+                "-u",
+                "user",
+                "-p",
+                "password",
+                "accounts",
+                "--proxy",
+                "http://127.0.0.1:8080",
+                "--http1-only",
+            ],
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual(
+            {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"},
+            mock_dkb_robo.call_args.kwargs["proxies"],
+        )
+        self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
+
     def test_003_load_format(self):
         """test _load_format()"""
         oformat = "pprint"

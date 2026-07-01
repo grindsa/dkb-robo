@@ -82,7 +82,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, headless=True|False, xvfb=True|False, session_backend=requests|curl-cffi, http1_only=True|False) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, headless=True|False, xvfb=True|False, session_backend=requests|curl-cffi, http1_only=True|False, proxies={"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"}) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
@@ -95,6 +95,7 @@ create a new DKBRobo context handler and login to DKB portal
 - xvfb: (True/**False**) Use Xvfb virtual display during captcha solving (useful on headless Linux servers)
 - session_backend: ("requests"/**"curl-cffi"**) HTTP backend used to create the login session. Default is "requests". When set to "curl-cffi", install the optional `curl-cffi` package first.
 - http1_only: (True/**False**) Force HTTP/1.1 when using `session_backend="curl-cffi"`. Default is False.
+- proxies: (dict/**None**) Optional proxy mapping for requests. Example: `{"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"}`
 
 After login you can return a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
 
@@ -366,6 +367,7 @@ Options:
   -p, --password TEXT             corresponding login password
   --format [pprint|table|csv|json]
                                   output format to use
+  --proxy TEXT                    Proxy address used for both HTTP and HTTPS requests
   --help                          Show this message and exit.
 
 Commands:
@@ -390,6 +392,7 @@ py dkb -u <user> -p <password> accounts
 py dkb -u <user> -p <password> transactions --name Girokonto
 py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
 py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
+py dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
 ```
 
 ## Further documentation

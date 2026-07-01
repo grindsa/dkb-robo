@@ -20,6 +20,47 @@ DATE_FORMAT = "%d.%m.%Y"
 DATE_FORMAT_ALTERNATE = "%Y-%m-%d"
 
 
+def _store_proxy(ctx, _param, value):
+    """store proxy option in click context"""
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is not None:
+        ctx.obj["PROXY"] = value
+    return value
+
+
+def _store_http1_only(ctx, _param, value):
+    """store HTTP/1.1 option in click context"""
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is not None:
+        ctx.obj["HTTP1_ONLY"] = value
+    return value
+
+
+def _login_options(func):
+    """options that can be placed after subcommands"""
+    func = click.option(
+        "--proxy",
+        default=None,
+        type=str,
+        help="Proxy address to use for both HTTP and HTTPS requests",
+        envvar="DKB_PROXY",
+        callback=_store_proxy,
+        expose_value=False,
+    )(func)
+    func = click.option(
+        "--http1-only",
+        default=None,
+        is_flag=True,
+        help="Force HTTP/1.1 for curl-cffi sessions",
+        envvar="DKB_HTTP1_ONLY",
+        callback=_store_http1_only,
+        expose_value=False,
+    )(func)
+    return func
+
+
 def _account_lookup(ctx, name, account, account_dic, unfiltered):
     """lookup account"""
 
@@ -184,6 +225,15 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     help="Force HTTP/1.1 for curl-cffi sessions",
     envvar="DKB_HTTP1_ONLY",
 )
+@click.option(
+    "--proxy",
+    default=None,
+    type=str,
+    help="Proxy address to use for both HTTP and HTTPS requests",
+    envvar="DKB_PROXY",
+    callback=_store_proxy,
+    expose_value=False,
+)
 @click.pass_context
 def main(
     ctx,
@@ -223,6 +273,7 @@ def main(
 
 
 @main.command()
+@_login_options
 @click.pass_context
 def accounts(ctx):
     """get list of account"""
@@ -243,6 +294,7 @@ def accounts(ctx):
 
 
 @main.command()
+@_login_options
 @click.pass_context
 @click.option(
     "--name",
@@ -300,6 +352,7 @@ def transactions(
 
 
 @main.command()
+@_login_options
 @click.pass_context
 def last_login(ctx):
     """get last login"""
@@ -311,6 +364,7 @@ def last_login(ctx):
 
 
 @main.command()
+@_login_options
 @click.pass_context
 def credit_limits(ctx):
     """get limits"""
@@ -324,6 +378,7 @@ def credit_limits(ctx):
 
 
 @main.command()
+@_login_options
 @click.pass_context
 @click.option(
     "--name",
@@ -357,6 +412,7 @@ def standing_orders(ctx, name, account):  # pragma: no cover
 
 
 @main.command()
+@_login_options
 @click.pass_context
 @click.option(
     "--path",
@@ -410,6 +466,7 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
 
 
 @main.command()
+@_login_options
 @click.pass_context
 @click.option(
     "--path",
@@ -525,6 +582,9 @@ def _load_format(output_format):
 
 
 def _login(ctx):
+    proxy = ctx.obj.get("PROXY", None)
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+
     return dkb_robo.DKBRobo(
         dkb_user=ctx.obj["USERNAME"],
         dkb_password=ctx.obj["PASSWORD"],
@@ -536,4 +596,5 @@ def _login(ctx):
         xvfb=ctx.obj["XVFB"],
         session_backend=ctx.obj.get("SESSION_BACKEND", "requests"),
         http1_only=ctx.obj.get("HTTP1_ONLY", False),
+        proxies=proxies,
     )
