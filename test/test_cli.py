@@ -4,6 +4,7 @@
 
 import sys
 import os
+import json
 import unittest
 from unittest.mock import patch, MagicMock, Mock, mock_open
 from datetime import date
@@ -45,6 +46,7 @@ class TestDKBRobo(unittest.TestCase):
             _transactionlink_lookup,
             scan_postbox,
             download,
+            DataclassJSONEncoder,
         )
 
         self.logger = logging.getLogger("dkb_robo")
@@ -61,19 +63,39 @@ class TestDKBRobo(unittest.TestCase):
         self._transactionlink_lookup = _transactionlink_lookup
         self.scan_postbox = scan_postbox
         self.download = download
+        self.DataclassJSONEncoder = DataclassJSONEncoder
 
     def test_001_default(self):
         """default test which always passes"""
         self.assertEqual("foo", "foo")
 
-    def test_002__login(self):
+    def test_001a_dataclass_json_encoder(self):
+        """test DataclassJSONEncoder serializes dataclass objects"""
+        from dkb_robo.utilities import Account
+
+        payload = Account(accountNr="123", iban="DE001234", name="Main")
+
+        result = json.dumps(payload, cls=self.DataclassJSONEncoder)
+
+        self.assertEqual(
+            '{"accountNr": "123", "accountId": null, "bic": null, "blz": null, "iban": "DE001234", "id": null, "intermediaryName": null, "name": "Main"}',
+            result,
+        )
+
+    def test_001b_dataclass_json_encoder_non_dataclass(self):
+        """test DataclassJSONEncoder fallback raises TypeError for unknown objects"""
+
+        with self.assertRaises(TypeError):
+            self.DataclassJSONEncoder().default(object())
+
+    def test_002_login(self):
         """test login"""
         cursor = MagicMock()
         cursor.__iter__.return_value = []
         self.assertTrue(self._login(cursor))
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_002a__login_headless(self, mock_dkb_robo):
+    def test_002a_login_headless(self, mock_dkb_robo):
         """test _login() forwards HEADLESS option to DKBRobo"""
         ctx = MagicMock()
         ctx.obj = {
@@ -86,33 +108,55 @@ class TestDKBRobo(unittest.TestCase):
             "HEADLESS": True,
             "XVFB": False,
             "SESSION_BACKEND": "requests",
+            "HTTP1_ONLY": False,
         }
 
         self._login(ctx)
 
         self.assertTrue(mock_dkb_robo.call_args.kwargs["headless"])
 
-    def test_003__load_format(self):
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_002b_login_http1_only(self, mock_dkb_robo):
+        """test _login() forwards HTTP1_ONLY option to DKBRobo"""
+        ctx = MagicMock()
+        ctx.obj = {
+            "USERNAME": "user",
+            "PASSWORD": "password",
+            "CHIP_TAN": False,
+            "DEBUG": False,
+            "UNFILTERED": False,
+            "MFA_DEVICE": None,
+            "HEADLESS": False,
+            "XVFB": False,
+            "SESSION_BACKEND": "curl-cffi",
+            "HTTP1_ONLY": True,
+        }
+
+        self._login(ctx)
+
+        self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
+
+    def test_003_load_format(self):
         """test _load_format()"""
         oformat = "pprint"
         self.assertIn("pprint", self._load_format(oformat).__code__.co_names)
 
-    def test_004__load_format(self):
+    def test_004_load_format(self):
         """test _load_format()"""
         oformat = "csv"
         self.assertIn("csv", self._load_format(oformat).__code__.co_names)
 
-    def test_005__load_format(self):
+    def test_005_load_format(self):
         """test _load_format()"""
         oformat = "table"
         self.assertIn("tabulate", self._load_format(oformat).__code__.co_names)
 
-    def test_006__load_format(self):
+    def test_006_load_format(self):
         """test _load_format()"""
         oformat = "json"
         self.assertIn("json", self._load_format(oformat).__code__.co_names)
 
-    def test_007__load_format(self):
+    def test_007_load_format(self):
         """test _load_format()"""
         oformat = "foo"
         with self.assertRaises(Exception) as err:
@@ -238,6 +282,31 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual("<Result okay>", str(runner.invoke(self.accounts, obj=obj)))
         self.assertFalse(mock_click.called)
         self.assertTrue(mock_object2dictionary.called)
+
+    @patch("dkb_robo.cli._login")
+    def test_015a_accounts_removes_details_and_transactions(self, mock_login):
+        """test accounts removes details/transactions fields before formatting"""
+        account_dic = {
+            1: {
+                "id": "acc-1",
+                "name": "Main",
+                "details": {"foo": "bar"},
+                "transactions": "/tx/1",
+            }
+        }
+        mock_login.return_value.__enter__.return_value.account_dic = account_dic
+        formatter = Mock()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.accounts,
+            obj={"FORMAT": formatter, "UNFILTERED": False},
+        )
+
+        self.assertEqual("<Result okay>", str(result))
+        formatter.assert_called_once_with([{"id": "acc-1", "name": "Main"}])
+        self.assertNotIn("details", account_dic[1])
+        self.assertNotIn("transactions", account_dic[1])
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
@@ -566,6 +635,54 @@ class TestDKBRobo(unittest.TestCase):
         )
         self.assertFalse(mock_click.called)
         # self.assertTrue(mock_o2d.called)
+
+    @patch("dkb_robo.cli._login")
+    def test_033a_scan_postbox_passthrough_when_filtered(self, mock_login):
+        """test scan_postbox keeps doc_list unchanged when UNFILTERED=False"""
+        formatter = Mock()
+        doc_list = {"doc-1": {"id": "doc-1"}}
+
+        dkb = Mock()
+        dkb.scan_postbox.return_value = doc_list
+        mock_login.return_value.__enter__.return_value = dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.scan_postbox,
+            obj={"FORMAT": formatter, "UNFILTERED": False},
+        )
+
+        self.assertEqual("<Result okay>", str(result))
+        formatter.assert_called_once_with(doc_list)
+
+    @patch("dkb_robo.cli.object2dictionary")
+    @patch("dkb_robo.cli._login")
+    def test_033b_scan_postbox_converts_each_doc_when_unfiltered(
+        self, mock_login, mock_o2d
+    ):
+        """test scan_postbox converts each doc when UNFILTERED=True"""
+        formatter = Mock()
+        doc_a = object()
+        doc_b = object()
+        doc_list = {"a": doc_a, "b": doc_b}
+
+        dkb = Mock()
+        dkb.scan_postbox.return_value = doc_list
+        mock_login.return_value.__enter__.return_value = dkb
+
+        mock_o2d.side_effect = [{"id": "a"}, {"id": "b"}]
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.scan_postbox,
+            obj={"FORMAT": formatter, "UNFILTERED": True},
+        )
+
+        self.assertEqual("<Result okay>", str(result))
+        self.assertEqual(2, mock_o2d.call_count)
+        mock_o2d.assert_any_call(doc_a)
+        mock_o2d.assert_any_call(doc_b)
+        formatter.assert_called_once_with([{"id": "a"}, {"id": "b"}])
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")

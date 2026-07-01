@@ -327,49 +327,49 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_039__get_valid_filename(self):
+    def test_031__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test.pdf"
         self.assertEqual("test.pdf", self.get_valid_filename(filename))
 
-    def test_040__get_valid_filename(self):
+    def test_032__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_041__get_valid_filename(self):
+    def test_033__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "testötest.pdf"
         self.assertEqual("testötest.pdf", self.get_valid_filename(filename))
 
-    def test_042__get_valid_filename(self):
+    def test_034__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test/test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_043_get_valid_filename(self):
+    def test_035_get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test\\test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_044_get_valid_filename(self):
+    def test_036_get_valid_filename(self):
         """test get_valid_filename"""
         filename = ".\test.pdf"
         self.assertEqual("._est.pdf", self.get_valid_filename(filename))
 
-    def test_045_get_valid_filename(self):
+    def test_037_get_valid_filename(self):
         """test get_valid_filename"""
         filename = "../test.pdf"
         self.assertEqual(".._test.pdf", self.get_valid_filename(filename))
 
     @patch("dkb_robo.utilities.generate_random_string")
-    def test_046_get_valid_filename(self, mock_rand):
+    def test_038_get_valid_filename(self, mock_rand):
         """test get_valid_filename"""
         filename = ".."
         mock_rand.return_value = "random"
         self.assertEqual("random.pdf", self.get_valid_filename(filename))
 
-    def test_047_object2dictionary(self):
+    def test_039_object2dictionary(self):
         """test object2dictionary"""
 
         nested_obj = DataclassObject(
@@ -395,7 +395,7 @@ class TestDKBRobo(unittest.TestCase):
         result = self.object2dictionary(test_obj)
         self.assertEqual(result, expected_output)
 
-    def test_048_object2dictionary(self):
+    def test_040_object2dictionary(self):
         """test object2dictionary"""
         test_obj = DataclassObject(
             Attr1="value1", attr2=2, attr3="attr3", attr4="attr4"
@@ -404,15 +404,42 @@ class TestDKBRobo(unittest.TestCase):
         result = self.object2dictionary(test_obj, key_lc=True, skip_list=["attr2"])
         self.assertEqual(result, expected_output)
 
-    def test_049_logger_setup(self):
+    @patch("dkb_robo.utilities.asdict")
+    def test_041_object2dictionary_nested_dataclass_branch(self, mock_asdict):
+        """test object2dictionary recursion when asdict returns a dataclass value"""
+        nested_obj = DataclassObject(
+            Attr1="nested_value", attr2=3, attr3="leaf", attr4="foo"
+        )
+        mock_asdict.side_effect = [
+            {"outer": nested_obj},
+            {"Attr1": "nested_value", "attr2": 3, "attr3": "leaf", "attr4": "foo"},
+        ]
+
+        result = self.object2dictionary(
+            DataclassObject(Attr1="value", attr2=1, attr3="x", attr4="y")
+        )
+
+        self.assertEqual(
+            {
+                "outer": {
+                    "Attr1": "nested_value",
+                    "attr2": 3,
+                    "attr3": "leaf",
+                    "attr4": "foo",
+                }
+            },
+            result,
+        )
+
+    def test_042_logger_setup(self):
         """logger setup"""
         self.assertTrue(self.logger_setup(False))
 
-    def test_050_logger_setup(self):
+    def test_043_logger_setup(self):
         """logger setup"""
         self.assertTrue(self.logger_setup(True))
 
-    def test_051_ulal(self):
+    def test_044_ulal(self):
         """test ulal() with_valid_parameter"""
         mapclass = Mock()
         parameter = {"key1": "value1", "key2": "value2"}
@@ -420,7 +447,7 @@ class TestDKBRobo(unittest.TestCase):
         mapclass.assert_called_once_with(**parameter)
         self.assertEqual(result, mapclass.return_value)
 
-    def test_052_ulal(self):
+    def test_045_ulal(self):
         """test ulal() with none parameter"""
         mapclass = MagicMock()
         parameter = None
@@ -439,7 +466,7 @@ class TestAmount(unittest.TestCase):
         self.Amount = Amount
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_047_amount(self, mock_logger):
+    def test_046_amount(self, mock_logger):
         """test Amount"""
         amount_data = {
             "value": "1000",
@@ -457,7 +484,7 @@ class TestAmount(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_049_amount(self, mock_logger):
+    def test_047_amount(self, mock_logger):
         """test Amount with wrong value"""
         amount_data = {
             "value": "invalid",
@@ -478,7 +505,7 @@ class TestAmount(unittest.TestCase):
         )
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_050_amount(self, mock_logger):
+    def test_048_amount(self, mock_logger):
         """test Amount with wrong conversation rate"""
         amount_data = {
             "value": "1000",
@@ -507,7 +534,7 @@ class TestPerformanceValue(unittest.TestCase):
         self.PerformanceValue = PerformanceValue
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_051_performancevalue(self, mock_logger):
+    def test_049_performancevalue(self, mock_logger):
         performance_value_data = {
             "currencyCode": "USD",
             "value": "1000",
@@ -522,7 +549,7 @@ class TestPerformanceValue(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_052_performancevalue(self, mock_logger):
+    def test_050_performancevalue(self, mock_logger):
         performance_value_data = {
             "currencyCode": "USD",
             "value": "invalid",

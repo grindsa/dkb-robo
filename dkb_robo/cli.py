@@ -177,6 +177,13 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     help="HTTP client backend to create login session",
     envvar="DKB_SESSION_BACKEND",
 )
+@click.option(
+    "--http1-only",
+    default=False,
+    is_flag=True,
+    help="Force HTTP/1.1 for curl-cffi sessions",
+    envvar="DKB_HTTP1_ONLY",
+)
 @click.pass_context
 def main(
     ctx,
@@ -191,6 +198,7 @@ def main(
     password,
     format,
     session_backend,
+    http1_only,
 ):  # pragma: no cover
     """main fuunction"""
 
@@ -211,6 +219,7 @@ def main(
     ctx.obj["PASSWORD"] = password
     ctx.obj["FORMAT"] = _load_format(format)
     ctx.obj["SESSION_BACKEND"] = session_backend
+    ctx.obj["HTTP1_ONLY"] = http1_only
 
 
 @main.command()
@@ -526,4 +535,5 @@ def _login(ctx):
         headless=ctx.obj.get("HEADLESS", False),
         xvfb=ctx.obj["XVFB"],
         session_backend=ctx.obj.get("SESSION_BACKEND", "requests"),
+        http1_only=ctx.obj.get("HTTP1_ONLY", False),
     )

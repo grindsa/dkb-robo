@@ -11,7 +11,11 @@ import logging
 import requests
 from dkb_robo.captcha import get_dkb_redeem_token
 from dkb_robo.portfolio import Overview
-from dkb_robo.utilities import DKBRoboError, JSON_CONTENT_TYPE
+from dkb_robo.utilities import (
+    DKBRoboError,
+    JSON_CONTENT_TYPE,
+    get_valid_screen_resolution,
+)
 
 BASE_URL = "https://banking.dkb.de/api"
 JSON_API_CONTENT_TYPE = "application/vnd.api+json"
@@ -52,6 +56,7 @@ class Authentication:
         headless: bool = False,
         xvfb: bool = False,
         session_backend: str = "curl-cffi",
+        http1_only: bool = False,
         request_timeout: int = 15,
     ):
         """Constructor"""
@@ -69,6 +74,7 @@ class Authentication:
         self.headers = HEADERS
         self.token_dic = None
         self.session_backend = self._normalize_session_backend(session_backend)
+        self.http1_only = http1_only
         self.request_timeout = request_timeout
         if chip_tan:
             logger.info("Using to chip_tan to login")
@@ -305,10 +311,14 @@ class Authentication:
                 raise DKBRoboError(
                     "session_backend='curl-cffi' requires optional dependency 'curl-cffi'."
                 ) from err
-            client = curl_requests.Session(
-                impersonate="chrome",
-                default_headers=False,  # , http_version=CurlHttpVersion.V1_1
-            )
+            session_kwargs = {
+                "impersonate": "chrome",
+                "default_headers": False,
+            }
+            if self.http1_only:
+                session_kwargs["http_version"] = CurlHttpVersion.V1_1
+
+            client = curl_requests.Session(**session_kwargs)
         else:
             client = requests.session()
         if self.headers:
@@ -420,6 +430,12 @@ class Authentication:
         else:
             operating_system = "Unknown"
         logger.debug(f"Detected operating system: {operating_system}")
+        screen_resolution = get_valid_screen_resolution(operating_system)
+        logger.debug(
+            "Selected screen resolution: %sx%s",
+            screen_resolution["width"],
+            screen_resolution["height"],
+        )
 
         data_dic = {
             "data": {
@@ -430,7 +446,7 @@ class Authentication:
                         "os": operating_system,
                         "localeCode": "de-DE",
                         "colorDepthBitsCount": 24,
-                        "screenResolution": {"width": 1920, "height": 1080},
+                        "screenResolution": screen_resolution,
                     },
                     "browserInfo": {
                         "browserTypeCode": "standard-browser",

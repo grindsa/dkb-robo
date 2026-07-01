@@ -82,7 +82,7 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, headless=True|False, xvfb=True|False, session_backend=requests|curl-cffi) as dkb:
+> with DKBRobo(dkb_user=<login username>, dkb_password=<password>, chip_tan=True|False|qr, mfa_device=<m|int>, debug=True|False, unfiltered=True|False, headless=True|False, xvfb=True|False, session_backend=requests|curl-cffi, http1_only=True|False) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
@@ -94,6 +94,7 @@ create a new DKBRobo context handler and login to DKB portal
 - headless: (True/**False**) Run the captcha browser in headless mode
 - xvfb: (True/**False**) Use Xvfb virtual display during captcha solving (useful on headless Linux servers)
 - session_backend: ("requests"/**"curl-cffi"**) HTTP backend used to create the login session. Default is "requests". When set to "curl-cffi", install the optional `curl-cffi` package first.
+- http1_only: (True/**False**) Force HTTP/1.1 when using `session_backend="curl-cffi"`. Default is False.
 
 After login you can return a dictionary containing a list of your accounts, the actual balance and a link to fetch the transactions
 

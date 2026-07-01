@@ -33,6 +33,7 @@ class DKBRobo(object):
         headless=False,
         xvfb=False,
         session_backend="curl-cffi",
+        http1_only=False,
         request_timeout=15,
         proxies=None,
     ):
@@ -50,6 +51,7 @@ class DKBRobo(object):
         self.headless = headless
         self.xvfb = xvfb
         self.session_backend = session_backend
+        self.http1_only = http1_only
         self.request_timeout = request_timeout
         self.proxies = proxies
 
@@ -75,6 +77,7 @@ class DKBRobo(object):
             headless=self.headless,
             xvfb=self.xvfb,
             session_backend=self.session_backend,
+            http1_only=self.http1_only,
             request_timeout=self.request_timeout,
         )
 

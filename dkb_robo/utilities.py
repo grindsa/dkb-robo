@@ -23,6 +23,43 @@ LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 JSON_CONTENT_TYPE = "application/vnd.api+json"
 BASE_URL = "https://banking.dkb.de/api"
 
+SCREEN_RESOLUTION_POOL = {
+    "Windows": [
+        ((1920, 1080), 45),
+        ((1366, 768), 20),
+        ((1536, 864), 10),
+        ((1600, 900), 8),
+        ((2560, 1440), 8),
+        ((1280, 720), 5),
+        ((3840, 2160), 4),
+    ],
+    "Mac OS": [
+        ((2560, 1600), 28),
+        ((1440, 900), 22),
+        ((1680, 1050), 16),
+        ((1728, 1117), 12),
+        ((1792, 1120), 10),
+        ((1920, 1080), 7),
+        ((2560, 1440), 5),
+    ],
+    "Linux": [
+        ((1920, 1080), 40),
+        ((1366, 768), 18),
+        ((2560, 1440), 14),
+        ((1600, 900), 10),
+        ((1280, 720), 8),
+        ((3440, 1440), 6),
+        ((3840, 2160), 4),
+    ],
+    "Unknown": [
+        ((1920, 1080), 50),
+        ((1366, 768), 20),
+        ((1536, 864), 10),
+        ((1600, 900), 10),
+        ((2560, 1440), 10),
+    ],
+}
+
 
 def filter_unexpected_fields(cls):
     """filter undefined fields (not defined as class variable) before import to dataclass"""
@@ -153,6 +190,17 @@ def generate_random_string(length: int) -> str:
     """generate random string to be used as name"""
     char_set = digits + ascii_letters
     return "".join(random.choice(char_set) for _ in range(length))
+
+
+def get_valid_screen_resolution(operating_system: str = "Unknown") -> dict:
+    """Get a plausible desktop screen resolution for the given OS. we also weight the resolutions to favor more common ones."""
+    pool = SCREEN_RESOLUTION_POOL.get(
+        operating_system, SCREEN_RESOLUTION_POOL["Unknown"]
+    )
+    values = [item[0] for item in pool]
+    weights = [item[1] for item in pool]
+    width, height = random.choices(values, weights=weights, k=1)[0]
+    return {"width": width, "height": height}
 
 
 def get_valid_filename(name):
