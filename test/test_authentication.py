@@ -152,7 +152,9 @@ class TestAuthentication(unittest.TestCase):
         curl_module.CurlHttpVersion = curl_http_version
 
         with patch.dict(sys.modules, {"curl_cffi": curl_module}):
-            with patch("dkb_robo.authentication.logger.isEnabledFor", return_value=True):
+            with patch(
+                "dkb_robo.authentication.logger.isEnabledFor", return_value=True
+            ):
                 self.auth.__init__(session_backend="curl-cffi")
                 client = self.auth._session_new()
 
@@ -359,6 +361,40 @@ class TestAuthentication(unittest.TestCase):
         self.auth._sync_csrf_header()
 
         self.assertEqual({"x-xsrf-token": "host-token"}, self.auth.client.headers)
+
+    @patch("dkb_robo.portfolio.Overview.get")
+    @patch("dkb_robo.authentication.Authentication._sync_csrf_header")
+    @patch("dkb_robo.authentication.login_via_browser")
+    @patch("dkb_robo.authentication.Authentication._session_new")
+    def test_028b_login_browser_applies_returned_headers(
+        self,
+        mock_session_new,
+        mock_browser_login,
+        mock_sync_csrf,
+        mock_overview,
+    ):
+        """test login() browser flow syncs csrf after browser login"""
+        self.auth.login_via_browser = True
+
+        mock_client = Mock()
+        mock_client.headers = {}
+        mock_client.cookies = {}
+        mock_session_new.return_value = mock_client
+        mock_browser_login.return_value = (
+            mock_client,
+            {
+                "headers": {
+                    "User-Agent": "UA/1.0",
+                    "X-XSRF-TOKEN": "token-from-browser",
+                }
+            },
+        )
+        mock_overview.return_value = {"accounts": []}
+
+        self.auth.login()
+
+        self.assertEqual(mock_client, self.auth.client)
+        self.assertTrue(mock_sync_csrf.called)
 
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
     def test_029_token_get(self, mock_captcha):

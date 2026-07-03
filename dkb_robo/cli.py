@@ -38,6 +38,15 @@ def _store_http1_only(ctx, _param, value):
     return value
 
 
+def _store_login_via_browser(ctx, _param, value):
+    """store browser login option in click context"""
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is not None:
+        ctx.obj["LOGIN_VIA_BROWSER"] = value
+    return value
+
+
 def _login_options(func):
     """options that can be placed after subcommands"""
     func = click.option(
@@ -56,6 +65,15 @@ def _login_options(func):
         help="Force HTTP/1.1 for curl-cffi sessions",
         envvar="DKB_HTTP1_ONLY",
         callback=_store_http1_only,
+        expose_value=False,
+    )(func)
+    func = click.option(
+        "--login-via-browser",
+        default=None,
+        is_flag=True,
+        help="Use Selenium browser login instead of REST login",
+        envvar="DKB_LOGIN_VIA_BROWSER",
+        callback=_store_login_via_browser,
         expose_value=False,
     )(func)
     return func
@@ -226,6 +244,13 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     envvar="DKB_HTTP1_ONLY",
 )
 @click.option(
+    "--login-via-browser",
+    default=False,
+    is_flag=True,
+    help="Use Selenium browser login instead of REST login",
+    envvar="DKB_LOGIN_VIA_BROWSER",
+)
+@click.option(
     "--proxy",
     default=None,
     type=str,
@@ -249,6 +274,7 @@ def main(
     format,
     session_backend,
     http1_only,
+    login_via_browser,
 ):  # pragma: no cover
     """main fuunction"""
 
@@ -270,6 +296,7 @@ def main(
     ctx.obj["FORMAT"] = _load_format(format)
     ctx.obj["SESSION_BACKEND"] = session_backend
     ctx.obj["HTTP1_ONLY"] = http1_only
+    ctx.obj["LOGIN_VIA_BROWSER"] = login_via_browser
 
 
 @main.command()
@@ -596,5 +623,6 @@ def _login(ctx):
         xvfb=ctx.obj["XVFB"],
         session_backend=ctx.obj.get("SESSION_BACKEND", "requests"),
         http1_only=ctx.obj.get("HTTP1_ONLY", False),
+        login_via_browser=ctx.obj.get("LOGIN_VIA_BROWSER", False),
         proxies=proxies,
     )

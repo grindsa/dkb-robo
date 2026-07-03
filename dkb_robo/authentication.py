@@ -9,7 +9,7 @@ import io
 import threading
 import logging
 import requests
-from dkb_robo.captcha import get_dkb_redeem_token
+from dkb_robo.captcha import get_dkb_redeem_token, login_via_browser
 from dkb_robo.portfolio import Overview
 from dkb_robo.utilities import (
     DKBRoboError,
@@ -58,11 +58,12 @@ class Authentication:
         session_backend: str = "curl-cffi",
         http1_only: bool = False,
         request_timeout: int = 15,
+        login_via_browser: bool = False,
     ):
         """Constructor"""
         self.account_dic = {}
         self.client = None
-
+        self.login_via_browser = login_via_browser
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
@@ -560,7 +561,18 @@ class Authentication:
         # create new session
         self.client = self._session_new()
 
-        self._rest_login()
+        # login via browser cannot be done headless
+        if self.login_via_browser:
+            self.client, _session_info = login_via_browser(
+                client=self.client,
+                dkb_user=self.dkb_user,
+                dkb_password=self.dkb_password,
+                headless=False,
+                xvfb=self.xvfb,
+            )
+            self._sync_csrf_header()
+        else:
+            self._rest_login()
 
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)

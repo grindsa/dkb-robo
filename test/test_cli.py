@@ -36,6 +36,7 @@ class TestDKBRobo(unittest.TestCase):
             _load_format,
             _login,
             _store_http1_only,
+            _store_login_via_browser,
             standing_orders,
             credit_limits,
             last_login,
@@ -54,6 +55,7 @@ class TestDKBRobo(unittest.TestCase):
         self._load_format = _load_format
         self._login = _login
         self._store_http1_only = _store_http1_only
+        self._store_login_via_browser = _store_login_via_browser
         self.standing_orders = standing_orders
         self.credit_limits = credit_limits
         self.last_login = last_login
@@ -163,6 +165,28 @@ class TestDKBRobo(unittest.TestCase):
             mock_dkb_robo.call_args.kwargs["proxies"],
         )
 
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_007a_login_login_via_browser(self, mock_dkb_robo):
+        """test _login() forwards LOGIN_VIA_BROWSER option to DKBRobo"""
+        ctx = MagicMock()
+        ctx.obj = {
+            "USERNAME": "user",
+            "PASSWORD": "password",
+            "CHIP_TAN": False,
+            "DEBUG": False,
+            "UNFILTERED": False,
+            "MFA_DEVICE": None,
+            "HEADLESS": False,
+            "XVFB": False,
+            "SESSION_BACKEND": "curl-cffi",
+            "HTTP1_ONLY": False,
+            "LOGIN_VIA_BROWSER": True,
+        }
+
+        self._login(ctx)
+
+        self.assertTrue(mock_dkb_robo.call_args.kwargs["login_via_browser"])
+
     def test_008_store_http1_only_initializes_ctx_obj(self):
         """test _store_http1_only initializes ctx.obj when missing"""
         ctx = MagicMock()
@@ -172,6 +196,16 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual({"HTTP1_ONLY": True}, ctx.obj)
+
+    def test_008a_store_login_via_browser_initializes_ctx_obj(self):
+        """test _store_login_via_browser initializes ctx.obj when missing"""
+        ctx = MagicMock()
+        ctx.obj = None
+
+        result = self._store_login_via_browser(ctx, None, True)
+
+        self.assertTrue(result)
+        self.assertEqual({"LOGIN_VIA_BROWSER": True}, ctx.obj)
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
     def test_009_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
@@ -201,6 +235,29 @@ class TestDKBRobo(unittest.TestCase):
             mock_dkb_robo.call_args.kwargs["proxies"],
         )
         self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_009a_main_accepts_login_via_browser_after_subcommand(self, mock_dkb_robo):
+        """test main accepts --login-via-browser after subcommand"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            [
+                "-u",
+                "user",
+                "-p",
+                "password",
+                "accounts",
+                "--login-via-browser",
+            ],
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(mock_dkb_robo.call_args.kwargs["login_via_browser"])
 
     def test_010_load_format(self):
         """test _load_format()"""

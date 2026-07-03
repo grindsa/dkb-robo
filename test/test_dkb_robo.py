@@ -146,6 +146,16 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertTrue(mock_authentication.call_args.kwargs["http1_only"])
 
+    @patch("dkb_robo.dkb_robo.Authentication")
+    def test_007d__enter_login_via_browser(self, mock_authentication):
+        """test enter forwards login_via_browser to Authentication"""
+        self.dkb.login_via_browser = True
+        mock_authentication.return_value.login.return_value = ("api", "foo")
+
+        self.dkb.__enter__()
+
+        self.assertTrue(mock_authentication.call_args.kwargs["login_via_browser"])
+
     def test_008__exit(self):
         """test enter"""
         self.dkb.wrapper = Mock()

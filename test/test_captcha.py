@@ -157,9 +157,9 @@ class TestLoginViaBrowser(unittest.TestCase):
 
         mock_client = MagicMock()
         mock_client.cookies = MagicMock()
+        mock_client.headers = {}
 
         login_via_browser(
-            logging.getLogger("dkb_robo"),
             "user",
             "password",
             timeout=1,
@@ -167,6 +167,7 @@ class TestLoginViaBrowser(unittest.TestCase):
         )
 
         mock_client.cookies.set.assert_called_once_with("foo", "bar")
+        self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
 
     @patch("dkb_robo.captcha.SB")
     def test_009_covers_cookie_and_checkbox_retry_paths(self, mock_sb):
@@ -186,9 +187,9 @@ class TestLoginViaBrowser(unittest.TestCase):
 
         mock_client = MagicMock()
         mock_client.cookies = MagicMock()
+        mock_client.headers = {}
 
         login_via_browser(
-            logging.getLogger("dkb_robo"),
             "user",
             "password",
             timeout=2,
@@ -198,6 +199,8 @@ class TestLoginViaBrowser(unittest.TestCase):
         widget.scroll_into_view.assert_called_once()
         widget.mouse_click.assert_called_once()
         mock_client.cookies.set.assert_called_once_with("foo", "bar")
+        self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
+        self.assertEqual("xsrf-token", mock_client.headers["x-xsrf-token"])
 
 
 class TestPollFrcToken(unittest.TestCase):
