@@ -315,6 +315,9 @@ class Authentication:
                 "impersonate": "chrome",
                 "default_headers": False,
             }
+            if logger.isEnabledFor(logging.DEBUG):
+                # Enable low-level curl logging only when project debug logging is active.
+                session_kwargs["debug"] = True
             if self.http1_only:
                 session_kwargs["http_version"] = CurlHttpVersion.V1_1
 

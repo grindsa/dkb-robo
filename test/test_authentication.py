@@ -139,6 +139,28 @@ class TestAuthentication(unittest.TestCase):
             impersonate="chrome", default_headers=False, http_version="V1_1"
         )
 
+    def test_011a__session_new_curl_backend_debug_enabled(self):
+        """test _session_new() forwards debug=True when logger debug mode is enabled"""
+        curl_client = Mock()
+        curl_client.cookies = {}
+        curl_requests = Mock()
+        curl_requests.Session.return_value = curl_client
+        curl_http_version = Mock()
+        curl_http_version.V1_1 = "V1_1"
+        curl_module = Mock()
+        curl_module.requests = curl_requests
+        curl_module.CurlHttpVersion = curl_http_version
+
+        with patch.dict(sys.modules, {"curl_cffi": curl_module}):
+            with patch("dkb_robo.authentication.logger.isEnabledFor", return_value=True):
+                self.auth.__init__(session_backend="curl-cffi")
+                client = self.auth._session_new()
+
+        self.assertEqual(curl_client, client)
+        curl_requests.Session.assert_called_once_with(
+            impersonate="chrome", default_headers=False, debug=True
+        )
+
     @patch("requests.session")
     def test_012__session_new(self, mock_session):
         """test _session_new()"""
