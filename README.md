@@ -397,7 +397,13 @@ Commands:
 ### Example command to fetch account list
 
 ```bash
-py dkb -u <user> -p <password> accounts
+dkb -u <user> -p <password> accounts
+```
+
+If the `dkb` command is not available in your shell, use module mode instead:
+
+```bash
+python3 -m dkb_robo -u <user> -p <password> accounts
 ```
 
 ### Use environment variables for password
@@ -421,11 +427,13 @@ dkb --password-env-var MY_DKB_PASSWORD accounts
 ### Example commands to fetch transactions via CLI tool
 
 ```bash
-py dkb -u <user> -p <password> transactions --name Girokonto
-py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
-py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
-py dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
+dkb -u <user> -p <password> transactions --name Girokonto
+dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
+dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
+dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
 ```
+
+On Windows, use either `dkb ...` or `py -m dkb_robo ...`.
 
 ## Further documentation
 
