@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 import pathlib
 from pprint import pprint
+import os
 import sys
 import csv
 import json
@@ -47,6 +48,24 @@ def _store_login_via_browser(ctx, _param, value):
     return value
 
 
+def _store_session_backend(ctx, _param, value):
+    """store session backend option in click context"""
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is not None:
+        ctx.obj["SESSION_BACKEND"] = value
+    return value
+
+
+def _store_password_env_var(ctx, _param, value):
+    """store password env var name in click context"""
+    if ctx.obj is None:
+        ctx.obj = {}
+    if value is not None:
+        ctx.obj["PASSWORD_ENV_VAR"] = value
+    return value
+
+
 def _login_options(func):
     """options that can be placed after subcommands"""
     func = click.option(
@@ -73,10 +92,38 @@ def _login_options(func):
         is_flag=True,
         help="Use Selenium browser login instead of REST login",
         envvar="DKB_LOGIN_VIA_BROWSER",
+        hidden=True,
         callback=_store_login_via_browser,
         expose_value=False,
     )(func)
     return func
+
+
+def _resolve_password(ctx, password, password_env_var):
+    """Resolve password from CLI/env and prompt as fallback."""
+    password_source = None
+    if hasattr(ctx, "get_parameter_source"):
+        try:
+            password_source = ctx.get_parameter_source("password")
+        except Exception:
+            password_source = None
+
+    password_from_cli = (
+        hasattr(click.core, "ParameterSource")
+        and password_source == click.core.ParameterSource.COMMANDLINE
+    )
+    if password_from_cli:
+        return password
+
+    if password_env_var:
+        password_from_env = os.getenv(password_env_var)
+        if password_from_env:
+            return password_from_env
+
+    if password:
+        return password
+
+    return click.prompt("Password", hide_input=True, type=str)
 
 
 def _account_lookup(ctx, name, account, account_dic, unfiltered):
@@ -216,11 +263,21 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
 @click.option(
     "--password",
     "-p",
-    prompt=True,
+    prompt=False,
     hide_input=True,
     type=str,
     help="corresponding login password",
     envvar="DKB_PASSWORD",
+)
+@click.option(
+    "--password-env-var",
+    default="DKB_PASSWORD",
+    type=str,
+    show_default=True,
+    help="Environment variable name that contains the login password",
+    envvar="DKB_PASSWORD_ENV_VAR",
+    callback=_store_password_env_var,
+    expose_value=False,
 )
 @click.option(
     "--format",
@@ -235,6 +292,8 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     type=click.Choice(["requests", "curl-cffi"]),
     help="HTTP client backend to create login session",
     envvar="DKB_SESSION_BACKEND",
+    callback=_store_session_backend,
+    expose_value=False,
 )
 @click.option(
     "--http1-only",
@@ -249,6 +308,7 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     is_flag=True,
     help="Use Selenium browser login instead of REST login",
     envvar="DKB_LOGIN_VIA_BROWSER",
+    hidden=True,
 )
 @click.option(
     "--proxy",
@@ -272,7 +332,6 @@ def main(
     username,
     password,
     format,
-    session_backend,
     http1_only,
     login_via_browser,
 ):  # pragma: no cover
@@ -292,9 +351,13 @@ def main(
     ctx.obj["HEADLESS"] = headless
     ctx.obj["XVFB"] = xvfb
     ctx.obj["USERNAME"] = username
-    ctx.obj["PASSWORD"] = password
+    ctx.obj["PASSWORD"] = _resolve_password(
+        ctx,
+        password,
+        ctx.obj.get("PASSWORD_ENV_VAR", "DKB_PASSWORD"),
+    )
     ctx.obj["FORMAT"] = _load_format(format)
-    ctx.obj["SESSION_BACKEND"] = session_backend
+    ctx.obj["SESSION_BACKEND"] = ctx.obj.get("SESSION_BACKEND", "curl-cffi")
     ctx.obj["HTTP1_ONLY"] = http1_only
     ctx.obj["LOGIN_VIA_BROWSER"] = login_via_browser
 

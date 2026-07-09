@@ -35,6 +35,7 @@ class TestDKBRobo(unittest.TestCase):
         from dkb_robo.cli import (
             _load_format,
             _login,
+            _resolve_password,
             _store_http1_only,
             _store_login_via_browser,
             standing_orders,
@@ -54,6 +55,7 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger("dkb_robo")
         self._load_format = _load_format
         self._login = _login
+        self._resolve_password = _resolve_password
         self._store_http1_only = _store_http1_only
         self._store_login_via_browser = _store_login_via_browser
         self.standing_orders = standing_orders
@@ -166,7 +168,7 @@ class TestDKBRobo(unittest.TestCase):
         )
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_007a_login_login_via_browser(self, mock_dkb_robo):
+    def test_008_login_login_via_browser(self, mock_dkb_robo):
         """test _login() forwards LOGIN_VIA_BROWSER option to DKBRobo"""
         ctx = MagicMock()
         ctx.obj = {
@@ -187,7 +189,7 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertTrue(mock_dkb_robo.call_args.kwargs["login_via_browser"])
 
-    def test_008_store_http1_only_initializes_ctx_obj(self):
+    def test_009_store_http1_only_initializes_ctx_obj(self):
         """test _store_http1_only initializes ctx.obj when missing"""
         ctx = MagicMock()
         ctx.obj = None
@@ -197,7 +199,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual({"HTTP1_ONLY": True}, ctx.obj)
 
-    def test_008a_store_login_via_browser_initializes_ctx_obj(self):
+    def test_010_store_login_via_browser_initializes_ctx_obj(self):
         """test _store_login_via_browser initializes ctx.obj when missing"""
         ctx = MagicMock()
         ctx.obj = None
@@ -208,7 +210,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual({"LOGIN_VIA_BROWSER": True}, ctx.obj)
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_009_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
+    def test_011_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
         """test main accepts --proxy/--http1-only after subcommand"""
         mock_dkb = MagicMock()
         mock_dkb.account_dic = {}
@@ -237,7 +239,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_009a_main_accepts_login_via_browser_after_subcommand(self, mock_dkb_robo):
+    def test_012_main_accepts_login_via_browser_after_subcommand(self, mock_dkb_robo):
         """test main accepts --login-via-browser after subcommand"""
         mock_dkb = MagicMock()
         mock_dkb.account_dic = {}
@@ -259,27 +261,130 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(0, result.exit_code)
         self.assertTrue(mock_dkb_robo.call_args.kwargs["login_via_browser"])
 
-    def test_010_load_format(self):
+    def test_013_main_help_hides_login_via_browser(self):
+        """test --login-via-browser is hidden from top-level help output"""
+        runner = CliRunner()
+        result = runner.invoke(self.main, ["--help"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertNotIn("--login-via-browser", result.output)
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_014_main_accepts_password_from_default_env(self, mock_dkb_robo):
+        """test main reads password from DKB_PASSWORD env var"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "accounts"],
+            env={"DKB_PASSWORD": "env-password"},
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("env-password", mock_dkb_robo.call_args.kwargs["dkb_password"])
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_015_main_accepts_password_from_custom_env(self, mock_dkb_robo):
+        """test main reads password from custom env var via --password-env-var"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            [
+                "-u",
+                "user",
+                "--password-env-var",
+                "MY_DKB_PASSWORD",
+                "accounts",
+            ],
+            env={
+                "DKB_PASSWORD": "legacy-password",
+                "MY_DKB_PASSWORD": "custom-password",
+            },
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual(
+            "custom-password",
+            mock_dkb_robo.call_args.kwargs["dkb_password"],
+        )
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_016_main_prefers_password_cli_over_env(self, mock_dkb_robo):
+        """test main prefers explicit -p/--password over env vars"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            [
+                "-u",
+                "user",
+                "-p",
+                "cli-password",
+                "--password-env-var",
+                "MY_DKB_PASSWORD",
+                "accounts",
+            ],
+            env={
+                "DKB_PASSWORD": "legacy-password",
+                "MY_DKB_PASSWORD": "custom-password",
+            },
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("cli-password", mock_dkb_robo.call_args.kwargs["dkb_password"])
+
+    @patch("dkb_robo.cli.dkb_robo.DKBRobo")
+    def test_017_main_prompts_for_password_when_not_provided(self, mock_dkb_robo):
+        """test main prompts for password if no CLI/env value is available"""
+        mock_dkb = MagicMock()
+        mock_dkb.account_dic = {}
+        mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "accounts"],
+            input="typed-password\n",
+            env={"DKB_PASSWORD": ""},
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual(
+            "typed-password",
+            mock_dkb_robo.call_args.kwargs["dkb_password"],
+        )
+
+    def test_018_load_format(self):
         """test _load_format()"""
         oformat = "pprint"
         self.assertIn("pprint", self._load_format(oformat).__code__.co_names)
 
-    def test_011_load_format(self):
+    def test_019_load_format(self):
         """test _load_format()"""
         oformat = "csv"
         self.assertIn("csv", self._load_format(oformat).__code__.co_names)
 
-    def test_012_load_format(self):
+    def test_020_load_format(self):
         """test _load_format()"""
         oformat = "table"
         self.assertIn("tabulate", self._load_format(oformat).__code__.co_names)
 
-    def test_013_load_format(self):
+    def test_021_load_format(self):
         """test _load_format()"""
         oformat = "json"
         self.assertIn("json", self._load_format(oformat).__code__.co_names)
 
-    def test_014_load_format(self):
+    def test_022_load_format(self):
         """test _load_format()"""
         oformat = "foo"
         with self.assertRaises(Exception) as err:
@@ -289,7 +394,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.cli._account_lookup")
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_015_standing_orders(self, mock_login, mock_click, mock_lookup):
+    def test_023_standing_orders(self, mock_login, mock_click, mock_lookup):
         """test standing orders"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -304,7 +409,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.cli._id_lookup")
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_016_standing_orders(self, mock_login, mock_click, mock_lookup):
+    def test_024_standing_orders(self, mock_login, mock_click, mock_lookup):
         """test standing orders"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -318,7 +423,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_017_standing_orders(self, mock_login, mock_click):
+    def test_025_standing_orders(self, mock_login, mock_click):
         """standing orders"""
         from dkb_robo import DKBRoboError
 
@@ -333,7 +438,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_018_credit_limits(self, mock_login, mock_click):
+    def test_026_credit_limits(self, mock_login, mock_click):
         """credit limits"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -345,7 +450,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_019_credit_limits(self, mock_login, mock_click):
+    def test_027_credit_limits(self, mock_login, mock_click):
         """credit limits"""
         from dkb_robo import DKBRoboError
 
@@ -358,7 +463,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_020_last_login(self, mock_login, mock_click):
+    def test_028_last_login(self, mock_login, mock_click):
         """test last login"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -368,7 +473,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_021_last_login(self, mock_login, mock_click):
+    def test_029_last_login(self, mock_login, mock_click):
         """test last login"""
         from dkb_robo import DKBRoboError
 
@@ -381,7 +486,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_022_accounts(self, mock_login, mock_click):
+    def test_030_accounts(self, mock_login, mock_click):
         """test accounts"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -392,7 +497,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.cli.object2dictionary")
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_023_accounts(self, mock_login, mock_click, mock_object2dictionary):
+    def test_031_accounts(self, mock_login, mock_click, mock_object2dictionary):
         """test accounts"""
         mock_login.return_value.__enter__.return_value.account_dic = {
             1: {"details": "details", "transactions": "transactions"},
@@ -407,7 +512,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_object2dictionary.called)
 
     @patch("dkb_robo.cli._login")
-    def test_024_accounts_removes_details_and_transactions(self, mock_login):
+    def test_032_accounts_removes_details_and_transactions(self, mock_login):
         """test accounts removes details/transactions fields before formatting"""
         account_dic = {
             1: {
@@ -433,7 +538,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_025_accounts(self, mock_login, mock_click):
+    def test_033_accounts(self, mock_login, mock_click):
         """test accounts"""
         from dkb_robo import DKBRoboError
 
@@ -446,7 +551,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.option")
     @patch("click.pass_context")
-    def test_026_main(self, mock_pass, mock_option):
+    def test_034_main(self, mock_pass, mock_option):
         """test main"""
 
         ctx = MagicMock()
@@ -470,7 +575,7 @@ class TestDKBRobo(unittest.TestCase):
         )
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_027_id_lookup(self, mock_account_lookup):
+    def test_035_id_lookup(self, mock_account_lookup):
         """test id look with unfiltered True"""
         ctx = MagicMock()
         name = "test_name"
@@ -484,7 +589,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, "123")
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_028_id_lookup(self, mock_account_lookup):
+    def test_036_id_lookup(self, mock_account_lookup):
         """test id look with unfiltered False"""
         ctx = MagicMock()
         name = "test_name"
@@ -499,7 +604,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, "123")
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_029_id_lookup(self, mock_account_lookup):
+    def test_037_id_lookup(self, mock_account_lookup):
         """test id look with unfiltered False"""
         ctx = MagicMock()
         name = "test_name"
@@ -512,7 +617,7 @@ class TestDKBRobo(unittest.TestCase):
         )
         self.assertIsNone(result)
 
-    def test_030_account_lookup(self):
+    def test_038_account_lookup(self):
         """test account lookup by name filtered"""
         ctx = MagicMock()
         name = "Test Account"
@@ -527,7 +632,7 @@ class TestDKBRobo(unittest.TestCase):
             account_dic["acc1"],
         )
 
-    def test_031_account_lookup(self):
+    def test_039_account_lookup(self):
         """test account lookup by name unfiltered"""
         ctx = MagicMock()
         name = "Test Account"
@@ -542,7 +647,7 @@ class TestDKBRobo(unittest.TestCase):
             account_dic["acc1"],
         )
 
-    def test_032_account_lookup(self):
+    def test_040_account_lookup(self):
         """test account lookup by account unfiltered"""
         ctx = MagicMock()
         name = None
@@ -555,7 +660,7 @@ class TestDKBRobo(unittest.TestCase):
         result = self._account_lookup(ctx, name, account, account_dic, unfiltered)
         self.assertEqual(result, account_dic["acc1"])
 
-    def test_033_account_lookup(self):
+    def test_041_account_lookup(self):
         """test account lookup by account unfiltered"""
         ctx = MagicMock()
         name = None
@@ -571,7 +676,7 @@ class TestDKBRobo(unittest.TestCase):
         )
 
     @patch("dkb_robo.cli.click.echo", autospec=True)
-    def test_034_account_lookup(self, mock_echo):
+    def test_042_account_lookup(self, mock_echo):
         """test account lookup no name match"""
         ctx = MagicMock()
         name = "Nonexistent Account"
@@ -587,7 +692,7 @@ class TestDKBRobo(unittest.TestCase):
             "No account found matching 'Nonexistent Account'", err=True
         )
 
-    def test_035_account_lookup(self):
+    def test_043_account_lookup(self):
         """test account lookup neiner name nor account"""
         ctx = MagicMock()
         name = None
@@ -601,7 +706,7 @@ class TestDKBRobo(unittest.TestCase):
             self._account_lookup(ctx, name, account, account_dic, unfiltered)
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_036_transactionlink_lookup(self, mock_account_lookup):
+    def test_044_transactionlink_lookup(self, mock_account_lookup):
         """test transaction link lookup unfiltered True"""
         self.ctx = MagicMock()
         name = "Test Account"
@@ -627,7 +732,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_037_transactionlink_lookup(self, mock_account_lookup):
+    def test_045_transactionlink_lookup(self, mock_account_lookup):
         """test transaction link lookup unfiltered False"""
         self.ctx = MagicMock()
         name = "Test Account"
@@ -655,7 +760,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_038_transactionlink_lookup(self, mock_account_lookup):
+    def test_046_transactionlink_lookup(self, mock_account_lookup):
         """test transaction link lookup unfiltered True no id"""
         self.ctx = MagicMock()
         name = "Test Account"
@@ -679,7 +784,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     @patch("dkb_robo.cli._account_lookup", autospec=True)
-    def test_039_transactionlink_lookup(self, mock_account_lookup):
+    def test_047_transactionlink_lookup(self, mock_account_lookup):
         """test transaction link lookup unfiltered False no id"""
         self.ctx = MagicMock()
         name = "Test Account"
@@ -705,7 +810,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.dkb_robo.DKBRobo.scan_postbox", autospec=True)
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_040_scan_postbox(self, mock_login, mock_click, mock_scanpb):
+    def test_048_scan_postbox(self, mock_login, mock_click, mock_scanpb):
         """test scan postbox"""
         mock_login.return_value.__enter__.return_value.account_dic = {
             1: {"details": "details", "transactions": "transactions"},
@@ -724,7 +829,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_041_scan_postbox(self, mock_login, mock_click):
+    def test_049_scan_postbox(self, mock_login, mock_click):
         """test scan postbox"""
         from dkb_robo import DKBRoboError
 
@@ -742,7 +847,7 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.cli.object2dictionary")
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_042_scan_postbox(self, mock_login, mock_click, mock_o2d, mock_scanpb):
+    def test_050_scan_postbox(self, mock_login, mock_click, mock_o2d, mock_scanpb):
         """test scan postbox"""
         mock_login.return_value.__enter__.return_value.account_dic = {
             1: {"details": "details", "transactions": "transactions"},
@@ -760,7 +865,7 @@ class TestDKBRobo(unittest.TestCase):
         # self.assertTrue(mock_o2d.called)
 
     @patch("dkb_robo.cli._login")
-    def test_043_scan_postbox_passthrough_when_filtered(self, mock_login):
+    def test_051_scan_postbox_passthrough_when_filtered(self, mock_login):
         """test scan_postbox keeps doc_list unchanged when UNFILTERED=False"""
         formatter = Mock()
         doc_list = {"doc-1": {"id": "doc-1"}}
@@ -780,7 +885,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("dkb_robo.cli.object2dictionary")
     @patch("dkb_robo.cli._login")
-    def test_044_scan_postbox_converts_each_doc_when_unfiltered(
+    def test_052_scan_postbox_converts_each_doc_when_unfiltered(
         self, mock_login, mock_o2d
     ):
         """test scan_postbox converts each doc when UNFILTERED=True"""
@@ -809,7 +914,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_045_download(self, mock_login, mock_click):
+    def test_053_download(self, mock_login, mock_click):
         """test scan postbox"""
         obj = Config()
         obj.FORMAT = Mock()
@@ -820,7 +925,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_046_download(self, mock_login, mock_click):
+    def test_054_download(self, mock_login, mock_click):
         """test scan postbox"""
         from dkb_robo import DKBRoboError
 

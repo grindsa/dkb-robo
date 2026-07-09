@@ -377,6 +377,8 @@ Options:
   -u, --username TEXT             username to access the dkb portal
                                   [required]
   -p, --password TEXT             corresponding login password
+  --password-env-var TEXT         Environment variable name that contains the login password
+                                  [default: DKB_PASSWORD]
   --format [pprint|table|csv|json]
                                   output format to use
   --proxy TEXT                    Proxy address used for both HTTP and HTTPS requests
@@ -396,6 +398,24 @@ Commands:
 
 ```bash
 py dkb -u <user> -p <password> accounts
+```
+
+### Use environment variables for password
+
+By default the CLI reads the login password from `DKB_PASSWORD` if `-p/--password` is not provided.
+
+```bash
+export DKB_USERNAME="<user>"
+export DKB_PASSWORD="<password>"
+dkb accounts
+```
+
+You can also configure a custom environment variable name:
+
+```bash
+export DKB_USERNAME="<user>"
+export MY_DKB_PASSWORD="<password>"
+dkb --password-env-var MY_DKB_PASSWORD accounts
 ```
 
 ### Example commands to fetch transactions via CLI tool
