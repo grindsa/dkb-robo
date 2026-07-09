@@ -39,15 +39,6 @@ def _store_http1_only(ctx, _param, value):
     return value
 
 
-def _store_login_via_browser(ctx, _param, value):
-    """store browser login option in click context"""
-    if ctx.obj is None:
-        ctx.obj = {}
-    if value is not None:
-        ctx.obj["LOGIN_VIA_BROWSER"] = value
-    return value
-
-
 def _store_session_backend(ctx, _param, value):
     """store session backend option in click context"""
     if ctx.obj is None:
@@ -86,16 +77,6 @@ def _login_options(func):
         callback=_store_http1_only,
         expose_value=False,
     )(func)
-    func = click.option(
-        "--login-via-browser",
-        default=None,
-        is_flag=True,
-        help="Use Selenium browser login instead of REST login",
-        envvar="DKB_LOGIN_VIA_BROWSER",
-        hidden=True,
-        callback=_store_login_via_browser,
-        expose_value=False,
-    )(func)
     return func
 
 
@@ -124,6 +105,15 @@ def _resolve_password(ctx, password, password_env_var):
         return password
 
     return click.prompt("Password", hide_input=True, type=str)
+
+
+def _read_env_flag(env_name, default=False):
+    """Read a boolean flag from an environment variable."""
+    value = os.getenv(env_name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    return normalized in ("1", "true", "yes", "on")
 
 
 def _account_lookup(ctx, name, account, account_dic, unfiltered):
@@ -303,14 +293,6 @@ def _transactionlink_lookup(ctx, name, account, account_dic, unfiltered):
     envvar="DKB_HTTP1_ONLY",
 )
 @click.option(
-    "--login-via-browser",
-    default=False,
-    is_flag=True,
-    help="Use Selenium browser login instead of REST login",
-    envvar="DKB_LOGIN_VIA_BROWSER",
-    hidden=True,
-)
-@click.option(
     "--proxy",
     default=None,
     type=str,
@@ -333,7 +315,6 @@ def main(
     password,
     format,
     http1_only,
-    login_via_browser,
 ):  # pragma: no cover
     """main fuunction"""
 
@@ -359,7 +340,7 @@ def main(
     ctx.obj["FORMAT"] = _load_format(format)
     ctx.obj["SESSION_BACKEND"] = ctx.obj.get("SESSION_BACKEND", "curl-cffi")
     ctx.obj["HTTP1_ONLY"] = http1_only
-    ctx.obj["LOGIN_VIA_BROWSER"] = login_via_browser
+    ctx.obj["LOGIN_VIA_BROWSER"] = _read_env_flag("DKB_LOGIN_VIA_BROWSER")
 
 
 @main.command()

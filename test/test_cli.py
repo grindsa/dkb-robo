@@ -35,9 +35,9 @@ class TestDKBRobo(unittest.TestCase):
         from dkb_robo.cli import (
             _load_format,
             _login,
+            _read_env_flag,
             _resolve_password,
             _store_http1_only,
-            _store_login_via_browser,
             standing_orders,
             credit_limits,
             last_login,
@@ -55,9 +55,9 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger("dkb_robo")
         self._load_format = _load_format
         self._login = _login
+        self._read_env_flag = _read_env_flag
         self._resolve_password = _resolve_password
         self._store_http1_only = _store_http1_only
-        self._store_login_via_browser = _store_login_via_browser
         self.standing_orders = standing_orders
         self.credit_limits = credit_limits
         self.last_login = last_login
@@ -199,15 +199,16 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual({"HTTP1_ONLY": True}, ctx.obj)
 
-    def test_010_store_login_via_browser_initializes_ctx_obj(self):
-        """test _store_login_via_browser initializes ctx.obj when missing"""
-        ctx = MagicMock()
-        ctx.obj = None
+    def test_010_read_env_flag(self):
+        """test _read_env_flag parses env var booleans"""
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertTrue(self._read_env_flag("DKB_LOGIN_VIA_BROWSER", default=True))
 
-        result = self._store_login_via_browser(ctx, None, True)
+        with patch.dict(os.environ, {"DKB_LOGIN_VIA_BROWSER": "true"}, clear=True):
+            self.assertTrue(self._read_env_flag("DKB_LOGIN_VIA_BROWSER"))
 
-        self.assertTrue(result)
-        self.assertEqual({"LOGIN_VIA_BROWSER": True}, ctx.obj)
+        with patch.dict(os.environ, {"DKB_LOGIN_VIA_BROWSER": "0"}, clear=True):
+            self.assertFalse(self._read_env_flag("DKB_LOGIN_VIA_BROWSER"))
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
     def test_011_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
@@ -239,8 +240,8 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_012_main_accepts_login_via_browser_after_subcommand(self, mock_dkb_robo):
-        """test main accepts --login-via-browser after subcommand"""
+    def test_012_main_accepts_login_via_browser_env(self, mock_dkb_robo):
+        """test main reads LOGIN_VIA_BROWSER from environment variable"""
         mock_dkb = MagicMock()
         mock_dkb.account_dic = {}
         mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
@@ -254,19 +255,30 @@ class TestDKBRobo(unittest.TestCase):
                 "-p",
                 "password",
                 "accounts",
-                "--login-via-browser",
             ],
+            env={"DKB_LOGIN_VIA_BROWSER": "true"},
         )
 
         self.assertEqual(0, result.exit_code)
         self.assertTrue(mock_dkb_robo.call_args.kwargs["login_via_browser"])
 
-    def test_013_main_help_hides_login_via_browser(self):
-        """test --login-via-browser is hidden from top-level help output"""
+    def test_013_main_help_has_no_login_via_browser(self):
+        """test --login-via-browser is not registered in top-level help output"""
         runner = CliRunner()
         result = runner.invoke(self.main, ["--help"])
 
         self.assertEqual(0, result.exit_code)
+        self.assertNotIn("--login-via-browser", result.output)
+
+    def test_013a_accounts_unknown_option_does_not_leak_login_via_browser(self):
+        """test typo suggestions do not reveal --login-via-browser"""
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "accounts", "--login-browser"],
+        )
+
+        self.assertNotEqual(0, result.exit_code)
         self.assertNotIn("--login-via-browser", result.output)
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
