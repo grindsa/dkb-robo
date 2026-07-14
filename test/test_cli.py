@@ -211,8 +211,8 @@ class TestDKBRobo(unittest.TestCase):
             self.assertFalse(self._read_env_flag("DKB_LOGIN_VIA_BROWSER"))
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
-    def test_011_main_accepts_proxy_after_subcommand(self, mock_dkb_robo):
-        """test main accepts --proxy/--http1-only after subcommand"""
+    def test_011_main_rejects_proxy_after_subcommand(self, mock_dkb_robo):
+        """test --proxy/--http1-only must be passed before subcommand"""
         mock_dkb = MagicMock()
         mock_dkb.account_dic = {}
         mock_dkb_robo.return_value.__enter__.return_value = mock_dkb
@@ -232,12 +232,53 @@ class TestDKBRobo(unittest.TestCase):
             ],
         )
 
-        self.assertEqual(0, result.exit_code)
-        self.assertEqual(
-            {"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"},
-            mock_dkb_robo.call_args.kwargs["proxies"],
+        self.assertNotEqual(0, result.exit_code)
+        self.assertIn("No such option", result.output)
+        self.assertIn("--proxy", result.output)
+
+    @patch("dkb_robo.cli._login")
+    def test_011a_interactive_reuses_single_login(self, mock_login):
+        """test interactive mode logs in once and reuses the session"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        dkb.last_login = "2026-01-01"
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="accounts\nlast-login\nlogout\n",
         )
-        self.assertTrue(mock_dkb_robo.call_args.kwargs["http1_only"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual(1, mock_login.call_count)
+        session_manager.__enter__.assert_called_once()
+        session_manager.__exit__.assert_called_once()
+
+    @patch("dkb_robo.cli._login")
+    def test_011b_interactive_rejects_proxy_after_start(self, mock_login):
+        """test interactive mode rejects --proxy/--http1-only in subcommands"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="accounts --proxy http://127.0.0.1:8080\nlogout\n",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn(
+            "--proxy and --http1-only must be passed when starting the CLI session",
+            result.output,
+        )
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
     def test_012_main_accepts_login_via_browser_env(self, mock_dkb_robo):

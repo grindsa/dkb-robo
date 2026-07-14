@@ -5,6 +5,8 @@ from datetime import date
 from pathlib import Path
 import pathlib
 from pprint import pprint
+from contextlib import contextmanager
+import shlex
 import os
 import sys
 import csv
@@ -55,29 +57,6 @@ def _store_password_env_var(ctx, _param, value):
     if value is not None:
         ctx.obj["PASSWORD_ENV_VAR"] = value
     return value
-
-
-def _login_options(func):
-    """options that can be placed after subcommands"""
-    func = click.option(
-        "--proxy",
-        default=None,
-        type=str,
-        help="Proxy address to use for both HTTP and HTTPS requests",
-        envvar="DKB_PROXY",
-        callback=_store_proxy,
-        expose_value=False,
-    )(func)
-    func = click.option(
-        "--http1-only",
-        default=None,
-        is_flag=True,
-        help="Force HTTP/1.1 for curl-cffi sessions",
-        envvar="DKB_HTTP1_ONLY",
-        callback=_store_http1_only,
-        expose_value=False,
-    )(func)
-    return func
 
 
 def _resolve_password(ctx, password, password_env_var):
@@ -344,12 +323,11 @@ def main(
 
 
 @main.command()
-@_login_options
 @click.pass_context
 def accounts(ctx):
     """get list of account"""
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             accounts_dict = dkb.account_dic
             for id, value in accounts_dict.items():
                 if ctx.obj["UNFILTERED"]:
@@ -365,7 +343,6 @@ def accounts(ctx):
 
 
 @main.command()
-@_login_options
 @click.pass_context
 @click.option(
     "--name",
@@ -405,7 +382,7 @@ def transactions(
     """get list of transactions"""
 
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             the_account = _transactionlink_lookup(
                 ctx, name, account, dkb.account_dic, ctx.obj["UNFILTERED"]
             )
@@ -423,24 +400,22 @@ def transactions(
 
 
 @main.command()
-@_login_options
 @click.pass_context
 def last_login(ctx):
     """get last login"""
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             ctx.obj["FORMAT"]([{"last_login": dkb.last_login}])
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 
 
 @main.command()
-@_login_options
 @click.pass_context
 def credit_limits(ctx):
     """get limits"""
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             limits = dkb.get_credit_limits()
             limits = [{"account": k, "limit": v} for k, v in limits.items()]
             ctx.obj["FORMAT"](limits)
@@ -449,7 +424,6 @@ def credit_limits(ctx):
 
 
 @main.command()
-@_login_options
 @click.pass_context
 @click.option(
     "--name",
@@ -468,7 +442,7 @@ def credit_limits(ctx):
 def standing_orders(ctx, name, account):  # pragma: no cover
     """get standing orders"""
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             uid = _id_lookup(ctx, name, account, dkb.account_dic, ctx.obj["UNFILTERED"])
             so_list = dkb.get_standing_orders(uid)
             standing_orders_list = []
@@ -483,7 +457,6 @@ def standing_orders(ctx, name, account):  # pragma: no cover
 
 
 @main.command()
-@_login_options
 @click.pass_context
 @click.option(
     "--path",
@@ -521,7 +494,7 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
     if not path:
         path = "documents"
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             doc_list = dkb.scan_postbox(
                 path=path, download_all=download_all, prepend_date=prepend_date
             )
@@ -537,7 +510,6 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
 
 
 @main.command()
-@_login_options
 @click.pass_context
 @click.option(
     "--path",
@@ -600,7 +572,7 @@ def download(
     if path is None:
         list_only = True
     try:
-        with _login(ctx) as dkb:
+        with _session_scope(ctx) as dkb:
             ctx.obj["FORMAT"](
                 dkb.download(
                     path=path,
@@ -613,6 +585,89 @@ def download(
             )
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
+
+
+def _invoke_shell_command(ctx, args):
+    """Invoke one existing subcommand using the current click context."""
+    command_name = args[0]
+    if command_name == "interactive":
+        click.echo("interactive cannot be called from interactive mode", err=True)
+        return
+
+    if "--proxy" in args or "--http1-only" in args:
+        click.echo(
+            "--proxy and --http1-only must be passed when starting the CLI session",
+            err=True,
+        )
+        return
+
+    command = main.get_command(ctx, command_name)
+    if command is None:
+        click.echo(f"Unknown command: {command_name}", err=True)
+        return
+
+    cmd_ctx = command.make_context(command_name, args[1:], parent=ctx, obj=ctx.obj)
+    with cmd_ctx:
+        command.invoke(cmd_ctx)
+
+
+@main.command()
+@click.pass_context
+def interactive(ctx):
+    """Start an interactive shell with a single login session."""
+    session = _login(ctx)
+    try:
+        with session as dkb:
+            ctx.obj["ACTIVE_SESSION"] = dkb
+            click.echo('Interactive mode started. Type "help" for commands and "logout" to exit.')
+            while True:
+                try:
+                    line = input("dkb> ").strip()
+                except EOFError:
+                    click.echo()
+                    break
+                except KeyboardInterrupt:
+                    click.echo()
+                    break
+
+                if not line:
+                    continue
+
+                if line in ("logout", "quit", "exit"):
+                    break
+
+                if line in ("help", "?"):
+                    commands = sorted(name for name in main.commands if name != "interactive")
+                    click.echo("Commands: " + ", ".join(commands))
+                    continue
+
+                try:
+                    _invoke_shell_command(ctx, shlex.split(line))
+                except click.ClickException as err:
+                    err.show()
+                except click.Abort:
+                    click.echo("Aborted", err=True)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
+    finally:
+        ctx.obj.pop("ACTIVE_SESSION", None)
+
+
+@contextmanager
+def _session_scope(ctx):
+    """Use active interactive session when present, otherwise login per command."""
+    active_session = None
+    if ctx.obj:
+        if hasattr(ctx.obj, "get"):
+            active_session = ctx.obj.get("ACTIVE_SESSION")
+        else:
+            active_session = getattr(ctx.obj, "ACTIVE_SESSION", None)
+    if active_session is not None:
+        yield active_session
+        return
+
+    with _login(ctx) as dkb:
+        yield dkb
 
 
 class DataclassJSONEncoder(json.JSONEncoder):
