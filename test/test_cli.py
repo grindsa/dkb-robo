@@ -35,9 +35,12 @@ class TestDKBRobo(unittest.TestCase):
         from dkb_robo.cli import (
             _load_format,
             _login,
+            _invoke_shell_command,
             _read_env_flag,
             _resolve_password,
+            _store_proxy,
             _store_http1_only,
+            _store_session_backend,
             standing_orders,
             credit_limits,
             last_login,
@@ -55,9 +58,12 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger("dkb_robo")
         self._load_format = _load_format
         self._login = _login
+        self._invoke_shell_command = _invoke_shell_command
         self._read_env_flag = _read_env_flag
         self._resolve_password = _resolve_password
+        self._store_proxy = _store_proxy
         self._store_http1_only = _store_http1_only
+        self._store_session_backend = _store_session_backend
         self.standing_orders = standing_orders
         self.credit_limits = credit_limits
         self.last_login = last_login
@@ -199,6 +205,51 @@ class TestDKBRobo(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual({"HTTP1_ONLY": True}, ctx.obj)
 
+    def test_009a_store_proxy_initializes_ctx_obj(self):
+        """test _store_proxy initializes ctx.obj when missing"""
+        ctx = MagicMock()
+        ctx.obj = None
+
+        result = self._store_proxy(ctx, None, None)
+
+        self.assertIsNone(result)
+        self.assertEqual({}, ctx.obj)
+
+    def test_009b_store_proxy_sets_proxy_value(self):
+        """test _store_proxy stores proxy value in ctx.obj"""
+        ctx = MagicMock()
+        ctx.obj = {}
+
+        result = self._store_proxy(ctx, None, "http://127.0.0.1:8080")
+
+        self.assertEqual("http://127.0.0.1:8080", result)
+        self.assertEqual(
+            {"PROXY": "http://127.0.0.1:8080"},
+            ctx.obj,
+        )
+
+    def test_009c_store_session_backend_initializes_ctx_obj(self):
+        """test _store_session_backend initializes ctx.obj when missing"""
+        ctx = MagicMock()
+        ctx.obj = None
+
+        result = self._store_session_backend(ctx, None, None)
+
+        self.assertIsNone(result)
+        self.assertEqual({}, ctx.obj)
+
+    def test_009d_resolve_password_handles_parameter_source_error(self):
+        """test _resolve_password ignores parameter source errors and returns password"""
+
+        class BrokenContext:
+            def get_parameter_source(self, _name):
+                raise RuntimeError("boom")
+
+        with patch.dict(os.environ, {}, clear=True):
+            result = self._resolve_password(BrokenContext(), "cli-password", None)
+
+        self.assertEqual("cli-password", result)
+
     def test_010_read_env_flag(self):
         """test _read_env_flag parses env var booleans"""
         with patch.dict(os.environ, {}, clear=True):
@@ -209,6 +260,28 @@ class TestDKBRobo(unittest.TestCase):
 
         with patch.dict(os.environ, {"DKB_LOGIN_VIA_BROWSER": "0"}, clear=True):
             self.assertFalse(self._read_env_flag("DKB_LOGIN_VIA_BROWSER"))
+
+    @patch("dkb_robo.cli.click.echo")
+    def test_010a_invoke_shell_command_rejects_nested_interactive(self, mock_echo):
+        """test _invoke_shell_command rejects interactive command inside shell"""
+        ctx = MagicMock()
+        ctx.obj = {}
+
+        self._invoke_shell_command(ctx, ["interactive"])
+
+        mock_echo.assert_called_once_with(
+            "interactive cannot be called from interactive mode", err=True
+        )
+
+    @patch("dkb_robo.cli.click.echo")
+    def test_010b_invoke_shell_command_handles_unknown_command(self, mock_echo):
+        """test _invoke_shell_command reports unknown command"""
+        ctx = MagicMock()
+        ctx.obj = {}
+
+        self._invoke_shell_command(ctx, ["does-not-exist"])
+
+        mock_echo.assert_called_once_with("Unknown command: does-not-exist", err=True)
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
     def test_011_main_rejects_proxy_after_subcommand(self, mock_dkb_robo):
@@ -279,6 +352,154 @@ class TestDKBRobo(unittest.TestCase):
             "--proxy and --http1-only must be passed when starting the CLI session",
             result.output,
         )
+
+    @patch("dkb_robo.cli._login")
+    def test_011c_interactive_help_lists_commands(self, mock_login):
+        """test interactive help displays available commands"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="help\nlogout\n",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn("Commands:", result.output)
+        self.assertIn("accounts", result.output)
+        self.assertIn("transactions", result.output)
+
+    @patch("dkb_robo.cli._invoke_shell_command")
+    @patch("dkb_robo.cli._login")
+    def test_011d_interactive_handles_click_exception(
+        self, mock_login, mock_invoke_shell_command
+    ):
+        """test interactive mode keeps running on ClickException"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+        mock_invoke_shell_command.side_effect = click.ClickException("boom")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="accounts\nlogout\n",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn("Error: boom", result.output)
+
+    @patch("dkb_robo.cli._invoke_shell_command")
+    @patch("dkb_robo.cli._login")
+    def test_011e_interactive_handles_abort(
+        self, mock_login, mock_invoke_shell_command
+    ):
+        """test interactive mode keeps running on click.Abort"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+        mock_invoke_shell_command.side_effect = click.Abort()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="accounts\nlogout\n",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn("Aborted", result.output)
+
+    @patch("dkb_robo.cli._login")
+    def test_011f_interactive_exits_on_eof(self, mock_login):
+        """test interactive mode exits cleanly on EOF"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        session_manager.__enter__.assert_called_once()
+        session_manager.__exit__.assert_called_once()
+
+    @patch("builtins.input", side_effect=KeyboardInterrupt())
+    @patch("dkb_robo.cli._login")
+    def test_011g_interactive_exits_on_keyboard_interrupt(self, mock_login, mock_input):
+        """test interactive mode exits cleanly on KeyboardInterrupt"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+        )
+
+        self.assertEqual(0, result.exit_code)
+        mock_input.assert_called()
+        session_manager.__enter__.assert_called_once()
+        session_manager.__exit__.assert_called_once()
+
+    @patch("dkb_robo.cli._invoke_shell_command")
+    @patch("dkb_robo.cli._login")
+    def test_011h_interactive_ignores_empty_lines(
+        self, mock_login, mock_invoke_shell_command
+    ):
+        """test interactive mode ignores blank input lines"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {}
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input="\nlogout\n",
+        )
+
+        self.assertEqual(0, result.exit_code)
+        mock_invoke_shell_command.assert_not_called()
+
+    @patch("dkb_robo.cli._login")
+    def test_011i_interactive_handles_dkbrobo_error(self, mock_login):
+        """test interactive mode catches DKBRoboError and prints message"""
+        from dkb_robo import DKBRoboError
+
+        session_manager = MagicMock()
+        session_manager.__enter__.side_effect = DKBRoboError("login failed")
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn("login failed", result.output)
 
     @patch("dkb_robo.cli.dkb_robo.DKBRobo")
     def test_012_main_accepts_login_via_browser_env(self, mock_dkb_robo):
@@ -566,7 +787,7 @@ class TestDKBRobo(unittest.TestCase):
 
     @patch("dkb_robo.cli._login")
     def test_032_accounts_removes_details_and_transactions(self, mock_login):
-        """test accounts removes details/transactions fields before formatting"""
+        """test accounts output omits details/transactions without mutating source"""
         account_dic = {
             1: {
                 "id": "acc-1",
@@ -586,8 +807,47 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertEqual("<Result okay>", str(result))
         formatter.assert_called_once_with([{"id": "acc-1", "name": "Main"}])
-        self.assertNotIn("details", account_dic[1])
-        self.assertNotIn("transactions", account_dic[1])
+        self.assertIn("details", account_dic[1])
+        self.assertIn("transactions", account_dic[1])
+
+    @patch("dkb_robo.cli._login")
+    def test_032a_interactive_accounts_then_transactions_keeps_transaction_link(
+        self, mock_login
+    ):
+        """test interactive accounts call does not break subsequent transactions"""
+        session_manager = MagicMock()
+        dkb = MagicMock()
+        dkb.account_dic = {
+            1: {
+                "id": "1",
+                "name": "Visa",
+                "account": "4930XXXXXXXX0858",
+                "type": "creditCard",
+                "transactions": "/tx/1",
+            }
+        }
+        session_manager.__enter__.return_value = dkb
+        mock_login.return_value = session_manager
+
+        runner = CliRunner()
+        result = runner.invoke(
+            self.main,
+            ["-u", "user", "-p", "password", "interactive"],
+            input=(
+                "accounts\n"
+                "transactions --account 4930XXXXXXXX0858 --date-from 30.05.2026 --date-to 14.07.2026\n"
+                "logout\n"
+            ),
+        )
+
+        self.assertEqual(0, result.exit_code)
+        dkb.get_transactions.assert_called_once_with(
+            "/tx/1",
+            "creditCard",
+            "30.05.2026",
+            "14.07.2026",
+            transaction_type="booked",
+        )
 
     @patch("click.echo")
     @patch("dkb_robo.cli._login")

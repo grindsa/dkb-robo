@@ -202,6 +202,32 @@ class TestLoginViaBrowser(unittest.TestCase):
         self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
         self.assertEqual("xsrf-token", mock_client.headers["x-xsrf-token"])
 
+    @patch("dkb_robo.captcha.SB")
+    def test_009a_initializes_client_headers_when_missing(self, mock_sb):
+        """login_via_browser() initializes client.headers when it is None"""
+        sb_instance = MagicMock()
+        mock_sb.return_value.__enter__.return_value = sb_instance
+
+        widget = MagicMock()
+        sb_instance.cdp.find_element.return_value = widget
+        sb_instance.get_cookies.return_value = [{"name": "foo", "value": "bar"}]
+        sb_instance.cdp.evaluate.return_value = "UA/1.0"
+
+        mock_client = MagicMock()
+        mock_client.cookies = MagicMock()
+        mock_client.headers = None
+
+        login_via_browser(
+            "user",
+            "password",
+            timeout=1,
+            client=mock_client,
+        )
+
+        self.assertIsInstance(mock_client.headers, dict)
+        self.assertIn("User-Agent", mock_client.headers)
+        mock_client.cookies.set.assert_called_once_with("foo", "bar")
+
 
 class TestPollFrcToken(unittest.TestCase):
     """tests for _poll_frc_token()"""

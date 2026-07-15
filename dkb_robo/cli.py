@@ -328,16 +328,16 @@ def accounts(ctx):
     """get list of account"""
     try:
         with _session_scope(ctx) as dkb:
-            accounts_dict = dkb.account_dic
-            for id, value in accounts_dict.items():
+            accounts_list = []
+            for value in dkb.account_dic.values():
                 if ctx.obj["UNFILTERED"]:
                     value = object2dictionary(value)
-                    accounts_dict[id] = value
-                if "details" in value:
-                    del value["details"]
-                if "transactions" in value:
-                    del value["transactions"]
-            ctx.obj["FORMAT"](list(accounts_dict.values()))
+                else:
+                    value = dict(value)
+                value.pop("details", None)
+                value.pop("transactions", None)
+                accounts_list.append(value)
+            ctx.obj["FORMAT"](accounts_list)
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
 
@@ -619,7 +619,9 @@ def interactive(ctx):
     try:
         with session as dkb:
             ctx.obj["ACTIVE_SESSION"] = dkb
-            click.echo('Interactive mode started. Type "help" for commands and "logout" to exit.')
+            click.echo(
+                'Interactive mode started. Type "help" for commands and "logout" to exit.'
+            )
             while True:
                 try:
                     line = input("dkb> ").strip()
@@ -637,7 +639,9 @@ def interactive(ctx):
                     break
 
                 if line in ("help", "?"):
-                    commands = sorted(name for name in main.commands if name != "interactive")
+                    commands = sorted(
+                        name for name in main.commands if name != "interactive"
+                    )
                     click.echo("Commands: " + ", ".join(commands))
                     continue
 
