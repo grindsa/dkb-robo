@@ -660,7 +660,9 @@ def interactive(ctx):
                     commands = sorted(
                         name for name in main.commands if name != "interactive"
                     )
-                    click.echo("Commands: " + ", ".join(commands))
+                    click.echo("Commands:")
+                    for command in commands:
+                        click.echo(f"  {command}")
                     continue
 
                 try:
