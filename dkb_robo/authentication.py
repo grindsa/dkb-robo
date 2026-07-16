@@ -251,6 +251,71 @@ class Authentication:
         logger.debug("Authentication._mfa_get() ended\n")
         return mfa_dic
 
+    def _mfa_process(
+        self,
+        device_num: int,
+        device_list: List[int],
+        _tmp_device_num: str,
+        deviceselection_completed: bool,
+    ) -> Tuple[int, bool]:
+        logger.debug("Authentication._mfa_process(%s)", _tmp_device_num)
+        try:
+            # we are referring to an index in a list thus we need to lower the user input by 1
+            if int(_tmp_device_num) - 1 in device_list:
+                deviceselection_completed = True
+                device_num = int(_tmp_device_num) - 1
+            else:
+                print("\nWrong input!")
+        except Exception:
+            print("\nInvalid input!")
+
+        logger.debug("Authentication._mfa_process()\n ended")
+        return device_num, deviceselection_completed
+
+    @staticmethod
+    def _format_enrollment_date(enrolled_at_raw) -> str:
+        """Format enrollment timestamp as YYYY-MM-DD."""
+        if enrolled_at_raw:
+            return str(enrolled_at_raw).split("T", maxsplit=1)[0]
+        return "unknown"
+
+    @staticmethod
+    def _print_mfa_devices_table(mfa_data: List[Dict[str, Dict[str, str]]]) -> List[int]:
+        """Print MFA devices in fixed-width columns and return selectable indices."""
+        index_col_width = 3
+        name_col_width = 36
+        date_col_width = 25
+        row_format = (
+            f"{{:<{index_col_width}}} "
+            f"{{:<{name_col_width}}} "
+            f"{{:<{date_col_width}}}"
+        )
+
+        print("\nPick an authentication device from the below list:")
+        print(row_format.format("#", "device name", "enrollment date"))
+        print(
+            row_format.format(
+                "-" * index_col_width,
+                "-" * name_col_width,
+                "-" * date_col_width,
+            )
+        )
+
+        device_list = []
+        for idx, device_dic in enumerate(mfa_data):
+            device_list.append(idx)
+            if "attributes" in device_dic and "deviceName" in device_dic["attributes"]:
+                device_name = device_dic["attributes"]["deviceName"]
+                if len(device_name) > name_col_width:
+                    device_name = f"{device_name[: name_col_width - 3]}..."
+
+                enrolled_at = Authentication._format_enrollment_date(
+                    device_dic["attributes"].get("enrolledAt")
+                )
+                print(row_format.format(idx + 1, device_name, str(enrolled_at)))
+
+        return device_list
+
     def _mfa_select(self, mfa_dic: Dict[str, str]) -> int:
         """pick mfa_device from dictionary"""
         logger.debug("Authentication._mfa_select()")
@@ -270,19 +335,9 @@ class Authentication:
             device_num = self.mfa_device - 1
 
         elif "data" in mfa_dic and len(mfa_dic["data"]) > 1:
-            device_list = []
             deviceselection_completed = False
             while not deviceselection_completed:
-                print("\nPick an authentication device from the below list:")
-                # we have multiple devices to select
-                for idx, device_dic in enumerate(mfa_dic["data"]):
-                    device_list.append(idx)
-                    if (
-                        "attributes" in device_dic
-                        and "deviceName" in device_dic["attributes"]
-                    ):
-                        # we should start counting with 1 for the user
-                        print(f"[{idx + 1}] - {device_dic['attributes']['deviceName']}")
+                device_list = self._print_mfa_devices_table(mfa_dic["data"])
                 _tmp_device_num = input(":")
 
                 device_num, deviceselection_completed = self._mfa_process(
