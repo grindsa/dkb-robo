@@ -270,11 +270,24 @@ class Authentication:
             device_num = self.mfa_device - 1
 
         elif "data" in mfa_dic and len(mfa_dic["data"]) > 1:
-            # use the first device (preferred device after _mfa_sort())
-            logger.debug(
-                "api.Wrapper._mfa_select(): multiple devices, using preferred device (index 0)"
-            )
-            device_num = 0
+            device_list = []
+            deviceselection_completed = False
+            while not deviceselection_completed:
+                print("\nPick an authentication device from the below list:")
+                # we have multiple devices to select
+                for idx, device_dic in enumerate(mfa_dic["data"]):
+                    device_list.append(idx)
+                    if (
+                        "attributes" in device_dic
+                        and "deviceName" in device_dic["attributes"]
+                    ):
+                        # we should start counting with 1 for the user
+                        print(f"[{idx + 1}] - {device_dic['attributes']['deviceName']}")
+                _tmp_device_num = input(":")
+
+                device_num, deviceselection_completed = self._mfa_process(
+                    device_num, device_list, _tmp_device_num, deviceselection_completed
+                )
 
         logger.debug("Authentication._mfa_select() ended with: %s", device_num)
         return device_num
