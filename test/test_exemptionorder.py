@@ -8,6 +8,7 @@ from datetime import date
 import unittest
 import logging
 import json
+import requests
 from unittest.mock import patch, Mock, MagicMock, mock_open
 import io
 
@@ -38,11 +39,53 @@ class TestExemptionOrders(unittest.TestCase):
         """test ExemptionOrders.fetch() with uid but http error"""
         self.exo.client = Mock()
         self.exo.client.get.return_value.status_code = 400
-        self.exo.client.get.return_value.json.return_value = {"foo": "bar"}
+        self.exo.client.get.return_value.text = "bad request"
+        self.exo.client.get.return_value.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError("400 Client Error")
+        )
         with self.assertRaises(Exception) as err:
             self.assertFalse(self.exo.fetch())
         self.assertEqual(
-            "fetch exemption orders: http status code is not 200 but 400",
+            "fetch exemption orders: http status code is 400; response=bad request",
+            str(err.exception),
+        )
+        self.assertFalse(mock_filter.called)
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_001a_fetch_http_error_without_response_text(self, mock_filter):
+        """test ExemptionOrders.fetch() with http error and empty body"""
+        self.exo.client = Mock()
+        self.exo.client.get.return_value.status_code = 503
+        self.exo.client.get.return_value.text = ""
+        self.exo.client.get.return_value.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError("503 Service Unavailable")
+        )
+
+        with self.assertRaises(Exception) as err:
+            self.exo.fetch()
+
+        self.assertEqual(
+            "fetch exemption orders: http status code is 503", str(err.exception)
+        )
+        self.assertFalse(mock_filter.called)
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_001b_fetch_http_error_response_text_truncated(self, mock_filter):
+        """test ExemptionOrders.fetch() truncates long error response text"""
+        self.exo.client = Mock()
+        long_response = "x" * 250
+        self.exo.client.get.return_value.status_code = 502
+        self.exo.client.get.return_value.text = long_response
+        self.exo.client.get.return_value.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError("502 Bad Gateway")
+        )
+
+        with self.assertRaises(Exception) as err:
+            self.exo.fetch()
+
+        expected_suffix = "x" * 200
+        self.assertEqual(
+            f"fetch exemption orders: http status code is 502; response={expected_suffix}",
             str(err.exception),
         )
         self.assertFalse(mock_filter.called)
@@ -56,6 +99,58 @@ class TestExemptionOrders(unittest.TestCase):
         mock_filter.return_value = "mock_filter"
         self.assertEqual("mock_filter", self.exo.fetch())
         self.assertTrue(mock_filter.called)
+        self.exo.client.get.assert_called_once_with(
+            "https://banking.dkb.de/api/customers/me/tax-exemptions", timeout=10.0
+        )
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_002c_fetch_custom_timeout(self, mock_filter):
+        """test ExemptionOrders.fetch() with custom timeout"""
+        self.exo = ExemptionOrders(client=Mock(), timeout=3.5)
+        self.exo.client.get.return_value.status_code = 200
+        self.exo.client.get.return_value.json.return_value = {"foo": "bar"}
+        mock_filter.return_value = "mock_filter"
+
+        self.assertEqual("mock_filter", self.exo.fetch())
+        self.exo.client.get.assert_called_once_with(
+            "https://banking.dkb.de/api/customers/me/tax-exemptions", timeout=3.5
+        )
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_002d_fetch_base_url_trailing_slash(self, mock_filter):
+        """test ExemptionOrders.fetch() with trailing slash in base_url"""
+        self.exo = ExemptionOrders(client=Mock(), base_url="https://banking.dkb.de/api/")
+        self.exo.client.get.return_value.status_code = 200
+        self.exo.client.get.return_value.json.return_value = {"foo": "bar"}
+        mock_filter.return_value = "mock_filter"
+
+        self.assertEqual("mock_filter", self.exo.fetch())
+        self.exo.client.get.assert_called_once_with(
+            "https://banking.dkb.de/api/customers/me/tax-exemptions", timeout=10.0
+        )
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_002a_fetch_request_exception(self, mock_filter):
+        """test ExemptionOrders.fetch() with request exception"""
+        self.exo.client = Mock()
+        self.exo.client.get.side_effect = requests.exceptions.Timeout("timeout")
+        with self.assertRaises(Exception) as err:
+            self.exo.fetch()
+        self.assertIn("fetch exemption orders: request failed:", str(err.exception))
+        self.assertFalse(mock_filter.called)
+
+    @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
+    def test_002b_fetch_invalid_json(self, mock_filter):
+        """test ExemptionOrders.fetch() with invalid json response"""
+        self.exo.client = Mock()
+        self.exo.client.get.return_value.status_code = 200
+        self.exo.client.get.return_value.json.side_effect = ValueError("invalid json")
+        with self.assertRaises(Exception) as err:
+            self.exo.fetch()
+        self.assertEqual(
+            "fetch exemption orders: invalid json in response", str(err.exception)
+        )
+        self.assertFalse(mock_filter.called)
 
     def test_003__filter(self):
         """test ExemptionOrders._filter() with empty list"""
@@ -232,6 +327,38 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertEqual("Doe", result[0].partner.lastName)
         self.assertEqual("Frau", result[0].partner.salutation)
         self.assertEqual("1234567890", result[0].partner.taxId)
+
+    def test_007__filter_missing_nested_fields(self):
+        """test ExemptionOrders._filter() with missing nested fields"""
+        full_list = {
+            "data": {
+                "attributes": {
+                    "exemptionOrders": [
+                        {
+                            "exemptionOrderType": "single",
+                            "receivedAt": "2020-01-01",
+                            "validFrom": "2020-01-01",
+                            "validUntil": "9999-12-31",
+                        }
+                    ]
+                }
+            }
+        }
+
+        result = [
+            {
+                "amount": None,
+                "used": None,
+                "currencycode": None,
+                "validfrom": "2020-01-01",
+                "validto": "9999-12-31",
+                "receivedat": "2020-01-01",
+                "type": "single",
+                "partner": {},
+            }
+        ]
+
+        self.assertEqual(result, self.exo._filter(full_list))
 
 
 if __name__ == "__main__":
