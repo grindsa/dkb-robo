@@ -233,20 +233,30 @@ def string2float(value: Union[str, float, int]) -> Union[float, str, int]:
 
 def logger_setup(debug: bool) -> logging.Logger:
     """setup logger"""
-    if debug:
-        log_mode = logging.DEBUG
-    else:
-        log_mode = logging.INFO
+    log_mode = logging.DEBUG if debug else logging.INFO
+    log_format = "%(module)s: %(message)s" if debug else "%(message)s"
 
-    # define standard log format
-    log_format = None
-    if debug:
-        log_format = "%(module)s: %(message)s"
-    else:
-        log_format = "%(message)s"
-
-    logging.basicConfig(format=log_format, datefmt="%Y-%m-%d %H:%M:%S", level=log_mode)
     mylogger = logging.getLogger("dkb_robo")
+    mylogger.setLevel(log_mode)
+
+    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+
+    # Keep setup idempotent: update existing stream handlers, otherwise add one.
+    stream_handlers = [
+        handler
+        for handler in mylogger.handlers
+        if isinstance(handler, logging.StreamHandler)
+    ]
+    if stream_handlers:
+        for handler in stream_handlers:
+            handler.setLevel(log_mode)
+            handler.setFormatter(formatter)
+    else:
+        handler = logging.StreamHandler()
+        handler.setLevel(log_mode)
+        handler.setFormatter(formatter)
+        mylogger.addHandler(handler)
+
     return mylogger
 
 
@@ -327,37 +337,45 @@ def ulal(mapclass, parameter):
     return None
 
 
+def _object2dictionary_input(obj: Any) -> Optional[Dict[str, Any]]:
+    """Normalize supported input types for object2dictionary."""
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, dict):
+        return obj
+
+    logger.debug("object2dictionary(): unsupported input type %s", type(obj).__name__)
+    return None
+
+
+def _object2dictionary_convert_value(value: Any, key_lc: bool) -> Any:
+    """Recursively convert nested values to serializable dict/list structures."""
+    if is_dataclass(value):
+        return object2dictionary(value, key_lc=key_lc)
+    if isinstance(value, dict):
+        return {
+            (sub_key.lower() if key_lc else sub_key): _object2dictionary_convert_value(
+                sub_value, key_lc
+            )
+            for sub_key, sub_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_object2dictionary_convert_value(item, key_lc) for item in value]
+    return value
+
+
 def object2dictionary(obj, key_lc: bool = False, skip_list: Optional[List[str]] = None):
     """convert dataclass-like object to dict"""
 
-    if is_dataclass(obj):
-        raw: Dict[str, Any] = asdict(obj)
-    elif isinstance(obj, dict):
-        raw = obj
-    else:
-        logger.debug(
-            "object2dictionary(): unsupported input type %s", type(obj).__name__
-        )
+    raw = _object2dictionary_input(obj)
+    if raw is None:
         return {}
 
     skip_keys = set(skip_list) if isinstance(skip_list, list) else set()
-
-    def _convert_value(value: Any):
-        if is_dataclass(value):
-            return object2dictionary(value, key_lc=key_lc)
-        if isinstance(value, dict):
-            return {
-                (sub_key.lower() if key_lc else sub_key): _convert_value(sub_value)
-                for sub_key, sub_value in value.items()
-            }
-        if isinstance(value, list):
-            return [_convert_value(item) for item in value]
-        return value
-
-    output_dict = {}
-    for k, v in raw.items():
-        if k in skip_keys:
+    output_dict: Dict[str, Any] = {}
+    for key, value in raw.items():
+        if key in skip_keys:
             continue
-        target_key = k.lower() if key_lc else k
-        output_dict[target_key] = _convert_value(v)
+        target_key = key.lower() if key_lc else key
+        output_dict[target_key] = _object2dictionary_convert_value(value, key_lc)
     return output_dict

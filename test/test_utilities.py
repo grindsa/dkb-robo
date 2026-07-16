@@ -447,6 +447,29 @@ class TestDKBRobo(unittest.TestCase):
         """logger setup"""
         self.assertTrue(self.logger_setup(True))
 
+    def test_043a_logger_setup(self):
+        """logger setup should be idempotent and not duplicate handlers"""
+        logger = self.logger_setup(False)
+        initial_handler_count = len(logger.handlers)
+
+        logger = self.logger_setup(False)
+
+        self.assertEqual(initial_handler_count, len(logger.handlers))
+
+    def test_043b_logger_setup(self):
+        """logger setup should update level and formatter on existing handler"""
+        logger = self.logger_setup(False)
+        self.assertEqual(logging.INFO, logger.level)
+        self.assertTrue(logger.handlers)
+
+        logger = self.logger_setup(True)
+
+        self.assertEqual(logging.DEBUG, logger.level)
+        self.assertTrue(logger.handlers)
+        formatter = logger.handlers[0].formatter
+        self.assertIsNotNone(formatter)
+        self.assertEqual("%(module)s: %(message)s", formatter._fmt)
+
     def test_045_ulal(self):
         """test ulal() with_valid_parameter"""
         mapclass = Mock()
