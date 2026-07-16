@@ -29,6 +29,7 @@ class TestDKBRobo(unittest.TestCase):
     def setUp(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         from dkb_robo.utilities import (
+            DKBRoboError,
             validate_dates,
             generate_random_string,
             logger_setup,
@@ -52,6 +53,7 @@ class TestDKBRobo(unittest.TestCase):
         self.logger = logging.getLogger("dkb_robo")
         self.logger_setup = logger_setup
         self.ulal = ulal
+        self.DKBRoboError = DKBRoboError
 
     @patch("time.time")
     def test_001_validate_dates(self, mock_time):
@@ -194,95 +196,101 @@ class TestDKBRobo(unittest.TestCase):
             lcm.output,
         )
 
+    def test_010_validate_dates(self):
+        """test validate dates with invalid input format"""
+        with self.assertRaises(self.DKBRoboError) as err:
+            self.validate_dates("invalid-date", "2024-01-10")
+        self.assertIn("invalid date 'invalid-date'", str(err.exception))
+
     @patch("random.choice")
-    def test_010_generate_random_string(self, mock_rc):
+    def test_011_generate_random_string(self, mock_rc):
         """test generate_random_string"""
         mock_rc.return_value = "1a"
         length = 5
         self.assertEqual("1a1a1a1a1a", self.generate_random_string(length))
 
     @patch("random.choice")
-    def test_011_generate_random_string(self, mock_rc):
+    def test_012_generate_random_string(self, mock_rc):
         """generate_random_string"""
         mock_rc.return_value = "1a"
         length = 10
         self.assertEqual("1a1a1a1a1a1a1a1a1a1a", self.generate_random_string(length))
 
-    def test_012_string2float(self):
+    def test_013_string2float(self):
         """test string2float"""
         value = 1000
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_013_string2float(self):
+    def test_014_string2float(self):
         """test string2float"""
         value = 1000.0
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_014_string2float(self):
+    def test_015_string2float(self):
         """test string2float"""
         value = "1.000,00"
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_015_string2float(self):
+    def test_016_string2float(self):
         """test string2float"""
         value = "1000,00"
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_016_string2float(self):
+    def test_017_string2float(self):
         """test string2float"""
         value = "1.000"
         self.assertEqual(1000.0, self.string2float(value))
 
-    def test_017_string2float(self):
+    def test_018_string2float(self):
         """test string2float"""
         value = "1.000,23"
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_018_string2float(self):
+    def test_019_string2float(self):
         """test string2float"""
         value = "1000,23"
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_019_string2float(self):
+    def test_020_string2float(self):
         """test string2float"""
         value = 1000.23
         self.assertEqual(1000.23, self.string2float(value))
 
-    def test_020_string2float(self):
+    def test_021_string2float(self):
         """test string2float"""
         value = "-1.000"
         self.assertEqual(-1000.0, self.string2float(value))
 
-    def test_021_string2float(self):
+    def test_022_string2float(self):
         """test string2float"""
         value = "-1.000,23"
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_022_string2float(self):
+    def test_023_string2float(self):
         """test string2float"""
         value = "-1000,23"
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_023_string2float(self):
+    def test_024_string2float(self):
         """test string2float"""
         value = -1000.23
         self.assertEqual(-1000.23, self.string2float(value))
 
-    def test_024__convert_date_format(self):
+    def test_025__convert_date_format(self):
         """test _convert_date_format()"""
         self.assertEqual(
             "01.01.2023",
             self._convert_date_format("2023/01/01", ["%Y/%m/%d"], "%d.%m.%Y"),
         )
 
-    def test_025__convert_date_format(self):
+    def test_026__convert_date_format(self):
         """test _convert_date_format()"""
         self.assertEqual(
             "wrong date",
             self._convert_date_format("wrong date", ["%Y/%m/%d"], "%d.%m.%Y"),
         )
 
-    def test_026__convert_date_format(self):
+    def test_027__convert_date_format(self):
         """test _convert_date_format() first match"""
         self.assertEqual(
             "01.01.2023",
@@ -291,7 +299,7 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_027__convert_date_format(self):
+    def test_028__convert_date_format(self):
         """test _convert_date_format() last match"""
         self.assertEqual(
             "01.01.2023",
@@ -300,7 +308,7 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_028__convert_date_format(self):
+    def test_029__convert_date_format(self):
         """test _convert_date_format() last match"""
         self.assertEqual(
             "2023/01/01",
@@ -309,7 +317,7 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_029__convert_date_format(self):
+    def test_030__convert_date_format(self):
         """test _convert_date_format() first match"""
         self.assertEqual(
             "2023/01/01",
@@ -318,7 +326,7 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_030__convert_date_format(self):
+    def test_031__convert_date_format(self):
         """test _convert_date_format() no match"""
         self.assertEqual(
             "wrong date",
@@ -327,49 +335,49 @@ class TestDKBRobo(unittest.TestCase):
             ),
         )
 
-    def test_031__get_valid_filename(self):
+    def test_032__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test.pdf"
         self.assertEqual("test.pdf", self.get_valid_filename(filename))
 
-    def test_032__get_valid_filename(self):
+    def test_033__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_033__get_valid_filename(self):
+    def test_034__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "testötest.pdf"
         self.assertEqual("testötest.pdf", self.get_valid_filename(filename))
 
-    def test_034__get_valid_filename(self):
+    def test_035__get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test/test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_035_get_valid_filename(self):
+    def test_036_get_valid_filename(self):
         """test get_valid_filename"""
         filename = "test\\test.pdf"
         self.assertEqual("test_test.pdf", self.get_valid_filename(filename))
 
-    def test_036_get_valid_filename(self):
+    def test_037_get_valid_filename(self):
         """test get_valid_filename"""
         filename = ".\test.pdf"
         self.assertEqual("._est.pdf", self.get_valid_filename(filename))
 
-    def test_037_get_valid_filename(self):
+    def test_038_get_valid_filename(self):
         """test get_valid_filename"""
         filename = "../test.pdf"
         self.assertEqual(".._test.pdf", self.get_valid_filename(filename))
 
     @patch("dkb_robo.utilities.generate_random_string")
-    def test_038_get_valid_filename(self, mock_rand):
+    def test_039_get_valid_filename(self, mock_rand):
         """test get_valid_filename"""
         filename = ".."
         mock_rand.return_value = "random"
         self.assertEqual("random.pdf", self.get_valid_filename(filename))
 
-    def test_039_object2dictionary(self):
+    def test_040_object2dictionary(self):
         """test object2dictionary"""
 
         nested_obj = DataclassObject(
@@ -395,7 +403,7 @@ class TestDKBRobo(unittest.TestCase):
         result = self.object2dictionary(test_obj)
         self.assertEqual(result, expected_output)
 
-    def test_040_object2dictionary(self):
+    def test_041_object2dictionary(self):
         """test object2dictionary"""
         test_obj = DataclassObject(
             Attr1="value1", attr2=2, attr3="attr3", attr4="attr4"
@@ -405,7 +413,7 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     @patch("dkb_robo.utilities.asdict")
-    def test_041_object2dictionary_nested_dataclass_branch(self, mock_asdict):
+    def test_042_object2dictionary_nested_dataclass_branch(self, mock_asdict):
         """test object2dictionary recursion when asdict returns a dataclass value"""
         nested_obj = DataclassObject(
             Attr1="nested_value", attr2=3, attr3="leaf", attr4="foo"
@@ -431,15 +439,15 @@ class TestDKBRobo(unittest.TestCase):
             result,
         )
 
-    def test_042_logger_setup(self):
+    def test_043_logger_setup(self):
         """logger setup"""
         self.assertTrue(self.logger_setup(False))
 
-    def test_043_logger_setup(self):
+    def test_044_logger_setup(self):
         """logger setup"""
         self.assertTrue(self.logger_setup(True))
 
-    def test_044_ulal(self):
+    def test_045_ulal(self):
         """test ulal() with_valid_parameter"""
         mapclass = Mock()
         parameter = {"key1": "value1", "key2": "value2"}
@@ -447,13 +455,58 @@ class TestDKBRobo(unittest.TestCase):
         mapclass.assert_called_once_with(**parameter)
         self.assertEqual(result, mapclass.return_value)
 
-    def test_045_ulal(self):
+    def test_046_ulal(self):
         """test ulal() with none parameter"""
         mapclass = MagicMock()
         parameter = None
         result = self.ulal(mapclass, parameter)
         mapclass.assert_not_called()
         self.assertIsNone(result)
+
+    def test_047_ulal(self):
+        """test ulal() with non-dict parameter"""
+        mapclass = MagicMock()
+        parameter = "invalid"
+        result = self.ulal(mapclass, parameter)
+        mapclass.assert_not_called()
+        self.assertIsNone(result)
+
+    def test_048_ulal(self):
+        """test ulal() with invalid mapping payload"""
+
+        def mapclass(required):
+            return required
+
+        with self.assertRaises(self.DKBRoboError) as err:
+            self.ulal(mapclass, {"unexpected": 1})
+        self.assertIn("ulal: cannot map parameter", str(err.exception))
+
+    def test_049_object2dictionary(self):
+        """test object2dictionary() with unsupported input"""
+        self.assertEqual({}, self.object2dictionary("invalid"))
+
+    def test_050_object2dictionary(self):
+        """test object2dictionary() with dict input"""
+        payload = {"Name": "Alice", "Age": 30}
+        self.assertEqual(payload, self.object2dictionary(payload))
+
+    def test_051_object2dictionary(self):
+        """test object2dictionary() converts nested list values"""
+        payload = {
+            "Items": [
+                {"Label": "A", "Value": 1},
+                {"Label": "B", "Value": 2},
+            ]
+        }
+        self.assertEqual(
+            {
+                "items": [
+                    {"label": "A", "value": 1},
+                    {"label": "B", "value": 2},
+                ]
+            },
+            self.object2dictionary(payload, key_lc=True),
+        )
 
 
 class TestAmount(unittest.TestCase):
@@ -466,7 +519,7 @@ class TestAmount(unittest.TestCase):
         self.Amount = Amount
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_046_amount(self, mock_logger):
+    def test_052_amount(self, mock_logger):
         """test Amount"""
         amount_data = {
             "value": "1000",
@@ -484,7 +537,7 @@ class TestAmount(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_047_amount(self, mock_logger):
+    def test_053_amount(self, mock_logger):
         """test Amount with wrong value"""
         amount_data = {
             "value": "invalid",
@@ -505,7 +558,7 @@ class TestAmount(unittest.TestCase):
         )
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_048_amount(self, mock_logger):
+    def test_054_amount(self, mock_logger):
         """test Amount with wrong conversation rate"""
         amount_data = {
             "value": "1000",
@@ -534,7 +587,7 @@ class TestPerformanceValue(unittest.TestCase):
         self.PerformanceValue = PerformanceValue
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_049_performancevalue(self, mock_logger):
+    def test_055_performancevalue(self, mock_logger):
         performance_value_data = {
             "currencyCode": "USD",
             "value": "1000",
@@ -549,7 +602,7 @@ class TestPerformanceValue(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("dkb_robo.utilities.logger", autospec=True)
-    def test_050_performancevalue(self, mock_logger):
+    def test_056_performancevalue(self, mock_logger):
         performance_value_data = {
             "currencyCode": "USD",
             "value": "invalid",
