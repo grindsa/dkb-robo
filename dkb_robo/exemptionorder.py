@@ -68,40 +68,50 @@ class ExemptionOrders:
         """Filter exemption orders from the API payload."""
         logger.debug("ExemptionOrders._filter()")
 
-        unfiltered_exo_list = (
-            full_list.get("data", {}).get("attributes", {}).get("exemptionOrders", [])
-        )
         exo_list = []
-        for exo in unfiltered_exo_list:
-
+        for exo in self._extract_exemption_orders(full_list):
             exemptionorder_obj = ExemptionOrderItem(**exo)
             if self.unfiltered:
                 exo_list.append(exemptionorder_obj)
-            else:
-                exemption_amount = exemptionorder_obj.exemptionAmount
-                utilized_amount = exemptionorder_obj.utilizedAmount
-                partner = exemptionorder_obj.partner
-                exo_list.append(
-                    {
-                        "amount": exemption_amount.value if exemption_amount else None,
-                        "used": utilized_amount.value if utilized_amount else None,
-                        "currencycode": (
-                            exemption_amount.currencyCode if exemption_amount else None
-                        ),
-                        "validfrom": exemptionorder_obj.validFrom,
-                        "validto": exemptionorder_obj.validUntil,
-                        "receivedat": exemptionorder_obj.receivedAt,
-                        "type": exemptionorder_obj.exemptionOrderType,
-                        "partner": (
-                            object2dictionary(partner, key_lc=True, skip_list=["title"])
-                            if partner
-                            else {}
-                        ),
-                    }
-                )
+                continue
+            exo_list.append(self._build_filtered_exemption_order(exemptionorder_obj))
 
         logger.debug("ExemptionOrders._filter() ended with: %s entries.", len(exo_list))
         return exo_list
+
+    def _extract_exemption_orders(self, full_list: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract exemption order entries from the API payload."""
+        data = full_list.get("data", {}) if isinstance(full_list, dict) else {}
+        attributes = data.get("attributes", {}) if isinstance(data, dict) else {}
+        exemption_orders = (
+            attributes.get("exemptionOrders", []) if isinstance(attributes, dict) else []
+        )
+        return [item for item in exemption_orders if isinstance(item, dict)]
+
+    def _build_filtered_exemption_order(
+        self, exemptionorder_obj: ExemptionOrderItem
+    ) -> FilteredExemptionOrder:
+        """Build filtered output for a single exemption order."""
+        exemption_amount = exemptionorder_obj.exemptionAmount
+        utilized_amount = exemptionorder_obj.utilizedAmount
+        return {
+            "amount": exemption_amount.value if exemption_amount else None,
+            "used": utilized_amount.value if utilized_amount else None,
+            "currencycode": (
+                exemption_amount.currencyCode if exemption_amount else None
+            ),
+            "validfrom": exemptionorder_obj.validFrom,
+            "validto": exemptionorder_obj.validUntil,
+            "receivedat": exemptionorder_obj.receivedAt,
+            "type": exemptionorder_obj.exemptionOrderType,
+            "partner": self._build_partner(exemptionorder_obj.partner),
+        }
+
+    def _build_partner(self, partner: Optional[Person]) -> Dict[str, Any]:
+        """Build partner output shape for filtered responses."""
+        if not partner:
+            return {}
+        return object2dictionary(partner, key_lc=True, skip_list=["title"])
 
     def fetch(self) -> ExemptionOrderList:
         """Fetch exemption orders from the API."""

@@ -52,7 +52,7 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_001a_fetch_http_error_without_response_text(self, mock_filter):
+    def test_002_fetch_http_error_without_response_text(self, mock_filter):
         """test ExemptionOrders.fetch() with http error and empty body"""
         self.exo.client = Mock()
         self.exo.client.get.return_value.status_code = 503
@@ -70,7 +70,7 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_001b_fetch_http_error_response_text_truncated(self, mock_filter):
+    def test_003_fetch_http_error_response_text_truncated(self, mock_filter):
         """test ExemptionOrders.fetch() truncates long error response text"""
         self.exo.client = Mock()
         long_response = "x" * 250
@@ -91,7 +91,7 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_002_fetch(self, mock_filter):
+    def test_004_fetch(self, mock_filter):
         """test ExemptionOrders.fetch() with uid no error"""
         self.exo.client = Mock()
         self.exo.client.get.return_value.status_code = 200
@@ -104,7 +104,7 @@ class TestExemptionOrders(unittest.TestCase):
         )
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_002c_fetch_custom_timeout(self, mock_filter):
+    def test_005_fetch_custom_timeout(self, mock_filter):
         """test ExemptionOrders.fetch() with custom timeout"""
         self.exo = ExemptionOrders(client=Mock(), timeout=3.5)
         self.exo.client.get.return_value.status_code = 200
@@ -117,7 +117,7 @@ class TestExemptionOrders(unittest.TestCase):
         )
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_002d_fetch_base_url_trailing_slash(self, mock_filter):
+    def test_006_fetch_base_url_trailing_slash(self, mock_filter):
         """test ExemptionOrders.fetch() with trailing slash in base_url"""
         self.exo = ExemptionOrders(client=Mock(), base_url="https://banking.dkb.de/api/")
         self.exo.client.get.return_value.status_code = 200
@@ -130,7 +130,7 @@ class TestExemptionOrders(unittest.TestCase):
         )
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_002a_fetch_request_exception(self, mock_filter):
+    def test_007_fetch_request_exception(self, mock_filter):
         """test ExemptionOrders.fetch() with request exception"""
         self.exo.client = Mock()
         self.exo.client.get.side_effect = requests.exceptions.Timeout("timeout")
@@ -140,7 +140,7 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertFalse(mock_filter.called)
 
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
-    def test_002b_fetch_invalid_json(self, mock_filter):
+    def test_008_fetch_invalid_json(self, mock_filter):
         """test ExemptionOrders.fetch() with invalid json response"""
         self.exo.client = Mock()
         self.exo.client.get.return_value.status_code = 200
@@ -152,12 +152,12 @@ class TestExemptionOrders(unittest.TestCase):
         )
         self.assertFalse(mock_filter.called)
 
-    def test_003__filter(self):
+    def test_009__filter(self):
         """test ExemptionOrders._filter() with empty list"""
         full_list = {}
         self.assertFalse(self.exo._filter(full_list))
 
-    def test_004__filter(self):
+    def test_010__filter(self):
         """test StandingOrder._filter() with list"""
         full_list = {
             "data": {
@@ -216,7 +216,7 @@ class TestExemptionOrders(unittest.TestCase):
         ]
         self.assertEqual(result, self.exo._filter(full_list))
 
-    def test_005__filter(self):
+    def test_011__filter(self):
         """test StandingOrder._filter() with incomplete list"""
         full_list = {
             "data": {
@@ -271,7 +271,7 @@ class TestExemptionOrders(unittest.TestCase):
             lcm.output,
         )
 
-    def test_006__filter(self):
+    def test_012__filter(self):
         """test StandingOrder._filter() with list"""
         full_list = {
             "data": {
@@ -328,7 +328,7 @@ class TestExemptionOrders(unittest.TestCase):
         self.assertEqual("Frau", result[0].partner.salutation)
         self.assertEqual("1234567890", result[0].partner.taxId)
 
-    def test_007__filter_missing_nested_fields(self):
+    def test_013__filter_missing_nested_fields(self):
         """test ExemptionOrders._filter() with missing nested fields"""
         full_list = {
             "data": {
