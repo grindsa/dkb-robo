@@ -1,12 +1,14 @@
-"""Module for handling dkb transactions"""
+"""Module for handling DKB portfolio data."""
 
 # pylint: disable=c0415, r0913, c0103
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Tuple, Optional, Union, Type
 from dataclasses import dataclass, asdict
 import logging
+from urllib.parse import urljoin
 import requests
 from dkb_robo.utilities import (
     Amount,
+    DKBRoboError,
     Person,
     get_dateformat,
     filter_unexpected_fields,
@@ -19,77 +21,89 @@ logger = logging.getLogger(__name__)
 
 
 class ProductGroup:
-    """ProductGroup class"""
+    """Create product-group mappings for portfolio sorting."""
 
-    def _uid2names(self, data_ele: Dict[str, str]) -> Dict[str, str]:
+    def _uid2names(self, data_ele: Dict[str, Any]) -> Dict[str, str]:
         """create a dictionary containing id to product-name mapping"""
-        logger.debug("ProductGroup._uid2names()\n")
+        logger.debug("ProductGroup._uid2names()")
 
         product_settings_dic = {}
         portfolio_dic = data_ele.get("attributes", {}).get("productSettings", {})
         for product_data in portfolio_dic.values():
             if isinstance(product_data, dict):
                 for uid, product_value in product_data.items():
-                    if "name" in product_value:
+                    if isinstance(product_value, dict) and "name" in product_value:
                         product_settings_dic[uid] = product_value["name"]
             else:
                 logger.warning(
                     "uid2name mapping failed. product data are not in dictionary format"
                 )
 
-        logger.debug("ProductGroup._uid2names() ended\n")
+        logger.debug("ProductGroup._uid2names() ended")
         return product_settings_dic
 
-    def _group(self, data_ele: Dict[str, str]) -> List[str]:
+    def _group(self, data_ele: Dict[str, Any]) -> List[Dict[str, Dict[int, str]]]:
         """create a list of products per group"""
-        logger.debug("ProductGroup._group()\n")
+        logger.debug("ProductGroup._group()")
 
         product_group_list = []
         portfolio_dic = data_ele.get("attributes", {}).get("productGroups", {})
-        for product_group in sorted(portfolio_dic.values(), key=lambda x: x["index"]):
+        valid_groups = [
+            product_group
+            for product_group in portfolio_dic.values()
+            if isinstance(product_group, dict)
+            and isinstance(product_group.get("index"), int)
+            and isinstance(product_group.get("products"), dict)
+        ]
+        for product_group in sorted(valid_groups, key=lambda x: x["index"]):
             id_dic = {}
             for _id_dic in product_group["products"].values():
-                for uid in _id_dic:
-                    id_dic[_id_dic[uid]["index"]] = uid
+                if not isinstance(_id_dic, dict):
+                    continue
+                for uid, uid_entry in _id_dic.items():
+                    if isinstance(uid_entry, dict) and isinstance(uid_entry.get("index"), int):
+                        id_dic[uid_entry["index"]] = uid
             product_group_list.append(
-                {"name": product_group["name"], "product_list": id_dic}
+                {"name": product_group.get("name"), "product_list": id_dic}
             )
 
-        logger.debug("ProductGroup._group()\n")
+        logger.debug("ProductGroup._group() ended")
         return product_group_list
 
     def map(
-        self, data_ele: Dict[str, str]
-    ) -> Tuple[Dict[str, str], Dict[str, str], int]:
+        self, data_ele: Dict[str, Any]
+    ) -> Tuple[Dict[str, str], List[Dict[str, Dict[int, str]]]]:
         """fetch data"""
-        logger.debug("ProductGroup.map()\n")
+        logger.debug("ProductGroup.map()")
 
-        # crate uid-name mapping and items per product group needed to sort the productgroup
+        # Create uid-name mapping and product groups used for ordering.
         return self._uid2names(data_ele), self._group(data_ele)
 
 
 class Overview:
-    """Overview class"""
+    """Fetch and combine account/card/depot overview data."""
 
     def __init__(
         self,
         client: requests.Session,
         unfiltered: bool = False,
         base_url: str = BASE_URL,
+        timeout: float = 10.0,
     ):
         self.client = client
         self.base_url = base_url
         self.unfiltered = unfiltered
+        self.timeout = timeout
 
     def _add(
         self,
-        data_dic: Dict[str, str],
-        product_group: Dict[str, str],
+        data_dic: Dict[str, Any],
+        product_group: Dict[str, Any],
         dic_id: str,
         product_display_dic: Dict[str, str],
-    ) -> Dict[str, str]:
+    ) -> Any:
         """add product to account_dic"""
-        logger.debug("Overview._add()\n")
+        logger.debug("Overview._add()")
 
         # add product data to account_dic
         acc_dic = data_dic[product_group["product_list"][dic_id]]
@@ -115,14 +129,14 @@ class Overview:
                     product_group["product_list"][dic_id]
                 ]
 
-        logger.debug("Overview._add() ended\n")
+        logger.debug("Overview._add() ended")
         return acc_dic
 
     def _add_remaining(
-        self, data_dic: Dict[str, str], account_dic: Dict[str, str], account_cnt: int
-    ) -> Dict[str, str]:
+        self, data_dic: Dict[str, Any], account_dic: Dict[int, Any], account_cnt: int
+    ) -> Dict[int, Any]:
         """add remaining products"""
-        logger.debug("Overview._add_remaining()\n")
+        logger.debug("Overview._add_remaining()")
 
         for product_data in data_dic.values():
             account_dic[account_cnt] = product_data
@@ -132,36 +146,52 @@ class Overview:
                 account_dic[account_cnt]["productgroup"] = None
             account_cnt += 1
 
-        logger.debug("Overview._add_remaining() ended\n")
+        logger.debug("Overview._add_remaining() ended")
         return account_dic
 
-    def _fetch(self, url_path) -> Dict[str, str]:
+    def _fetch(self, url_path: str) -> Dict[str, Any]:
         """fetch data via API"""
-        logger.debug("Overview._fetch()\n")
+        logger.debug("Overview._fetch()")
 
-        response = self.client.get(self.base_url + url_path)
-        if response.status_code == 200:
-            response_dic = response.json()
-        else:
-            logger.error(
-                "fetch %s: RC is not 200 but %s", url_path, response.status_code
+        endpoint = urljoin(self.base_url.rstrip("/") + "/", url_path.lstrip("/"))
+
+        try:
+            response = self.client.get(endpoint, timeout=self.timeout)
+        except requests.RequestException as err:
+            raise DKBRoboError(f"fetch {url_path}: request failed: {err}") from err
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as err:
+            status_code = response.status_code
+            response_text = response.text if response.text else ""
+            response_detail = (
+                f"; response={response_text[:200]}" if response_text else ""
             )
-            print(response.text)
-            response_dic = {}
+            raise DKBRoboError(
+                f"fetch {url_path}: http status code is {status_code}{response_detail}"
+            ) from err
 
-        logger.debug("Overview._fetch() ended\n")
+        try:
+            response_dic = response.json()
+        except ValueError as err:
+            raise DKBRoboError(f"fetch {url_path}: invalid json in response") from err
+
+        logger.debug("Overview._fetch() ended")
         return response_dic
 
-    def _sort(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
+    def _sort(self, portfolio_dic: Dict[str, Any]) -> Dict[int, Any]:
         """format and sort data"""
-        logger.debug("Overview._sort()\n")
+        logger.debug("Overview._sort()")
 
         account_dic = {}
         account_cnt = 0
 
         data_dic = self._itemize(portfolio_dic)
 
-        display_settings_dic = portfolio_dic.get("product_display", {}).get("data", {})
+        display_settings_dic = portfolio_dic.get("product_display", {}).get("data", [])
+        if not isinstance(display_settings_dic, list):
+            display_settings_dic = []
         productgroup = ProductGroup()
         for portfolio in display_settings_dic:
             # get id/name mapping and productlist per group
@@ -169,54 +199,59 @@ class Overview:
             for product_group in product_group_list:
                 # dic_id is a uid of the product
                 for dic_id in sorted(product_group["product_list"]):
-                    if product_group["product_list"][dic_id] in data_dic:
+                    product_uid = product_group["product_list"][dic_id]
+                    if product_uid in data_dic:
                         logger.debug(
                             'Overview._sort(): assign productgroup "%s" to product %s',
                             product_group["name"],
-                            product_group["product_list"][dic_id],
+                            product_uid,
                         )
                         # add to dictionary
                         account_dic[account_cnt] = self._add(
                             data_dic, product_group, dic_id, product_display_dic
                         )
-                        del data_dic[product_group["product_list"][dic_id]]
+                        del data_dic[product_uid]
                         account_cnt += 1
 
         # add products without productgroup
         account_dic = self._add_remaining(data_dic, account_dic, account_cnt)
 
-        logger.debug("Overview._sort() ended\n")
+        logger.debug("Overview._sort() ended")
         return account_dic
 
-    def _itemize(self, portfolio_dic: Dict[str, str]) -> Dict[str, str]:
+    def _itemize(self, portfolio_dic: Dict[str, Any]) -> Dict[str, Any]:
         """raw data"""
-        logger.debug("Overview._itemize()\n")
+        logger.debug("Overview._itemize()")
 
         product_dic = {}
 
-        product_group_dic = {
-            "accounts": "AccountItem",
-            "cards": "CardItem",
-            "depots": "DepotItem",
+        product_group_dic: Dict[str, Type] = {
+            "accounts": AccountItem,
+            "cards": CardItem,
+            "depots": DepotItem,
         }
         for product_group in sorted(product_group_dic.keys()):
-            if (
-                product_group in portfolio_dic
-                and "data" in portfolio_dic[product_group]
-            ):
-                for item in portfolio_dic[product_group]["data"]:
-                    item["attributes"]["id"] = item.get("id", None)
-                    item["attributes"]["type"] = item.get("type", None)
-                    product = globals()[product_group_dic[product_group]](
-                        **item["attributes"]
-                    )
+            group_payload = portfolio_dic.get(product_group, {})
+            group_data = group_payload.get("data", []) if isinstance(group_payload, dict) else []
+            if not isinstance(group_data, list):
+                continue
+            for item in group_data:
+                if not isinstance(item, dict):
+                    continue
+                item_id = item.get("id", None)
+                attributes = item.get("attributes", {})
+                if not isinstance(attributes, dict):
+                    attributes = {}
+                attributes = {**attributes, "id": item_id, "type": item.get("type", None)}
 
-                    if self.unfiltered:
-                        product_dic[item["id"]] = product
-                    else:
-                        product_dic[item["id"]] = product.format()
+                product = product_group_dic[product_group](**attributes)
 
-        logger.debug("Overview._itemize() ended\n")
+                if self.unfiltered:
+                    product_dic[item_id] = product
+                else:
+                    product_dic[item_id] = product.format()
+
+        logger.debug("Overview._itemize() ended")
         return product_dic
 
     def get(self):
@@ -234,12 +269,11 @@ class Overview:
                     "/credit-card/cards?filter%5Btype%5D=creditCard&filter%5Bportfolio%5D=dkb&filter%5Btype%5D=debitCard"
                 ),
                 "depots": self._fetch("/broker/brokerage-accounts"),
-                "loans": self._fetch("/loans/loans"),
             }
         else:
             portfolio_dic = {}
 
-        logger.debug("Overview.get() ended\n")
+        logger.debug("Overview.get() ended")
         return self._sort(portfolio_dic)
 
 
@@ -273,7 +307,8 @@ class AccountItem:
     def __post_init__(self):
         self.availableBalance = ulal(Amount, self.availableBalance)
         self.balance = ulal(Amount, self.balance)
-        self.interests = [self.InterestsItem(**interest) for interest in self.interests]
+        interests = self.interests if isinstance(self.interests, list) else []
+        self.interests = [self.InterestsItem(**interest) for interest in interests]
         self.nearTimeBalance = ulal(Amount, self.nearTimeBalance)
         self.product = ulal(self.Product, self.product)
         self.transactions = BASE_URL + f"/accounts/accounts/{self.id}/transactions"
@@ -292,7 +327,8 @@ class AccountItem:
         type: Optional[str] = None
 
         def __post_init__(self):
-            self.details = [self.DetailsItem(**detail) for detail in self.details]
+            details = self.details if isinstance(self.details, list) else []
+            self.details = [self.DetailsItem(**detail) for detail in details]
 
         @filter_unexpected_fields
         @dataclass
@@ -315,12 +351,12 @@ class AccountItem:
                 minimumAmount: Optional[float] = None
 
                 def __post_init__(self):
-                    if self.minimumAmount:
+                    if self.minimumAmount is not None:
                         try:
                             self.minimumAmount = float(self.minimumAmount)
                         except Exception:
                             self.minimumAmount = None
-                    if self.maximumAmount:
+                    if self.maximumAmount is not None:
                         try:
                             self.maximumAmount = float(self.maximumAmount)
                         except Exception:
@@ -342,14 +378,14 @@ class AccountItem:
         output_dic = {
             # for backward compatibility
             "account": self.iban,
-            "amount": self.balance.value,
+            "amount": self.balance.value if self.balance else None,
             "currencyCode": self.currencyCode,
             "date": self.updatedAt,
             "holderName": self.holderName,
             "iban": self.iban,
             "id": self.id,
             "limit": self.overdraftLimit,
-            "name": self.product.displayName,
+            "name": self.product.displayName if self.product else None,
             "transactions": self.transactions,
             "type": self.type,
         }
@@ -395,7 +431,10 @@ class CardItem:
         self.authorizedAmount = ulal(Amount, self.authorizedAmount)
         self.referenceAccount = ulal(self.Account, self.referenceAccount)
         self.billingDetails = ulal(self.BillingDetails, self.billingDetails)
-        self.limit = self.Limit(**self.limit)
+        if isinstance(self.limit, dict):
+            self.limit = self.Limit(**self.limit)
+        else:
+            self.limit = None
         self.product = ulal(self.Product, self.product)
         self.status = ulal(self.Status, self.status)
         self.holder = ulal(self.Holder, self.holder)
@@ -443,15 +482,17 @@ class CardItem:
         categories: Optional[List] = None
 
         def __post_init__(self):
-            if self.value:
+            if self.value is not None:
                 try:
                     self.value = float(self.value)
                 except Exception:
                     self.value = None
-            if self.categories:
+            if isinstance(self.categories, list):
                 self.categories = [
                     self.CategoryItem(**category) for category in self.categories
                 ]
+            else:
+                self.categories = []
 
         @filter_unexpected_fields
         @dataclass
@@ -495,22 +536,24 @@ class CardItem:
         output_dic = {
             "account": self.maskedPan,
             "expirydate": self.expiryDate,
-            "holdername:": self.holder.person.firstName
-            + " "
-            + self.holder.person.lastName,
+            "holdername:": (
+                f"{self.holder.person.firstName} {self.holder.person.lastName}"
+                if self.holder and self.holder.person
+                else None
+            ),
             "id": self.id,
-            "name": self.product.displayName,
-            "limit": self.limit.value,
+            "name": self.product.displayName if self.product else None,
+            "limit": self.limit.value if self.limit else None,
             "maskedpan": self.maskedPan,
-            "status": asdict(self.status),
-            "type": self.type.lower(),
+            "status": asdict(self.status) if self.status else None,
+            "type": self.type.lower() if self.type else None,
         }
         if self.type == "creditCard":
             output_dic["transactions"] = self.transactions
             # dkb does some weird stuff with the balance. we need to flip it
-            output_dic["amount"] = self.balance.value * -1
-            output_dic["currencycode"] = self.balance.currencyCode
-            output_dic["date"] = self.balance.date
+            output_dic["amount"] = self.balance.value * -1 if self.balance else None
+            output_dic["currencycode"] = self.balance.currencyCode if self.balance else None
+            output_dic["date"] = self.balance.date if self.balance else None
         else:
             output_dic["transactions"] = None
 
@@ -539,9 +582,12 @@ class DepotItem:
             self.BrokerageAccountPerformance, self.brokerageAccountPerformance
         )
         self.holder = ulal(Person, self.holder)
+        reference_accounts = (
+            self.referenceAccounts if isinstance(self.referenceAccounts, list) else []
+        )
         self.referenceAccounts = [
             self.ReferenceAccountItem(**reference_account)
-            for reference_account in self.referenceAccounts
+            for reference_account in reference_accounts
         ]
         self.transactions = (
             BASE_URL
@@ -581,8 +627,18 @@ class DepotItem:
 
         output_dic = {
             "account": self.depositAccountId,
-            "amount": self.brokerageAccountPerformance.currentValue.value,
-            "currencyCode": self.brokerageAccountPerformance.currentValue.currencyCode,
+            "amount": (
+                self.brokerageAccountPerformance.currentValue.value
+                if self.brokerageAccountPerformance
+                and self.brokerageAccountPerformance.currentValue
+                else None
+            ),
+            "currencyCode": (
+                self.brokerageAccountPerformance.currentValue.currencyCode
+                if self.brokerageAccountPerformance
+                and self.brokerageAccountPerformance.currentValue
+                else None
+            ),
             "holderName": self.holderName,
             "id": self.id,
             "name": self.holderName,
