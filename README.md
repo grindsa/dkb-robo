@@ -82,19 +82,19 @@ you need to import dkb-robo into your script
 create a new DKBRobo context handler and login to DKB portal
 
 ```python
-> with DKBRobo(
->     dkb_user=<login username>,
->     dkb_password=<password>,
->     chip_tan=True|False|qr,
->     mfa_device=<m|int>,
->     debug=True|False,
->     unfiltered=True|False,
->     headless=True|False,
->     xvfb=True|False,
->     session_backend=requests|curl-cffi,
->     http1_only=True|False,
->     proxies={"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"},
-> ) as dkb:
+with DKBRobo(
+    dkb_user=<login username>,
+    dkb_password=<password>,
+    chip_tan=True|False|qr,
+    mfa_device=<m|int>,
+    debug=True|False,
+    unfiltered=True|False,
+    headless=True|False,
+    xvfb=True|False,
+    session_backend=requests|curl-cffi,
+    http1_only=True|False,
+    proxies={"http": "http://127.0.0.1:8080", "https": "http://127.0.0.1:8080"},
+) as dkb:
 ```
 
 - dbk_user: username to access the dkb portal
