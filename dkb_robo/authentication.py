@@ -1,7 +1,7 @@
 # pylint: disable=r0913
 """Module for handling dkb standing orders"""
 
-from typing import Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypedDict
 import time
 import json
 import base64
@@ -9,7 +9,7 @@ import io
 import threading
 import logging
 import requests
-from dkb_robo.captcha import get_dkb_redeem_token
+from dkb_robo.captcha import get_dkb_redeem_token, login_via_browser
 from dkb_robo.portfolio import Overview
 from dkb_robo.utilities import (
     DKBRoboError,
@@ -40,10 +40,55 @@ HEADERS = {
 }
 
 
+class MFADeviceAttributes(TypedDict, total=False):
+    """Attributes for an MFA device/method entry."""
+
+    deviceName: str
+    enrolledAt: str
+    preferredDevice: bool
+
+
+class MFAMethod(TypedDict, total=False):
+    """Single MFA method entry returned by the API."""
+
+    id: str
+    attributes: MFADeviceAttributes
+
+
+class MFAMethodsResponse(TypedDict):
+    """Response shape for MFA methods list."""
+
+    data: List[MFAMethod]
+
+
+class MFAChallengeData(TypedDict, total=False):
+    """Response shape for MFA challenge data node."""
+
+    id: str
+    type: str
+    attributes: Dict[str, Any]
+
+
+class MFAChallengeResponse(TypedDict, total=False):
+    """Response shape for MFA challenge endpoints."""
+
+    data: MFAChallengeData
+
+
 class Authentication:
     """Authentication class"""
 
     base_url = BASE_URL
+    mfa_selection_max_attempts = 5
+    mfa_selection_cancel_tokens = {"q", "quit", "exit", "cancel"}
+    mfa_device_list_title = "Pick an authentication device from the below list:"
+    mfa_selection_prompt = ":"
+    mfa_table_index_width = 3
+    mfa_table_name_width = 36
+    mfa_table_date_width = 25
+    mfa_table_header_index = "#"
+    mfa_table_header_device = "device name"
+    mfa_table_header_date = "enrollment date"
 
     def __init__(
         self,
@@ -58,11 +103,16 @@ class Authentication:
         session_backend: str = "curl-cffi",
         http1_only: bool = False,
         request_timeout: int = 15,
+        login_via_browser: bool = False,
+        input_callback: Optional[Callable[[str], str]] = None,
+        output_callback: Optional[Callable[[str], None]] = None,
     ):
         """Constructor"""
         self.account_dic = {}
         self.client = None
-
+        self.login_via_browser = login_via_browser
+        self.input_callback = input_callback
+        self.output_callback = output_callback
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
@@ -77,7 +127,7 @@ class Authentication:
         self.http1_only = http1_only
         self.request_timeout = request_timeout
         if chip_tan:
-            logger.info("Using to chip_tan to login")
+            logger.info("Using chip_tan for login")
             if chip_tan in ("qr", "chip_tan_qr"):
                 self.mfa_method = "chip_tan_qr"
             else:
@@ -109,16 +159,29 @@ class Authentication:
         )
         return aliases[backend]
 
+    def _read_input(self, prompt: str) -> str:
+        """Read user input via injectable callback or built-in input()."""
+        if self.input_callback is not None:
+            return self.input_callback(prompt)
+        return input(prompt)
+
+    def _write_output(self, message: str) -> None:
+        """Write user-facing output via injectable callback or built-in print()."""
+        if self.output_callback is not None:
+            self.output_callback(message)
+            return
+        print(message)
+
     def _mfa_challenge(
-        self, mfa_dic: Dict[str, str], device_num: int = 0
-    ) -> Tuple[str, str]:
+        self, mfa_dic: MFAMethodsResponse, device_num: int = 0
+    ) -> Tuple[MFAChallengeResponse, Optional[str]]:
         """get challenge dict with information on the 2nd factor"""
         logger.debug(
             "Authentication._mfa_challenge(): login with device_num: %s\n", device_num
         )
 
         device_name = None
-        challenge_dic = {}
+        challenge_dic: MFAChallengeResponse = {}
         if "data" in mfa_dic and "id" in mfa_dic["data"][device_num]:
             try:
                 device_name = mfa_dic["data"][device_num]["attributes"]["deviceName"]
@@ -161,7 +224,7 @@ class Authentication:
                     f"Login failed: post request to get the mfa challenges failed. RC: {response.status_code}"
                 )
 
-            # we rmove the headers we added earlier
+            # we remove the headers we added earlier
             self.client.headers.pop("Content-Type")
             self.client.headers.pop("Accept")
         else:
@@ -170,7 +233,7 @@ class Authentication:
         logger.debug("Authentication._mfa_challenge() ended\n")
         return challenge_dic, device_name
 
-    def _mfa_challenge_id(self, challenge_dic: Dict[str, str]) -> str:
+    def _mfa_challenge_id(self, challenge_dic: MFAChallengeResponse) -> str:
         """get challenge dict with information on the 2nd factor"""
         logger.debug("api.Wrapper._mfa_challenge_id()\n")
         challenge_id = None
@@ -195,7 +258,9 @@ class Authentication:
         logger.debug("api.Wrapper._mfa_challenge_id() ended with: %s\n", challenge_id)
         return challenge_id
 
-    def _mfa_finalize(self, challenge_dic: Dict[str, str], devicename: str) -> bool:
+    def _mfa_finalize(
+        self, challenge_dic: MFAChallengeResponse, devicename: Optional[str]
+    ) -> bool:
         """wait for confirmation for the 2nd factor"""
         logger.debug("Authentication._mfa_finalize()\n")
 
@@ -206,6 +271,7 @@ class Authentication:
                 client=self.client,
                 base_url=self.base_url,
                 request_timeout=self.request_timeout,
+                output_callback=self.output_callback,
             )
         elif self.mfa_method in ("chip_tan_manual", "chip_tan_qr"):
             mfa_auth = TANAuthentication(
@@ -213,6 +279,8 @@ class Authentication:
                 base_url=self.base_url,
                 mfa_method=self.mfa_method,
                 request_timeout=self.request_timeout,
+                input_callback=self.input_callback,
+                output_callback=self.output_callback,
             )
         else:
             raise DKBRoboError(f"Login failed: unknown mfa method: {self.mfa_method}")
@@ -224,10 +292,10 @@ class Authentication:
         logger.debug("Authentication._mfa_finalize() ended with %s\n", mfa_completed)
         return mfa_completed
 
-    def _mfa_get(self) -> Dict[str, str]:
+    def _mfa_get(self) -> MFAMethodsResponse:
         """get mfa methods"""
         logger.debug("Authentication._mfa_get()\n")
-        mfa_dic = {}
+        mfa_dic: MFAMethodsResponse = {"data": []}
 
         # check for access_token and get mfa_methods
         if "access_token" in self.token_dic and "mfa_id" in self.token_dic:
@@ -250,14 +318,86 @@ class Authentication:
         logger.debug("Authentication._mfa_get() ended\n")
         return mfa_dic
 
-    def _mfa_select(self, mfa_dic: Dict[str, str]) -> int:
+    def _mfa_process(
+        self,
+        device_num: int,
+        device_list: List[int],
+        _tmp_device_num: str,
+        deviceselection_completed: bool,
+    ) -> Tuple[int, bool]:
+        logger.debug("Authentication._mfa_process(%s)", _tmp_device_num)
+        try:
+            # we are referring to an index in a list thus we need to lower the user input by 1
+            if int(_tmp_device_num) - 1 in device_list:
+                deviceselection_completed = True
+                device_num = int(_tmp_device_num) - 1
+            else:
+                self._write_output("\nWrong input!")
+        except Exception:
+            self._write_output("\nInvalid input!")
+
+        logger.debug("Authentication._mfa_process()\n ended")
+        return device_num, deviceselection_completed
+
+    @staticmethod
+    def _format_enrollment_date(enrolled_at_raw) -> str:
+        """Format enrollment timestamp as YYYY-MM-DD."""
+        if enrolled_at_raw:
+            return str(enrolled_at_raw).split("T", maxsplit=1)[0]
+        return "unknown"
+
+    def _print_mfa_devices_table(self, mfa_data: List[MFAMethod]) -> List[int]:
+        """Print MFA devices in fixed-width columns and return selectable indices."""
+        index_col_width = self.mfa_table_index_width
+        name_col_width = self.mfa_table_name_width
+        date_col_width = self.mfa_table_date_width
+        row_format = (
+            f"{{:<{index_col_width}}} "
+            f"{{:<{name_col_width}}} "
+            f"{{:<{date_col_width}}}"
+        )
+
+        self._write_output(f"\n{self.mfa_device_list_title}")
+        self._write_output(
+            row_format.format(
+                self.mfa_table_header_index,
+                self.mfa_table_header_device,
+                self.mfa_table_header_date,
+            )
+        )
+        self._write_output(
+            row_format.format(
+                "-" * index_col_width,
+                "-" * name_col_width,
+                "-" * date_col_width,
+            )
+        )
+
+        device_list = []
+        for idx, device_dic in enumerate(mfa_data):
+            device_list.append(idx)
+            if "attributes" in device_dic and "deviceName" in device_dic["attributes"]:
+                device_name = device_dic["attributes"]["deviceName"]
+                if len(device_name) > name_col_width:
+                    device_name = f"{device_name[: name_col_width - 3]}..."
+
+                enrolled_at = Authentication._format_enrollment_date(
+                    device_dic["attributes"].get("enrolledAt")
+                )
+                self._write_output(
+                    row_format.format(idx + 1, device_name, str(enrolled_at))
+                )
+
+        return device_list
+
+    def _mfa_select(self, mfa_dic: MFAMethodsResponse) -> int:
         """pick mfa_device from dictionary"""
         logger.debug("Authentication._mfa_select()")
         device_num = 0
 
         # adjust self.mfa_device if the user input is too high
         if "data" in mfa_dic and len(mfa_dic["data"]) < self.mfa_device:
-            logger.warning("User submitted mfa_device number is invalid. Ingoring...")
+            logger.warning("User submitted mfa_device number is invalid. Ignoring...")
             self.mfa_device = 0
 
         if self.mfa_device > 0:
@@ -269,16 +409,31 @@ class Authentication:
             device_num = self.mfa_device - 1
 
         elif "data" in mfa_dic and len(mfa_dic["data"]) > 1:
-            # use the first device (preferred device after _mfa_sort())
-            logger.debug(
-                "api.Wrapper._mfa_select(): multiple devices, using preferred device (index 0)"
-            )
-            device_num = 0
+            deviceselection_completed = False
+            failed_attempts = 0
+            while not deviceselection_completed:
+                if failed_attempts >= self.mfa_selection_max_attempts:
+                    raise DKBRoboError(
+                        "Login failed: maximum MFA device selection attempts exceeded"
+                    )
+
+                device_list = self._print_mfa_devices_table(mfa_dic["data"])
+                _tmp_device_num = self._read_input(self.mfa_selection_prompt)
+                if _tmp_device_num.strip().lower() in self.mfa_selection_cancel_tokens:
+                    raise DKBRoboError(
+                        "Login canceled by user during MFA device selection"
+                    )
+
+                device_num, deviceselection_completed = self._mfa_process(
+                    device_num, device_list, _tmp_device_num, deviceselection_completed
+                )
+                if not deviceselection_completed:
+                    failed_attempts += 1
 
         logger.debug("Authentication._mfa_select() ended with: %s", device_num)
         return device_num
 
-    def _mfa_sort(self, mfa_dic):
+    def _mfa_sort(self, mfa_dic: MFAMethodsResponse) -> MFAMethodsResponse:
         """sort mfa methods"""
         logger.debug("Authentication._mfa_sort()")
 
@@ -315,6 +470,9 @@ class Authentication:
                 "impersonate": "chrome",
                 "default_headers": False,
             }
+            if logger.isEnabledFor(logging.DEBUG):
+                # Enable low-level curl logging only when project debug logging is active.
+                session_kwargs["debug"] = True
             if self.http1_only:
                 session_kwargs["http_version"] = CurlHttpVersion.V1_1
 
@@ -394,7 +552,7 @@ class Authentication:
             self.client.headers = {"x-xsrf-token": csrf_token}
 
     def _token_update(self):
-        """update token information with 2fa iformation"""
+        """update token information with 2fa information"""
         logger.debug("Authentication._token_update()\n")
 
         data_dic = {
@@ -487,7 +645,7 @@ class Authentication:
         """login into DKB banking area via REST backend"""
         logger.debug("Authentication.login()\n")
 
-        mfa_dic = {}
+        mfa_dic: MFAMethodsResponse = {"data": []}
 
         # fetch captcha token required since 2025-11-01
         captcha_kwargs = {
@@ -519,8 +677,8 @@ class Authentication:
         # pick mfa device from list
         device_number = self._mfa_select(mfa_dic)
 
-        # we need a challege-id for polling so lets try to get it
-        mfa_challenge_dic = None
+        # we need a challenge-id for polling so lets try to get it
+        mfa_challenge_dic: Optional[MFAChallengeResponse] = None
         if "mfa_id" in self.token_dic and "data" in mfa_dic:
             mfa_challenge_dic, device_name = self._mfa_challenge(mfa_dic, device_number)
         else:
@@ -557,7 +715,18 @@ class Authentication:
         # create new session
         self.client = self._session_new()
 
-        self._rest_login()
+        # login via browser cannot be done headless
+        if self.login_via_browser:
+            self.client, _session_info = login_via_browser(
+                client=self.client,
+                dkb_user=self.dkb_user,
+                dkb_password=self.dkb_password,
+                headless=False,
+                xvfb=self.xvfb,
+            )
+            self._sync_csrf_header()
+        else:
+            self._rest_login()
 
         # get account overview
         overview = Overview(client=self.client, unfiltered=self.unfiltered)
@@ -588,10 +757,19 @@ class APPAuthentication:
         client: requests.Session,
         base_url: str = BASE_URL,
         request_timeout: int = 15,
+        output_callback: Optional[Callable[[str], None]] = None,
     ):
         self.client = client
         self.base_url = base_url
         self.request_timeout = request_timeout
+        self.output_callback = output_callback
+
+    def _write_output(self, message: str) -> None:
+        """Write user-facing output via injectable callback or built-in print()."""
+        if self.output_callback is not None:
+            self.output_callback(message)
+            return
+        print(message)
 
     def _check(self, polling_dic: Dict[str, str], cnt: 1) -> bool:
         logger.debug("APPAuthentication._check()\n")
@@ -621,7 +799,7 @@ class APPAuthentication:
             elif (
                 polling_dic["data"]["attributes"]["verificationStatus"]
             ) == "canceled":
-                raise DKBRoboError("2fa chanceled by user")
+                raise DKBRoboError("2fa canceled by user")
             else:
                 logger.info(
                     "Unknown processing status: %s",
@@ -639,9 +817,11 @@ class APPAuthentication:
         """2fa confirmation message"""
         logger.debug("api.Wrapper._print()\n")
         if devicename:
-            print(f'check your banking app on "{devicename}" and confirm login...')
+            self._write_output(
+                f'check your banking app on "{devicename}" and confirm login...'
+            )
         else:
-            print("check your banking app and confirm login...")
+            self._write_output("check your banking app and confirm login...")
 
     def finalize(
         self, challenge_id: str, _challenge_dic: Dict[str, str], devicename: str
@@ -690,11 +870,28 @@ class TANAuthentication:
         base_url: str = BASE_URL,
         mfa_method: str = "chip_tan_manual",
         request_timeout: int = 15,
+        input_callback: Optional[Callable[[str], str]] = None,
+        output_callback: Optional[Callable[[str], None]] = None,
     ):
         self.client = client
         self.base_url = base_url
         self.mfa_method = mfa_method
         self.request_timeout = request_timeout
+        self.input_callback = input_callback
+        self.output_callback = output_callback
+
+    def _read_input(self, prompt: str) -> str:
+        """Read user input via injectable callback or built-in input()."""
+        if self.input_callback is not None:
+            return self.input_callback(prompt)
+        return input(prompt)
+
+    def _write_output(self, message: str) -> None:
+        """Write user-facing output via injectable callback or built-in print()."""
+        if self.output_callback is not None:
+            self.output_callback(message)
+            return
+        print(message)
 
     def _image(self, qr_data: str) -> None:
         """show qr code"""
@@ -738,15 +935,17 @@ class TANAuthentication:
             and "chipTan" in challenge_dic["data"]["attributes"]
         ):
             if "headline" in challenge_dic["data"]["attributes"]["chipTan"]:
-                print(f"{challenge_dic['data']['attributes']['chipTan']['headline']}\n")
+                self._write_output(
+                    f"{challenge_dic['data']['attributes']['chipTan']['headline']}\n"
+                )
             if "instructions" in challenge_dic["data"]["attributes"]["chipTan"]:
                 for idx, instruction in enumerate(
                     challenge_dic["data"]["attributes"]["chipTan"]["instructions"],
                     start=1,
                 ):
-                    print(f"{idx}. {instruction}\n")
+                    self._write_output(f"{idx}. {instruction}\n")
 
-            tan = input("TAN: ")
+            tan = self._read_input("TAN: ")
 
         logger.debug("TANAuthentication._print() ended\n")
         return tan

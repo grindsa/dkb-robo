@@ -166,9 +166,10 @@ def get_dkb_redeem_token(
 
 # not used yet, but might be useful in the future
 def login_via_browser(
-    logger, dkb_user, dkb_password, timeout=30, headless=False, xvfb=False, client=None
+    dkb_user, dkb_password, timeout=30, headless=False, xvfb=False, client=None
 ):
     """Open DKB login page, solve Friendly Captcha, perform login via browser."""
+    logger.debug("login_via_browser: Starting login flow via browser")
 
     print("login_via_browser: Starting login flow via browser")
     with SB(uc=True, locale="de", headless=headless, xvfb=xvfb) as sb:
@@ -231,13 +232,12 @@ def login_via_browser(
 
         # After successful login, extract session headers and cookies
 
-        session = client
+        session = client or requests.session()
+        if getattr(session, "headers", None) is None:
+            session.headers = {}
         # Get cookies from SeleniumBase browser
         cookies = sb.get_cookies()
         cookie_dict = {c["name"]: c["value"] for c in cookies}
-
-        print("Cookies extracted from browser:")
-        print(cookie_dict)
 
         for name, value in cookie_dict.items():
             session.cookies.set(name, value)
@@ -256,11 +256,25 @@ def login_via_browser(
         except Exception:
             pass
 
+        for key, value in headers.items():
+            if key and value is not None:
+                session.headers[str(key)] = str(value)
+
+        # Keep canonical x-xsrf-token header in sync for API calls.
+        xsrf_token = (
+            headers.get("X-XSRF-TOKEN")
+            or headers.get("x-xsrf-token")
+            or cookie_dict.get("__Host-xsrf")
+            or cookie_dict.get("XSRF-TOKEN")
+        )
+        if xsrf_token:
+            session.headers["x-xsrf-token"] = str(xsrf_token)
+            headers["x-xsrf-token"] = str(xsrf_token)
+
         # Dump all session info into a dictionary
         session_info = {"cookies": cookie_dict, "headers": headers}
 
-        time.sleep(20)
-        # logger.info(f"Session info: {session_info}")
+        logger.debug(f"Session info: {session_info}")
 
         # session object is ready for use
         return session, session_info

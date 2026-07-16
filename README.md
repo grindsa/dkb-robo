@@ -377,8 +377,11 @@ Options:
   -u, --username TEXT             username to access the dkb portal
                                   [required]
   -p, --password TEXT             corresponding login password
+  --password-env-var TEXT         Environment variable name that contains the login password
+                                  [default: DKB_PASSWORD]
   --format [pprint|table|csv|json]
                                   output format to use
+  --http1-only                    Force HTTP/1.1 for curl-cffi sessions
   --proxy TEXT                    Proxy address used for both HTTP and HTTPS requests
   --help                          Show this message and exit.
 
@@ -386,26 +389,80 @@ Commands:
   accounts
   credit-limits
   download
+  interactive
   scan-postbox
   last-login
   standing-orders
   transactions
 ```
 
+`--proxy` and `--http1-only` are startup options. They must be passed before the subcommand.
+
 ### Example command to fetch account list
 
 ```bash
-py dkb -u <user> -p <password> accounts
+dkb -u <user> -p <password> accounts
+```
+
+If the `dkb` command is not available in your shell, use module mode instead:
+
+```bash
+python3 -m dkb_robo -u <user> -p <password> accounts
+```
+
+### Use environment variables for password
+
+By default the CLI reads the login password from `DKB_PASSWORD` if `-p/--password` is not provided.
+
+```bash
+export DKB_USERNAME="<user>"
+export DKB_PASSWORD="<password>"
+dkb accounts
+```
+
+You can also configure a custom environment variable name:
+
+```bash
+export DKB_USERNAME="<user>"
+export MY_DKB_PASSWORD="<password>"
+dkb --password-env-var MY_DKB_PASSWORD accounts
 ```
 
 ### Example commands to fetch transactions via CLI tool
 
 ```bash
-py dkb -u <user> -p <password> transactions --name Girokonto
-py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
-py dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
-py dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
+dkb -u <user> -p <password> transactions --name Girokonto
+dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx"
+dkb -u <user> -p <password> transactions --account "DE75xxxxxxxxxxxxxxxxxxx" --date-from 2023-08-01  --date-to 2023-08-15"
+dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
+dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" --http1-only accounts
 ```
+
+### Interactive mode
+
+Use interactive mode to login once, run multiple commands, and logout at the end.
+
+```bash
+dkb -u <user> -p <password> interactive
+```
+
+Interactive commands run in the same session, for example:
+
+```text
+dkb> accounts
+dkb> last-login
+dkb> transactions --name Girokonto
+dkb> download --list-only
+dkb> logout
+```
+
+You can also start interactive mode with startup options:
+
+```bash
+dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" --http1-only interactive
+```
+
+On Windows, use either `dkb ...` or `py -m dkb_robo ...`.
 
 ## Further documentation
 

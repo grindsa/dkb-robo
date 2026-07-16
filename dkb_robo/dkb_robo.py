@@ -36,6 +36,7 @@ class DKBRobo(object):
         http1_only=False,
         request_timeout=15,
         proxies=None,
+        login_via_browser=False,
     ):
         self.last_login = None
         self.account_dic = {}
@@ -54,6 +55,7 @@ class DKBRobo(object):
         self.http1_only = http1_only
         self.request_timeout = request_timeout
         self.proxies = proxies
+        self.login_via_browser = login_via_browser
 
     def __enter__(self):
         """Makes DKBRobo a Context Manager"""
@@ -79,6 +81,7 @@ class DKBRobo(object):
             session_backend=self.session_backend,
             http1_only=self.http1_only,
             request_timeout=self.request_timeout,
+            login_via_browser=self.login_via_browser,
         )
 
         # login and get the account overview

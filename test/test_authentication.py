@@ -45,7 +45,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan=True)
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_manual", self.auth.mfa_method)
 
@@ -59,7 +59,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan="qr")
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_qr", self.auth.mfa_method)
 
@@ -68,7 +68,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan="chip_tan_qr")
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_qr", self.auth.mfa_method)
 
@@ -139,8 +139,32 @@ class TestAuthentication(unittest.TestCase):
             impersonate="chrome", default_headers=False, http_version="V1_1"
         )
 
+    def test_012__session_new_curl_backend_debug_enabled(self):
+        """test _session_new() forwards debug=True when logger debug mode is enabled"""
+        curl_client = Mock()
+        curl_client.cookies = {}
+        curl_requests = Mock()
+        curl_requests.Session.return_value = curl_client
+        curl_http_version = Mock()
+        curl_http_version.V1_1 = "V1_1"
+        curl_module = Mock()
+        curl_module.requests = curl_requests
+        curl_module.CurlHttpVersion = curl_http_version
+
+        with patch.dict(sys.modules, {"curl_cffi": curl_module}):
+            with patch(
+                "dkb_robo.authentication.logger.isEnabledFor", return_value=True
+            ):
+                self.auth.__init__(session_backend="curl-cffi")
+                client = self.auth._session_new()
+
+        self.assertEqual(curl_client, client)
+        curl_requests.Session.assert_called_once_with(
+            impersonate="chrome", default_headers=False, debug=True
+        )
+
     @patch("requests.session")
-    def test_012__session_new(self, mock_session):
+    def test_013__session_new(self, mock_session):
         """test _session_new()"""
         self.auth.session_backend = "requests"
         mock_session.return_value.cookies = {}
@@ -149,7 +173,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual(self.auth.headers, client.headers)
 
     @patch("requests.session")
-    def test_013__session_new(self, mock_session):
+    def test_014__session_new(self, mock_session):
         """test _session_new()"""
         mock_session.headers = {}
         self.auth.proxies = "proxies"
@@ -157,7 +181,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual("proxies", client.proxies)
 
     @patch("requests.session")
-    def test_014__session_new(self, mock_session):
+    def test_015__session_new(self, mock_session):
         """test _session_new()"""
         self.auth.session_backend = "requests"
         mock_session.return_value.headers = {}
@@ -166,7 +190,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual("foo", client.headers["x-xsrf-token"])
 
     @patch("requests.session")
-    def test_015__session_new_csrf_with_none_headers(self, mock_session):
+    def test_016__session_new_csrf_with_none_headers(self, mock_session):
         """test _session_new() initializes headers when csrf cookie exists and self.headers is None"""
         self.auth.session_backend = "requests"
         self.auth.headers = None
@@ -178,7 +202,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual({"x-xsrf-token": "foo"}, client.headers)
 
     @patch("requests.session")
-    def test_016__session_new_assigns_headers(self, mock_session):
+    def test_017__session_new_assigns_headers(self, mock_session):
         """test _session_new() assigns provided headers to client"""
         self.auth.session_backend = "requests"
         self.auth.headers = {"Accept": "application/json"}
@@ -188,7 +212,7 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual(self.auth.headers, client.headers)
 
-    def test_017__session_new_curl_backend_import_error(self):
+    def test_018__session_new_curl_backend_import_error(self):
         """test _session_new() raises DKBRoboError when curl-cffi import fails"""
         self.auth.session_backend = "curl-cffi"
         broken_module = types.ModuleType("curl_cffi")
@@ -203,17 +227,17 @@ class TestAuthentication(unittest.TestCase):
             str(err.exception),
         )
 
-    def test_018_init_xvfb(self):
+    def test_019_init_xvfb(self):
         """test init() with xvfb=True"""
         self.auth.__init__(xvfb=True)
         self.assertTrue(self.auth.xvfb)
 
-    def test_019_init_headless(self):
+    def test_020_init_headless(self):
         """test init() with headless=True"""
         self.auth.__init__(headless=True)
         self.assertTrue(self.auth.headless)
 
-    def test_020_token_get(self):
+    def test_021_token_get(self):
         """test _token_get() ok"""
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
@@ -223,7 +247,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth._token_get()
         self.assertEqual({"foo": "bar"}, self.auth.token_dic)
 
-    def test_021_token_get_xvfb(self):
+    def test_022_token_get_xvfb(self):
         """test _token_get() ignores xvfb directly"""
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
@@ -234,7 +258,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth._token_get()
         self.assertEqual({"foo": "bar"}, self.auth.token_dic)
 
-    def test_022_token_get_retries_once_on_csrf_403(self):
+    def test_023_token_get_retries_once_on_csrf_403(self):
         """test _token_get() retries once after csrf-related 403"""
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
@@ -263,7 +287,7 @@ class TestAuthentication(unittest.TestCase):
             lcm.output,
         )
 
-    def test_023_token_get_403_without_csrf_does_not_retry(self):
+    def test_024_token_get_403_without_csrf_does_not_retry(self):
         """test _token_get() does not retry if 403 is not csrf-related"""
         self.auth.dkb_user = "dkb_user"
         self.auth.dkb_password = "dkb_password"
@@ -284,7 +308,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual(1, self.auth.client.post.call_count)
         self.auth.client.get.assert_not_called()
 
-    def test_024_sync_csrf_header_uses_host_xsrf_cookie(self):
+    def test_025_sync_csrf_header_uses_host_xsrf_cookie(self):
         """test _sync_csrf_header() prefers __Host-xsrf cookie"""
         self.auth.client = Mock()
         self.auth.client.cookies = {
@@ -297,7 +321,7 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual("host-token", self.auth.client.headers["x-xsrf-token"])
 
-    def test_025_sync_csrf_header_uses_fallback_cookie(self):
+    def test_026_sync_csrf_header_uses_fallback_cookie(self):
         """test _sync_csrf_header() uses XSRF-TOKEN when __Host-xsrf is missing"""
         self.auth.client = Mock()
         self.auth.client.cookies = {"XSRF-TOKEN": "fallback-token"}
@@ -307,7 +331,7 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual("fallback-token", self.auth.client.headers["x-xsrf-token"])
 
-    def test_026_sync_csrf_header_no_token_no_change(self):
+    def test_027_sync_csrf_header_no_token_no_change(self):
         """test _sync_csrf_header() does nothing when csrf cookie is missing"""
         self.auth.client = Mock()
         self.auth.client.cookies = {}
@@ -317,7 +341,7 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual({"existing": "header"}, self.auth.client.headers)
 
-    def test_027_sync_csrf_header_cookies_error_no_change(self):
+    def test_028_sync_csrf_header_cookies_error_no_change(self):
         """test _sync_csrf_header() ignores cookie access errors"""
         self.auth.client = Mock()
         self.auth.client.cookies = Mock()
@@ -328,7 +352,7 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual({"existing": "header"}, self.auth.client.headers)
 
-    def test_028_sync_csrf_header_headers_fallback_assignment(self):
+    def test_029_sync_csrf_header_headers_fallback_assignment(self):
         """test _sync_csrf_header() falls back to replacing headers mapping"""
         self.auth.client = Mock()
         self.auth.client.cookies = {"__Host-xsrf": "host-token"}
@@ -338,8 +362,42 @@ class TestAuthentication(unittest.TestCase):
 
         self.assertEqual({"x-xsrf-token": "host-token"}, self.auth.client.headers)
 
+    @patch("dkb_robo.portfolio.Overview.get")
+    @patch("dkb_robo.authentication.Authentication._sync_csrf_header")
+    @patch("dkb_robo.authentication.login_via_browser")
+    @patch("dkb_robo.authentication.Authentication._session_new")
+    def test_030_login_browser_applies_returned_headers(
+        self,
+        mock_session_new,
+        mock_browser_login,
+        mock_sync_csrf,
+        mock_overview,
+    ):
+        """test login() browser flow syncs csrf after browser login"""
+        self.auth.login_via_browser = True
+
+        mock_client = Mock()
+        mock_client.headers = {}
+        mock_client.cookies = {}
+        mock_session_new.return_value = mock_client
+        mock_browser_login.return_value = (
+            mock_client,
+            {
+                "headers": {
+                    "User-Agent": "UA/1.0",
+                    "X-XSRF-TOKEN": "token-from-browser",
+                }
+            },
+        )
+        mock_overview.return_value = {"accounts": []}
+
+        self.auth.login()
+
+        self.assertEqual(mock_client, self.auth.client)
+        self.assertTrue(mock_sync_csrf.called)
+
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_029_token_get(self, mock_captcha):
+    def test_031_token_get(self, mock_captcha):
         """test _token_get() error"""
         mock_captcha.return_value = "captcha_token"
         self.auth.dkb_user = "dkb_user"
@@ -356,7 +414,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertFalse(self.auth.token_dic)
 
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_030_rest_login_forwards_headless_and_xvfb(self, mock_captcha):
+    def test_032_rest_login_forwards_headless_and_xvfb(self, mock_captcha):
         """test _rest_login() forwards browser mode flags to captcha solver"""
         self.auth.headless = True
         self.auth.xvfb = True
@@ -386,14 +444,14 @@ class TestAuthentication(unittest.TestCase):
             client=self.auth.client,
         )
 
-    def test_031__mfa_get(self):
+    def test_033__mfa_get(self):
         """test _mfa_get()"""
         self.auth.token_dic = {"foo": "bar"}
         with self.assertRaises(Exception) as err:
             self.auth._mfa_get()
         self.assertEqual("Login failed: no 1fa access token.", str(err.exception))
 
-    def test_032__mfa_get(self):
+    def test_034__mfa_get(self):
         """test _mfa_get()"""
         self.auth.token_dic = {"access_token": "bar", "mfa_id": "mfa_id"}
         self.auth.client = Mock()
@@ -404,7 +462,7 @@ class TestAuthentication(unittest.TestCase):
             "Login failed: getting mfa_methods failed. RC: 400", str(err.exception)
         )
 
-    def test_033__mfa_get(self):
+    def test_035__mfa_get(self):
         """test _mfa_get()"""
         self.auth.client = Mock()
         self.auth.client.get.return_value.status_code = 200
@@ -412,46 +470,46 @@ class TestAuthentication(unittest.TestCase):
         self.auth.token_dic = {"access_token": "bar", "mfa_id": "mfa_id"}
         self.assertEqual({"foo1": "bar1"}, self.auth._mfa_get())
 
-    def test_034__mfa_sort(self):
-        """test sort_mfa_devices()"""
-        mfa_dic = {
-            "data": [
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
-                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
-            ]
-        }
-        expected_result = {
-            "data": [
-                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
-            ]
-        }
-        self.assertEqual(expected_result, self.auth._mfa_sort(mfa_dic))
-
-    def test_035__mfa_sort(self):
-        """test sort_mfa_devices()"""
-        mfa_dic = {
-            "data": [
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
-                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
-            ]
-        }
-        expected_result = {
-            "data": [
-                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
-                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
-            ]
-        }
-        self.assertEqual(expected_result, self.auth._mfa_sort(mfa_dic))
-
     def test_036__mfa_sort(self):
         """test sort_mfa_devices()"""
         mfa_dic = {
             "data": [
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
+                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
+            ]
+        }
+        expected_result = {
+            "data": [
+                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
+            ]
+        }
+        self.assertEqual(expected_result, self.auth._mfa_sort(mfa_dic))
+
+    def test_037__mfa_sort(self):
+        """test sort_mfa_devices()"""
+        mfa_dic = {
+            "data": [
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
+                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
+            ]
+        }
+        expected_result = {
+            "data": [
+                {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-02"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-01"}},
+                {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
+            ]
+        }
+        self.assertEqual(expected_result, self.auth._mfa_sort(mfa_dic))
+
+    def test_038__mfa_sort(self):
+        """test sort_mfa_devices()"""
+        mfa_dic = {
+            "data": [
                 {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-03"}},
                 {"attributes": {"preferredDevice": False, "enrolledAt": "2022-01-02"}},
                 {"attributes": {"preferredDevice": True, "enrolledAt": "2022-01-04"}},
@@ -466,36 +524,94 @@ class TestAuthentication(unittest.TestCase):
         }
         self.assertEqual(expected_result, self.auth._mfa_sort(mfa_dic))
 
-    def test_037__mfa_select(self):
+    def test_039__mfa_select(self):
         """test _mfa_select()"""
         mfa_dic = {"foo": "bar"}
         self.auth.mfa_device = 1
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
 
-    def test_038__mfa_select(self):
+    def test_040__mfa_select(self):
         """test _mfa_select()"""
         mfa_dic = {"foo": "bar"}
         self.auth.mfa_device = 2
         self.assertEqual(1, self.auth._mfa_select(mfa_dic))
 
-    def test_039__mfa_select(self):
+    def test_041__mfa_select(self):
         """test _mfa_select()"""
         mfa_dic = {"foo": "bar"}
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
 
-    def test_040__mfa_select(self):
-        """test _mfa_select() - multiple devices, no explicit device set: auto-select first (preferred)"""
+    def test_042__mfa_process_valid_selection(self):
+        """test _mfa_process() accepts valid selection and marks completion"""
+        device_num, deviceselection_completed = self.auth._mfa_process(
+            device_num=0,
+            device_list=[0, 1, 2],
+            _tmp_device_num="2",
+            deviceselection_completed=False,
+        )
+        self.assertEqual(1, device_num)
+        self.assertTrue(deviceselection_completed)
+
+    def test_043__mfa_process_out_of_range_selection(self):
+        """test _mfa_process() rejects out-of-range input"""
+        with patch("sys.stdout", new_callable=io.StringIO) as fake_out:
+            device_num, deviceselection_completed = self.auth._mfa_process(
+                device_num=0,
+                device_list=[0, 1],
+                _tmp_device_num="5",
+                deviceselection_completed=False,
+            )
+        self.assertEqual(0, device_num)
+        self.assertFalse(deviceselection_completed)
+        self.assertIn("Wrong input!", fake_out.getvalue())
+
+    def test_044__mfa_process_non_numeric_selection(self):
+        """test _mfa_process() rejects non-numeric input"""
+        with patch("sys.stdout", new_callable=io.StringIO) as fake_out:
+            device_num, deviceselection_completed = self.auth._mfa_process(
+                device_num=1,
+                device_list=[0, 1],
+                _tmp_device_num="abc",
+                deviceselection_completed=False,
+            )
+        self.assertEqual(1, device_num)
+        self.assertFalse(deviceselection_completed)
+        self.assertIn("Invalid input!", fake_out.getvalue())
+
+    @patch("builtins.input", return_value="1")
+    def test_045__mfa_select(self, mock_input):
+        """test _mfa_select() - multiple devices with interactive selection"""
         self.auth.mfa_device = 0
         mfa_dic = {
             "data": [
-                {"attributes": {"deviceName": "device-1"}},
-                {"attributes": {"deviceName": "device-2"}},
+                {
+                    "attributes": {
+                        "deviceName": "device-1",
+                        "enrolledAt": "2026-07-16T10:11:12.123Z",
+                    }
+                },
+                {
+                    "attributes": {
+                        "deviceName": "device-2",
+                        "enrolledAt": "2026-07-15T10:11:12.123Z",
+                    }
+                },
             ]
         }
-        self.assertEqual(0, self.auth._mfa_select(mfa_dic))
 
-    def test_041__mfa_select(self):
-        """test _mfa_select() - invalid mfa_device resets to 0, auto-selects preferred device"""
+        with patch("sys.stdout", new_callable=io.StringIO) as fake_out:
+            self.assertEqual(0, self.auth._mfa_select(mfa_dic))
+
+        output = fake_out.getvalue()
+        self.assertIn("#   device name", output)
+        self.assertIn("enrollment date", output)
+        self.assertIn("2026-07-16", output)
+        self.assertNotIn("2026-07-16T10:11:12.123Z", output)
+        mock_input.assert_called_once_with(":")
+
+    @patch("builtins.input", return_value="1")
+    def test_046__mfa_select(self, _mock_input):
+        """test _mfa_select() - invalid mfa_device resets to 0 and allows interactive selection"""
         self.auth.mfa_device = 4
         mfa_dic = {
             "data": [
@@ -506,12 +622,70 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.assertEqual(0, self.auth._mfa_select(mfa_dic))
         self.assertIn(
-            "WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ingoring...",
+            "WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ignoring...",
             lcm.output,
         )
 
-    def test_042__mfa_select(self):
-        """test _mfa_select() - multiple devices, default mfa_device: auto-select first (preferred)"""
+    @patch("builtins.input", return_value="cancel")
+    def test_041a__mfa_select_cancel(self, _mock_input):
+        """test _mfa_select() allows user to cancel device selection"""
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+        with self.assertRaises(Exception) as err:
+            self.auth._mfa_select(mfa_dic)
+        self.assertEqual(
+            "Login canceled by user during MFA device selection",
+            str(err.exception),
+        )
+
+    def test_041c__mfa_select_uses_injected_io_callbacks(self):
+        """test _mfa_select() can use injected input/output callbacks"""
+        outputs = []
+        callback_auth = Authentication(
+            input_callback=lambda _prompt: "1",
+            output_callback=outputs.append,
+        )
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+
+        with patch(
+            "builtins.input",
+            side_effect=AssertionError("builtins.input should not be called"),
+        ):
+            self.assertEqual(0, callback_auth._mfa_select(mfa_dic))
+
+        self.assertTrue(
+            any("Pick an authentication device" in line for line in outputs)
+        )
+
+    @patch("builtins.input", return_value="x")
+    def test_041b__mfa_select_max_attempts(self, _mock_input):
+        """test _mfa_select() aborts after too many invalid attempts"""
+        self.auth.mfa_selection_max_attempts = 2
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+        with self.assertRaises(Exception) as err:
+            self.auth._mfa_select(mfa_dic)
+        self.assertEqual(
+            "Login failed: maximum MFA device selection attempts exceeded",
+            str(err.exception),
+        )
+
+    @patch("builtins.input", return_value="1")
+    def test_047__mfa_select(self, _mock_input):
+        """test _mfa_select() - multiple devices, default mfa_device: interactive selection"""
         mfa_dic = {
             "data": [
                 {"attributes": {"deviceName": "device-1"}},
@@ -520,7 +694,7 @@ class TestAuthentication(unittest.TestCase):
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
 
-    def test_043__mfa_select(self):
+    def test_048__mfa_select(self):
         """test _mfa_select() - multiple devices, mfa_device=2: selects second device"""
         self.auth.mfa_device = 2
         mfa_dic = {
@@ -531,8 +705,9 @@ class TestAuthentication(unittest.TestCase):
         }
         self.assertEqual(1, self.auth._mfa_select(mfa_dic))
 
-    def test_044__mfa_select(self):
-        """test _mfa_select() - multiple devices, no explicit device: returns 0 without prompting"""
+    @patch("builtins.input", return_value="1")
+    def test_049__mfa_select(self, mock_input):
+        """test _mfa_select() - multiple devices prompts for a selection"""
         mfa_dic = {
             "data": [
                 {"attributes": {"deviceName": "device-1"}},
@@ -540,9 +715,11 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
+        mock_input.assert_called_once_with(":")
 
-    def test_045__mfa_select(self):
-        """test _mfa_select() - multiple devices without deviceName attribute: returns 0"""
+    @patch("builtins.input", return_value="1")
+    def test_050__mfa_select(self, mock_input):
+        """test _mfa_select() - multiple devices without deviceName attribute still allow selection"""
         mfa_dic = {
             "data": [
                 {"id": "dev1"},
@@ -550,9 +727,63 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
         self.assertEqual(0, self.auth._mfa_select(mfa_dic))
+        mock_input.assert_called_once_with(":")
+
+    @patch("builtins.input", return_value="1")
+    def test_051__mfa_select_truncates_long_device_name(self, mock_input):
+        """test _mfa_select() truncates long device names to fixed column width"""
+        long_device_name = "very-long-device-name-abcdefghijklmnopqrstuvwxyz1234567890"
+        expected_name = f"{long_device_name[:33]}..."
+        mfa_dic = {
+            "data": [
+                {
+                    "attributes": {
+                        "deviceName": long_device_name,
+                        "enrolledAt": "2026-07-16T10:11:12.123Z",
+                    }
+                },
+                {"attributes": {"deviceName": "short-name"}},
+            ]
+        }
+
+        with patch("sys.stdout", new_callable=io.StringIO) as fake_out:
+            self.assertEqual(0, self.auth._mfa_select(mfa_dic))
+
+        output = fake_out.getvalue()
+        self.assertIn(expected_name, output)
+        self.assertNotIn(long_device_name, output)
+        mock_input.assert_called_once_with(":")
+
+    def test_051a__tan_print_uses_injected_io_callbacks(self):
+        """test TANAuthentication._print() can use injected input/output callbacks"""
+        outputs = []
+        tan_auth = TANAuthentication(
+            client=Mock(),
+            input_callback=lambda _prompt: "123456",
+            output_callback=outputs.append,
+        )
+        challenge_dic = {
+            "data": {
+                "attributes": {
+                    "chipTan": {
+                        "headline": "Please confirm",
+                        "instructions": ["Step one", "Step two"],
+                    }
+                }
+            }
+        }
+
+        with patch(
+            "builtins.input",
+            side_effect=AssertionError("builtins.input should not be called"),
+        ):
+            self.assertEqual("123456", tan_auth._print(challenge_dic))
+
+        self.assertTrue(any("Please confirm" in line for line in outputs))
+        self.assertTrue(any("1. Step one" in line for line in outputs))
 
     @patch("requests.session")
-    def test_046__mfa_challenge(self, mock_session):
+    def test_052__mfa_challenge(self, mock_session):
         """test _mfa_challenge()"""
         mfa_dic = {}
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
@@ -563,7 +794,7 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("requests.session")
-    def test_047__mfa_challenge(self, mock_session):
+    def test_053__mfa_challenge(self, mock_session):
         """test _mfa_challenge()"""
         self.auth.client = Mock()
         self.auth.client.headers = {}
@@ -583,7 +814,7 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("requests.session")
-    def test_048__mfa_challenge(self, mock_session):
+    def test_054__mfa_challenge(self, mock_session):
         """test _mfa_challenge()"""
         self.auth.client = Mock()
         self.auth.client.headers = {}
@@ -608,7 +839,7 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("requests.session")
-    def test_049__mfa_challenge(self, mock_session):
+    def test_055__mfa_challenge(self, mock_session):
         """test _mfa_challenge()"""
         self.auth.client = Mock()
         self.auth.client.headers = {}
@@ -633,7 +864,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.TANAuthentication.finalize")
     @patch("dkb_robo.authentication.APPAuthentication.finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge_id")
-    def test_050__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
+    def test_056__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
         """test _mfa_finalize()"""
         mock_cid.return_value = "cid"
         mock_app.return_value = "app"
@@ -647,7 +878,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.TANAuthentication.finalize")
     @patch("dkb_robo.authentication.APPAuthentication.finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge_id")
-    def test_051__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
+    def test_057__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
         """test _mfa_finalize()"""
         mock_cid.return_value = "cid"
         mock_app.return_value = "app"
@@ -661,7 +892,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.TANAuthentication.finalize")
     @patch("dkb_robo.authentication.APPAuthentication.finalize")
     @patch("dkb_robo.authentication.Authentication._mfa_challenge_id")
-    def test_052__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
+    def test_058__mfa_finalize(self, mock_cid, mock_app, mock_ctm):
         """test _mfa_finalize()"""
         mock_cid.return_value = "cid"
         mock_app.return_value = "app"
@@ -677,7 +908,7 @@ class TestAuthentication(unittest.TestCase):
         self.assertFalse(mock_ctm.called)
 
     @patch("requests.session")
-    def test_053__mfa_challenge_id(self, mock_session):
+    def test_059__mfa_challenge_id(self, mock_session):
         """test _mfa_challenge_id()"""
         mfa_dic = {}
         with self.assertRaises(Exception) as err:
@@ -688,7 +919,7 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("requests.session")
-    def test_054__mfa_challenge_id(self, mock_session):
+    def test_060__mfa_challenge_id(self, mock_session):
         """test _mfa_challenge_id()"""
         mfa_dic = {"data": {"id": "id", "type": "type"}}
         with self.assertRaises(Exception) as err:
@@ -699,12 +930,12 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("requests.session")
-    def test_055__mfa_challenge_id(self, mock_session):
+    def test_061__mfa_challenge_id(self, mock_session):
         """test _mfa_challenge_id()"""
         mfa_dic = {"data": {"id": "id", "type": "mfa-challenge"}}
         self.assertEqual("id", self.auth._mfa_challenge_id(mfa_dic))
 
-    def test_056__token_update(self):
+    def test_062__token_update(self):
         """test _token_update() ok"""
         self.auth.token_dic = {"mfa_id": "mfa_id", "access_token": "access_token"}
         self.auth.client = Mock()
@@ -713,7 +944,7 @@ class TestAuthentication(unittest.TestCase):
         self.auth._token_update()
         self.assertEqual({"foo": "bar"}, self.auth.token_dic)
 
-    def test_057__token_update(self):
+    def test_063__token_update(self):
         """test _token_update() nok"""
         self.auth.token_dic = {"mfa_id": "mfa_id", "access_token": "access_token"}
         self.auth.client = Mock()
@@ -728,7 +959,7 @@ class TestAuthentication(unittest.TestCase):
             {"mfa_id": "mfa_id", "access_token": "access_token"}, self.auth.token_dic
         )
 
-    def test_058__device_data_send(self):
+    def test_064__device_data_send(self):
         """test _device_data_send() ok"""
         self.auth.token_dic = {"mfa_id": "mfa_id"}
         self.auth.client = Mock()
@@ -750,7 +981,7 @@ class TestAuthentication(unittest.TestCase):
             "application/json, text/plain, */*", self.auth.client.headers["Accept"]
         )
 
-    def test_059__device_data_send(self):
+    def test_065__device_data_send(self):
         """test _device_data_send() nok"""
         self.auth.token_dic = {"mfa_id": "mfa_id"}
         self.auth.client = Mock()
@@ -770,7 +1001,7 @@ class TestAuthentication(unittest.TestCase):
         )
 
     @patch("dkb_robo.authentication.get_valid_screen_resolution")
-    def test_060__device_data_send_os_detection_and_payload(self, mock_resolution):
+    def test_066__device_data_send_os_detection_and_payload(self, mock_resolution):
         """test _device_data_send() maps User-Agent to OS and forwards screen resolution"""
         mock_resolution.return_value = {"width": 1111, "height": 777}
         self.auth.token_dic = {"mfa_id": "mfa_id"}
@@ -811,7 +1042,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_061_login(
+    def test_067_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -839,7 +1070,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_062_login(
+    def test_068_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -872,7 +1103,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_063_login(
+    def test_069_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -909,7 +1140,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_064_login(
+    def test_070_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -950,7 +1181,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_065_login(
+    def test_071_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -992,7 +1223,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_066_login(
+    def test_072_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -1037,7 +1268,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_067_login(
+    def test_073_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -1088,7 +1319,7 @@ class TestAuthentication(unittest.TestCase):
     @patch("dkb_robo.authentication.Authentication._token_get")
     @patch("dkb_robo.authentication.Authentication._session_new")
     @patch("dkb_robo.authentication.get_dkb_redeem_token")
-    def test_068_login(
+    def test_074_login(
         self,
         _mock_captcha,
         mock_sess,
@@ -1124,11 +1355,11 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(mock_overview.called)
         self.assertTrue(mock_device_data_send.called)
 
-    def test_069_logout(self):
+    def test_075_logout(self):
         """test logout"""
         self.assertFalse(self.auth.logout())
 
-    def test_070_logout_closes_client_and_clears_reference(self):
+    def test_076_logout_closes_client_and_clears_reference(self):
         """test logout closes an active client and resets self.client"""
         client = Mock()
         self.auth.client = client
@@ -1138,7 +1369,7 @@ class TestAuthentication(unittest.TestCase):
         client.close.assert_called_once()
         self.assertIsNone(self.auth.client)
 
-    def test_071_logout_handles_close_exception_and_clears_reference(self):
+    def test_077_logout_handles_close_exception_and_clears_reference(self):
         """test logout handles close() errors and still clears self.client"""
         failing_client = Mock()
         failing_client.close.side_effect = RuntimeError("close failed")
@@ -1165,7 +1396,7 @@ class TestAPPAuthentication(unittest.TestCase):
         self.appauth = APPAuthentication(client=mock_session)
         # self.maxDiff = None
 
-    def test_072__check(self):
+    def test_078__check(self):
         """test _check_processing_status()"""
         polling_dic = {}
         with self.assertRaises(Exception) as err:
@@ -1175,7 +1406,7 @@ class TestAPPAuthentication(unittest.TestCase):
             str(err.exception),
         )
 
-    def test_073__check(self):
+    def test_079__check(self):
         """test _check_processing_status()"""
         polling_dic = {"data": {"attributes": {"verificationStatus": "foo"}}}
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
@@ -1184,19 +1415,19 @@ class TestAPPAuthentication(unittest.TestCase):
             "INFO:dkb_robo.authentication:Unknown processing status: foo", lcm.output
         )
 
-    def test_074__check(self):
+    def test_080__check(self):
         """test _check_processing_status()"""
         polling_dic = {"data": {"attributes": {"verificationStatus": "processed"}}}
         self.assertEqual(True, self.appauth._check(polling_dic, 1))
 
-    def test_075__check(self):
+    def test_081__check(self):
         """test _check_processing_status()"""
         polling_dic = {"data": {"attributes": {"verificationStatus": "canceled"}}}
         with self.assertRaises(Exception) as err:
             self.assertEqual(True, self.appauth._check(polling_dic, 1))
-        self.assertEqual("2fa chanceled by user", str(err.exception))
+        self.assertEqual("2fa canceled by user", str(err.exception))
 
-    def test_076__check(self):
+    def test_082__check(self):
         """test _check_processing_status()"""
         polling_dic = {"data": {"attributes": {"verificationStatus": "processing"}}}
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
@@ -1207,7 +1438,7 @@ class TestAPPAuthentication(unittest.TestCase):
         )
 
     @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    def test_077__print(self, mock_stdout):
+    def test_083__print(self, mock_stdout):
         """test _print_app_2fa_confirmation()"""
         self.appauth._print(None)
         self.assertIn(
@@ -1215,7 +1446,7 @@ class TestAPPAuthentication(unittest.TestCase):
         )
 
     @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
-    def test_078__print(self, mock_stdout):
+    def test_084__print(self, mock_stdout):
         """test _print_app_2fa_confirmation()"""
         self.appauth._print("devicename")
         self.assertIn(
@@ -1226,7 +1457,7 @@ class TestAPPAuthentication(unittest.TestCase):
     @patch("time.sleep", return_value=None)
     @patch("dkb_robo.authentication.APPAuthentication._check")
     @patch("dkb_robo.authentication.APPAuthentication._print")
-    def test_079_finalize(self, mock_confirm, mock_status, _mock_sleep):
+    def test_085_finalize(self, mock_confirm, mock_status, _mock_sleep):
         """test _mfa_finalize()"""
         self.appauth.client = Mock()
         self.appauth.client.headers = {}
@@ -1249,7 +1480,7 @@ class TestAPPAuthentication(unittest.TestCase):
     @patch("time.sleep", return_value=None)
     @patch("dkb_robo.authentication.APPAuthentication._check")
     @patch("dkb_robo.authentication.APPAuthentication._print")
-    def test_080_finalize(self, mock_confirm, mock_status, _mock_sleep):
+    def test_086_finalize(self, mock_confirm, mock_status, _mock_sleep):
         """test _mfa_finalize()"""
         self.appauth.client = Mock()
         self.appauth.client.headers = {}
@@ -1279,7 +1510,7 @@ class TestTANAuthentication(unittest.TestCase):
         # self.maxDiff = None
 
     @patch("dkb_robo.authentication.TANAuthentication._image")
-    def test_081__print(self, mock_show):
+    def test_087__print(self, mock_show):
         """test _print()"""
         challenge_dic = {}
         self.assertFalse(self.tanauth._print(challenge_dic))
@@ -1288,7 +1519,7 @@ class TestTANAuthentication(unittest.TestCase):
     @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
     @patch("dkb_robo.authentication.TANAuthentication._image")
     @patch("builtins.input")
-    def test_082__print(self, mock_input, mock_show, mock_stdout):
+    def test_088__print(self, mock_input, mock_show, mock_stdout):
         """test _print()"""
         challenge_dic = {
             "data": {
@@ -1310,7 +1541,7 @@ class TestTANAuthentication(unittest.TestCase):
     @unittest.mock.patch("sys.stdout", new_callable=io.StringIO)
     @patch("dkb_robo.authentication.TANAuthentication._image")
     @patch("builtins.input")
-    def test_083__print(self, mock_input, mock_show, mock_stdout):
+    def test_089__print(self, mock_input, mock_show, mock_stdout):
         """test _print()"""
         challenge_dic = {
             "data": {
@@ -1331,13 +1562,13 @@ class TestTANAuthentication(unittest.TestCase):
         self.assertTrue(mock_show.called)
 
     @patch("PIL.Image.open")
-    def test_084__print(self, mock_open):
+    def test_090__print(self, mock_open):
         """test _print()"""
         self.assertFalse(self.tanauth._image("cXJEYXRh"))
         self.assertTrue(mock_open.called)
 
     @patch("dkb_robo.authentication.TANAuthentication._print")
-    def test_085_finalize(self, mock_ctan):
+    def test_091_finalize(self, mock_ctan):
         """test finalize()"""
         mock_ctan.return_value = "ctan"
         self.tanauth.client = Mock()
@@ -1353,7 +1584,7 @@ class TestTANAuthentication(unittest.TestCase):
         self.assertTrue(mock_ctan.called)
 
     @patch("dkb_robo.authentication.TANAuthentication._print")
-    def test_086_finalize(self, mock_ctan):
+    def test_092_finalize(self, mock_ctan):
         """test finalize()"""
         mock_ctan.return_value = "ctan"
         self.tanauth.client = Mock()
@@ -1369,7 +1600,7 @@ class TestTANAuthentication(unittest.TestCase):
         self.assertTrue(mock_ctan.called)
 
     @patch("dkb_robo.authentication.TANAuthentication._print")
-    def test_087_finalize(self, mock_ctan):
+    def test_093_finalize(self, mock_ctan):
         """test finalize()"""
         mock_ctan.return_value = "ctan"
         self.tanauth.client = Mock()
