@@ -642,6 +642,25 @@ class TestAuthentication(unittest.TestCase):
             str(err.exception),
         )
 
+    def test_041c__mfa_select_uses_injected_io_callbacks(self):
+        """test _mfa_select() can use injected input/output callbacks"""
+        outputs = []
+        callback_auth = Authentication(
+            input_callback=lambda _prompt: "1",
+            output_callback=outputs.append,
+        )
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+
+        with patch("builtins.input", side_effect=AssertionError("builtins.input should not be called")):
+            self.assertEqual(0, callback_auth._mfa_select(mfa_dic))
+
+        self.assertTrue(any("Pick an authentication device" in line for line in outputs))
+
     @patch("builtins.input", return_value="x")
     def test_041b__mfa_select_max_attempts(self, _mock_input):
         """test _mfa_select() aborts after too many invalid attempts"""
@@ -729,6 +748,31 @@ class TestAuthentication(unittest.TestCase):
         self.assertIn(expected_name, output)
         self.assertNotIn(long_device_name, output)
         mock_input.assert_called_once_with(":")
+
+    def test_051a__tan_print_uses_injected_io_callbacks(self):
+        """test TANAuthentication._print() can use injected input/output callbacks"""
+        outputs = []
+        tan_auth = TANAuthentication(
+            client=Mock(),
+            input_callback=lambda _prompt: "123456",
+            output_callback=outputs.append,
+        )
+        challenge_dic = {
+            "data": {
+                "attributes": {
+                    "chipTan": {
+                        "headline": "Please confirm",
+                        "instructions": ["Step one", "Step two"],
+                    }
+                }
+            }
+        }
+
+        with patch("builtins.input", side_effect=AssertionError("builtins.input should not be called")):
+            self.assertEqual("123456", tan_auth._print(challenge_dic))
+
+        self.assertTrue(any("Please confirm" in line for line in outputs))
+        self.assertTrue(any("1. Step one" in line for line in outputs))
 
     @patch("requests.session")
     def test_052__mfa_challenge(self, mock_session):
