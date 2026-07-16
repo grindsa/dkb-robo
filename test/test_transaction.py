@@ -8,6 +8,7 @@ from datetime import date
 import unittest
 import logging
 import json
+import requests
 from unittest.mock import patch, Mock, MagicMock, mock_open
 import io
 
@@ -18,6 +19,7 @@ from dkb_robo.transaction import (
     AccountTransactionItem,
     CreditCardTransactionItem,
     DepotTransactionItem,
+    DKBRoboError,
 )
 
 
@@ -40,20 +42,40 @@ class TestTransactions(unittest.TestCase):
         self.maxDiff = None
 
     def test_001__fetch(self):
-        """test Transactions._fetch() returning error"""
+        """test Transactions._fetch() returning http error"""
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 400
-        self.transaction.client.get.return_value.json.return_value = {"foo": "bar"}
-        with self.assertLogs("dkb_robo", level="INFO") as lcm:
-            self.assertEqual(
-                {"data": [], "included": []}, self.transaction._fetch("transaction_url")
-            )
-        self.assertIn(
-            "ERROR:dkb_robo.transaction:fetch transactions: http status code is not 200 but 400",
-            lcm.output,
+        self.transaction.client.get.return_value.text = "bad request"
+        self.transaction.client.get.return_value.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError("400 Client Error")
+        )
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._fetch("transaction_url")
+        self.assertEqual(
+            "fetch transactions: http status code is 400; response=bad request",
+            str(err.exception),
         )
 
     def test_002__fetch(self):
+        """test Transactions._fetch() request exception"""
+        self.transaction.client = Mock()
+        self.transaction.client.get.side_effect = requests.exceptions.Timeout("timeout")
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._fetch("transaction_url")
+        self.assertIn("fetch transactions: request failed", str(err.exception))
+
+    def test_003__fetch(self):
+        """test Transactions._fetch() invalid json"""
+        self.transaction.client = Mock()
+        self.transaction.client.get.return_value.status_code = 200
+        self.transaction.client.get.return_value.raise_for_status.return_value = None
+        self.transaction.client.get.return_value.json.side_effect = ValueError("invalid")
+
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._fetch("transaction_url")
+        self.assertIn("fetch transactions: invalid json in response", str(err.exception))
+
+    def test_004__fetch(self):
         """test _get_transaction_list() with wrong response"""
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 200
@@ -62,7 +84,7 @@ class TestTransactions(unittest.TestCase):
             {"data": [], "included": []}, self.transaction._fetch("transaction_url")
         )
 
-    def test_003__fetch(self):
+    def test_005__fetch(self):
         """test _get_transaction_list() without pagination"""
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 200
@@ -74,7 +96,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._fetch("transaction_url"),
         )
 
-    def test_004__fetch(self):
+    def test_006__fetch(self):
         """test _get_transaction_list()"""
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 200
@@ -98,7 +120,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._fetch("transaction_url"),
         )
 
-    def test_005__fetch(self):
+    def test_007__fetch(self):
         """test _get_transaction_list() with pagination"""
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 200
@@ -127,7 +149,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._fetch("transaction_url"),
         )
 
-    def test_006__filter(self):
+    def test_008__filter(self):
         """test _filter() with empty transaction list"""
         transaction_list = []
         from_date = "01.01.2023"
@@ -136,7 +158,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "trtype")
         )
 
-    def test_007__filter(self):
+    def test_009__filter(self):
         """test _filter() with a single transaction"""
         transaction_list = [
             {
@@ -157,7 +179,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "trtype"),
         )
 
-    def test_008__filter(self):
+    def test_010__filter(self):
         """test _filter_transactions() with two transactions"""
         transaction_list = [
             {
@@ -186,7 +208,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "trtype"),
         )
 
-    def test_009__filter(self):
+    def test_011__filter(self):
         """test _filter_transactions() with two transactions but only one is in range"""
         transaction_list = [
             {
@@ -211,7 +233,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "trtype"),
         )
 
-    def test_010__filter(self):
+    def test_012__filter(self):
         """test _filter_transactions() with two transaction but only one is the right type"""
         transaction_list = [
             {
@@ -236,7 +258,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "trtype"),
         )
 
-    def test_011__filter(self):
+    def test_013__filter(self):
         """test _filter_transactions() with two transaction check for booked status"""
         transaction_list = [
             {
@@ -261,7 +283,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "booked"),
         )
 
-    def test_012__filter(self):
+    def test_014__filter(self):
         """test _filter_transactions() with two transactions check for pending status"""
         transaction_list = [
             {
@@ -286,7 +308,7 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "pending"),
         )
 
-    def test_013__filter(self):
+    def test_015__filter(self):
         """test _filter_transactions() with two transactions check for reserved status"""
         transaction_list = [
             {
@@ -311,10 +333,45 @@ class TestTransactions(unittest.TestCase):
             self.transaction._filter(transaction_list, from_date, to_date, "reserved"),
         )
 
+    def test_016__filter(self):
+        """test _filter() skips invalid booking date rows"""
+        transaction_list = [
+            {
+                "foo1": "bar1",
+                "attributes": {"status": "booked", "bookingDate": "invalid"},
+            },
+            {
+                "foo2": "bar2",
+                "attributes": {"status": "booked", "bookingDate": "2023-01-15"},
+            },
+        ]
+        result = [
+            {
+                "foo2": "bar2",
+                "attributes": {"status": "booked", "bookingDate": "2023-01-15"},
+            }
+        ]
+        self.assertEqual(
+            result,
+            self.transaction._filter(transaction_list, "2023-01-01", "2023-01-31", "booked"),
+        )
+
+    def test_017__filter(self):
+        """test _filter() invalid date input raises DKBRoboError"""
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._filter([], "invalid", "2023-01-31", "booked")
+        self.assertIn("filter transactions: invalid date", str(err.exception))
+
+    def test_018__format(self):
+        """test _format() rejects unsupported type"""
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._format([], "unknown")
+        self.assertIn("format transactions: unsupported account type 'unknown'", str(err.exception))
+
     @patch("dkb_robo.transaction.AccountTransactionItem")
     @patch("dkb_robo.transaction.Transactions._filter")
     @patch("dkb_robo.transaction.Transactions._fetch")
-    def test_014_get(self, mock_fetch, mock_filter, mock_aformat):
+    def test_019_get(self, mock_fetch, mock_filter, mock_aformat):
         "" " test get() for acount transactions " ""
         mock_aformat.return_value = "mock_aformat"
         mock_aformat.format.return_value = "foo"
@@ -339,7 +396,7 @@ class TestTransactions(unittest.TestCase):
     @patch("dkb_robo.transaction.Transactions._correlate")
     @patch("dkb_robo.transaction.Transactions._filter")
     @patch("dkb_robo.transaction.Transactions._fetch")
-    def test_015_get(
+    def test_020_get(
         self,
         mock_fetch,
         mock_filter,
@@ -375,7 +432,7 @@ class TestTransactions(unittest.TestCase):
     @patch("dkb_robo.transaction.AccountTransactionItem")
     @patch("dkb_robo.transaction.Transactions._filter")
     @patch("dkb_robo.transaction.Transactions._fetch")
-    def test_016_get(self, mock_fetch, mock_filter, mock_aformat):
+    def test_021_get(self, mock_fetch, mock_filter, mock_aformat):
         "" " test get() for acount transactions " ""
         mock_aformat.return_value = "mock_aformat"
         mock_aformat.format.return_value = "foo"
@@ -397,7 +454,7 @@ class TestTransactions(unittest.TestCase):
     @patch("dkb_robo.transaction.Transactions._correlate")
     @patch("dkb_robo.transaction.Transactions._filter")
     @patch("dkb_robo.transaction.Transactions._fetch")
-    def test_017_get(
+    def test_022_get(
         self,
         mock_fetch,
         mock_filter,
@@ -436,7 +493,7 @@ class TestTransactions(unittest.TestCase):
     @patch("dkb_robo.transaction.Transactions._correlate")
     @patch("dkb_robo.transaction.Transactions._filter")
     @patch("dkb_robo.transaction.Transactions._fetch")
-    def test_018_get(
+    def test_023_get(
         self,
         mock_fetch,
         mock_filter,
@@ -466,7 +523,7 @@ class TestTransactions(unittest.TestCase):
         self.assertFalse(mock_creditformat.called)
         self.assertTrue(mock_depotformat.called)
 
-    def test_019_map(self):
+    def test_024_map(self):
         """test _details() - add instrument information"""
         included_list = [
             {
@@ -520,7 +577,7 @@ class TestTransactions(unittest.TestCase):
         }
         self.assertEqual(result, self.transaction._map(data_dic, included_list))
 
-    def test_020_map(self):
+    def test_025_map(self):
         """test _details() - add instrument information"""
         included_list = [
             {
@@ -566,7 +623,7 @@ class TestTransactions(unittest.TestCase):
         }
         self.assertEqual(result, self.transaction._map(data_dic, included_list))
 
-    def test_021_map(self):
+    def test_026_map(self):
         """test _details() - add instrument information"""
         included_list = [
             {
@@ -611,9 +668,54 @@ class TestTransactions(unittest.TestCase):
             },
         }
         self.assertEqual(result, self.transaction._map(data_dic, included_list))
+
+    def test_027_map(self):
+        """test _map() with non-dict position"""
+        self.assertIsNone(self.transaction._map("invalid", []))
+
+    def test_028_map(self):
+        """test _map() adds attributes tree when missing"""
+        included_list = [{"id": "inid", "attributes": {"foo": "bar"}}]
+        data_dic = {"relationships": {"instrument": {"data": {"id": "inid"}}}}
+
+        result = self.transaction._map(data_dic, included_list)
+
+        self.assertEqual({"foo": "bar", "id": "inid"}, result["attributes"]["instrument"])
+        self.assertEqual({"foo": "bar"}, included_list[0]["attributes"])
+
+    def test_029_format(self):
+        """test _format() does not mutate source attributes"""
+        raw_transaction_list = [
+            {
+                "id": "tx1",
+                "attributes": {
+                    "bookingDate": "2022-01-15",
+                    "valueDate": "2022-01-16",
+                    "description": "desc",
+                    "transactionType": "credit",
+                    "amount": {"value": 1, "currencyCode": "EUR"},
+                    "creditor": {
+                        "creditorAccount": {"iban": "DE00"},
+                        "agent": {},
+                        "id": "cid",
+                        "name": "Creditor",
+                    },
+                    "debtor": {
+                        "debtorAccount": {"iban": "DE01"},
+                        "agent": {},
+                        "id": "did",
+                        "name": "Debtor",
+                    },
+                },
+            }
+        ]
+
+        self.transaction._format(raw_transaction_list, "account")
+
+        self.assertNotIn("id", raw_transaction_list[0]["attributes"])
 
     @patch("dkb_robo.transaction.Transactions._map")
-    def test_022__correlate(self, mock_map):
+    def test_030__correlate(self, mock_map):
         """test _correlate()"""
         mock_map.return_value = "mock_map"
         transaction_dic = {"data": [{"foo": "bar"}]}
@@ -621,7 +723,7 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(mock_map.called)
 
     @patch("dkb_robo.transaction.Transactions._map")
-    def test_023__correlate(self, mock_map):
+    def test_031__correlate(self, mock_map):
         """test _correlate()"""
         mock_map.return_value = "mock_map"
         transaction_dic = {"included": "included", "data": [{"foo": "bar"}]}
@@ -629,7 +731,7 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(mock_map.called)
 
     @patch("dkb_robo.transaction.Transactions._map")
-    def test_024__correlate(self, mock_map):
+    def test_032__correlate(self, mock_map):
         """test _correlate()"""
         mock_map.return_value = None
         transaction_dic = {"included": "included", "data": [{"foo": "bar"}]}
@@ -637,7 +739,7 @@ class TestTransactions(unittest.TestCase):
         self.assertTrue(mock_map.called)
 
     @patch("dkb_robo.transaction.Transactions._map")
-    def test_025__correlate(self, mock_map):
+    def test_033__correlate(self, mock_map):
         """test _correlate()"""
         mock_map.return_value = "mock_map"
         transaction_dic = {"included": "included", "data1": [{"foo": "bar"}]}
@@ -692,7 +794,7 @@ class TestAccountTransactionItem(unittest.TestCase):
 
     @patch("dkb_robo.transaction.Amount", autospec=True)
     @patch("dkb_robo.transaction.Account", autospec=True)
-    def test_026_post_init(self, MockAccount, MockAmount):
+    def test_034_post_init(self, MockAccount, MockAmount):
         MockAmount.return_value = MagicMock()
         MockAccount.return_value = MagicMock()
 
@@ -704,7 +806,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(transaction.description, "Payment for services")
 
     @patch("dkb_robo.transaction.logger")
-    def test_027_peer_information(self, mock_logger):
+    def test_035_peer_information(self, mock_logger):
         transaction = AccountTransactionItem(**self.transaction_data)
         self.assertEqual("BICCODE", transaction.creditor.bic)
         self.assertEqual("creditor_id", transaction.creditor.id)
@@ -718,7 +820,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual("debintermediaryName", transaction.debtor.intermediaryName)
 
     @patch("dkb_robo.transaction.logger")
-    def test_028_peer_information(self, mock_logger):
+    def test_036_peer_information(self, mock_logger):
 
         self.amount_data = {"value": 100, "currencyCode": "USD"}
         self.creditor_data = {
@@ -770,7 +872,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(result, transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_029_format(self, mock_logger):
+    def test_037_format(self, mock_logger):
         transaction = AccountTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
 
@@ -793,7 +895,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(expected_transaction, formatted_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_030_format(self, mock_logger):
+    def test_038_format(self, mock_logger):
         self.transaction_data["debtor"]["debtorAccount"]["intermediaryName"] = None
         transaction = AccountTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
@@ -817,7 +919,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(expected_transaction, formatted_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_031_format(self, mock_logger):
+    def test_039_format(self, mock_logger):
         self.transaction_data["amount"] = {"value": -100, "currencyCode": "EUR"}
         transaction = AccountTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
@@ -841,7 +943,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(expected_transaction, formatted_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_032_format(self, mock_logger):
+    def test_040_format(self, mock_logger):
         self.transaction_data["amount"] = {"value": -100, "currencyCode": "EUR"}
         self.transaction_data["creditor"]["creditorAccount"]["intermediaryName"] = None
 
@@ -867,7 +969,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(expected_transaction, formatted_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_033_format(self, mock_logger):
+    def test_041_format(self, mock_logger):
         """do not use intermediaryName name for via debit"""
         self.transaction_data["amount"] = {"value": -100, "currencyCode": "EUR"}
         self.transaction_data["description"] = "VISA Debitkartenumsatz"
@@ -893,7 +995,7 @@ class TestAccountTransactionItem(unittest.TestCase):
         self.assertEqual(expected_transaction, formatted_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_034_format(self, mock_logger):
+    def test_042_format(self, mock_logger):
         """do not use intermediaryName name for via debit"""
         self.transaction_data["amount"] = {"value": -100, "currencyCode": "EUR"}
         self.transaction_data["description"] = "VISA Debitkartenumsatz in Fremdwährung"
@@ -917,6 +1019,25 @@ class TestAccountTransactionItem(unittest.TestCase):
             "text": "credit Creditor Name VISA Debitkartenumsatz in Fremdwährung",
         }
         self.assertEqual(expected_transaction, formatted_transaction)
+
+    @patch("dkb_robo.transaction.logger")
+    def test_043_format(self, mock_logger):
+        """format should be robust when amount and peers are missing"""
+        transaction = AccountTransactionItem(
+            amount=None,
+            creditor=None,
+            debtor=None,
+            description=None,
+            transactionType=None,
+        )
+
+        formatted_transaction = transaction.format()
+
+        self.assertEqual(None, formatted_transaction["amount"])
+        self.assertEqual(None, formatted_transaction["currencycode"])
+        self.assertEqual(None, formatted_transaction["peeraccount"])
+        self.assertEqual(None, formatted_transaction["peer"])
+        self.assertEqual("", formatted_transaction["text"])
 
 
 class TestCreditCardTransactionItem(unittest.TestCase):
@@ -942,7 +1063,7 @@ class TestCreditCardTransactionItem(unittest.TestCase):
     @patch(
         "dkb_robo.transaction.CreditCardTransactionItem.MerchantCategory", autospec=True
     )
-    def test_033_post_init(self, MockMerchantCategory, MockAmount):
+    def test_044_post_init(self, MockMerchantCategory, MockAmount):
         MockAmount.side_effect = [MagicMock(), MagicMock()]
         MockMerchantCategory.return_value = MagicMock()
 
@@ -952,7 +1073,7 @@ class TestCreditCardTransactionItem(unittest.TestCase):
         MockAmount.assert_any_call(**self.merchant_amount_data)
         MockMerchantCategory.assert_called_once_with(**self.merchant_category_data)
 
-    def test_034_post_init(self):
+    def test_045_post_init(self):
 
         transaction = CreditCardTransactionItem(**self.transaction_data)
 
@@ -969,7 +1090,7 @@ class TestCreditCardTransactionItem(unittest.TestCase):
         self.assertEqual(transaction.status, "completed")
 
     @patch("dkb_robo.transaction.logger")
-    def test_035_format(self, mock_logger):
+    def test_046_format(self, mock_logger):
         transaction = CreditCardTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
 
@@ -979,6 +1100,21 @@ class TestCreditCardTransactionItem(unittest.TestCase):
             "currencycode": "USD",
             "text": "Payment at merchant",
             "vdate": "2022-01-15",
+        }
+
+        self.assertEqual(formatted_transaction, expected_transaction)
+
+    @patch("dkb_robo.transaction.logger")
+    def test_047_format(self, mock_logger):
+        transaction = CreditCardTransactionItem(amount=None)
+        formatted_transaction = transaction.format()
+
+        expected_transaction = {
+            "amount": None,
+            "bdate": None,
+            "currencycode": None,
+            "text": None,
+            "vdate": None,
         }
 
         self.assertEqual(formatted_transaction, expected_transaction)
@@ -1027,7 +1163,7 @@ class TestDepotTransactionItem(unittest.TestCase):
     @patch("dkb_robo.transaction.DepotTransactionItem.Instrument", autospec=True)
     @patch("dkb_robo.transaction.DepotTransactionItem.Performance", autospec=True)
     @patch("dkb_robo.transaction.DepotTransactionItem.Quote", autospec=True)
-    def test_036_post_init(
+    def test_048_post_init(
         self,
         MockQuote,
         MockPerformance,
@@ -1050,7 +1186,7 @@ class TestDepotTransactionItem(unittest.TestCase):
         MockPerformance.assert_called_once_with(**self.performance_data)
         MockQuote.assert_called_once_with(**self.quote_data)
 
-    def test_037_post_init(self):
+    def test_049_post_init(self):
         transaction = DepotTransactionItem(**self.transaction_data)
         self.assertEqual(transaction.id, "trans123")
         self.assertEqual(transaction.availableQuantity.unit, "shares")
@@ -1081,7 +1217,7 @@ class TestDepotTransactionItem(unittest.TestCase):
         self.assertEqual(transaction.quote.timestamp, "2022-01-15")
 
     @patch("dkb_robo.transaction.logger")
-    def test_038_format(self, mock_logger):
+    def test_050_format(self, mock_logger):
         transaction = DepotTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
 
@@ -1102,7 +1238,7 @@ class TestDepotTransactionItem(unittest.TestCase):
         self.assertEqual(formatted_transaction, expected_transaction)
 
     @patch("dkb_robo.transaction.logger")
-    def test_039_format(self, mock_logger):
+    def test_051_format(self, mock_logger):
         self.transaction_data["availableQuantity"]["value"] = "aa"
         transaction = DepotTransactionItem(**self.transaction_data)
         formatted_transaction = transaction.format()
@@ -1120,6 +1256,35 @@ class TestDepotTransactionItem(unittest.TestCase):
             "market": "market1",
             "price": 150.0,
         }
+        self.assertEqual(formatted_transaction, expected_transaction)
+
+    def test_052_post_init(self):
+        """instrument post init should ignore malformed identifiers"""
+        instrument = DepotTransactionItem.Instrument(
+            id="instr123",
+            identifiers="invalid",
+            name={"long": "Long Name", "short": "Short Name"},
+            unit="unit1",
+        )
+        self.assertEqual([], instrument.identifiers)
+
+    @patch("dkb_robo.transaction.logger")
+    def test_053_format(self, mock_logger):
+        """format should be robust for missing nested depot data"""
+        transaction = DepotTransactionItem()
+        formatted_transaction = transaction.format()
+
+        expected_transaction = {
+            "isin_wkn": None,
+            "lastorderdate": None,
+            "price_euro": None,
+            "quantity": None,
+            "shares": None,
+            "shares_unit": None,
+            "text": None,
+            "text_long": None,
+        }
+
         self.assertEqual(formatted_transaction, expected_transaction)
 
 
