@@ -42,6 +42,7 @@ class TestDKBRobo(unittest.TestCase):
             _store_http1_only,
             _store_session_backend,
             standing_orders,
+            exemption_orders,
             credit_limits,
             last_login,
             accounts,
@@ -65,6 +66,7 @@ class TestDKBRobo(unittest.TestCase):
         self._store_http1_only = _store_http1_only
         self._store_session_backend = _store_session_backend
         self.standing_orders = standing_orders
+        self.exemption_orders = exemption_orders
         self.credit_limits = credit_limits
         self.last_login = last_login
         self.accounts = accounts
@@ -707,6 +709,52 @@ class TestDKBRobo(unittest.TestCase):
         runner = CliRunner()
         self.assertIn(
             "<Result okay>", str(runner.invoke(self.standing_orders, obj=obj))
+        )
+        self.assertTrue(mock_click.called)
+
+    @patch("dkb_robo.cli.object2dictionary")
+    @patch("click.echo")
+    @patch("dkb_robo.cli._login")
+    def test_025a_exemption_orders(self, mock_login, mock_click, mock_object2dictionary):
+        """test exemption orders unfiltered"""
+        mock_login.return_value.__enter__.return_value.get_exemption_order.return_value = [
+            MagicMock()
+        ]
+        obj = Config()
+        obj.FORMAT = Mock()
+        obj.UNFILTERED = True
+        runner = CliRunner()
+        self.assertEqual(
+            "<Result okay>", str(runner.invoke(self.exemption_orders, obj=obj))
+        )
+        self.assertFalse(mock_click.called)
+        self.assertTrue(mock_object2dictionary.called)
+
+    @patch("click.echo")
+    @patch("dkb_robo.cli._login")
+    def test_025b_exemption_orders(self, mock_login, mock_click):
+        """test exemption orders filtered"""
+        obj = Config()
+        obj.FORMAT = Mock()
+        obj.UNFILTERED = False
+        runner = CliRunner()
+        self.assertEqual(
+            "<Result okay>", str(runner.invoke(self.exemption_orders, obj=obj))
+        )
+        self.assertFalse(mock_click.called)
+
+    @patch("click.echo")
+    @patch("dkb_robo.cli._login")
+    def test_025c_exemption_orders(self, mock_login, mock_click):
+        """exemption orders error handling"""
+        from dkb_robo import DKBRoboError
+
+        mock_login.side_effect = DKBRoboError("Error during session confirmation")
+        obj = Config()
+        obj.FORMAT = "foo"
+        runner = CliRunner()
+        self.assertIn(
+            "<Result okay>", str(runner.invoke(self.exemption_orders, obj=obj))
         )
         self.assertTrue(mock_click.called)
 
