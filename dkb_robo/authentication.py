@@ -81,6 +81,14 @@ class Authentication:
     base_url = BASE_URL
     mfa_selection_max_attempts = 5
     mfa_selection_cancel_tokens = {"q", "quit", "exit", "cancel"}
+    mfa_device_list_title = "Pick an authentication device from the below list:"
+    mfa_selection_prompt = ":"
+    mfa_table_index_width = 3
+    mfa_table_name_width = 36
+    mfa_table_date_width = 25
+    mfa_table_header_index = "#"
+    mfa_table_header_device = "device name"
+    mfa_table_header_date = "enrollment date"
 
     def __init__(
         self,
@@ -340,17 +348,23 @@ class Authentication:
 
     def _print_mfa_devices_table(self, mfa_data: List[MFAMethod]) -> List[int]:
         """Print MFA devices in fixed-width columns and return selectable indices."""
-        index_col_width = 3
-        name_col_width = 36
-        date_col_width = 25
+        index_col_width = self.mfa_table_index_width
+        name_col_width = self.mfa_table_name_width
+        date_col_width = self.mfa_table_date_width
         row_format = (
             f"{{:<{index_col_width}}} "
             f"{{:<{name_col_width}}} "
             f"{{:<{date_col_width}}}"
         )
 
-        self._write_output("\nPick an authentication device from the below list:")
-        self._write_output(row_format.format("#", "device name", "enrollment date"))
+        self._write_output(f"\n{self.mfa_device_list_title}")
+        self._write_output(
+            row_format.format(
+                self.mfa_table_header_index,
+                self.mfa_table_header_device,
+                self.mfa_table_header_date,
+            )
+        )
         self._write_output(
             row_format.format(
                 "-" * index_col_width,
@@ -404,7 +418,7 @@ class Authentication:
                     )
 
                 device_list = self._print_mfa_devices_table(mfa_dic["data"])
-                _tmp_device_num = self._read_input(":")
+                _tmp_device_num = self._read_input(self.mfa_selection_prompt)
                 if _tmp_device_num.strip().lower() in self.mfa_selection_cancel_tokens:
                     raise DKBRoboError(
                         "Login canceled by user during MFA device selection"

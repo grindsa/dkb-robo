@@ -656,10 +656,15 @@ class TestAuthentication(unittest.TestCase):
             ]
         }
 
-        with patch("builtins.input", side_effect=AssertionError("builtins.input should not be called")):
+        with patch(
+            "builtins.input",
+            side_effect=AssertionError("builtins.input should not be called"),
+        ):
             self.assertEqual(0, callback_auth._mfa_select(mfa_dic))
 
-        self.assertTrue(any("Pick an authentication device" in line for line in outputs))
+        self.assertTrue(
+            any("Pick an authentication device" in line for line in outputs)
+        )
 
     @patch("builtins.input", return_value="x")
     def test_041b__mfa_select_max_attempts(self, _mock_input):
@@ -768,7 +773,10 @@ class TestAuthentication(unittest.TestCase):
             }
         }
 
-        with patch("builtins.input", side_effect=AssertionError("builtins.input should not be called")):
+        with patch(
+            "builtins.input",
+            side_effect=AssertionError("builtins.input should not be called"),
+        ):
             self.assertEqual("123456", tan_auth._print(challenge_dic))
 
         self.assertTrue(any("Please confirm" in line for line in outputs))
