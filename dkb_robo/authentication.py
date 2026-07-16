@@ -44,6 +44,8 @@ class Authentication:
     """Authentication class"""
 
     base_url = BASE_URL
+    mfa_selection_max_attempts = 5
+    mfa_selection_cancel_tokens = {"q", "quit", "exit", "cancel"}
 
     def __init__(
         self,
@@ -78,7 +80,7 @@ class Authentication:
         self.http1_only = http1_only
         self.request_timeout = request_timeout
         if chip_tan:
-            logger.info("Using to chip_tan to login")
+            logger.info("Using chip_tan for login")
             if chip_tan in ("qr", "chip_tan_qr"):
                 self.mfa_method = "chip_tan_qr"
             else:
@@ -162,7 +164,7 @@ class Authentication:
                     f"Login failed: post request to get the mfa challenges failed. RC: {response.status_code}"
                 )
 
-            # we rmove the headers we added earlier
+            # we remove the headers we added earlier
             self.client.headers.pop("Content-Type")
             self.client.headers.pop("Accept")
         else:
@@ -323,7 +325,7 @@ class Authentication:
 
         # adjust self.mfa_device if the user input is too high
         if "data" in mfa_dic and len(mfa_dic["data"]) < self.mfa_device:
-            logger.warning("User submitted mfa_device number is invalid. Ingoring...")
+            logger.warning("User submitted mfa_device number is invalid. Ignoring...")
             self.mfa_device = 0
 
         if self.mfa_device > 0:
@@ -336,13 +338,25 @@ class Authentication:
 
         elif "data" in mfa_dic and len(mfa_dic["data"]) > 1:
             deviceselection_completed = False
+            failed_attempts = 0
             while not deviceselection_completed:
+                if failed_attempts >= self.mfa_selection_max_attempts:
+                    raise DKBRoboError(
+                        "Login failed: maximum MFA device selection attempts exceeded"
+                    )
+
                 device_list = self._print_mfa_devices_table(mfa_dic["data"])
                 _tmp_device_num = input(":")
+                if _tmp_device_num.strip().lower() in self.mfa_selection_cancel_tokens:
+                    raise DKBRoboError(
+                        "Login canceled by user during MFA device selection"
+                    )
 
                 device_num, deviceselection_completed = self._mfa_process(
                     device_num, device_list, _tmp_device_num, deviceselection_completed
                 )
+                if not deviceselection_completed:
+                    failed_attempts += 1
 
         logger.debug("Authentication._mfa_select() ended with: %s", device_num)
         return device_num
@@ -466,7 +480,7 @@ class Authentication:
             self.client.headers = {"x-xsrf-token": csrf_token}
 
     def _token_update(self):
-        """update token information with 2fa iformation"""
+        """update token information with 2fa information"""
         logger.debug("Authentication._token_update()\n")
 
         data_dic = {
@@ -591,7 +605,7 @@ class Authentication:
         # pick mfa device from list
         device_number = self._mfa_select(mfa_dic)
 
-        # we need a challege-id for polling so lets try to get it
+        # we need a challenge-id for polling so lets try to get it
         mfa_challenge_dic = None
         if "mfa_id" in self.token_dic and "data" in mfa_dic:
             mfa_challenge_dic, device_name = self._mfa_challenge(mfa_dic, device_number)
@@ -704,7 +718,7 @@ class APPAuthentication:
             elif (
                 polling_dic["data"]["attributes"]["verificationStatus"]
             ) == "canceled":
-                raise DKBRoboError("2fa chanceled by user")
+                raise DKBRoboError("2fa canceled by user")
             else:
                 logger.info(
                     "Unknown processing status: %s",

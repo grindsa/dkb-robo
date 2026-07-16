@@ -45,7 +45,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan=True)
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_manual", self.auth.mfa_method)
 
@@ -59,7 +59,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan="qr")
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_qr", self.auth.mfa_method)
 
@@ -68,7 +68,7 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.auth.__init__(chip_tan="chip_tan_qr")
         self.assertIn(
-            "INFO:dkb_robo.authentication:Using to chip_tan to login", lcm.output
+            "INFO:dkb_robo.authentication:Using chip_tan for login", lcm.output
         )
         self.assertEqual("chip_tan_qr", self.auth.mfa_method)
 
@@ -622,8 +622,41 @@ class TestAuthentication(unittest.TestCase):
         with self.assertLogs("dkb_robo", level="INFO") as lcm:
             self.assertEqual(0, self.auth._mfa_select(mfa_dic))
         self.assertIn(
-            "WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ingoring...",
+            "WARNING:dkb_robo.authentication:User submitted mfa_device number is invalid. Ignoring...",
             lcm.output,
+        )
+
+    @patch("builtins.input", return_value="cancel")
+    def test_041a__mfa_select_cancel(self, _mock_input):
+        """test _mfa_select() allows user to cancel device selection"""
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+        with self.assertRaises(Exception) as err:
+            self.auth._mfa_select(mfa_dic)
+        self.assertEqual(
+            "Login canceled by user during MFA device selection",
+            str(err.exception),
+        )
+
+    @patch("builtins.input", return_value="x")
+    def test_041b__mfa_select_max_attempts(self, _mock_input):
+        """test _mfa_select() aborts after too many invalid attempts"""
+        self.auth.mfa_selection_max_attempts = 2
+        mfa_dic = {
+            "data": [
+                {"attributes": {"deviceName": "device-1"}},
+                {"attributes": {"deviceName": "device-2"}},
+            ]
+        }
+        with self.assertRaises(Exception) as err:
+            self.auth._mfa_select(mfa_dic)
+        self.assertEqual(
+            "Login failed: maximum MFA device selection attempts exceeded",
+            str(err.exception),
         )
 
     @patch("builtins.input", return_value="1")
@@ -1340,7 +1373,7 @@ class TestAPPAuthentication(unittest.TestCase):
         polling_dic = {"data": {"attributes": {"verificationStatus": "canceled"}}}
         with self.assertRaises(Exception) as err:
             self.assertEqual(True, self.appauth._check(polling_dic, 1))
-        self.assertEqual("2fa chanceled by user", str(err.exception))
+        self.assertEqual("2fa canceled by user", str(err.exception))
 
     def test_082__check(self):
         """test _check_processing_status()"""
