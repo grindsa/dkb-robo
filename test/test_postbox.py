@@ -57,17 +57,29 @@ class TestPostboxItem(unittest.TestCase):
                 "Accept": "application/vnd.api+json",
                 "Content-type": "application/vnd.api+json",
             },
+            timeout=10.0,
         )
 
     @patch("requests.Session")
     def test_002_mark_read_failed(self, mock_session):
         """Test that the mark_read method raises an exception if the request fails."""
         mock_client = mock_session.return_value
+        mock_client.patch.return_value.status_code = 500
+        mock_client.patch.return_value.text = "server error"
         mock_client.patch.return_value.raise_for_status.side_effect = (
             requests.HTTPError()
         )
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(DKBRoboError):
             self.postbox_item.mark_read(mock_client, True)
+
+    @patch("requests.Session")
+    def test_002a_mark_read_request_failed(self, mock_session):
+        """Test that mark_read wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.patch.side_effect = requests.Timeout("timeout")
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.mark_read(mock_client, True)
+        self.assertIn("postbox mark_read failed", str(err.exception))
 
     @patch("requests.Session")
     def test_003_download(self, mock_session):
@@ -80,6 +92,16 @@ class TestPostboxItem(unittest.TestCase):
         self.assertTrue(result)
         self.assertTrue(target_file.exists())
         target_file.unlink()  # Remove the downloaded test file
+
+    @patch("requests.Session")
+    def test_003a_download_request_failed(self, mock_session):
+        """Test that download wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = requests.Timeout("timeout")
+        target_file = Path(tempfile.gettempdir()) / "test_download_request_failed.pdf"
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.download(mock_client, target_file, overwrite=True)
+        self.assertIn("postbox download failed", str(err.exception))
 
     @patch("requests.Session")
     def test_004_download_existing_file(self, mock_session):
@@ -204,6 +226,11 @@ class TestPostboxItem(unittest.TestCase):
         self.document.metadata = {"iban": "DE123"}
         self.assertEqual(self.postbox_item.account(), "DE123")
 
+    def test_020a_account_with_invalid_metadata(self):
+        """Test account() returns None for invalid metadata payloads."""
+        self.document.metadata = None
+        self.assertIsNone(self.postbox_item.account())
+
     def test_021_date_with_statement_datetime(self):
         """Test that the date method returns the correct date for a document with a statementDateTime field."""
         self.document.metadata = {"statementDateTime": "2023-01-01T12:00:00"}
@@ -218,6 +245,13 @@ class TestPostboxItem(unittest.TestCase):
         """Test that the date method returns the correct date for a document with a creationDate field."""
         self.document.metadata = {"creationDate": "2023-01-01"}
         self.assertEqual(self.postbox_item.date(), "2023-01-01")
+
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_023a_date_with_invalid_metadata(self, mock_today):
+        """Test fallback behavior for invalid metadata structures."""
+        self.document.metadata = "invalid"
+        mock_today.today.return_value = date(2025, 3, 23)
+        self.assertEqual("2025-03-23", self.postbox_item.date())
 
     @patch("dkb_robo.postbox.datetime.date")
     def test_024_date_invalid(self, mock_today):
@@ -422,6 +456,35 @@ class TestPostBox(unittest.TestCase):
         self.assertEqual(item.category(), "Kreditkartenabrechnungen")
 
     @patch("requests.Session")
+    def test_028_fetch_items_request_error(self, mock_session):
+        """Test fetch_items wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = requests.Timeout("timeout")
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("postbox fetch failed", str(err.exception))
+
+    @patch("requests.Session")
+    def test_029_fetch_items_invalid_json(self, mock_session):
+        """Test fetch_items raises DKBRoboError for invalid JSON."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.raise_for_status.return_value = None
+        mock_client.get.return_value.json.side_effect = ValueError("invalid")
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("invalid json", str(err.exception))
+
+    @patch("requests.Session")
+    def test_030_fetch_items_invalid_payload_type(self, mock_session):
+        """Test fetch_items raises DKBRoboError for non-dict JSON payloads."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.raise_for_status.return_value = None
+        mock_client.get.return_value.json.return_value = []
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("invalid payload type", str(err.exception))
+
+    @patch("requests.Session")
     def test_028_fetch_empty_responses(self, mock_session):
         """Test that the fetch_items method raises an exception if the responses are empty."""
         mock_client = mock_session.return_value
@@ -447,7 +510,7 @@ class TestPostBox(unittest.TestCase):
         """Test that the fetch_items method raises an exception if the request fails."""
         mock_client = mock_session.return_value
         mock_client.get.side_effect = requests.HTTPError()
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(DKBRoboError):
             PostBox(client=mock_client).fetch_items()
 
 

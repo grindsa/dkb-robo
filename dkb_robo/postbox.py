@@ -5,7 +5,7 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 import requests
 from dkb_robo.utilities import (
     get_valid_filename,
@@ -70,15 +70,45 @@ class PostboxItem:
     document: Document
     message: Message
 
-    def mark_read(self, client: requests.Session, read: bool):
+    def _metadata(self) -> Dict[str, Any]:
+        """Return document metadata as dictionary."""
+        if isinstance(self.document.metadata, dict):
+            return self.document.metadata
+        return {}
+
+    def _has_metadata_key(self, key: str) -> bool:
+        """Return whether metadata contains key."""
+        return key in self._metadata()
+
+    def _metadata_value(self, key: str) -> Any:
+        """Return metadata value for key, or None if absent."""
+        return self._metadata().get(key)
+
+    def mark_read(
+        self, client: requests.Session, read: bool, timeout: float = 10.0
+    ):
         """Marks the document as read or unread."""
         logger.debug("PostboxItem.mark_read(): set document %s to %s", self.id, read)
-        resp = client.patch(
-            self.message.link,
-            json={"data": {"attributes": {"read": read}, "type": "message"}},
-            headers={"Accept": JSON_CONTENT_TYPE, "Content-type": JSON_CONTENT_TYPE},
-        )
-        resp.raise_for_status()
+        try:
+            resp = client.patch(
+                self.message.link,
+                json={"data": {"attributes": {"read": read}, "type": "message"}},
+                headers={"Accept": JSON_CONTENT_TYPE, "Content-type": JSON_CONTENT_TYPE},
+                timeout=timeout,
+            )
+        except requests.RequestException as err:
+            raise DKBRoboError(
+                f"postbox mark_read failed for {self.id}: request failed: {err}"
+            ) from err
+
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError as err:
+            response_text = resp.text if resp.text else ""
+            response_detail = f"; response={response_text[:200]}" if response_text else ""
+            raise DKBRoboError(
+                f"postbox mark_read failed for {self.id}: http status code is {resp.status_code}{response_detail}"
+            ) from err
 
     def check_checsum(self, target_file: Path):
         logger.debug("PostboxItem.check_checsum(): %s", self.id)
@@ -109,7 +139,11 @@ class PostboxItem:
                 )
 
     def download(
-        self, client: requests.Session, target_file: Path, overwrite: bool = False
+        self,
+        client: requests.Session,
+        target_file: Path,
+        overwrite: bool = False,
+        timeout: float = 10.0,
     ):
         """
         Downloads the document from the provided link and saves it to the target file.
@@ -121,10 +155,27 @@ class PostboxItem:
         """
         logger.debug("PostboxItem.download(): %s to %s", self.id, target_file)
         if not target_file.exists() or overwrite:
-            resp = client.get(
-                self.document.link, headers={"Accept": self.document.contentType}
-            )
-            resp.raise_for_status()
+            try:
+                resp = client.get(
+                    self.document.link,
+                    headers={"Accept": self.document.contentType},
+                    timeout=timeout,
+                )
+            except requests.RequestException as err:
+                raise DKBRoboError(
+                    f"postbox download failed for {self.id}: request failed: {err}"
+                ) from err
+
+            try:
+                resp.raise_for_status()
+            except requests.HTTPError as err:
+                response_text = resp.text if resp.text else ""
+                response_detail = (
+                    f"; response={response_text[:200]}" if response_text else ""
+                )
+                raise DKBRoboError(
+                    f"postbox download failed for {self.id}: http status code is {resp.status_code}{response_detail}"
+                ) from err
 
             # create directories if necessary
             target_file.parent.mkdir(parents=True, exist_ok=True)
@@ -148,24 +199,28 @@ class PostboxItem:
         filename = self.document.fileName
         # Depot related files don't have meaningful filenames but only contain the document id. Hence, we use subject
         # instead and rely on the filename sanitization.
-        if (
-            "dwpDocumentId" in self.document.metadata
-            and "subject" in self.document.metadata
+        if self._has_metadata_key("dwpDocumentId") and self._has_metadata_key(
+            "subject"
         ):
             filename = self.subject() or self.document.fileName
 
-        if self.document.contentType == "application/pdf" and not filename.endswith(
-            "pdf"
+        if (
+            self.document.contentType == "application/pdf"
+            and filename is not None
+            and not filename.endswith("pdf")
         ):
             filename = f"{filename}.pdf"
 
-        fname = get_valid_filename(filename)
+        fname = get_valid_filename(filename or "")
         logger.debug("PostboxItem.filename() for %s ended with %s", self.id, fname)
         return fname
 
     def subject(self) -> str:
         """Returns the subject of the message."""
-        return self.document.metadata.get("subject", self.message.subject)
+        message_subject = self.message.subject if self.message else None
+        if self._has_metadata_key("subject"):
+            return self._metadata_value("subject")
+        return message_subject
 
     def category(self) -> str:
         """Returns the category of the document based on the document type."""
@@ -179,14 +234,15 @@ class PostboxItem:
         if card_lookup is None:
             card_lookup = {}
         account = None
-        if "depotNumber" in self.document.metadata:
-            account = self.document.metadata["depotNumber"]
-        elif "cardId" in self.document.metadata:
+        if self._has_metadata_key("depotNumber"):
+            account = self._metadata_value("depotNumber")
+        elif self._has_metadata_key("cardId"):
+            card_id = self._metadata_value("cardId")
             account = card_lookup.get(
-                self.document.metadata["cardId"], self.document.metadata["cardId"]
+                card_id, card_id
             )
-        elif "iban" in self.document.metadata:
-            account = self.document.metadata["iban"]
+        elif self._has_metadata_key("iban"):
+            account = self._metadata_value("iban")
 
         logger.debug(
             "PostboxItem.account() for document %s ended with %s", self.id, account
@@ -197,20 +253,29 @@ class PostboxItem:
         """Returns the date of the document based on the metadata."""
         logger.debug("PostboxItem.date() for document %s", self.id)
         date = None
-        if "statementDate" in self.document.metadata:
-            date = datetime.date.fromisoformat(self.document.metadata["statementDate"])
-        elif "statementDateTime" in self.document.metadata:
-            date = datetime.datetime.fromisoformat(
-                self.document.metadata["statementDateTime"]
-            )
-        elif "creationDate" in self.document.metadata:
-            date = datetime.date.fromisoformat(self.document.metadata["creationDate"])
+        if self._has_metadata_key("statementDate"):
+            try:
+                date = datetime.date.fromisoformat(self._metadata_value("statementDate"))
+            except (TypeError, ValueError):
+                date = None
+        elif self._has_metadata_key("statementDateTime"):
+            try:
+                date = datetime.datetime.fromisoformat(
+                    self._metadata_value("statementDateTime")
+                )
+            except (TypeError, ValueError):
+                date = None
+        elif self._has_metadata_key("creationDate"):
+            try:
+                date = datetime.date.fromisoformat(self._metadata_value("creationDate"))
+            except (TypeError, ValueError):
+                date = None
 
         if date is None:
-            if "subject" in self.document.metadata:
+            if self._has_metadata_key("subject"):
                 logger.error(
                     '"%s" is missing a valid date field found in metadata. Using today\'s date as fallback.',
-                    self.document.metadata["subject"],
+                    self._metadata_value("subject"),
                 )
             else:
                 logger.error(
@@ -228,8 +293,37 @@ class PostBox:
     BASE_URL = "https://banking.dkb.de/api/documentstorage/"
 
     # pylint: disable=w0621
-    def __init__(self, client: requests.Session):
+    def __init__(self, client: requests.Session, timeout: float = 10.0):
         self.client = client
+        self.timeout = timeout
+
+    def _fetch_json(self, url: str) -> Dict[str, Any]:
+        """Fetch JSON payload from an endpoint with robust error handling."""
+        try:
+            response = self.client.get(url, timeout=self.timeout)
+        except requests.RequestException as err:
+            raise DKBRoboError(f"postbox fetch failed for {url}: {err}") from err
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as err:
+            response_text = response.text if response.text else ""
+            response_detail = f"; response={response_text[:200]}" if response_text else ""
+            raise DKBRoboError(
+                f"postbox fetch failed for {url}: http status code is {response.status_code}{response_detail}"
+            ) from err
+
+        try:
+            payload = response.json()
+        except ValueError as err:
+            raise DKBRoboError(f"postbox fetch failed for {url}: invalid json") from err
+
+        if not isinstance(payload, dict):
+            raise DKBRoboError(
+                f"postbox fetch failed for {url}: invalid payload type {type(payload).__name__}"
+            )
+
+        return payload
 
     def fetch_items(self) -> Dict[str, PostboxItem]:
         """Fetches all items from the postbox and merges document and message data."""
@@ -239,14 +333,10 @@ class PostBox:
             # print(f'old: {url}')
             return url.replace("https://api.dkb.de/documentstorage/", PostBox.BASE_URL)
 
-        response = self.client.get(PostBox.BASE_URL + "/messages")
-        response.raise_for_status()
-        messages = response.json()
+        messages = self._fetch_json(PostBox.BASE_URL + "/messages")
 
         logger.debug("PostBox.fetch_items(): Fetching documents")
-        response = self.client.get(PostBox.BASE_URL + "/documents?page%5Blimit%5D=1000")
-        response.raise_for_status()
-        documents = response.json()
+        documents = self._fetch_json(PostBox.BASE_URL + "/documents?page%5Blimit%5D=1000")
 
         if messages and documents:
             # Merge raw messages and documents from JSON API (left join with documents as base).
