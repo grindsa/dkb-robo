@@ -159,7 +159,9 @@ class Transactions:
                     booking_date, API_DATE_FORMAT
                 ).date()
             except ValueError:
-                logger.debug("Transactions._filter(): skip invalid bookingDate %s", booking_date)
+                logger.debug(
+                    "Transactions._filter(): skip invalid bookingDate %s", booking_date
+                )
                 continue
 
             if date_from_obj <= booking_date_obj <= date_to_obj:
@@ -243,12 +245,16 @@ class Transactions:
         for ele in included_list:
             if not isinstance(ele, dict):
                 continue
-            if "id" in ele and ele["id"] == instrument_id and isinstance(
-                ele.get("attributes"), dict
+            if (
+                "id" in ele
+                and ele["id"] == instrument_id
+                and isinstance(ele.get("attributes"), dict)
             ):
                 mapped_attributes["instrument"] = {**ele["attributes"], "id": ele["id"]}
-            if "id" in ele and ele["id"] == quote_id and isinstance(
-                ele.get("attributes"), dict
+            if (
+                "id" in ele
+                and ele["id"] == quote_id
+                and isinstance(ele.get("attributes"), dict)
             ):
                 mapped_attributes["quote"] = {**ele["attributes"], "id": ele["id"]}
 
@@ -641,8 +647,16 @@ class DepotTransactionItem:
         quantity_value = self.quantity.value if self.quantity else None
         shares_value = self.availableQuantity.value if self.availableQuantity else None
         shares_unit = self.quantity.unit if self.quantity else None
-        text_short = self.instrument.name.short if self.instrument and self.instrument.name else None
-        text_long = self.instrument.name.long if self.instrument and self.instrument.name else None
+        text_short = (
+            self.instrument.name.short
+            if self.instrument and self.instrument.name
+            else None
+        )
+        text_long = (
+            self.instrument.name.long
+            if self.instrument and self.instrument.name
+            else None
+        )
 
         transaction_dic = {
             "isin_wkn": identifier_value,

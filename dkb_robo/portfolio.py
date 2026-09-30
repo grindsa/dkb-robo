@@ -61,7 +61,9 @@ class ProductGroup:
                 if not isinstance(_id_dic, dict):
                     continue
                 for uid, uid_entry in _id_dic.items():
-                    if isinstance(uid_entry, dict) and isinstance(uid_entry.get("index"), int):
+                    if isinstance(uid_entry, dict) and isinstance(
+                        uid_entry.get("index"), int
+                    ):
                         id_dic[uid_entry["index"]] = uid
             product_group_list.append(
                 {"name": product_group.get("name"), "product_list": id_dic}
@@ -232,7 +234,9 @@ class Overview:
         }
         for product_group in sorted(product_group_dic.keys()):
             group_payload = portfolio_dic.get(product_group, {})
-            group_data = group_payload.get("data", []) if isinstance(group_payload, dict) else []
+            group_data = (
+                group_payload.get("data", []) if isinstance(group_payload, dict) else []
+            )
             if not isinstance(group_data, list):
                 continue
             for item in group_data:
@@ -242,7 +246,11 @@ class Overview:
                 attributes = item.get("attributes", {})
                 if not isinstance(attributes, dict):
                     attributes = {}
-                attributes = {**attributes, "id": item_id, "type": item.get("type", None)}
+                attributes = {
+                    **attributes,
+                    "id": item_id,
+                    "type": item.get("type", None),
+                }
 
                 product = product_group_dic[product_group](**attributes)
 
@@ -552,7 +560,9 @@ class CardItem:
             output_dic["transactions"] = self.transactions
             # dkb does some weird stuff with the balance. we need to flip it
             output_dic["amount"] = self.balance.value * -1 if self.balance else None
-            output_dic["currencycode"] = self.balance.currencyCode if self.balance else None
+            output_dic["currencycode"] = (
+                self.balance.currencyCode if self.balance else None
+            )
             output_dic["date"] = self.balance.date if self.balance else None
         else:
             output_dic["transactions"] = None

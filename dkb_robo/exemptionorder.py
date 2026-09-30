@@ -79,12 +79,16 @@ class ExemptionOrders:
         logger.debug("ExemptionOrders._filter() ended with: %s entries.", len(exo_list))
         return exo_list
 
-    def _extract_exemption_orders(self, full_list: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_exemption_orders(
+        self, full_list: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Extract exemption order entries from the API payload."""
         data = full_list.get("data", {}) if isinstance(full_list, dict) else {}
         attributes = data.get("attributes", {}) if isinstance(data, dict) else {}
         exemption_orders = (
-            attributes.get("exemptionOrders", []) if isinstance(attributes, dict) else []
+            attributes.get("exemptionOrders", [])
+            if isinstance(attributes, dict)
+            else []
         )
         return [item for item in exemption_orders if isinstance(item, dict)]
 
@@ -125,7 +129,9 @@ class ExemptionOrders:
         try:
             response = self.client.get(endpoint, timeout=self.timeout)
         except requests.RequestException as err:
-            raise DKBRoboError(f"fetch exemption orders: request failed: {err}") from err
+            raise DKBRoboError(
+                f"fetch exemption orders: request failed: {err}"
+            ) from err
 
         try:
             response.raise_for_status()
@@ -142,7 +148,9 @@ class ExemptionOrders:
         try:
             _exo_list = response.json()
         except ValueError as err:
-            raise DKBRoboError("fetch exemption orders: invalid json in response") from err
+            raise DKBRoboError(
+                "fetch exemption orders: invalid json in response"
+            ) from err
         exo_list = self._filter(_exo_list)
 
         logger.debug("ExemptionOrders.fetch() ended")

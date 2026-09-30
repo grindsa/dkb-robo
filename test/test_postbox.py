@@ -87,8 +87,8 @@ class TestPostboxItem(unittest.TestCase):
         mock_client = mock_session.return_value
         mock_client.patch.return_value.status_code = 500
         mock_client.patch.return_value.text = "server boom"
-        mock_client.patch.return_value.raise_for_status.side_effect = requests.HTTPError(
-            "boom"
+        mock_client.patch.return_value.raise_for_status.side_effect = (
+            requests.HTTPError("boom")
         )
 
         with self.assertRaises(DKBRoboError) as err:
@@ -162,7 +162,9 @@ class TestPostboxItem(unittest.TestCase):
         mock_client.get.return_value.content = b"test content"
         target_file = Path(tempfile.gettempdir()) / "test_download_custom_timeout.pdf"
 
-        self.postbox_item.download(mock_client, target_file, overwrite=True, timeout=2.5)
+        self.postbox_item.download(
+            mock_client, target_file, overwrite=True, timeout=2.5
+        )
 
         mock_client.get.assert_called_once_with(
             self.document.link,
@@ -648,7 +650,10 @@ class TestPostBox(unittest.TestCase):
                         {"id": "missing-links", "attributes": {}},
                         {
                             "id": "valid-id",
-                            "attributes": {"fileName": "x", "contentType": "application/pdf"},
+                            "attributes": {
+                                "fileName": "x",
+                                "contentType": "application/pdf",
+                            },
                             "links": {
                                 "self": "https://api.dkb.de/documentstorage/documents/valid-id"
                             },
@@ -688,7 +693,10 @@ class TestPostBox(unittest.TestCase):
                     "data": [
                         {
                             "id": "valid-id",
-                            "attributes": {"fileName": "doc", "contentType": "application/pdf"},
+                            "attributes": {
+                                "fileName": "doc",
+                                "contentType": "application/pdf",
+                            },
                             "links": {
                                 "self": "https://api.dkb.de/documentstorage/documents/valid-id"
                             },

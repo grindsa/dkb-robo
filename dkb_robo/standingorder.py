@@ -193,7 +193,9 @@ class StandingOrders:
         try:
             _so_list = response.json()
         except ValueError as err:
-            raise DKBRoboError("fetch standing orders: invalid json in response") from err
+            raise DKBRoboError(
+                "fetch standing orders: invalid json in response"
+            ) from err
 
         so_list = self._filter(_so_list)
 

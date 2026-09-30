@@ -141,24 +141,23 @@ class PostboxItem:
             return hashlib.md5(content).hexdigest()
         if len(checksum) == 128:
             return hashlib.sha512(content).hexdigest()
-        raise DKBRoboError(
-            f"Unsupported checksum length: {len(checksum)}, {checksum}"
-        )
+        raise DKBRoboError(f"Unsupported checksum length: {len(checksum)}, {checksum}")
 
     def _checksum_mismatch_path(self, target_file: Path) -> Path:
         """Return renamed path for checksum mismatch."""
         return target_file.with_name(target_file.name + ".checksum_mismatch")
 
-    def mark_read(
-        self, client: requests.Session, read: bool, timeout: float = 10.0
-    ):
+    def mark_read(self, client: requests.Session, read: bool, timeout: float = 10.0):
         """Marks the document as read or unread."""
         logger.debug("PostboxItem.mark_read(): set document %s to %s", self.id, read)
         try:
             resp = client.patch(
                 self.message.link,
                 json={"data": {"attributes": {"read": read}, "type": "message"}},
-                headers={"Accept": JSON_CONTENT_TYPE, "Content-type": JSON_CONTENT_TYPE},
+                headers={
+                    "Accept": JSON_CONTENT_TYPE,
+                    "Content-type": JSON_CONTENT_TYPE,
+                },
                 timeout=timeout,
             )
         except requests.RequestException as err:
@@ -189,9 +188,7 @@ class PostboxItem:
             if not mismatch_path.exists():
                 target_file.rename(mismatch_path)
             else:
-                logger.warning(
-                    "File %s already exists. Not renaming.", mismatch_path
-                )
+                logger.warning("File %s already exists. Not renaming.", mismatch_path)
 
     # Backward-compatible alias for typo in older callers.
     def check_checsum(self, target_file: Path):
@@ -278,9 +275,7 @@ class PostboxItem:
             account = self._metadata_value("depotNumber")
         elif self._has_metadata_key("cardId"):
             card_id = self._metadata_value("cardId")
-            account = card_lookup.get(
-                card_id, card_id
-            )
+            account = card_lookup.get(card_id, card_id)
         elif self._has_metadata_key("iban"):
             account = self._metadata_value("iban")
 
@@ -331,7 +326,9 @@ class PostBox:
             response.raise_for_status()
         except requests.HTTPError as err:
             response_text = response.text if response.text else ""
-            response_detail = f"; response={response_text[:200]}" if response_text else ""
+            response_detail = (
+                f"; response={response_text[:200]}" if response_text else ""
+            )
             raise DKBRoboError(
                 f"postbox fetch failed for {url}: http status code is {response.status_code}{response_detail}"
             ) from err
@@ -413,7 +410,9 @@ class PostBox:
         messages = self._fetch_json(PostBox.BASE_URL + "/messages")
 
         logger.debug("PostBox.fetch_items(): Fetching documents")
-        documents = self._fetch_json(PostBox.BASE_URL + "/documents?page%5Blimit%5D=1000")
+        documents = self._fetch_json(
+            PostBox.BASE_URL + "/documents?page%5Blimit%5D=1000"
+        )
 
         if not (messages and documents):
             raise DKBRoboError("Could not fetch messages/documents.")

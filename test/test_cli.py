@@ -715,7 +715,9 @@ class TestDKBRobo(unittest.TestCase):
     @patch("dkb_robo.cli.object2dictionary")
     @patch("click.echo")
     @patch("dkb_robo.cli._login")
-    def test_025a_exemption_orders(self, mock_login, mock_click, mock_object2dictionary):
+    def test_025a_exemption_orders(
+        self, mock_login, mock_click, mock_object2dictionary
+    ):
         """test exemption orders unfiltered"""
         mock_login.return_value.__enter__.return_value.get_exemption_order.return_value = [
             MagicMock()

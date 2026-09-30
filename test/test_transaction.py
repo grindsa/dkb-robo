@@ -69,11 +69,15 @@ class TestTransactions(unittest.TestCase):
         self.transaction.client = Mock()
         self.transaction.client.get.return_value.status_code = 200
         self.transaction.client.get.return_value.raise_for_status.return_value = None
-        self.transaction.client.get.return_value.json.side_effect = ValueError("invalid")
+        self.transaction.client.get.return_value.json.side_effect = ValueError(
+            "invalid"
+        )
 
         with self.assertRaises(DKBRoboError) as err:
             self.transaction._fetch("transaction_url")
-        self.assertIn("fetch transactions: invalid json in response", str(err.exception))
+        self.assertIn(
+            "fetch transactions: invalid json in response", str(err.exception)
+        )
 
     def test_004__fetch(self):
         """test _get_transaction_list() with wrong response"""
@@ -353,7 +357,9 @@ class TestTransactions(unittest.TestCase):
         ]
         self.assertEqual(
             result,
-            self.transaction._filter(transaction_list, "2023-01-01", "2023-01-31", "booked"),
+            self.transaction._filter(
+                transaction_list, "2023-01-01", "2023-01-31", "booked"
+            ),
         )
 
     def test_017__filter(self):
@@ -366,7 +372,10 @@ class TestTransactions(unittest.TestCase):
         """test _format() rejects unsupported type"""
         with self.assertRaises(DKBRoboError) as err:
             self.transaction._format([], "unknown")
-        self.assertIn("format transactions: unsupported account type 'unknown'", str(err.exception))
+        self.assertIn(
+            "format transactions: unsupported account type 'unknown'",
+            str(err.exception),
+        )
 
     @patch("dkb_robo.transaction.AccountTransactionItem")
     @patch("dkb_robo.transaction.Transactions._filter")
@@ -680,7 +689,9 @@ class TestTransactions(unittest.TestCase):
 
         result = self.transaction._map(data_dic, included_list)
 
-        self.assertEqual({"foo": "bar", "id": "inid"}, result["attributes"]["instrument"])
+        self.assertEqual(
+            {"foo": "bar", "id": "inid"}, result["attributes"]["instrument"]
+        )
         self.assertEqual({"foo": "bar"}, included_list[0]["attributes"])
 
     def test_029_format(self):

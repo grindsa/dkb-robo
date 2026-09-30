@@ -119,7 +119,9 @@ class TestExemptionOrders(unittest.TestCase):
     @patch("dkb_robo.exemptionorder.ExemptionOrders._filter")
     def test_006_fetch_base_url_trailing_slash(self, mock_filter):
         """test ExemptionOrders.fetch() with trailing slash in base_url"""
-        self.exo = ExemptionOrders(client=Mock(), base_url="https://banking.dkb.de/api/")
+        self.exo = ExemptionOrders(
+            client=Mock(), base_url="https://banking.dkb.de/api/"
+        )
         self.exo.client.get.return_value.status_code = 200
         self.exo.client.get.return_value.json.return_value = {"foo": "bar"}
         mock_filter.return_value = "mock_filter"
