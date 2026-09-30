@@ -57,8 +57,8 @@ class DKBRobo(object):
         self.proxies = proxies
         self.login_via_browser = login_via_browser
 
-    def __enter__(self):
-        """Makes DKBRobo a Context Manager"""
+    def _normalize_login_options(self):
+        """Normalize login-related options before authentication starts."""
         # tan usage requires legacy login
         if self.tan_insert:
             self.logger.info(
@@ -69,7 +69,9 @@ class DKBRobo(object):
         if self.mfa_device == "m":
             self.mfa_device = 1
 
-        self.wrapper = Authentication(
+    def _build_authentication(self):
+        """Create an Authentication wrapper from current configuration."""
+        return Authentication(
             dkb_user=self.dkb_user,
             dkb_password=self.dkb_password,
             proxies=self.proxies,
@@ -84,6 +86,33 @@ class DKBRobo(object):
             login_via_browser=self.login_via_browser,
         )
 
+    def _require_session(self):
+        """Ensure methods using the authenticated session are called after login."""
+        if self.wrapper is None or getattr(self.wrapper, "client", None) is None:
+            raise DKBRoboError(
+                "No active session. Use DKBRobo as a context manager and login first."
+            )
+
+    def _resolve_document_target(
+        self,
+        path: Path,
+        doc,
+        prepend_date: bool = False,
+        use_account_folders: bool = False,
+        accounts_by_id: dict = None,
+    ):
+        """Return download target folder and filename for a document."""
+        target = path / doc.category()
+        if use_account_folders:
+            target = target / doc.account(card_lookup=accounts_by_id)
+        filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+        return target, filename
+
+    def __enter__(self):
+        """Makes DKBRobo a Context Manager"""
+        self._normalize_login_options()
+        self.wrapper = self._build_authentication()
+
         # login and get the account overview
         self.account_dic, self.last_login = self.wrapper.login()
 
@@ -95,6 +124,7 @@ class DKBRobo(object):
 
     def _accounts_by_id(self):
         self.logger.debug("DKBRobo._accounts_by_id()\n")
+        self._require_session()
 
         if self.unfiltered:
             accounts_by_id = {}
@@ -134,6 +164,7 @@ class DKBRobo(object):
     def get_exemption_order(self):
         """get get_exemption_order"""
         self.logger.debug("DKBRobo.get_exemption_order()\n")
+        self._require_session()
         exemptionorder = ExemptionOrders(
             client=self.wrapper.client, unfiltered=self.unfiltered
         )
@@ -147,6 +178,7 @@ class DKBRobo(object):
     def get_standing_orders(self, uid=None):
         """get standing orders"""
         self.logger.debug("DKBRobo.get_standing_orders()\n")
+        self._require_session()
         standingorder = StandingOrders(
             client=self.wrapper.client, unfiltered=self.unfiltered
         )
@@ -163,6 +195,7 @@ class DKBRobo(object):
             date_from,
             date_to,
         )
+        self._require_session()
 
         date_from, date_to = validate_dates(date_from, date_to)
         transaction = Transactions(
@@ -198,12 +231,14 @@ class DKBRobo(object):
         accounts_by_id: dict = None,
     ):
         """download a single document"""
-        target = path / doc.category()
-
-        if use_account_folders:
-            target = target / doc.account(card_lookup=accounts_by_id)
-
-        filename = f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+        self._require_session()
+        target, filename = self._resolve_document_target(
+            path=path,
+            doc=doc,
+            prepend_date=prepend_date,
+            use_account_folders=use_account_folders,
+            accounts_by_id=accounts_by_id,
+        )
 
         if not list_only:
             self.logger.info('Downloading "%s" to %s...', doc.subject(), target)
@@ -235,11 +270,12 @@ class DKBRobo(object):
             if category not in document_dic:
                 document_dic[category] = {"documents": {}, "count": 0}
 
-            target = path / category
-            if use_account_folders:
-                target = target / doc.account(card_lookup=accounts_by_id)
-            filename = (
-                f"{doc.date()}_{doc.filename()}" if prepend_date else doc.filename()
+            target, filename = self._resolve_document_target(
+                path=path,
+                doc=doc,
+                prepend_date=prepend_date,
+                use_account_folders=use_account_folders,
+                accounts_by_id=accounts_by_id,
             )
 
             document_dic[category]["documents"][doc.message.subject] = {
@@ -262,6 +298,7 @@ class DKBRobo(object):
         list_only: bool = False,
     ):
         """download postbox documents"""
+        self._require_session()
         if path is None:
             list_only = True
         postbox = PostBox(client=self.wrapper.client)

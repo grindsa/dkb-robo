@@ -546,6 +546,47 @@ class TestDKBRobo(unittest.TestCase):
         }
         self.assertEqual(result, expected_result)
 
+    def test_025_require_session_raises_without_login(self):
+        """methods requiring session should fail with clear error before login"""
+        self.dkb.wrapper = None
+        with self.assertRaises(Exception) as err:
+            self.dkb.get_standing_orders()
+        self.assertEqual(
+            "No active session. Use DKBRobo as a context manager and login first.",
+            str(err.exception),
+        )
+
+    def test_026_require_session_raises_without_client(self):
+        """methods requiring session should fail when wrapper has no client"""
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = None
+        with self.assertRaises(Exception) as err:
+            self.dkb.download(path=Path("/tmp"), download_all=True)
+        self.assertEqual(
+            "No active session. Use DKBRobo as a context manager and login first.",
+            str(err.exception),
+        )
+
+    def test_027_resolve_document_target(self):
+        """document target helper should resolve folder and filename consistently"""
+        path = Path("/some/path")
+        doc = MagicMock()
+        doc.category.return_value = "category"
+        doc.account.return_value = "account"
+        doc.date.return_value = "2022-01-01"
+        doc.filename.return_value = "document.pdf"
+
+        target, filename = self.dkb._resolve_document_target(
+            path=path,
+            doc=doc,
+            prepend_date=True,
+            use_account_folders=True,
+            accounts_by_id={},
+        )
+
+        self.assertEqual(path / "category" / "account", target)
+        self.assertEqual("2022-01-01_document.pdf", filename)
+
     def test_ß25_accounts_by_id(self):
         """test accounts_by_id unfiltered False"""
         self.dkb.unfiltered = False
