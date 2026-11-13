@@ -5,6 +5,14 @@ This is a high-level summary of the most important changes. For a full list of c
 
 ## Unreleased
 
+**Features**:
+
+- `download` CLI command and `DKBRobo.download()`: new `--category`/`categories` option to download only documents of selected postbox categories (e.g. `Wertpapierdokumente`)
+
+**Bugfixes**:
+
+- `download` CLI command: `--mark-read` could not be disabled; added `--no-mark-read`
+
 ## Changes in 0.32
 
 **Features**:
