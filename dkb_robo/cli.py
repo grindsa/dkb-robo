@@ -3,6 +3,7 @@
 
 from datetime import date
 from pathlib import Path
+from typing import Tuple
 import pathlib
 from pprint import pprint
 from contextlib import contextmanager
@@ -536,8 +537,7 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
     envvar="DKB_PREPEND_DATE",
 )
 @click.option(
-    "--mark-read",
-    is_flag=True,
+    "--mark-read/--no-mark-read",
     show_default=True,
     default=True,
     help="Mark downloaded files read",
@@ -559,6 +559,15 @@ def scan_postbox(ctx, path, download_all, archive, prepend_date):
     help="Only list documents, do not download",
     envvar="DKB_LIST_ONLY",
 )
+@click.option(
+    "--category",
+    "-c",
+    "categories",
+    multiple=True,
+    help="Only process documents of this category (e.g. Wertpapierdokumente, "
+    "Kontoauszüge, Kreditkartenabrechnungen). Can be given multiple times.",
+    envvar="DKB_DOWNLOAD_CATEGORY",
+)
 def download(
     ctx,
     path: Path,
@@ -567,6 +576,7 @@ def download(
     mark_read: bool,
     use_account_folders: bool,
     list_only: bool,
+    categories: Tuple[str, ...],
 ):
     """download document"""
     if path is None:
@@ -581,6 +591,7 @@ def download(
                     mark_read=mark_read,
                     use_account_folders=use_account_folders,
                     list_only=list_only,
+                    categories=categories,
                 )
             )
     except dkb_robo.DKBRoboError as _err:

@@ -1250,6 +1250,48 @@ class TestDKBRobo(unittest.TestCase):
         self.assertEqual("<Result okay>", str(runner.invoke(self.download, obj=obj)))
         self.assertTrue(mock_click.called)
 
+    @patch("click.echo")
+    @patch("dkb_robo.cli._login")
+    def test_055_download_defaults(self, mock_login, mock_click):
+        """download keeps mark_read enabled and does not filter by default"""
+        obj = Config()
+        obj.FORMAT = Mock()
+        obj.UNFILTERED = False
+        runner = CliRunner()
+        result = runner.invoke(self.download, ["--path", "docs"], obj=obj)
+        self.assertEqual("<Result okay>", str(result))
+        dkb = mock_login.return_value.__enter__.return_value
+        kwargs = dkb.download.call_args.kwargs
+        self.assertTrue(kwargs["mark_read"])
+        self.assertEqual((), kwargs["categories"])
+
+    @patch("click.echo")
+    @patch("dkb_robo.cli._login")
+    def test_056_download_no_mark_read_and_categories(self, mock_login, mock_click):
+        """--no-mark-read and --category are passed to DKBRobo.download()"""
+        obj = Config()
+        obj.FORMAT = Mock()
+        obj.UNFILTERED = False
+        runner = CliRunner()
+        result = runner.invoke(
+            self.download,
+            [
+                "--path",
+                "docs",
+                "--no-mark-read",
+                "--category",
+                "Wertpapierdokumente",
+                "-c",
+                "Kontoauszüge",
+            ],
+            obj=obj,
+        )
+        self.assertEqual("<Result okay>", str(result))
+        dkb = mock_login.return_value.__enter__.return_value
+        kwargs = dkb.download.call_args.kwargs
+        self.assertFalse(kwargs["mark_read"])
+        self.assertEqual(("Wertpapierdokumente", "Kontoauszüge"), kwargs["categories"])
+
 
 if __name__ == "__main__":
 

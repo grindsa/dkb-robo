@@ -3,6 +3,7 @@
 
 # -*- coding: utf-8 -*-
 from pathlib import Path
+from typing import Iterable, Optional
 import time
 from dkb_robo.postbox import PostBox
 from dkb_robo.authentication import Authentication
@@ -260,8 +261,13 @@ class DKBRobo(object):
         mark_read: bool = True,
         use_account_folders: bool = False,
         list_only: bool = False,
+        categories: Optional[Iterable[str]] = None,
     ):
-        """download postbox documents"""
+        """download postbox documents
+
+        categories: optional list of document categories (e.g. "Wertpapierdokumente")
+                    to restrict the download to. Matching is case-insensitive.
+        """
         if path is None:
             list_only = True
         postbox = PostBox(client=self.wrapper.client)
@@ -272,6 +278,15 @@ class DKBRobo(object):
                 id: item
                 for id, item in documents.items()
                 if item.message and item.message.read is False
+            }
+
+        if categories:
+            # only documents of the requested categories
+            wanted = {category.casefold() for category in categories}
+            documents = {
+                id: item
+                for id, item in documents.items()
+                if item.message and str(item.category()).casefold() in wanted
             }
 
         # create dictionary to map accounts to their respective iban/maskedpan
