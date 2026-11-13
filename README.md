@@ -438,6 +438,18 @@ dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" accounts
 dkb -u <user> -p <password> --proxy "http://127.0.0.1:8080" --http1-only accounts
 ```
 
+### Example commands to download postbox documents via CLI tool
+
+```bash
+# download all documents into ./documents, one folder per account/depot
+dkb -u <user> -p <password> download --all --path documents --use-account-folders --prepend-date
+# only securities documents (e.g. for an import into Portfolio Performance), keep them unread in the postbox
+dkb -u <user> -p <password> download --all --path documents --category Wertpapierdokumente --no-mark-read
+```
+
+- `--category`/`-c` restricts the download to one or more categories (`Wertpapierdokumente`, `Kontoauszüge`, `Kreditkartenabrechnungen`, or the raw DKB document type). It can be given multiple times and is case-insensitive.
+- `--no-mark-read` keeps downloaded documents unread in the DKB postbox (default: `--mark-read`).
+
 ### Interactive mode
 
 Use interactive mode to login once, run multiple commands, and logout at the end.

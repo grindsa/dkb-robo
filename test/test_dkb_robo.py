@@ -564,6 +564,74 @@ class TestDKBRobo(unittest.TestCase):
 
         self.assertEqual(result, expected_result)
 
+    @patch("dkb_robo.dkb_robo.DKBRobo.format_doc", autospec=True)
+    @patch("dkb_robo.postbox.PostBox.fetch_items")
+    @patch("dkb_robo.dkb_robo.DKBRobo.download_doc", autospec=True)
+    def test_026_download_categories(
+        self, mock_download_doc, mock_fetch_items, mock_format
+    ):
+        """download only documents of the requested categories"""
+        path = Path("/some/path")
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {"id1": {"id": "id1", "account": "account1"}}
+        depot_doc = MagicMock()
+        depot_doc.category.return_value = "Wertpapierdokumente"
+        account_doc = MagicMock()
+        account_doc.category.return_value = "Kontoauszüge"
+        card_doc = MagicMock()
+        card_doc.category.return_value = "Kreditkartenabrechnungen"
+        orphan_doc = MagicMock()
+        orphan_doc.message = None
+        mock_fetch_items.return_value = {
+            "doc1": depot_doc,
+            "doc2": account_doc,
+            "doc3": card_doc,
+            "doc4": orphan_doc,
+        }
+        mock_format.side_effect = lambda _self, **kwargs: kwargs["documents"]
+
+        documents = self.dkb.download(
+            path=path,
+            download_all=True,
+            categories=["wertpapierdokumente", "Kontoauszüge"],
+        )
+        self.assertEqual({"doc1": depot_doc, "doc2": account_doc}, documents)
+        self.assertEqual(2, mock_download_doc.call_count)
+        downloaded = [call.kwargs["doc"] for call in mock_download_doc.call_args_list]
+        self.assertEqual([depot_doc, account_doc], downloaded)
+
+    @patch("dkb_robo.dkb_robo.DKBRobo.format_doc", autospec=True)
+    @patch("dkb_robo.postbox.PostBox.fetch_items")
+    @patch("dkb_robo.dkb_robo.DKBRobo.download_doc", autospec=True)
+    def test_027_download_categories_empty(
+        self, mock_download_doc, mock_fetch_items, mock_format
+    ):
+        """an empty category list does not filter"""
+        path = Path("/some/path")
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {"id1": {"id": "id1", "account": "account1"}}
+        mock_fetch_items.return_value = {"doc1": MagicMock(), "doc2": MagicMock()}
+        mock_format.side_effect = lambda _self, **kwargs: kwargs["documents"]
+
+        documents = self.dkb.download(path=path, download_all=True, categories=())
+        self.assertEqual(2, len(documents))
+        self.assertEqual(2, mock_download_doc.call_count)
+
+    @patch("dkb_robo.dkb_robo.DKBRobo.download_doc", autospec=True)
+    @patch("dkb_robo.postbox.PostBox.fetch_items")
+    def test_028_download_mark_read_false(self, mock_fetch_items, mock_download_doc):
+        """mark_read=False is passed on to download_doc"""
+        self.dkb.unfiltered = True
+        self.dkb.wrapper = Mock()
+        self.dkb.wrapper.client = Mock()
+        self.dkb.wrapper.account_dic = {}
+        mock_fetch_items.return_value = {"doc1": MagicMock()}
+
+        self.dkb.download(path=Path("/some/path"), download_all=True, mark_read=False)
+        self.assertFalse(mock_download_doc.call_args.kwargs["mark_read"])
+
 
 if __name__ == "__main__":
 
