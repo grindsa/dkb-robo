@@ -55,7 +55,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.13"
 
       - name: Install linters
         run: 'python3 -m pip install --only-binary=:all: "pylint==3.2.7" "pylint-exit==1.2.0" "pycodestyle==2.12.1"'
