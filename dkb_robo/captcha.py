@@ -117,11 +117,7 @@ def _poll_frc_token(sb, timeout=30, reclick_every=5):
                 return val
         except Exception:
             pass
-        if (
-            reclick_every
-            and second > 0
-            and second % reclick_every == 0
-        ):
+        if reclick_every and second > 0 and second % reclick_every == 0:
             _dismiss_cookie_banner(sb, timeout=1)
             _click_frc_checkbox(sb, attempts=1)
         time.sleep(1)
@@ -132,8 +128,7 @@ def _poll_frc_token(sb, timeout=30, reclick_every=5):
 def _cookie_banner_button_rects(sb):
     """Return visible Usercentrics button rects from the CMP shadow root."""
     try:
-        result = sb.cdp.evaluate(
-            """(() => {
+        result = sb.cdp.evaluate("""(() => {
                 const host = document.querySelector('#usercentrics-cmp-ui');
                 if (!(host && host.shadowRoot)) {
                     return [];
@@ -151,8 +146,7 @@ def _cookie_banner_button_rects(sb):
                         };
                     })
                     .filter((button) => button.w > 0 && button.h > 0);
-            })()"""
-        )
+            })()""")
         if not isinstance(result, list):
             return []
         return [button for button in result if isinstance(button, dict)]
@@ -168,16 +162,14 @@ def _cookie_banner_visible(sb):
 def _remove_cookie_banner_host(sb):
     """Remove the CMP host node so it cannot intercept clicks."""
     try:
-        sb.cdp.evaluate(
-            """(() => {
+        sb.cdp.evaluate("""(() => {
                 const host = document.querySelector('#usercentrics-cmp-ui');
                 if (host) {
                     host.remove();
                     return true;
                 }
                 return false;
-            })()"""
-        )
+            })()""")
         return True
     except Exception:
         return False
@@ -186,8 +178,7 @@ def _remove_cookie_banner_host(sb):
 def _uc_ui_dismiss_cookies(sb):
     """Deny/accept consents and close the CMP UI via UC_UI."""
     try:
-        result = sb.cdp.evaluate(
-            """(() => {
+        result = sb.cdp.evaluate("""(() => {
                 try {
                     if (!(window.UC_UI && window.UC_UI.isInitialized
                           && window.UC_UI.isInitialized())) {
@@ -208,8 +199,7 @@ def _uc_ui_dismiss_cookies(sb):
                 } catch (err) {
                     return false;
                 }
-            })()"""
-        )
+            })()""")
         return bool(result)
     except Exception:
         return False
@@ -315,8 +305,7 @@ def _dismiss_cookie_banner(sb, timeout=30):
 def _frc_iframe_rect(sb):
     """Return the Friendly Captcha iframe bounding box, if present."""
     try:
-        return sb.cdp.evaluate(
-            """(() => {
+        return sb.cdp.evaluate("""(() => {
                 const iframe = document.querySelector('iframe.frc-i-widget')
                     || document.querySelector('iframe[data--frc-frame-id]');
                 if (!iframe) {
@@ -327,8 +316,7 @@ def _frc_iframe_rect(sb):
                     return null;
                 }
                 return {x: rect.x, y: rect.y, w: rect.width, h: rect.height};
-            })()"""
-        )
+            })()""")
     except Exception:
         return None
 
