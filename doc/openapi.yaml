@@ -38,7 +38,7 @@ info:
 
     See the end of this file (`x-schema-gaps`) for responses that would benefit
     from live HAR / JSON dumps.
-  version: 0.31.2
+  version: 0.32
   contact:
     name: grindsa / dkb-robo
     url: https://github.com/grindsa/dkb-robo
