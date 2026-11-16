@@ -29,7 +29,7 @@ jobs:
           python-version: "3.x"
 
       - name: "[ PREPARE ] Install pypa/build"
-        run: python3 -m pip install --only-binary=:all: "build==1.2.2" --user
+        run: 'python3 -m pip install --only-binary=:all: "build==1.2.2" --user'
 
       - name: "[ PREPARE ] Get current version"
         uses: oprypin/find-latest-tag@6957ac556fa6d349727ecabfcaaf9f8e5ee37124 # v1.1.3
