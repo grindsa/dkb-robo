@@ -136,8 +136,8 @@ jobs:
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
           python3 -m pip install cyclonedx-bom
-          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format xml  --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml  /tmp/dkbroboenv
-          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --outfile /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
+          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format xml  --output-file /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml  /tmp/dkbroboenv
+          python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --output-file /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
       - name: "[ BUILD ] Upload SBOM"
         run: |
