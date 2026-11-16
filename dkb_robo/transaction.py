@@ -22,6 +22,35 @@ LEGACY_DATE_FORMAT, API_DATE_FORMAT = get_dateformat()
 logger = logging.getLogger(__name__)
 
 
+def _parse_filter_date(value: str) -> datetime.date:
+    """Parse a filter date in legacy or API format."""
+    for date_format in (LEGACY_DATE_FORMAT, API_DATE_FORMAT):
+        try:
+            return datetime.datetime.strptime(value, date_format).date()
+        except ValueError:
+            continue
+    raise DKBRoboError(
+        f"filter transactions: invalid date '{value}'; expected formats"
+        f" {LEGACY_DATE_FORMAT} or {API_DATE_FORMAT}"
+    )
+
+
+def _booking_date_in_range(
+    booking_date: str, date_from_obj: datetime.date, date_to_obj: datetime.date
+) -> bool:
+    """Return True when bookingDate parses and falls within [from, to]."""
+    try:
+        booking_date_obj = datetime.datetime.strptime(
+            booking_date, API_DATE_FORMAT
+        ).date()
+    except ValueError:
+        logger.debug(
+            "Transactions._filter(): skip invalid bookingDate %s", booking_date
+        )
+        return False
+    return date_from_obj <= booking_date_obj <= date_to_obj
+
+
 class Transactions:
     """Transactions class"""
 
@@ -59,6 +88,53 @@ class Transactions:
         )
         return position_list
 
+    def _request_transaction_page(self, transaction_url: str) -> Dict[str, Any]:
+        """GET one transaction page and return its JSON object."""
+        try:
+            response = self.client.get(transaction_url, timeout=self.timeout)
+        except requests.RequestException as err:
+            raise DKBRoboError(
+                f"fetch transactions: request failed for {transaction_url}: {err}"
+            ) from err
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as err:
+            response_text = response.text if response.text else ""
+            response_detail = (
+                f"; response={response_text[:200]}" if response_text else ""
+            )
+            raise DKBRoboError(
+                f"fetch transactions: http status code is {response.status_code}{response_detail}"
+            ) from err
+
+        try:
+            payload = response.json()
+        except ValueError as err:
+            raise DKBRoboError(
+                f"fetch transactions: invalid json in response for {transaction_url}"
+            ) from err
+
+        if not isinstance(payload, dict):
+            raise DKBRoboError(
+                f"fetch transactions: invalid payload type {type(payload).__name__}"
+            )
+        return payload
+
+    def _accumulate_transaction_page(
+        self, transaction_dic: Dict[str, Any], page: Dict[str, Any]
+    ) -> str | None:
+        """Merge one page into the aggregate result and return the next URL."""
+        if "included" in page:
+            transaction_dic["included"].extend(page["included"])
+
+        if "data" not in page:
+            logger.debug("fetch transactions: no data in response")
+            return None
+
+        transaction_dic["data"].extend(page["data"])
+        return self._nextpage_url(page)
+
     def _fetch(self, transaction_url: str) -> Dict[str, Any]:
         """get transaction list"""
         logger.debug("Transactions.fetch(%s)\n", transaction_url)
@@ -72,45 +148,8 @@ class Transactions:
                 )
             visited_urls.add(transaction_url)
 
-            try:
-                response = self.client.get(transaction_url, timeout=self.timeout)
-            except requests.RequestException as err:
-                raise DKBRoboError(
-                    f"fetch transactions: request failed for {transaction_url}: {err}"
-                ) from err
-
-            try:
-                response.raise_for_status()
-            except requests.HTTPError as err:
-                response_text = response.text if response.text else ""
-                response_detail = (
-                    f"; response={response_text[:200]}" if response_text else ""
-                )
-                raise DKBRoboError(
-                    f"fetch transactions: http status code is {response.status_code}{response_detail}"
-                ) from err
-
-            try:
-                _transaction_dic = response.json()
-            except ValueError as err:
-                raise DKBRoboError(
-                    f"fetch transactions: invalid json in response for {transaction_url}"
-                ) from err
-
-            if not isinstance(_transaction_dic, dict):
-                raise DKBRoboError(
-                    f"fetch transactions: invalid payload type {type(_transaction_dic).__name__}"
-                )
-
-            if "data" in _transaction_dic:
-                transaction_dic["data"].extend(_transaction_dic["data"])
-                transaction_url = self._nextpage_url(_transaction_dic)  # get next page
-            else:
-                logger.debug("fetch transactions: no data in response")
-                transaction_url = None
-
-            if "included" in _transaction_dic:
-                transaction_dic["included"].extend(_transaction_dic["included"])
+            page = self._request_transaction_page(transaction_url)
+            transaction_url = self._accumulate_transaction_page(transaction_dic, page)
 
         logger.debug(
             "Transactions.fetch() ended with %s entries\n", len(transaction_dic["data"])
@@ -127,23 +166,13 @@ class Transactions:
         """filter transactions"""
         logger.debug("Transactions._filter()\n")
 
-        def _parse_date(value: str) -> datetime.date:
-            for date_format in (LEGACY_DATE_FORMAT, API_DATE_FORMAT):
-                try:
-                    return datetime.datetime.strptime(value, date_format).date()
-                except ValueError:
-                    continue
-            raise DKBRoboError(
-                f"filter transactions: invalid date '{value}'; expected formats {LEGACY_DATE_FORMAT} or {API_DATE_FORMAT}"
-            )
-
         # support transation type 'reserved' for backwards compatibility
         transaction_type = (
             "pending" if transaction_type == "reserved" else transaction_type
         )
 
-        date_from_obj = _parse_date(date_from)
-        date_to_obj = _parse_date(date_to)
+        date_from_obj = _parse_filter_date(date_from)
+        date_to_obj = _parse_filter_date(date_to)
 
         filtered_transaction_list = []
         for transaction in transaction_list:
@@ -155,18 +184,7 @@ class Transactions:
             booking_date = attributes.get("bookingDate")
             if not booking_date:
                 continue
-
-            try:
-                booking_date_obj = datetime.datetime.strptime(
-                    booking_date, API_DATE_FORMAT
-                ).date()
-            except ValueError:
-                logger.debug(
-                    "Transactions._filter(): skip invalid bookingDate %s", booking_date
-                )
-                continue
-
-            if date_from_obj <= booking_date_obj <= date_to_obj:
+            if _booking_date_in_range(booking_date, date_from_obj, date_to_obj):
                 filtered_transaction_list.append(transaction)
 
         logger.debug(

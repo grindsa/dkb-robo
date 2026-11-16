@@ -629,6 +629,42 @@ def _invoke_shell_command(ctx, args):
         command.invoke(cmd_ctx)
 
 
+def _read_shell_line():
+    """Read one interactive prompt line. Return None on EOF/interrupt."""
+    try:
+        return input("dkb> ").strip()
+    except (EOFError, KeyboardInterrupt):
+        click.echo()
+        return None
+
+
+def _print_shell_help():
+    """List available shell commands."""
+    commands = sorted(name for name in main.commands if name != "interactive")
+    click.echo("Commands:")
+    for command in commands:
+        click.echo(f"  {command}")
+
+
+def _handle_shell_line(ctx, line):
+    """Handle one shell line. Return False to exit the shell loop."""
+    if not line:
+        return True
+    if line in ("logout", "quit", "exit"):
+        return False
+    if line in ("help", "?"):
+        _print_shell_help()
+        return True
+
+    try:
+        _invoke_shell_command(ctx, shlex.split(line))
+    except click.ClickException as err:
+        err.show()
+    except click.Abort:
+        click.echo("Aborted", err=True)
+    return True
+
+
 @main.command()
 @click.pass_context
 def interactive(ctx):
@@ -641,36 +677,9 @@ def interactive(ctx):
                 'Interactive mode started. Type "help" for commands and "logout" to exit.'
             )
             while True:
-                try:
-                    line = input("dkb> ").strip()
-                except EOFError:
-                    click.echo()
+                line = _read_shell_line()
+                if line is None or not _handle_shell_line(ctx, line):
                     break
-                except KeyboardInterrupt:
-                    click.echo()
-                    break
-
-                if not line:
-                    continue
-
-                if line in ("logout", "quit", "exit"):
-                    break
-
-                if line in ("help", "?"):
-                    commands = sorted(
-                        name for name in main.commands if name != "interactive"
-                    )
-                    click.echo("Commands:")
-                    for command in commands:
-                        click.echo(f"  {command}")
-                    continue
-
-                try:
-                    _invoke_shell_command(ctx, shlex.split(line))
-                except click.ClickException as err:
-                    err.show()
-                except click.Abort:
-                    click.echo("Aborted", err=True)
     except dkb_robo.DKBRoboError as _err:
         click.echo(_err.args[0], err=True)
     finally:

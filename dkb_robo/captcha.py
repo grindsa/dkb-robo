@@ -261,9 +261,34 @@ def _shadow_dom_dismiss_cookies(sb):
         return False
 
 
+def _finalize_cookie_dismissal(sb, message):
+    """Remove the CMP host when the banner is gone; return success."""
+    if _cookie_banner_visible(sb):
+        return False
+    _remove_cookie_banner_host(sb)
+    logger.debug(message)
+    return True
+
+
+def _try_cookie_dismiss_strategy(sb, dismiss_fn, success_msg):
+    """Run one dismiss strategy and confirm the banner disappeared."""
+    if not dismiss_fn(sb):
+        return False
+    time.sleep(0.5)
+    return _finalize_cookie_dismissal(sb, success_msg)
+
+
 def _dismiss_cookie_banner(sb, timeout=30):
     """Wait for and dismiss the cookie banner (Usercentrics CMP)."""
     logger.debug("captcha._dismiss_cookie_banner()")
+    strategies = (
+        (_uc_ui_dismiss_cookies, "captcha: cookie banner dismissed via UC_UI+closeCMP"),
+        (_gui_click_cookie_button, "captcha: cookie banner dismissed via GUI click"),
+        (
+            _shadow_dom_dismiss_cookies,
+            "captcha: cookie banner dismissed via shadow DOM click",
+        ),
+    )
     for _ in range(max(timeout, 1)):
         if not _cookie_banner_visible(sb):
             # No visible buttons — still drop an empty host if present.
@@ -271,25 +296,8 @@ def _dismiss_cookie_banner(sb, timeout=30):
             logger.debug("captcha: cookie banner not visible")
             return True
 
-        if _uc_ui_dismiss_cookies(sb):
-            time.sleep(0.5)
-            if not _cookie_banner_visible(sb):
-                _remove_cookie_banner_host(sb)
-                logger.debug("captcha: cookie banner dismissed via UC_UI+closeCMP")
-                return True
-
-        if _gui_click_cookie_button(sb):
-            time.sleep(0.5)
-            if not _cookie_banner_visible(sb):
-                _remove_cookie_banner_host(sb)
-                logger.debug("captcha: cookie banner dismissed via GUI click")
-                return True
-
-        if _shadow_dom_dismiss_cookies(sb):
-            time.sleep(0.5)
-            if not _cookie_banner_visible(sb):
-                _remove_cookie_banner_host(sb)
-                logger.debug("captcha: cookie banner dismissed via shadow DOM click")
+        for dismiss_fn, message in strategies:
+            if _try_cookie_dismiss_strategy(sb, dismiss_fn, message):
                 return True
 
         # Last resort for this attempt: remove the overlay so captcha is clickable.
@@ -368,6 +376,65 @@ def _click_frc_with_screen_coords(sb):
     return "gui_click_x_y"
 
 
+def _bring_window_to_front(sb):
+    """Best-effort focus of the active browser window."""
+    try:
+        if hasattr(sb, "bring_active_window_to_front"):
+            sb.bring_active_window_to_front()
+    except Exception:
+        pass
+
+
+def _click_frc_cdp_offset(sb):
+    """Click the FRC checkbox via CDP click_with_offset."""
+    sb.cdp.click_with_offset(
+        FRC_WIDGET_SELECTOR,
+        FRC_CHECKBOX_OFFSET[0],
+        FRC_CHECKBOX_OFFSET[1],
+    )
+    return "click_with_offset"
+
+
+def _click_frc_mouse(sb):
+    """Click the FRC checkbox via element mouse_click."""
+    elem = sb.cdp.find_element(FRC_WIDGET_SELECTOR)
+    elem.scroll_into_view()
+    time.sleep(0.3)
+    elem.mouse_click()
+    return "mouse_click"
+
+
+def _try_frc_click_methods(sb):
+    """Try FRC click strategies; return True once the widget leaves .UNACTIVATED."""
+    # FRC ignores synthetic CDP clicks. Prefer OS-level screen clicks first
+    # (getBoundingClientRect alone is NOT screen-relative).
+    click_methods = [
+        ("screen", _click_frc_with_screen_coords),
+        ("cdp_offset", _click_frc_cdp_offset),
+        ("mouse", _click_frc_mouse),
+    ]
+
+    for name, method in click_methods:
+        try:
+            detail = method(sb)
+            logger.debug("captcha: FRC click attempted via %s (%s)", name, detail)
+        except Exception as err:
+            logger.debug("captcha: FRC click via %s failed: %s", name, err)
+            continue
+
+        # Give the widget a moment to leave .UNACTIVATED before trying
+        # the next strategy.
+        time.sleep(1.5)
+        token = _frc_token_value(sb)
+        if _frc_click_started(token):
+            logger.debug(
+                "captcha: FRC click accepted (token prefix=%s)",
+                (token or "")[:20],
+            )
+            return True
+    return False
+
+
 def _click_frc_checkbox(sb, attempts=30):
     """Activate the Friendly Captcha 'Ich bin ein Mensch' checkbox."""
     logger.debug("captcha._click_frc_checkbox()")
@@ -380,54 +447,9 @@ def _click_frc_checkbox(sb, attempts=30):
             time.sleep(1)
             continue
 
-        try:
-            if hasattr(sb, "bring_active_window_to_front"):
-                sb.bring_active_window_to_front()
-        except Exception:
-            pass
-
-        # FRC ignores synthetic CDP clicks. Use OS-level clicks with screen
-        # coordinates (getBoundingClientRect alone is NOT screen-relative).
-        click_methods = [
-            ("screen", _click_frc_with_screen_coords),
-        ]
-
-        def _cdp_offset(_sb):
-            _sb.cdp.click_with_offset(
-                FRC_WIDGET_SELECTOR,
-                FRC_CHECKBOX_OFFSET[0],
-                FRC_CHECKBOX_OFFSET[1],
-            )
-            return "click_with_offset"
-
-        def _mouse_click(_sb):
-            elem = _sb.cdp.find_element(FRC_WIDGET_SELECTOR)
-            elem.scroll_into_view()
-            time.sleep(0.3)
-            elem.mouse_click()
-            return "mouse_click"
-
-        click_methods.append(("cdp_offset", _cdp_offset))
-        click_methods.append(("mouse", _mouse_click))
-
-        for name, method in click_methods:
-            try:
-                detail = method(sb)
-                logger.debug("captcha: FRC click attempted via %s (%s)", name, detail)
-            except Exception as err:
-                logger.debug("captcha: FRC click via %s failed: %s", name, err)
-                continue
-
-            # Give the widget a moment to leave .UNACTIVATED before trying
-            # the next strategy.
-            time.sleep(1.5)
-            token = _frc_token_value(sb)
-            if _frc_click_started(token):
-                logger.debug(
-                    "captcha: FRC click accepted (token prefix=%s)",
-                    (token or "")[:20],
-                )
-                return True
+        _bring_window_to_front(sb)
+        if _try_frc_click_methods(sb):
+            return True
 
         time.sleep(1)
     return False

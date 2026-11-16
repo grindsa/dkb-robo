@@ -223,6 +223,26 @@ class Overview:
         logger.debug("Overview._sort() ended")
         return account_dic
 
+    def _itemize_entry(self, item: Any, item_cls: Type) -> Optional[Tuple[Any, Any]]:
+        """Build one portfolio entry from a raw API item."""
+        if not isinstance(item, dict):
+            return None
+
+        item_id = item.get("id", None)
+        attributes = item.get("attributes", {})
+        if not isinstance(attributes, dict):
+            attributes = {}
+        attributes = {
+            **attributes,
+            "id": item_id,
+            "type": item.get("type", None),
+        }
+
+        product = item_cls(**attributes)
+        if self.unfiltered:
+            return item_id, product
+        return item_id, product.format()
+
     def _itemize(self, portfolio_dic: Dict[str, Any]) -> Dict[str, Any]:
         """raw data"""
         logger.debug("Overview._itemize()")
@@ -242,24 +262,10 @@ class Overview:
             if not isinstance(group_data, list):
                 continue
             for item in group_data:
-                if not isinstance(item, dict):
-                    continue
-                item_id = item.get("id", None)
-                attributes = item.get("attributes", {})
-                if not isinstance(attributes, dict):
-                    attributes = {}
-                attributes = {
-                    **attributes,
-                    "id": item_id,
-                    "type": item.get("type", None),
-                }
-
-                product = product_group_dic[product_group](**attributes)
-
-                if self.unfiltered:
-                    product_dic[item_id] = product
-                else:
-                    product_dic[item_id] = product.format()
+                entry = self._itemize_entry(item, product_group_dic[product_group])
+                if entry:
+                    item_id, value = entry
+                    product_dic[item_id] = value
 
         logger.debug("Overview._itemize() ended")
         return product_dic

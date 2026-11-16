@@ -390,6 +390,34 @@ class Authentication:
 
         return device_list
 
+    def _mfa_select_interactive(self, mfa_data: List[MFAMethod]) -> int:
+        """Prompt until a valid MFA device is selected."""
+        logger.debug("Authentication._mfa_select_interactive()")
+        device_num = 0
+        deviceselection_completed = False
+        failed_attempts = 0
+        while not deviceselection_completed:
+            if failed_attempts >= self.mfa_selection_max_attempts:
+                raise DKBRoboError(
+                    "Login failed: maximum MFA device selection attempts exceeded"
+                )
+
+            device_list = self._print_mfa_devices_table(mfa_data)
+            _tmp_device_num = self._read_input(self.mfa_selection_prompt)
+            if _tmp_device_num.strip().lower() in self.mfa_selection_cancel_tokens:
+                raise DKBRoboError("Login canceled by user during MFA device selection")
+
+            device_num, deviceselection_completed = self._mfa_process(
+                device_num, device_list, _tmp_device_num, deviceselection_completed
+            )
+            if not deviceselection_completed:
+                failed_attempts += 1
+
+        logger.debug(
+            "Authentication._mfa_select_interactive() ended with: %s", device_num
+        )
+        return device_num
+
     def _mfa_select(self, mfa_dic: MFAMethodsResponse) -> int:
         """pick mfa_device from dictionary"""
         logger.debug("Authentication._mfa_select()")
@@ -409,26 +437,7 @@ class Authentication:
             device_num = self.mfa_device - 1
 
         elif "data" in mfa_dic and len(mfa_dic["data"]) > 1:
-            deviceselection_completed = False
-            failed_attempts = 0
-            while not deviceselection_completed:
-                if failed_attempts >= self.mfa_selection_max_attempts:
-                    raise DKBRoboError(
-                        "Login failed: maximum MFA device selection attempts exceeded"
-                    )
-
-                device_list = self._print_mfa_devices_table(mfa_dic["data"])
-                _tmp_device_num = self._read_input(self.mfa_selection_prompt)
-                if _tmp_device_num.strip().lower() in self.mfa_selection_cancel_tokens:
-                    raise DKBRoboError(
-                        "Login canceled by user during MFA device selection"
-                    )
-
-                device_num, deviceselection_completed = self._mfa_process(
-                    device_num, device_list, _tmp_device_num, deviceselection_completed
-                )
-                if not deviceselection_completed:
-                    failed_attempts += 1
+            device_num = self._mfa_select_interactive(mfa_dic["data"])
 
         logger.debug("Authentication._mfa_select() ended with: %s", device_num)
         return device_num
