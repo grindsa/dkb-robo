@@ -1299,6 +1299,147 @@ class TestDepotTransactionItem(unittest.TestCase):
         self.assertEqual(formatted_transaction, expected_transaction)
 
 
+class TestTransactionCoverageGaps(unittest.TestCase):
+    """extra edge-case coverage for Transactions helpers"""
+
+    @patch("requests.Session")
+    def setUp(self, mock_session):
+        self.transaction = Transactions(client=mock_session)
+        self.maxDiff = None
+
+    def test_054__fetch_pagination_loop(self):
+        """_fetch() raises when the same next-page url repeats"""
+        self.transaction.client = Mock()
+        self.transaction.client.get.return_value.status_code = 200
+        self.transaction.client.get.return_value.raise_for_status.return_value = None
+        self.transaction.client.get.return_value.json.return_value = {
+            "data": [{"id": "1"}],
+            "links": {"next": "loop_url"},
+        }
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._fetch("loop_url")
+        self.assertIn("pagination loop detected", str(err.exception))
+
+    def test_055__fetch_invalid_payload_type(self):
+        """_fetch() raises when json payload is not a dict"""
+        self.transaction.client = Mock()
+        self.transaction.client.get.return_value.status_code = 200
+        self.transaction.client.get.return_value.raise_for_status.return_value = None
+        self.transaction.client.get.return_value.json.return_value = [
+            "not",
+            "a",
+            "dict",
+        ]
+        with self.assertRaises(DKBRoboError) as err:
+            self.transaction._fetch("transaction_url")
+        self.assertIn("invalid payload type", str(err.exception))
+
+    def test_056__filter_skips_non_dict_attributes(self):
+        """_filter() skips rows whose attributes are not a dict"""
+        transaction_list = [
+            {"attributes": "bad"},
+            {
+                "attributes": {
+                    "status": "booked",
+                    "bookingDate": "2023-01-15",
+                }
+            },
+        ]
+        result = self.transaction._filter(
+            transaction_list, "01.01.2023", "31.01.2023", "booked"
+        )
+        self.assertEqual(1, len(result))
+
+    def test_057__filter_skips_missing_booking_date(self):
+        """_filter() skips rows without bookingDate"""
+        transaction_list = [
+            {"attributes": {"status": "booked"}},
+            {
+                "attributes": {
+                    "status": "booked",
+                    "bookingDate": "2023-01-15",
+                }
+            },
+        ]
+        result = self.transaction._filter(
+            transaction_list, "01.01.2023", "31.01.2023", "booked"
+        )
+        self.assertEqual(1, len(result))
+
+    def test_058__format_skips_non_dict_attributes(self):
+        """_format() skips entries whose attributes are not a dict"""
+        raw = [
+            {"id": "1", "attributes": "bad"},
+            {
+                "id": "2",
+                "attributes": {
+                    "bookingDate": "2022-01-15",
+                    "valueDate": "2022-01-16",
+                    "description": "desc",
+                    "transactionType": "credit",
+                    "amount": {"value": 1, "currencyCode": "EUR"},
+                    "creditor": {
+                        "creditorAccount": {"iban": "DE00"},
+                        "agent": {},
+                        "id": "cid",
+                        "name": "Creditor",
+                    },
+                    "debtor": {
+                        "debtorAccount": {"iban": "DE01"},
+                        "agent": {},
+                        "id": "did",
+                        "name": "Debtor",
+                    },
+                },
+            },
+        ]
+        result = self.transaction._format(raw, "account")
+        self.assertEqual(1, len(result))
+
+    def test_059__map_non_dict_attributes_and_included(self):
+        """_map() tolerates non-dict attributes and included entries"""
+        position = {
+            "attributes": "not-a-dict",
+            "relationships": {
+                "instrument": {"data": {"id": "inid"}},
+                "quote": {"data": {"id": "qid"}},
+            },
+        }
+        included = [
+            "skip-me",
+            {"id": "inid", "attributes": {"isin": "DE00"}},
+            {"id": "qid", "attributes": {"price": 1}},
+        ]
+        result = self.transaction._map(position, included)
+        self.assertEqual(
+            {"isin": "DE00", "id": "inid"}, result["attributes"]["instrument"]
+        )
+        self.assertEqual({"price": 1, "id": "qid"}, result["attributes"]["quote"])
+
+    def test_060__peer_information_non_dict_peer_type(self):
+        """_peer_information() returns {} when peer_type value is not a dict"""
+        item = AccountTransactionItem(
+            amount={"value": 1, "currencyCode": "EUR"},
+            creditor={
+                "creditorAccount": {"iban": "DE00"},
+                "agent": {},
+                "id": "c",
+                "name": "C",
+            },
+            debtor={
+                "debtorAccount": {"iban": "DE01"},
+                "agent": {},
+                "id": "d",
+                "name": "D",
+            },
+            description="x",
+        )
+        self.assertEqual(
+            {},
+            item._peer_information({"debtorAccount": "bad"}, "debtorAccount"),
+        )
+
+
 if __name__ == "__main__":
 
     unittest.main()

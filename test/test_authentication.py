@@ -1499,6 +1499,13 @@ class TestAPPAuthentication(unittest.TestCase):
         )
         self.assertTrue(mock_confirm.called)
 
+    def test_094__write_output_uses_callback(self):
+        """test _write_output() routes via output_callback when set"""
+        outputs = []
+        self.appauth.output_callback = outputs.append
+        self.appauth._write_output("callback-message")
+        self.assertEqual(["callback-message"], outputs)
+
 
 class TestTANAuthentication(unittest.TestCase):
     """test class"""

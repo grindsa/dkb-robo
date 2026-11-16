@@ -357,6 +357,14 @@ class TestPostboxItem(unittest.TestCase):
         self.assertEqual("2025-03-23", self.postbox_item.date())
 
     @patch("dkb_robo.postbox.datetime.date")
+    def test_023d_date_with_invalid_statement_date(self, mock_today):
+        """Test fallback date when statementDate is present but invalid."""
+        self.document.metadata = {"statementDate": "not-a-date"}
+        mock_today.fromisoformat.side_effect = ValueError("invalid")
+        mock_today.today.return_value = date(2025, 3, 23)
+        self.assertEqual("2025-03-23", self.postbox_item.date())
+
+    @patch("dkb_robo.postbox.datetime.date")
     def test_024_date_invalid(self, mock_today):
         """Test that the date method raises an exception if no valid date field is found in the metadata."""
         self.document.metadata = {}
@@ -719,6 +727,68 @@ class TestPostBox(unittest.TestCase):
         ]
         items = PostBox(client=mock_client).fetch_items()
         self.assertEqual(items, {})
+
+    @patch("requests.Session")
+    def test_035_fetch_http_error_includes_response_text(self, mock_session):
+        """_fetch_json() includes truncated response text on HTTPError"""
+        mock_client = mock_session.return_value
+        response = MagicMock()
+        response.status_code = 500
+        response.text = "server exploded " + ("x" * 250)
+        response.raise_for_status.side_effect = requests.HTTPError("500")
+        mock_client.get.return_value = response
+
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client)._fetch_json("https://example/docs")
+        self.assertIn("http status code is 500", str(err.exception))
+        self.assertIn("response=server exploded", str(err.exception))
+
+    def test_036_fix_link_url_non_string(self):
+        """_fix_link_url() returns empty string for non-string urls"""
+        postbox = PostBox(client=MagicMock())
+        self.assertEqual("", postbox._fix_link_url(None))
+        self.assertEqual("", postbox._fix_link_url(123))
+
+    @patch("requests.Session")
+    def test_037_merge_messages_skips_unknown_ids(self, mock_session):
+        """_merge_messages() skips message ids that are not in the item map"""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = [
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        {
+                            "id": "orphan-msg",
+                            "attributes": {"subject": "orphan"},
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/messages/orphan-msg"
+                            },
+                        }
+                    ]
+                },
+            ),
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        {
+                            "id": "doc-only",
+                            "attributes": {
+                                "fileName": "x",
+                                "contentType": "application/pdf",
+                            },
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/documents/doc-only"
+                            },
+                        }
+                    ]
+                },
+            ),
+        ]
+        items = PostBox(client=mock_client).fetch_items()
+        self.assertEqual(["doc-only"], list(items.keys()))
+        self.assertIsNone(items["doc-only"].message)
 
 
 if __name__ == "__main__":
