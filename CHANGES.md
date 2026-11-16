@@ -8,6 +8,7 @@ This is a high-level summary of the most important changes. For a full list of c
 **Bugfixes**:
 
 - Forward new `headless` option from CLI and DKBRobo into captcha token solving
+- Captcha flow: dismiss Usercentrics via `denyAllConsents()` + `closeCMP()` (and remove leftover overlay), then OS-level-click the Friendly Captcha checkbox
 
 ## Changes in 0.31.1
 

@@ -13,6 +13,7 @@ from dkb_robo.captcha import (
     _apply_browser_headers,
     _click_frc_checkbox,
     _dismiss_cookie_banner,
+    _is_active_frc_token,
     _poll_frc_token,
     _transfer_browser_state_to_client,
     get_dkb_redeem_token,
@@ -54,21 +55,43 @@ class TestApplyBrowserHeaders(unittest.TestCase):
 class TestDismissCookieBanner(unittest.TestCase):
     """tests for _dismiss_cookie_banner()"""
 
-    def test_003_swallows_exceptions_when_banner_not_clickable(self):
-        """_dismiss_cookie_banner() ignores failures of deny/accept clicks"""
+    def setUp(self):
+        self._sleep_patcher = patch("dkb_robo.captcha.time.sleep", return_value=None)
+        self._sleep_patcher.start()
+
+    def tearDown(self):
+        self._sleep_patcher.stop()
+
+    @patch("dkb_robo.captcha._remove_cookie_banner_host", return_value=True)
+    @patch("dkb_robo.captcha._cookie_banner_visible", side_effect=[True, True, True])
+    def test_003_swallows_exceptions_when_banner_not_clickable(
+        self, _mock_visible, mock_remove
+    ):
+        """_dismiss_cookie_banner() keeps going when UC_UI/deny/accept clicks fail"""
         mock_sb = MagicMock()
-        mock_sb.cdp.evaluate.side_effect = [Exception("deny"), Exception("accept")]
+        mock_sb.cdp.evaluate.side_effect = Exception("boom")
 
-        _dismiss_cookie_banner(mock_sb)
-        self.assertEqual(2, mock_sb.cdp.evaluate.call_count)
+        # Final remove path still clears the banner for this attempt.
+        result = _dismiss_cookie_banner(mock_sb, timeout=1)
+        self.assertTrue(result)
+        self.assertTrue(mock_remove.called)
 
-    def test_004_accept_path_runs_when_deny_fails(self):
-        """_dismiss_cookie_banner() falls back to accept path"""
+    @patch("dkb_robo.captcha._remove_cookie_banner_host", return_value=True)
+    @patch(
+        "dkb_robo.captcha._cookie_banner_visible",
+        side_effect=[True, False],
+    )
+    @patch("dkb_robo.captcha._uc_ui_dismiss_cookies", return_value=True)
+    def test_004b_uc_ui_path_dismisses_banner(
+        self, mock_uc, _mock_visible, mock_remove
+    ):
+        """_dismiss_cookie_banner() prefers UC_UI.denyAllConsents()+closeCMP()"""
         mock_sb = MagicMock()
-        mock_sb.cdp.evaluate.side_effect = [Exception("deny"), None]
 
-        _dismiss_cookie_banner(mock_sb)
-        self.assertEqual(2, mock_sb.cdp.evaluate.call_count)
+        result = _dismiss_cookie_banner(mock_sb, timeout=1)
+        self.assertTrue(result)
+        self.assertTrue(mock_uc.called)
+        self.assertTrue(mock_remove.called)
 
 
 class TestClickFrcCheckbox(unittest.TestCase):
@@ -81,14 +104,36 @@ class TestClickFrcCheckbox(unittest.TestCase):
     def tearDown(self):
         self._sleep_patcher.stop()
 
-    def test_005_returns_false_when_find_element_keeps_failing(self):
-        """_click_frc_checkbox() returns False after repeated exceptions"""
+    @patch("dkb_robo.captcha._cookie_banner_visible", return_value=False)
+    @patch("dkb_robo.captcha._frc_iframe_rect", return_value=None)
+    def test_005_returns_false_when_iframe_never_appears(
+        self, _mock_rect, _mock_visible
+    ):
+        """_click_frc_checkbox() returns False when the FRC iframe is missing"""
         mock_sb = MagicMock()
-        mock_sb.cdp.find_element.side_effect = Exception("not ready")
 
         result = _click_frc_checkbox(mock_sb, attempts=3)
         self.assertFalse(result)
-        self.assertEqual(3, mock_sb.cdp.find_element.call_count)
+
+    @patch("dkb_robo.captcha._frc_token_value", side_effect=[".UNACTIVATED", "x" * 401])
+    @patch("dkb_robo.captcha._cookie_banner_visible", return_value=False)
+    @patch(
+        "dkb_robo.captcha._frc_iframe_rect",
+        return_value={"x": 100, "y": 200, "w": 400, "h": 70},
+    )
+    @patch(
+        "dkb_robo.captcha._click_frc_with_screen_coords",
+        return_value="gui_click_captcha",
+    )
+    def test_005b_uses_screen_click_when_widget_present(
+        self, mock_screen_click, _mock_rect, _mock_visible, _mock_token
+    ):
+        """_click_frc_checkbox() prefers a screen-aware OS-level captcha click"""
+        mock_sb = MagicMock()
+
+        result = _click_frc_checkbox(mock_sb, attempts=1)
+        self.assertTrue(result)
+        self.assertTrue(mock_screen_click.called)
 
 
 class TestTransferBrowserStateToClient(unittest.TestCase):
@@ -131,8 +176,12 @@ class TestLoginViaBrowser(unittest.TestCase):
     def tearDown(self):
         self._sleep_patcher.stop()
 
+    @patch("dkb_robo.captcha._click_frc_checkbox", return_value=True)
+    @patch("dkb_robo.captcha._dismiss_cookie_banner", return_value=False)
     @patch("dkb_robo.captcha.SB")
-    def test_008_ignores_optional_step_exceptions(self, mock_sb):
+    def test_008_ignores_optional_step_exceptions(
+        self, mock_sb, _mock_dismiss, _mock_click_frc
+    ):
         """login_via_browser() ignores optional UI step exceptions"""
         sb_instance = MagicMock()
         mock_sb.return_value.__enter__.return_value = sb_instance
@@ -150,7 +199,6 @@ class TestLoginViaBrowser(unittest.TestCase):
         sb_instance.click.side_effect = click_side_effect
         sb_instance.get_cookies.return_value = [{"name": "foo", "value": "bar"}]
         sb_instance.cdp.evaluate.side_effect = [
-            Exception("cookie banner lookup fail"),
             "UA/1.0",
             Exception("xsrf fail"),
         ]
@@ -169,18 +217,18 @@ class TestLoginViaBrowser(unittest.TestCase):
         mock_client.cookies.set.assert_called_once_with("foo", "bar")
         self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
 
+    @patch("dkb_robo.captcha._click_frc_checkbox", return_value=True)
+    @patch("dkb_robo.captcha._dismiss_cookie_banner", return_value=True)
     @patch("dkb_robo.captcha.SB")
-    def test_009_covers_cookie_and_checkbox_retry_paths(self, mock_sb):
-        """login_via_browser() covers cookie banner deny and captcha retry exception path"""
+    def test_009_covers_cookie_and_checkbox_helpers(
+        self, mock_sb, mock_dismiss, mock_click_frc
+    ):
+        """login_via_browser() calls cookie/captcha helpers then builds a session"""
         sb_instance = MagicMock()
         mock_sb.return_value.__enter__.return_value = sb_instance
 
-        widget = MagicMock()
-        sb_instance.cdp.find_element.side_effect = [Exception("not ready"), widget]
         sb_instance.get_cookies.return_value = [{"name": "foo", "value": "bar"}]
         sb_instance.cdp.evaluate.side_effect = [
-            True,
-            None,
             "UA/1.0",
             "xsrf-token",
         ]
@@ -196,20 +244,22 @@ class TestLoginViaBrowser(unittest.TestCase):
             client=mock_client,
         )
 
-        widget.scroll_into_view.assert_called_once()
-        widget.mouse_click.assert_called_once()
+        mock_dismiss.assert_called()
+        mock_click_frc.assert_called()
         mock_client.cookies.set.assert_called_once_with("foo", "bar")
         self.assertEqual("UA/1.0", mock_client.headers["User-Agent"])
         self.assertEqual("xsrf-token", mock_client.headers["x-xsrf-token"])
 
+    @patch("dkb_robo.captcha._click_frc_checkbox", return_value=True)
+    @patch("dkb_robo.captcha._dismiss_cookie_banner", return_value=True)
     @patch("dkb_robo.captcha.SB")
-    def test_009a_initializes_client_headers_when_missing(self, mock_sb):
+    def test_009a_initializes_client_headers_when_missing(
+        self, mock_sb, _mock_dismiss, _mock_click_frc
+    ):
         """login_via_browser() initializes client.headers when it is None"""
         sb_instance = MagicMock()
         mock_sb.return_value.__enter__.return_value = sb_instance
 
-        widget = MagicMock()
-        sb_instance.cdp.find_element.return_value = widget
         sb_instance.get_cookies.return_value = [{"name": "foo", "value": "bar"}]
         sb_instance.cdp.evaluate.return_value = "UA/1.0"
 
@@ -227,6 +277,19 @@ class TestLoginViaBrowser(unittest.TestCase):
         self.assertIsInstance(mock_client.headers, dict)
         self.assertIn("User-Agent", mock_client.headers)
         mock_client.cookies.set.assert_called_once_with("foo", "bar")
+
+
+class TestIsActiveFrcToken(unittest.TestCase):
+    """tests for _is_active_frc_token()"""
+
+    def test_009b_rejects_placeholders_and_short_values(self):
+        """_is_active_frc_token() rejects .UNACTIVATED and short values"""
+        self.assertFalse(_is_active_frc_token(None))
+        self.assertFalse(_is_active_frc_token(""))
+        self.assertFalse(_is_active_frc_token(".UNACTIVATED"))
+        self.assertFalse(_is_active_frc_token(".UNFINISHED"))
+        self.assertFalse(_is_active_frc_token("x" * 100))
+        self.assertTrue(_is_active_frc_token("x" * 401))
 
 
 class TestPollFrcToken(unittest.TestCase):
@@ -297,9 +360,19 @@ class TestGetDkbRedeemToken(unittest.TestCase):
         # Avoid real delays from checkbox/poll helper sleeps in captcha flow.
         self._sleep_patcher = patch("dkb_robo.captcha.time.sleep", return_value=None)
         self._sleep_patcher.start()
+        self._dismiss_patcher = patch(
+            "dkb_robo.captcha._dismiss_cookie_banner", return_value=True
+        )
+        self._dismiss_patcher.start()
+        self._click_patcher = patch(
+            "dkb_robo.captcha._click_frc_checkbox", return_value=True
+        )
+        self._click_patcher.start()
 
     def tearDown(self):
         self._sleep_patcher.stop()
+        self._dismiss_patcher.stop()
+        self._click_patcher.stop()
 
     @patch("dkb_robo.captcha._poll_frc_token", new_callable=MagicMock)
     @patch("dkb_robo.captcha.SB")
