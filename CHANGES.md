@@ -3,7 +3,7 @@
 
 This is a high-level summary of the most important changes. For a full list of changes, see the [git commit log](https://github.com/grindsa/dkb-robo/commits) and pick the appropriate release branch.
 
-## Unreleased
+## Changes in 0.32.1
 
 **Features**:
 
