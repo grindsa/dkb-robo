@@ -29,7 +29,7 @@ Starting from version 0.9 dkb-robo can handle the 2nd factor DKB introduced to f
 
 The introduction of a 2nd factor does limit the usage of dkb-robo for automation purposes. DKB is unfortunately ~~not willing/ not able~~ not allowed to open their PSD2-API for non-Fintechs. I discussed this with them for weeks at some point they stopped responding to my emails so I gave up.
 
-DKB introduced a new web-frontend in July 2023 which is using a REST-API as backend. The migration to the new REST endpoints started with v0.22 and has been completed with v0.27.
+DKB introduced a new web-frontend in July 2023 which is using a REST-API as backend. The migration to the new REST endpoints started with v0.22 and has been completed with v0.27. An unofficial OpenAPI description of the endpoints used by dkb-robo is available in [doc/openapi.yaml](doc/openapi.yaml).
 
 ## Getting Started
 
@@ -467,6 +467,8 @@ On Windows, use either `dkb ...` or `py -m dkb_robo ...`.
 ## Further documentation
 
 please check the [doc](https://github.com/grindsa/dkb-robo/tree/master/doc) folder of the project. You will find further documentation and an example scripts of all dkb-robo methods there.
+
+- [doc/openapi.yaml](doc/openapi.yaml) — unofficial OpenAPI 3 spec of the DKB REST endpoints used by this library (open in [Swagger Editor](https://editor.swagger.io) to browse)
 
 ## Contributing
 

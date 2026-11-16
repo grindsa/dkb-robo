@@ -1,0 +1,1813 @@
+openapi: 3.0.3
+info:
+  title: DKB Banking REST API (unofficial)
+  description: |
+    Reverse-engineered documentation of the Deutsche Kreditbank (DKB) web-banking
+    REST backend as used by [dkb-robo](https://github.com/grindsa/dkb-robo) (≥ v0.27).
+
+    This is **not** an official DKB API. Schemas are derived from client code,
+    unit-test fixtures under `test/mocks/`, and inline test payloads. Fields that
+    the library does not consume may exist on the wire but are omitted or marked
+    as incomplete.
+
+    ## Authentication flow
+
+    1. Obtain a Friendly Captcha redeem token via browser automation on
+       `https://banking.dkb.de/login` (not a REST call).
+    2. `POST /token` with `grant_type=banking_user_sca` (1FA).
+    3. `GET /mfa/mfa/methods` to list MFA devices.
+    4. `POST /device-data/web-device-data` (device fingerprint).
+    5. `POST /mfa/mfa/challenges` to start 2FA.
+    6. Poll `GET /mfa/mfa/challenges/{id}` (app / seal_one) **or**
+       `POST /mfa/mfa/challenges/{id}` with TAN (chipTAN).
+    7. `POST /token` with `grant_type=banking_user_mfa` (complete 2FA).
+    8. Subsequent GETs use the authenticated `requests`/`curl_cffi` session
+       (cookies + `x-xsrf-token`). No `Authorization: Bearer` header is set
+       by dkb-robo.
+
+    ## Content types
+
+    | Endpoint family | Content-Type / Accept |
+    |-----------------|------------------------|
+    | `/token` | `application/x-www-form-urlencoded` |
+    | MFA challenges, postbox PATCH | `application/vnd.api+json` |
+    | Device data | `application/json` |
+    | Most GETs | `application/json, text/plain, */*` (session default) |
+
+    ## Gaps / incomplete schemas
+
+    See the end of this file (`x-schema-gaps`) for responses that would benefit
+    from live HAR / JSON dumps.
+  version: 0.31.2
+  contact:
+    name: grindsa / dkb-robo
+    url: https://github.com/grindsa/dkb-robo
+  license:
+    name: GPL-3.0-or-later
+
+servers:
+  - url: https://banking.dkb.de/api
+    description: DKB web-banking REST API (primary)
+  - url: https://banking.dkb.de/api/documentstorage
+    description: Document / postbox storage (paths relative to this server)
+
+tags:
+  - name: Authentication
+    description: SCA login, MFA, device fingerprint, CSRF refresh
+  - name: Portfolio
+    description: Product display, accounts, cards, brokerage accounts
+  - name: Transactions
+    description: Account bookings, credit-card transactions, depot positions
+  - name: StandingOrders
+    description: Recurring credit transfers (Daueraufträge)
+  - name: TaxExemptions
+    description: Freistellungsauftrag / tax exemptions
+  - name: Postbox
+    description: Messages, documents, download, mark read
+
+security:
+  - CookieSession: []
+    XsrfToken: []
+
+paths:
+  /token:
+    post:
+      tags: [Authentication]
+      summary: Obtain or upgrade OAuth-style banking token
+      description: |
+        Two grant types are used by dkb-robo:
+
+        - **SCA (1FA):** `grant_type=banking_user_sca` with username/password and
+          captcha token. Response must include `access_token` and `mfa_id`.
+        - **MFA (2FA complete):** `grant_type=banking_user_mfa` with `mfa_id` and
+          `scope=device_sso`. Response must include `token_factor_type: "2fa"`.
+
+        On HTTP 403 with a CSRF-related body after SCA, the client calls
+        `GET /login` once and retries this POST.
+      operationId: postToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TokenScaRequest'
+                - $ref: '#/components/schemas/TokenMfaRequest'
+            examples:
+              sca:
+                summary: First-factor login
+                value:
+                  captcha_token: "<friendly-captcha-redeem-token>"
+                  grant_type: banking_user_sca
+                  username: "user@example.com"
+                  password: "secret"
+                  sca_type: web-login
+              mfa:
+                summary: Second-factor token upgrade
+                value:
+                  grant_type: banking_user_mfa
+                  mfa_id: "<mfa_id from SCA response>"
+                  scope: device_sso
+      responses:
+        '200':
+          description: Token issued / upgraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '403':
+          description: Forbidden (often CSRF); client may refresh `/login` and retry
+
+  /login:
+    get:
+      tags: [Authentication]
+      summary: Refresh login / CSRF cookies
+      description: |
+        Called only when `POST /token` returns 403 with a CSRF-related body.
+        Response body is ignored; purpose is cookie refresh.
+      operationId: getLogin
+      security: []
+      responses:
+        '200':
+          description: Login page / cookie refresh succeeded
+
+  /mfa/mfa/methods:
+    get:
+      tags: [Authentication]
+      summary: List MFA methods for the current SCA session
+      description: |
+        Requires a successful SCA token (`access_token` + `mfa_id` in session state).
+        Filter by method type used by dkb-robo: `seal_one`, `chip_tan_manual`,
+        or `chip_tan_qr`.
+      operationId: getMfaMethods
+      parameters:
+        - name: filter[methodType]
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/MfaMethodType'
+          description: MFA method type filter
+      responses:
+        '200':
+          description: JSON:API list of MFA methods / devices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaMethodsResponse'
+
+  /device-data/web-device-data:
+    post:
+      tags: [Authentication]
+      summary: Submit web device fingerprint
+      description: |
+        Sent after MFA methods are loaded. Expects HTTP **204** with empty body.
+        Content-Type is temporarily set to `application/json`.
+      operationId: postWebDeviceData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebDeviceDataRequest'
+      responses:
+        '204':
+          description: Device data accepted (empty body)
+        default:
+          description: Non-204 is treated as login failure by dkb-robo
+
+  /mfa/mfa/challenges:
+    post:
+      tags: [Authentication]
+      summary: Create MFA challenge
+      operationId: createMfaChallenge
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/MfaChallengeCreateRequest'
+      responses:
+        '200':
+          description: Challenge created
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
+        '201':
+          description: Challenge created
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
+
+  /mfa/mfa/challenges/{challengeId}:
+    parameters:
+      - $ref: '#/components/parameters/ChallengeId'
+    get:
+      tags: [Authentication]
+      summary: Poll MFA challenge status (app / seal_one)
+      description: |
+        Polled every ~5s (up to 11 times). Looks at
+        `data.attributes.verificationStatus`: `processing`, `processed`,
+        `canceled`, or unknown.
+      operationId: getMfaChallenge
+      responses:
+        '200':
+          description: Current challenge state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
+    post:
+      tags: [Authentication]
+      summary: Submit chipTAN challenge response
+      operationId: submitMfaChallengeTan
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/MfaChallengeTanRequest'
+      responses:
+        '200':
+          description: TAN accepted when `verificationStatus` is `authorized`
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/MfaChallengeResponse'
+
+  /config/users/me/product-display-settings:
+    get:
+      tags: [Portfolio]
+      summary: Product display settings and product groups
+      description: First portfolio call after login; drives ordering/naming of products.
+      operationId: getProductDisplaySettings
+      responses:
+        '200':
+          description: Product display settings (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDisplaySettingsResponse'
+              examples:
+                mock:
+                  summary: From test/mocks/pd.json
+                  externalValue: ../test/mocks/pd.json
+
+  /accounts/accounts:
+    get:
+      tags: [Portfolio]
+      summary: List banking accounts
+      operationId: getAccounts
+      responses:
+        '200':
+          description: Account list (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountsResponse'
+
+  /credit-card/cards:
+    get:
+      tags: [Portfolio]
+      summary: List credit and debit cards
+      description: |
+        dkb-robo requests both credit and debit cards in one query string with a
+        duplicated `filter[type]` key:
+        `filter[type]=creditCard&filter[portfolio]=dkb&filter[type]=debitCard`.
+      operationId: getCards
+      parameters:
+        - name: filter[type]
+          in: query
+          description: Card type (may appear twice — creditCard and debitCard)
+          schema:
+            type: string
+            enum: [creditCard, debitCard]
+          style: form
+          explode: true
+        - name: filter[portfolio]
+          in: query
+          schema:
+            type: string
+            example: dkb
+      responses:
+        '200':
+          description: Card list (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardsResponse'
+
+  /broker/brokerage-accounts:
+    get:
+      tags: [Portfolio]
+      summary: List brokerage (depot) accounts
+      operationId: getBrokerageAccounts
+      responses:
+        '200':
+          description: Brokerage account list (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerageAccountsResponse'
+
+  /accounts/accounts/{accountId}/transactions:
+    get:
+      tags: [Transactions]
+      summary: Account transactions
+      description: |
+        Date filters and pagination are appended by the client. Client-side
+        filtering keeps items where `attributes.status` is `booked` or `pending`
+        (`reserved` is treated as `pending`).
+      operationId: getAccountTransactions
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - name: filter[bookingDate][GE]
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Inclusive booking-date from (YYYY-MM-DD)
+        - name: filter[bookingDate][LE]
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Inclusive booking-date to (YYYY-MM-DD)
+        - name: expand
+          in: query
+          schema:
+            type: string
+            example: Merchant
+        - name: page[size]
+          in: query
+          schema:
+            type: integer
+            example: 400
+      responses:
+        '200':
+          description: Paginated account transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountTransactionsResponse'
+
+  /card-transactions/creditcard-transactions:
+    get:
+      tags: [Transactions]
+      summary: Credit-card transactions
+      description: |
+        Base URL built as
+        `/card-transactions/creditcard-transactions?cardId={id}`; date filters
+        are appended with `&`.
+      operationId: getCreditCardTransactions
+      parameters:
+        - name: cardId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: filter[date][GE]
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: filter[date][LE]
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: expand
+          in: query
+          schema:
+            type: string
+            example: Merchant
+        - name: page[size]
+          in: query
+          schema:
+            type: integer
+            example: 400
+      responses:
+        '200':
+          description: Paginated credit-card transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditCardTransactionsResponse'
+
+  /broker/brokerage-accounts/{depotId}/positions:
+    get:
+      tags: [Transactions]
+      summary: Depot positions (holdings)
+      description: |
+        Used as the “transactions” URL for brokerage accounts. Client merges
+        `relationships.instrument` / `quote` with `included[]`.
+      operationId: getDepotPositions
+      parameters:
+        - $ref: '#/components/parameters/DepotId'
+        - name: include
+          in: query
+          schema:
+            type: string
+            example: instrument,quote
+          description: Related resources to include (comma-separated)
+      responses:
+        '200':
+          description: Positions with included instruments and quotes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepotPositionsResponse'
+
+  /accounts/payments/recurring-credit-transfers:
+    get:
+      tags: [StandingOrders]
+      summary: List standing orders for an account
+      operationId: getStandingOrders
+      parameters:
+        - name: accountId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Account UUID
+      responses:
+        '200':
+          description: Standing orders (JSON:API list)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandingOrdersResponse'
+
+  /customers/me/tax-exemptions:
+    get:
+      tags: [TaxExemptions]
+      summary: Tax exemptions (Freistellungsauftrag)
+      operationId: getTaxExemptions
+      responses:
+        '200':
+          description: Single customerTaxExemptions resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxExemptionsResponse'
+
+  /documentstorage/messages:
+    servers:
+      - url: https://banking.dkb.de/api
+    get:
+      tags: [Postbox]
+      summary: List postbox messages
+      operationId: getPostboxMessages
+      responses:
+        '200':
+          description: Message list (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostboxMessagesResponse'
+
+  /documentstorage/documents:
+    servers:
+      - url: https://banking.dkb.de/api
+    get:
+      tags: [Postbox]
+      summary: List postbox documents
+      operationId: getPostboxDocuments
+      parameters:
+        - name: page[limit]
+          in: query
+          schema:
+            type: integer
+            example: 1000
+      responses:
+        '200':
+          description: Document list (JSON:API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostboxDocumentsResponse'
+
+  /documentstorage/documents/{documentId}:
+    servers:
+      - url: https://banking.dkb.de/api
+    get:
+      tags: [Postbox]
+      summary: Download document binary
+      description: |
+        Typical download URL from `document.links.self` after host rewrite from
+        `api.dkb.de` → `banking.dkb.de`. `Accept` is set to the document
+        `contentType` (e.g. `application/pdf`).
+      operationId: downloadDocument
+      parameters:
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Raw document bytes
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /messages/{messageId}:
+    servers:
+      - url: https://banking.dkb.de/api
+      - url: https://api.dkb.de
+    patch:
+      tags: [Postbox]
+      summary: Mark message read/unread
+      description: |
+        Target URL is `message.links.self` as returned by the API (often
+        `https://api.dkb.de/messages/{id}`). dkb-robo does **not** rewrite
+        message hosts (only `documentstorage` links).
+      operationId: patchMessage
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/MessageReadPatch'
+      responses:
+        '200':
+          description: Message updated
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                additionalProperties: true
+
+components:
+  securitySchemes:
+    CookieSession:
+      type: apiKey
+      in: cookie
+      name: session
+      description: |
+        Authenticated browser-like session cookies established during login.
+        Exact cookie names are not fully documented in dkb-robo (capture via HAR).
+        CSRF cookie is typically `__Host-xsrf` or `XSRF-TOKEN`.
+    XsrfToken:
+      type: apiKey
+      in: header
+      name: x-xsrf-token
+      description: Copied from `__Host-xsrf` or `XSRF-TOKEN` cookie.
+
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+    DepotId:
+      name: depotId
+      in: path
+      required: true
+      schema:
+        type: string
+    ChallengeId:
+      name: challengeId
+      in: path
+      required: true
+      schema:
+        type: string
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # ---- Shared primitives ----
+    Amount:
+      type: object
+      description: Monetary amount as returned by DKB JSON:API payloads
+      properties:
+        value:
+          oneOf:
+            - type: string
+              example: "12345.67"
+            - type: number
+          description: Often a string in wire format; library coerces to float
+        currencyCode:
+          type: string
+          example: EUR
+        conversionRate:
+          type: number
+          nullable: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+          example: currency
+
+    Person:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        title:
+          type: string
+          nullable: true
+        salutation:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        taxId:
+          type: string
+          nullable: true
+
+    JsonApiResourceMeta:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+        links:
+          type: object
+          additionalProperties:
+            type: string
+        relationships:
+          type: object
+          additionalProperties: true
+
+    PaginationLinks:
+      type: object
+      properties:
+        next:
+          type: string
+          description: |
+            Relative next-page path. dkb-robo currently rebuilds the next URL as
+            `base_url + "/accounts" + links.next` (may be incorrect for card/broker
+            pagination — needs live samples).
+        self:
+          type: string
+
+    # ---- Auth ----
+    MfaMethodType:
+      type: string
+      enum: [seal_one, chip_tan_manual, chip_tan_qr]
+
+    TokenScaRequest:
+      type: object
+      required: [grant_type, username, password, sca_type]
+      properties:
+        captcha_token:
+          type: string
+          description: Friendly Captcha redeem token (required since ~2025-11)
+        grant_type:
+          type: string
+          enum: [banking_user_sca]
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        sca_type:
+          type: string
+          enum: [web-login]
+
+    TokenMfaRequest:
+      type: object
+      required: [grant_type, mfa_id, scope]
+      properties:
+        grant_type:
+          type: string
+          enum: [banking_user_mfa]
+        mfa_id:
+          type: string
+        scope:
+          type: string
+          enum: [device_sso]
+        access_token:
+          type: string
+          description: Present in older flows; currently commented out in dkb-robo
+
+    TokenResponse:
+      type: object
+      description: |
+        Partial schema — only fields consumed by dkb-robo are required.
+        Full OAuth response (expires_in, refresh_token, etc.) is unknown without
+        a live dump.
+      required: [access_token]
+      properties:
+        access_token:
+          type: string
+        mfa_id:
+          type: string
+          description: Present after SCA; used for MFA steps
+        token_factor_type:
+          type: string
+          description: Must be `2fa` after MFA token upgrade
+          example: "2fa"
+        scope:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        refresh_token:
+          type: string
+      additionalProperties: true
+
+    MfaMethodsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              attributes:
+                type: object
+                properties:
+                  deviceName:
+                    type: string
+                  enrolledAt:
+                    type: string
+                    format: date-time
+                  preferredDevice:
+                    type: boolean
+
+    WebDeviceDataRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [type, attributes]
+          properties:
+            type:
+              type: string
+              enum: [webDeviceData]
+            attributes:
+              type: object
+              required: [mfaId, deviceInfo, browserInfo, requestMetadata]
+              properties:
+                mfaId:
+                  type: string
+                deviceInfo:
+                  type: object
+                  properties:
+                    os:
+                      type: string
+                      enum: [Windows, Linux, Mac OS, Unknown]
+                    localeCode:
+                      type: string
+                      example: de-DE
+                    colorDepthBitsCount:
+                      type: integer
+                      example: 24
+                    screenResolution:
+                      type: object
+                      properties:
+                        width:
+                          type: integer
+                        height:
+                          type: integer
+                browserInfo:
+                  type: object
+                  properties:
+                    browserTypeCode:
+                      type: string
+                      example: standard-browser
+                    cookiesEnabled:
+                      type: boolean
+                    timeZone:
+                      type: string
+                      example: Europe/Berlin
+                requestMetadata:
+                  type: object
+                  properties:
+                    visitorId:
+                      type: string
+                      example: disabled
+                    requestId:
+                      type: string
+                      example: disabled
+
+    MfaChallengeCreateRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [type, attributes]
+          properties:
+            type:
+              type: string
+              enum: [mfa-challenge]
+            attributes:
+              type: object
+              required: [mfaId, methodId, methodType]
+              properties:
+                mfaId:
+                  type: string
+                methodId:
+                  type: string
+                methodType:
+                  $ref: '#/components/schemas/MfaMethodType'
+
+    MfaChallengeTanRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [type, attributes]
+          properties:
+            type:
+              type: string
+              enum: [mfa-challenge]
+            attributes:
+              type: object
+              required: [challengeResponse, methodType]
+              properties:
+                challengeResponse:
+                  type: string
+                  description: Entered TAN
+                methodType:
+                  type: string
+                  enum: [chip_tan_manual, chip_tan_qr]
+
+    MfaChallengeResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+              enum: [mfa-challenge]
+            attributes:
+              type: object
+              properties:
+                verificationStatus:
+                  type: string
+                  enum: [processing, processed, canceled, authorized]
+                  description: Observed statuses used by dkb-robo
+                chipTan:
+                  type: object
+                  description: Present for chipTAN challenges
+                  properties:
+                    headline:
+                      type: string
+                    instructions:
+                      type: array
+                      items:
+                        type: string
+                    qrData:
+                      type: string
+                      description: "data:image/png;base64,... for chip_tan_qr"
+              additionalProperties: true
+
+    # ---- Portfolio ----
+    ProductDisplaySettingsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: productDisplaySettings
+              id:
+                type: string
+              attributes:
+                type: object
+                properties:
+                  portfolio:
+                    type: string
+                    example: dkb
+                  productSettings:
+                    type: object
+                    additionalProperties: true
+                  productGroups:
+                    type: object
+                    additionalProperties: true
+                  clientTypeSpecificSettings:
+                    type: object
+                    additionalProperties: true
+              links:
+                type: object
+                additionalProperties:
+                  type: string
+        included:
+          type: array
+          items: {}
+
+    AccountsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountResource'
+
+    AccountResource:
+      type: object
+      properties:
+        type:
+          type: string
+          example: account
+        id:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/AccountAttributes'
+
+    AccountAttributes:
+      type: object
+      properties:
+        holderName:
+          type: string
+        iban:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        currencyCode:
+          type: string
+        balance:
+          $ref: '#/components/schemas/Amount'
+        availableBalance:
+          $ref: '#/components/schemas/Amount'
+        nearTimeBalance:
+          $ref: '#/components/schemas/Amount'
+        product:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+            displayName:
+              type: string
+        state:
+          type: string
+          example: active
+        updatedAt:
+          type: string
+          format: date
+        openingDate:
+          type: string
+          format: date
+        overdraftLimit:
+          oneOf:
+            - type: string
+            - type: number
+        interestRate:
+          type: string
+        unauthorizedOverdraftInterestRate:
+          type: string
+        lastAccountStatementDate:
+          type: string
+          format: date
+        interests:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              method:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    interestRate:
+                      type: string
+                    condition:
+                      type: object
+                      properties:
+                        currency:
+                          type: string
+                        minimumAmount:
+                          type: string
+                        maximumAmount:
+                          type: string
+        productGroup:
+          type: string
+        displayName:
+          type: string
+
+    CardsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardResource'
+
+    CardResource:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [creditCard, debitCard]
+        id:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/CardAttributes'
+        relationships:
+          type: object
+          additionalProperties: true
+
+    CardAttributes:
+      type: object
+      properties:
+        maskedPan:
+          type: string
+        network:
+          type: string
+          example: visa
+        engravedLine1:
+          type: string
+        engravedLine2:
+          type: string
+        activationDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        creationDate:
+          type: string
+          format: date
+        balance:
+          $ref: '#/components/schemas/Amount'
+        state:
+          type: string
+        owner:
+          $ref: '#/components/schemas/Person'
+        holder:
+          type: object
+          properties:
+            person:
+              $ref: '#/components/schemas/Person'
+        product:
+          type: object
+          properties:
+            superProductId:
+              type: string
+            displayName:
+              type: string
+            institute:
+              type: string
+            productType:
+              type: string
+            ownerType:
+              type: string
+            id:
+              type: string
+            type:
+              type: string
+        limit:
+          type: object
+          properties:
+            value:
+              oneOf:
+                - type: string
+                - type: number
+            currencyCode:
+              type: string
+            identifier:
+              type: string
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  amount:
+                    $ref: '#/components/schemas/Amount'
+        availableLimit:
+          $ref: '#/components/schemas/Amount'
+        authorizedAmount:
+          $ref: '#/components/schemas/Amount'
+        referenceAccount:
+          type: object
+          properties:
+            iban:
+              type: string
+            bic:
+              type: string
+        status:
+          type: object
+          properties:
+            category:
+              type: string
+            since:
+              type: string
+            reason:
+              type: string
+            final:
+              type: boolean
+            limitationsFor:
+              type: array
+              items: {}
+        billingDetails:
+          type: object
+          properties:
+            days:
+              type: array
+              items:
+                type: integer
+            calendarType:
+              type: string
+            cycle:
+              type: string
+        blockedSince:
+          type: string
+          nullable: true
+        failedPinAttempts:
+          type: integer
+        followUpCardId:
+          type: string
+          nullable: true
+        type:
+          type: string
+
+    BrokerageAccountsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrokerageAccountResource'
+
+    BrokerageAccountResource:
+      type: object
+      properties:
+        type:
+          type: string
+          example: brokerageAccount
+        id:
+          type: string
+        attributes:
+          $ref: '#/components/schemas/BrokerageAccountAttributes'
+
+    BrokerageAccountAttributes:
+      type: object
+      properties:
+        brokerageAccountPerformance:
+          type: object
+          properties:
+            currentValue:
+              $ref: '#/components/schemas/Amount'
+            averagePrice:
+              $ref: '#/components/schemas/Amount'
+            overallAbsolute:
+              $ref: '#/components/schemas/Amount'
+            overallRelative:
+              type: string
+            isOutdated:
+              type: boolean
+        depositAccountId:
+          type: string
+        holder:
+          $ref: '#/components/schemas/Person'
+        holderName:
+          type: string
+        referenceAccounts:
+          type: array
+          items:
+            type: object
+            properties:
+              internalReferenceAccounts:
+                type: boolean
+              accountType:
+                type: string
+              accountNumber:
+                type: string
+              bankCode:
+                type: string
+              holderName:
+                type: string
+        tradingEnabled:
+          type: boolean
+        riskClasses:
+          type: array
+          items: {}
+
+    # ---- Transactions ----
+    AccountTransactionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              id:
+                type: string
+              attributes:
+                $ref: '#/components/schemas/AccountTransactionAttributes'
+        included:
+          type: array
+          description: Present when expand=Merchant (shape not fully captured in tests)
+          items:
+            $ref: '#/components/schemas/JsonApiResourceMeta'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+
+    AccountTransactionAttributes:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Client filters on `booked` or `pending`
+          enum: [booked, pending]
+        bookingDate:
+          type: string
+          format: date
+        valueDate:
+          type: string
+          format: date
+        description:
+          type: string
+        mandateId:
+          type: string
+          nullable: true
+        endToEndId:
+          type: string
+          nullable: true
+        transactionType:
+          type: string
+        purposeCode:
+          type: string
+          nullable: true
+        businessTransactionCode:
+          type: string
+          nullable: true
+        amount:
+          $ref: '#/components/schemas/Amount'
+        creditor:
+          $ref: '#/components/schemas/PaymentPeer'
+        debtor:
+          $ref: '#/components/schemas/PaymentPeer'
+        isRevocable:
+          type: boolean
+
+    PaymentPeer:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+        intermediaryName:
+          type: string
+          nullable: true
+        agent:
+          type: object
+          properties:
+            bic:
+              type: string
+        creditorAccount:
+          $ref: '#/components/schemas/PeerAccount'
+        debtorAccount:
+          $ref: '#/components/schemas/PeerAccount'
+
+    PeerAccount:
+      type: object
+      properties:
+        iban:
+          type: string
+        bic:
+          type: string
+        accountNr:
+          type: string
+        accountId:
+          type: string
+        blz:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        intermediaryName:
+          type: string
+
+    CreditCardTransactionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              id:
+                type: string
+              attributes:
+                $ref: '#/components/schemas/CreditCardTransactionAttributes'
+        included:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonApiResourceMeta'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+
+    CreditCardTransactionAttributes:
+      type: object
+      properties:
+        amount:
+          $ref: '#/components/schemas/Amount'
+        authorizationDate:
+          type: string
+          format: date
+        bookingDate:
+          type: string
+          format: date
+        bonuses:
+          type: array
+          items: {}
+        cardId:
+          type: string
+        description:
+          type: string
+        merchantAmount:
+          $ref: '#/components/schemas/Amount'
+        merchantCategory:
+          type: object
+          properties:
+            code:
+              type: string
+        status:
+          type: string
+        transactionType:
+          type: string
+
+    DepotPositionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              id:
+                type: string
+              attributes:
+                $ref: '#/components/schemas/DepotPositionAttributes'
+              relationships:
+                type: object
+                properties:
+                  instrument:
+                    type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          type:
+                            type: string
+                  quote:
+                    type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          type:
+                            type: string
+        included:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/InstrumentResource'
+              - $ref: '#/components/schemas/QuoteResource'
+              - $ref: '#/components/schemas/JsonApiResourceMeta'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+
+    DepotPositionAttributes:
+      type: object
+      properties:
+        availableQuantity:
+          $ref: '#/components/schemas/Quantity'
+        quantity:
+          $ref: '#/components/schemas/Quantity'
+        lastOrderDate:
+          type: string
+          format: date
+        custody:
+          type: object
+          properties:
+            block:
+              type: object
+              properties:
+                blockType:
+                  type: string
+            certificateType:
+              type: string
+            characteristic:
+              type: object
+              properties:
+                characteristicType:
+                  type: string
+            custodyType:
+              type: string
+            custodyTypeId:
+              type: string
+        performance:
+          type: object
+          properties:
+            currentValue:
+              $ref: '#/components/schemas/Amount'
+            isOutdated:
+              type: boolean
+
+    Quantity:
+      type: object
+      properties:
+        unit:
+          type: string
+        value:
+          oneOf:
+            - type: string
+            - type: number
+
+    InstrumentResource:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          example: instrument
+        attributes:
+          type: object
+          properties:
+            identifiers:
+              type: array
+              items:
+                type: object
+                properties:
+                  identifier:
+                    type: string
+                    example: ISIN
+                  value:
+                    type: string
+            name:
+              type: object
+              properties:
+                long:
+                  type: string
+                short:
+                  type: string
+            unit:
+              type: string
+
+    QuoteResource:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          example: quote
+        attributes:
+          type: object
+          properties:
+            market:
+              type: string
+            price:
+              $ref: '#/components/schemas/Amount'
+            timestamp:
+              type: string
+              format: date-time
+
+    # ---- Standing orders ----
+    StandingOrdersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: recurringCreditTransferResponse
+              id:
+                type: string
+              attributes:
+                $ref: '#/components/schemas/StandingOrderAttributes'
+
+    StandingOrderAttributes:
+      type: object
+      properties:
+        status:
+          type: string
+          example: accepted
+        description:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Amount'
+        creditor:
+          type: object
+          properties:
+            name:
+              type: string
+            creditorAccount:
+              type: object
+              properties:
+                iban:
+                  type: string
+                bic:
+                  type: string
+        debtor:
+          type: object
+          properties:
+            debtorAccount:
+              type: object
+              properties:
+                iban:
+                  type: string
+        messages:
+          type: array
+          items: {}
+        recurrence:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            until:
+              type: string
+              format: date
+            frequency:
+              type: string
+              example: monthly
+            holidayExecutionStrategy:
+              type: string
+              example: following
+            nextExecutionAt:
+              type: string
+              format: date
+
+    # ---- Tax exemptions ----
+    TaxExemptionsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            type:
+              type: string
+              example: customerTaxExemptions
+            id:
+              type: string
+            attributes:
+              type: object
+              properties:
+                exemptionCertificates:
+                  type: array
+                  items: {}
+                exemptionOrders:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ExemptionOrder'
+
+    ExemptionOrder:
+      type: object
+      properties:
+        exemptionAmount:
+          $ref: '#/components/schemas/Amount'
+        utilizedAmount:
+          $ref: '#/components/schemas/Amount'
+        remainingAmount:
+          $ref: '#/components/schemas/Amount'
+        exemptionOrderType:
+          type: string
+          example: joint
+        partner:
+          $ref: '#/components/schemas/Person'
+        receivedAt:
+          type: string
+          format: date
+        validFrom:
+          type: string
+          format: date
+        validUntil:
+          type: string
+          format: date
+
+    # ---- Postbox ----
+    PostboxMessagesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                type: string
+              attributes:
+                type: object
+                properties:
+                  archived:
+                    oneOf:
+                      - type: boolean
+                      - type: string
+                  read:
+                    oneOf:
+                      - type: boolean
+                      - type: string
+                  subject:
+                    type: string
+                  documentType:
+                    type: string
+                    description: |
+                      Known values mapped by dkb-robo include bankAccountStatement,
+                      creditCardStatement, dwpRevenueStatement, dwpOrderStatement,
+                      dwpDepotStatement, exAnteCostInformation,
+                      dwpCorporateActionNotice
+                  documentId:
+                    type: string
+                  creationDate:
+                    type: string
+                    format: date-time
+              links:
+                type: object
+                properties:
+                  self:
+                    type: string
+                    format: uri
+
+    PostboxDocumentsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              type:
+                type: string
+              attributes:
+                type: object
+                properties:
+                  creationDate:
+                    type: string
+                    format: date-time
+                  expirationDate:
+                    type: string
+                    format: date
+                  retentionPeriod:
+                    type: string
+                    example: P3Y
+                  contentType:
+                    type: string
+                    example: application/pdf
+                  checksum:
+                    type: string
+                    description: MD5 (32 hex) or SHA-512 (128 hex)
+                  fileName:
+                    type: string
+                  owner:
+                    type: string
+                  documentTypeId:
+                    type: string
+                  rcode:
+                    type: string
+                  metadata:
+                    type: object
+                    description: Varies by document type (IBAN, cardId, depotNumber, statementDate, …)
+                    additionalProperties: true
+              links:
+                type: object
+                properties:
+                  self:
+                    type: string
+                    format: uri
+                    description: Often on api.dkb.de; client rewrites documentstorage hosts to banking.dkb.de
+
+    MessageReadPatch:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [type, attributes]
+          properties:
+            type:
+              type: string
+              enum: [message]
+            attributes:
+              type: object
+              required: [read]
+              properties:
+                read:
+                  type: boolean
+
+x-default-headers:
+  description: Session headers set by dkb_robo.authentication.HEADERS
+  headers:
+    Accept: "application/json, text/plain, */*"
+    Accept-Language: "de-DE;q=0.8,de;q=0.6,en-US;q=0.4,en;q=0.2"
+    Accept-Encoding: identity
+    Application-Name: web-banking
+    Cache-Control: no-cache
+    Pragma: no-cache
+    DNT: "1"
+    Sec-Fetch-Dest: empty
+    Sec-Fetch-Mode: cors
+    Sec-Fetch-Site: same-origin
+    sec-gpc: "1"
+    priority: "u=1, i"
+    Origin: https://banking.dkb.de
+    Content-Type: application/x-www-form-urlencoded
+    x-xsrf-token: "<from CSRF cookie>"
+    User-Agent: "<browser-like / curl-cffi impersonation>"
+
+x-schema-gaps:
+  description: |
+    Live response captures that would improve this spec. Redact PII/IBANs/PANs
+    before sharing. JSON files or a mitmproxy/Charles HAR are ideal.
+  items:
+    - id: token-response-full
+      endpoint: "POST /token (SCA and MFA)"
+      need: "Full JSON body including any extra OAuth fields and Set-Cookie names"
+    - id: session-cookies
+      endpoint: "after successful MFA"
+      need: "Cookie names that authenticate subsequent GETs"
+    - id: account-tx-included
+      endpoint: "GET /accounts/accounts/{id}/transactions?expand=Merchant"
+      need: "Real included[] and links.next shape"
+    - id: card-tx-pagination
+      endpoint: "GET /card-transactions/creditcard-transactions"
+      need: "links.next format (client hard-codes /accounts prefix today)"
+    - id: depot-positions-live
+      endpoint: "GET /broker/brokerage-accounts/{id}/positions?include=instrument,quote"
+      need: "Complete included instrument/quote resources"
+    - id: postbox-message-patch-host
+      endpoint: "PATCH message links.self"
+      need: "Whether banking.dkb.de vs api.dkb.de both accept the PATCH"
+    - id: error-bodies
+      endpoint: "any failing call"
+      need: "Structured error JSON if any (library only logs status + truncated text)"
+    - id: terms-consent
+      endpoint: "GET /terms-consent/consent-requests (commented in portfolio.py)"
+      need: "Whether still required by IDS / response shape"
+
+x-non-rest:
+  description: "Browser-only steps used by dkb-robo (not OpenAPI paths)"
+  items:
+    - url: "https://banking.dkb.de/login"
+      purpose: "Friendly Captcha + optional full browser login; cookies/UA copied into session"
+    - note: "Authentication.logout() only closes the HTTP client — no logout HTTP call"
