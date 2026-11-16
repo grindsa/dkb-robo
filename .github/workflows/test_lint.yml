@@ -30,7 +30,10 @@ jobs:
         allow-prereleases: true
 
     - name: Install package
-      run: python -m pip install .[test]
+      run: |
+        python -m pip install --upgrade --only-binary=:all: "build==1.2.2"
+        python -m build --wheel
+        python -m pip install --only-binary=:all: dist/*.whl "pytest==8.3.5" "pytest-cov==5.0.0" "html5lib==1.1"
 
     - name: Run tests
       run: python3 -m pytest
@@ -55,7 +58,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install linters
-        run: python3 -m pip install pylint pylint-exit pycodestyle
+        run: python3 -m pip install --only-binary=:all: "pylint==3.2.7" "pylint-exit==1.2.0" "pycodestyle==2.12.1"
 
       - name: Lint with pylint
         run: |

@@ -17,6 +17,6 @@ jobs:
     - uses: actions/checkout@master
     - uses: umbrelladocs/action-linkspector@568ec8d29fa92b31fd9ea5381e155c51e922af83 # v1.5.5
     - name: Lint changelog file root
-      uses: avto-dev/markdown-lint@v1
+      uses: avto-dev/markdown-lint@04d43ee9191307b50935a753da3b775ab695eceb # v1.5.0
       with:
         args: '*.md'

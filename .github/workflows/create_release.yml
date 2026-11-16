@@ -29,10 +29,10 @@ jobs:
           python-version: "3.x"
 
       - name: "[ PREPARE ] Install pypa/build"
-        run: python3 -m pip install build --user
+        run: python3 -m pip install --only-binary=:all: "build==1.2.2" --user
 
       - name: "[ PREPARE ] Get current version"
-        uses: oprypin/find-latest-tag@v1
+        uses: oprypin/find-latest-tag@6957ac556fa6d349727ecabfcaaf9f8e5ee37124 # v1.1.3
         with:
           repository: ${{ github.repository }}  # The repository to scan.
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
@@ -43,8 +43,7 @@ jobs:
 
       - name: "[ PREPARE ] Retrieve version"
         run: |
-          python3 -m pip install .
-          echo TAG_NAME=$(python3 -c "import dkb_robo; print(dkb_robo.__version__)") >> $GITHUB_ENV
+          echo TAG_NAME=$(python3 -c "import re; from pathlib import Path; print(re.search(r'^version\s*=\s*\"([^\"]+)\"', Path('pyproject.toml').read_text(), re.M).group(1))") >> $GITHUB_ENV
           echo APP_NAME=$(echo ${{ github.repository }} | awk -F / '{print $2}') >> $GITHUB_ENV
 
       - name: "[ PREPARE ] Check version difference"
@@ -105,7 +104,7 @@ jobs:
           path: dist
 
       - name: "[ UPLOAD ] Publish package"
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
   create-sbom:
     needs: [build, upload-to-pypi]
@@ -126,7 +125,9 @@ jobs:
         run: |
           python3 -m venv /tmp/dkbroboenv
           source /tmp/dkbroboenv/bin/activate
-          python3 -m pip install .
+          python3 -m pip install --upgrade --only-binary=:all: "build==1.2.2"
+          python3 -m build --wheel
+          python3 -m pip install --only-binary=:all: dist/*.whl
           python3 -m pip freeze > /tmp/requirements_freeze.txt
           cat /tmp/requirements_freeze.txt
           deactivate
@@ -135,7 +136,7 @@ jobs:
         run: |
           mkdir -p /tmp/sbom/sbom/dkb-robo
           cp /tmp/requirements_freeze.txt /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.txt
-          python3 -m pip install cyclonedx-bom
+          python3 -m pip install --only-binary=:all: "cyclonedx-bom==8.0.1"
           python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format xml  --output-file /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.xml  /tmp/dkbroboenv
           python3 -m cyclonedx_py environment -v --pyproject pyproject.toml --mc-type library --output-reproducible --output-format json --output-file /tmp/sbom/sbom/dkb-robo/dkb-robo_sbom.json /tmp/dkbroboenv
 
