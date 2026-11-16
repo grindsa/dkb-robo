@@ -458,6 +458,24 @@ def standing_orders(ctx, name, account):  # pragma: no cover
 
 @main.command()
 @click.pass_context
+def exemption_orders(ctx):  # pragma: no cover
+    """get exemption orders"""
+    try:
+        with _session_scope(ctx) as dkb:
+            exo_list = dkb.get_exemption_order()
+            exemption_orders_list = []
+            for exo in exo_list:
+                if ctx.obj["UNFILTERED"]:
+                    exemption_orders_list.append(object2dictionary(exo))
+                else:
+                    exemption_orders_list.append(exo)
+            ctx.obj["FORMAT"](exemption_orders_list)
+    except dkb_robo.DKBRoboError as _err:
+        click.echo(_err.args[0], err=True)
+
+
+@main.command()
+@click.pass_context
 @click.option(
     "--path",
     "-p",
@@ -642,7 +660,9 @@ def interactive(ctx):
                     commands = sorted(
                         name for name in main.commands if name != "interactive"
                     )
-                    click.echo("Commands: " + ", ".join(commands))
+                    click.echo("Commands:")
+                    for command in commands:
+                        click.echo(f"  {command}")
                     continue
 
                 try:

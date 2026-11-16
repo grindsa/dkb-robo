@@ -5,8 +5,8 @@ import logging
 from pathlib import Path
 import random
 from string import digits, ascii_letters
-from typing import List, Tuple, Optional
-from datetime import datetime, timezone
+from typing import Any, Dict, List, Tuple, Optional, Union
+from datetime import datetime, timezone, date
 from dataclasses import dataclass, fields, asdict, is_dataclass
 import time
 import re
@@ -64,9 +64,16 @@ SCREEN_RESOLUTION_POOL = {
 def filter_unexpected_fields(cls):
     """filter undefined fields (not defined as class variable) before import to dataclass"""
     original_init = cls.__init__
+    expected_fields = {field.name for field in fields(cls)}
 
     def new_init(self, *args, **kwargs):
-        expected_fields = {field.name for field in fields(cls)}
+        dropped_fields = [key for key in kwargs if key not in expected_fields]
+        if dropped_fields:
+            logger.debug(
+                "filter_unexpected_fields(%s): dropped unexpected fields: %s",
+                cls.__name__,
+                dropped_fields,
+            )
         cleaned_kwargs = {
             key: value for key, value in kwargs.items() if key in expected_fields
         }
@@ -214,24 +221,7 @@ def get_valid_filename(name):
     return s + p.suffix
 
 
-def object2dictionary(obj, key_lc=False, skip_list=None):
-    """convert object to dict"""
-
-    output_dict = {}
-    for k, v in asdict(obj).items():
-        if isinstance(skip_list, list) and k in skip_list:
-            continue
-        if is_dataclass(v):
-            output_dict[k] = object2dictionary(v, key_lc=key_lc)
-        else:
-            if key_lc:
-                output_dict[k.lower()] = v
-            else:
-                output_dict[k] = v
-    return output_dict
-
-
-def string2float(value: str) -> float:
+def string2float(value: Union[str, float, int]) -> Union[float, str, int]:
     """convert string to float value"""
     try:
         result = float(value.replace(".", "").replace(",", "."))
@@ -243,20 +233,30 @@ def string2float(value: str) -> float:
 
 def logger_setup(debug: bool) -> logging.Logger:
     """setup logger"""
-    if debug:
-        log_mode = logging.DEBUG
-    else:
-        log_mode = logging.INFO
+    log_mode = logging.DEBUG if debug else logging.INFO
+    log_format = "%(module)s: %(message)s" if debug else "%(message)s"
 
-    # define standard log format
-    log_format = None
-    if debug:
-        log_format = "%(module)s: %(message)s"
-    else:
-        log_format = "%(message)s"
-
-    logging.basicConfig(format=log_format, datefmt="%Y-%m-%d %H:%M:%S", level=log_mode)
     mylogger = logging.getLogger("dkb_robo")
+    mylogger.setLevel(log_mode)
+
+    formatter = logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S")
+
+    # Keep setup idempotent: update existing stream handlers, otherwise add one.
+    stream_handlers = [
+        handler
+        for handler in mylogger.handlers
+        if isinstance(handler, logging.StreamHandler)
+    ]
+    if stream_handlers:
+        for handler in stream_handlers:
+            handler.setLevel(log_mode)
+            handler.setFormatter(formatter)
+    else:
+        handler = logging.StreamHandler()
+        handler.setLevel(log_mode)
+        handler.setFormatter(formatter)
+        mylogger.addHandler(handler)
+
     return mylogger
 
 
@@ -264,74 +264,54 @@ def validate_dates(date_from: str, date_to: str) -> Tuple[str, str]:
     """correct dates if needed"""
     logger.debug("validate_dates()")
 
-    try:
-        date_from_uts = int(
-            time.mktime(datetime.strptime(date_from, "%d.%m.%Y").timetuple())
-        )
-    except ValueError:
-        date_from_uts = int(
-            time.mktime(datetime.strptime(date_from, API_DATE_FORMAT).timetuple())
-        )
-    try:
-        date_to_uts = int(
-            time.mktime(datetime.strptime(date_to, "%d.%m.%Y").timetuple())
-        )
-    except ValueError:
-        date_to_uts = int(
-            time.mktime(datetime.strptime(date_to, API_DATE_FORMAT).timetuple())
+    def _parse_date(value: str) -> date:
+        for date_format in (LEGACY_DATE_FORMAT, API_DATE_FORMAT):
+            try:
+                return datetime.strptime(value, date_format).date()
+            except ValueError:
+                continue
+        raise DKBRoboError(
+            f"invalid date '{value}'; expected formats: {LEGACY_DATE_FORMAT} or {API_DATE_FORMAT}"
         )
 
-    now_uts = int(time.time())
+    date_from_obj = _parse_date(date_from)
+    date_to_obj = _parse_date(date_to)
+    now_date = datetime.fromtimestamp(int(time.time()), timezone.utc).date()
+    minimal_date = datetime(2022, 1, 1, tzinfo=timezone.utc).date()
 
-    # ajust valid_from to valid_to
-    if date_to_uts <= date_from_uts:
+    # adjust valid_from to valid_to
+    if date_to_obj <= date_from_obj:
         logger.info("validate_dates(): adjust date_from to date_to")
-        date_from = date_to
+        date_from_obj = date_to_obj
 
-    # minimal date uts (01.01.2022)
-    minimal_date_uts = 1640995200
-
-    if date_from_uts < minimal_date_uts:
+    if date_from_obj < minimal_date:
         logger.info(
             "validate_dates(): adjust date_from to %s",
-            datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(
-                API_DATE_FORMAT
-            ),
+            minimal_date.strftime(API_DATE_FORMAT),
         )
-        date_from = datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(
-            "%d.%m.%Y"
-        )
-    if date_to_uts < minimal_date_uts:
+        date_from_obj = minimal_date
+    if date_to_obj < minimal_date:
         logger.info(
             "validate_dates(): adjust date_to to %s",
-            datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(
-                API_DATE_FORMAT
-            ),
+            minimal_date.strftime(API_DATE_FORMAT),
         )
-        date_to = datetime.fromtimestamp(minimal_date_uts, timezone.utc).strftime(
-            "%d.%m.%Y"
-        )
+        date_to_obj = minimal_date
 
-    if date_from_uts > now_uts:
+    if date_from_obj > now_date:
         logger.info(
             "validate_dates(): adjust date_from to %s",
-            datetime.fromtimestamp(now_uts, timezone.utc).strftime(API_DATE_FORMAT),
+            now_date.strftime(API_DATE_FORMAT),
         )
-        date_from = datetime.fromtimestamp(now_uts).strftime("%d.%m.%Y")
-    if date_to_uts > now_uts:
+        date_from_obj = now_date
+    if date_to_obj > now_date:
         logger.info(
             "validate_dates(): adjust date_to to %s",
-            datetime.fromtimestamp(now_uts, timezone.utc).strftime(API_DATE_FORMAT),
+            now_date.strftime(API_DATE_FORMAT),
         )
-        date_to = datetime.fromtimestamp(now_uts, timezone.utc).strftime("%d.%m.%Y")
+        date_to_obj = now_date
 
-    # this is the new api we need to ensure %Y-%m-%d
-    date_from = _convert_date_format(
-        date_from, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT
-    )
-    date_to = _convert_date_format(
-        date_to, [API_DATE_FORMAT, LEGACY_DATE_FORMAT], API_DATE_FORMAT
-    )
+    date_from = date_from_obj.strftime(API_DATE_FORMAT)
+    date_to = date_to_obj.strftime(API_DATE_FORMAT)
 
     logger.debug("validate_dates() returned: %s, %s", date_from, date_to)
     return date_from, date_to
@@ -339,6 +319,63 @@ def validate_dates(date_from: str, date_to: str) -> Tuple[str, str]:
 
 def ulal(mapclass, parameter):
     """map parameter"""
-    if parameter:
+    if not parameter:
+        return None
+    if not isinstance(parameter, dict):
+        logger.debug(
+            "ulal(%s): skip non-dict parameter of type %s",
+            getattr(mapclass, "__name__", str(mapclass)),
+            type(parameter).__name__,
+        )
+        return None
+    try:
         return mapclass(**parameter)
+    except TypeError as err:
+        raise DKBRoboError(
+            f"ulal: cannot map parameter to {getattr(mapclass, '__name__', str(mapclass))}: {err}"
+        ) from err
     return None
+
+
+def _object2dictionary_input(obj: Any) -> Optional[Dict[str, Any]]:
+    """Normalize supported input types for object2dictionary."""
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, dict):
+        return obj
+
+    logger.debug("object2dictionary(): unsupported input type %s", type(obj).__name__)
+    return None
+
+
+def _object2dictionary_convert_value(value: Any, key_lc: bool) -> Any:
+    """Recursively convert nested values to serializable dict/list structures."""
+    if is_dataclass(value):
+        return object2dictionary(value, key_lc=key_lc)
+    if isinstance(value, dict):
+        return {
+            (sub_key.lower() if key_lc else sub_key): _object2dictionary_convert_value(
+                sub_value, key_lc
+            )
+            for sub_key, sub_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_object2dictionary_convert_value(item, key_lc) for item in value]
+    return value
+
+
+def object2dictionary(obj, key_lc: bool = False, skip_list: Optional[List[str]] = None):
+    """convert dataclass-like object to dict"""
+
+    raw = _object2dictionary_input(obj)
+    if raw is None:
+        return {}
+
+    skip_keys = set(skip_list) if isinstance(skip_list, list) else set()
+    output_dict: Dict[str, Any] = {}
+    for key, value in raw.items():
+        if key in skip_keys:
+            continue
+        target_key = key.lower() if key_lc else key
+        output_dict[target_key] = _object2dictionary_convert_value(value, key_lc)
+    return output_dict

@@ -8,6 +8,7 @@ from datetime import date
 import unittest
 import logging
 import json
+import requests
 from unittest.mock import patch, Mock, MagicMock, mock_open
 import io
 
@@ -171,6 +172,28 @@ class TestProductGroup(unittest.TestCase):
         ]
         self.assertEqual(result, self.productgroup._group(data_ele))
 
+    def test_009a__group(self):
+        """test _group() ignores malformed product buckets"""
+        data_ele = {
+            "attributes": {
+                "productGroups": {
+                    "foo": {
+                        "index": 0,
+                        "name": "foo",
+                        "products": {
+                            "product1": "invalid",
+                            "product2": {"uid1": {"index": 1}},
+                        },
+                    }
+                }
+            }
+        }
+
+        self.assertEqual(
+            [{"name": "foo", "product_list": {1: "uid1"}}],
+            self.productgroup._group(data_ele),
+        )
+
     @patch("dkb_robo.portfolio.ProductGroup._group")
     @patch("dkb_robo.portfolio.ProductGroup._uid2names")
     def test_010_map(self, mock_uid2names, mock_group):
@@ -199,18 +222,53 @@ class TestOverview(unittest.TestCase):
         self.overview.client.get.return_value.json.return_value = {"foo": "bar"}
         self.assertEqual({"foo": "bar"}, self.overview._fetch("url"))
         self.assertTrue(self.overview.client.get.called)
+        self.overview.client.get.assert_called_once_with(
+            self.overview.base_url.rstrip("/") + "/url", timeout=10.0
+        )
 
     def test_012__fetch(self):
         """test _fetch()"""
         self.overview.client = Mock()
         self.overview.client.get.return_value.status_code = 400
-        self.overview.client.get.return_value.json.return_value = {"foo": "bar"}
-        with self.assertLogs("dkb_robo", level="INFO") as lcm:
-            self.assertFalse(self.overview._fetch("url"))
-        self.assertIn(
-            "ERROR:dkb_robo.portfolio:fetch url: RC is not 200 but 400", lcm.output
+        self.overview.client.get.return_value.text = "bad request"
+        self.overview.client.get.return_value.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError("400 Client Error")
+        )
+        with self.assertRaises(Exception) as err:
+            self.overview._fetch("url")
+        self.assertEqual(
+            "fetch url: http status code is 400; response=bad request",
+            str(err.exception),
         )
         self.assertTrue(self.overview.client.get.called)
+
+    def test_012a__fetch_request_exception(self):
+        """test _fetch() with request exception"""
+        self.overview.client = Mock()
+        self.overview.client.get.side_effect = requests.exceptions.Timeout("timeout")
+        with self.assertRaises(Exception) as err:
+            self.overview._fetch("url")
+        self.assertIn("fetch url: request failed:", str(err.exception))
+
+    def test_012b__fetch_invalid_json(self):
+        """test _fetch() with invalid json"""
+        self.overview.client = Mock()
+        self.overview.client.get.return_value.status_code = 200
+        self.overview.client.get.return_value.json.side_effect = ValueError("invalid")
+        with self.assertRaises(Exception) as err:
+            self.overview._fetch("url")
+        self.assertEqual("fetch url: invalid json in response", str(err.exception))
+
+    def test_012c__fetch_custom_timeout(self):
+        """test _fetch() uses custom timeout"""
+        self.overview = Overview(client=Mock(), timeout=3.5)
+        self.overview.client.get.return_value.status_code = 200
+        self.overview.client.get.return_value.json.return_value = {"foo": "bar"}
+
+        self.assertEqual({"foo": "bar"}, self.overview._fetch("url"))
+        self.overview.client.get.assert_called_once_with(
+            self.overview.base_url.rstrip("/") + "/url", timeout=3.5
+        )
 
     @patch("dkb_robo.portfolio.Overview._sort")
     @patch("dkb_robo.portfolio.Overview._fetch")
@@ -347,6 +405,24 @@ class TestOverview(unittest.TestCase):
 
         self.assertEqual(result, {0: {"amount": 100, "productgroup": "Group1"}})
 
+    @patch("dkb_robo.portfolio.Overview._itemize", autospec=True)
+    @patch("dkb_robo.portfolio.Overview._add_remaining", autospec=True)
+    def test_018a_sort(self, mock_add_remaining, mock_itemize):
+        """test _sort() handles malformed product display payload"""
+        portfolio_dic = {
+            "product_display": {"data": {"invalid": True}},
+            "accounts": {"data": []},
+            "cards": {"data": []},
+            "depots": {"data": []},
+        }
+        mock_itemize.return_value = {}
+        mock_add_remaining.return_value = {"ok": True}
+
+        result = self.overview._sort(portfolio_dic)
+
+        self.assertEqual(result, {"ok": True})
+        mock_add_remaining.assert_called_once_with(self.overview, {}, {}, 0)
+
     def test_019_add_remaining(self):
         """test _add_remaining() formatted"""
         data_dic = {
@@ -380,6 +456,31 @@ class TestOverview(unittest.TestCase):
         expected_result = {0: data_dic["product1"], 1: data_dic["product2"]}
 
         self.assertEqual(result, expected_result)
+
+    @patch("dkb_robo.portfolio.AccountItem", autospec=True)
+    @patch("dkb_robo.portfolio.CardItem", autospec=True)
+    @patch("dkb_robo.portfolio.DepotItem", autospec=True)
+    def test_020a_itemize(self, mock_depot, mock_card, mock_account):
+        """test _itemize() skips malformed group data and items"""
+        portfolio_dic = {
+            "accounts": {"data": {"invalid": True}},
+            "cards": {
+                "data": [
+                    "not-a-dict",
+                    {"id": "card1", "attributes": "invalid"},
+                ]
+            },
+            "depots": {"data": []},
+        }
+
+        mock_card.return_value.format.return_value = "formatted_card"
+
+        result = self.overview._itemize(portfolio_dic)
+
+        self.assertEqual({"card1": "formatted_card"}, result)
+        mock_card.assert_called_once_with(id="card1", type=None)
+        self.assertFalse(mock_account.called)
+        self.assertFalse(mock_depot.called)
 
     @patch("dkb_robo.portfolio.Overview._fetch")
     def test_021_get(self, mock_fetch):
@@ -886,6 +987,12 @@ class TestCardItem(unittest.TestCase):
         self.assertEqual(card.status.final, True)
         self.assertEqual(card.status.limitationsFor, [])
         self.assertEqual(card.type, "creditCard")
+
+    def test_026a_post_init(self):
+        """test post init with missing limit payload"""
+        self.card_data["limit"] = None
+        card = CardItem(**self.card_data)
+        self.assertIsNone(card.limit)
 
     @patch("dkb_robo.portfolio.logger")
     def test_027_format(self, mock_logger):

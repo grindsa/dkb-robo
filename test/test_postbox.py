@@ -57,17 +57,63 @@ class TestPostboxItem(unittest.TestCase):
                 "Accept": "application/vnd.api+json",
                 "Content-type": "application/vnd.api+json",
             },
+            timeout=10.0,
         )
 
     @patch("requests.Session")
     def test_002_mark_read_failed(self, mock_session):
         """Test that the mark_read method raises an exception if the request fails."""
         mock_client = mock_session.return_value
+        mock_client.patch.return_value.status_code = 500
+        mock_client.patch.return_value.text = "server error"
         mock_client.patch.return_value.raise_for_status.side_effect = (
             requests.HTTPError()
         )
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(DKBRoboError):
             self.postbox_item.mark_read(mock_client, True)
+
+    @patch("requests.Session")
+    def test_002a_mark_read_request_failed(self, mock_session):
+        """Test that mark_read wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.patch.side_effect = requests.Timeout("timeout")
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.mark_read(mock_client, True)
+        self.assertIn("postbox mark_read failed", str(err.exception))
+
+    @patch("requests.Session")
+    def test_002b_mark_read_http_error_contains_status_and_response(self, mock_session):
+        """Test that mark_read wraps HTTP errors with status and response snippet."""
+        mock_client = mock_session.return_value
+        mock_client.patch.return_value.status_code = 500
+        mock_client.patch.return_value.text = "server boom"
+        mock_client.patch.return_value.raise_for_status.side_effect = (
+            requests.HTTPError("boom")
+        )
+
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.mark_read(mock_client, True)
+
+        self.assertIn("http status code is 500", str(err.exception))
+        self.assertIn("response=server boom", str(err.exception))
+
+    @patch("requests.Session")
+    def test_002c_mark_read_custom_timeout(self, mock_session):
+        """Test mark_read forwards custom timeout value."""
+        mock_client = mock_session.return_value
+        mock_client.patch.return_value.status_code = 200
+
+        self.postbox_item.mark_read(mock_client, True, timeout=1.5)
+
+        mock_client.patch.assert_called_once_with(
+            self.message.link,
+            json={"data": {"attributes": {"read": True}, "type": "message"}},
+            headers={
+                "Accept": "application/vnd.api+json",
+                "Content-type": "application/vnd.api+json",
+            },
+            timeout=1.5,
+        )
 
     @patch("requests.Session")
     def test_003_download(self, mock_session):
@@ -80,6 +126,53 @@ class TestPostboxItem(unittest.TestCase):
         self.assertTrue(result)
         self.assertTrue(target_file.exists())
         target_file.unlink()  # Remove the downloaded test file
+
+    @patch("requests.Session")
+    def test_003a_download_request_failed(self, mock_session):
+        """Test that download wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = requests.Timeout("timeout")
+        target_file = Path(tempfile.gettempdir()) / "test_download_request_failed.pdf"
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.download(mock_client, target_file, overwrite=True)
+        self.assertIn("postbox download failed", str(err.exception))
+
+    @patch("requests.Session")
+    def test_003b_download_http_error_contains_status_and_response(self, mock_session):
+        """Test that download wraps HTTP errors with status and response snippet."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.status_code = 404
+        mock_client.get.return_value.text = "not found"
+        mock_client.get.return_value.raise_for_status.side_effect = requests.HTTPError(
+            "missing"
+        )
+        target_file = Path(tempfile.gettempdir()) / "test_download_http_error.pdf"
+
+        with self.assertRaises(DKBRoboError) as err:
+            self.postbox_item.download(mock_client, target_file, overwrite=True)
+
+        self.assertIn("http status code is 404", str(err.exception))
+        self.assertIn("response=not found", str(err.exception))
+
+    @patch("requests.Session")
+    def test_003c_download_custom_timeout(self, mock_session):
+        """Test download forwards custom timeout value."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.status_code = 200
+        mock_client.get.return_value.content = b"test content"
+        target_file = Path(tempfile.gettempdir()) / "test_download_custom_timeout.pdf"
+
+        self.postbox_item.download(
+            mock_client, target_file, overwrite=True, timeout=2.5
+        )
+
+        mock_client.get.assert_called_once_with(
+            self.document.link,
+            headers={"Accept": self.document.contentType},
+            timeout=2.5,
+        )
+        if target_file.exists():
+            target_file.unlink()
 
     @patch("requests.Session")
     def test_004_download_existing_file(self, mock_session):
@@ -182,6 +275,18 @@ class TestPostboxItem(unittest.TestCase):
         self.document.metadata = {"dwpDocumentId": "12345", "subject": ""}
         self.assertEqual(self.postbox_item.filename(), "fallback.pdf")
 
+    def test_016a_filename_with_invalid_metadata(self):
+        """Test filename() is behavior-compatible for non-dict metadata."""
+        self.document.fileName = "fallback"
+        self.document.contentType = "application/pdf"
+        self.document.metadata = "invalid"
+        self.assertEqual(self.postbox_item.filename(), "fallback.pdf")
+
+    def test_016b_subject_with_invalid_metadata(self):
+        """Test subject() falls back to message subject for non-dict metadata."""
+        self.document.metadata = "invalid"
+        self.assertEqual(self.postbox_item.subject(), "Test Subject")
+
     def test_017_account_with_depot(self):
         """Test that the account method returns the correct account for a depot document."""
         self.document.metadata = {"depotNumber": "12345"}
@@ -204,6 +309,16 @@ class TestPostboxItem(unittest.TestCase):
         self.document.metadata = {"iban": "DE123"}
         self.assertEqual(self.postbox_item.account(), "DE123")
 
+    def test_020a_account_with_invalid_metadata(self):
+        """Test account() returns None for invalid metadata payloads."""
+        self.document.metadata = None
+        self.assertIsNone(self.postbox_item.account())
+
+    def test_020b_account_with_string_metadata(self):
+        """Test account() returns None for string metadata payloads."""
+        self.document.metadata = "invalid"
+        self.assertIsNone(self.postbox_item.account())
+
     def test_021_date_with_statement_datetime(self):
         """Test that the date method returns the correct date for a document with a statementDateTime field."""
         self.document.metadata = {"statementDateTime": "2023-01-01T12:00:00"}
@@ -218,6 +333,28 @@ class TestPostboxItem(unittest.TestCase):
         """Test that the date method returns the correct date for a document with a creationDate field."""
         self.document.metadata = {"creationDate": "2023-01-01"}
         self.assertEqual(self.postbox_item.date(), "2023-01-01")
+
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_023a_date_with_invalid_metadata(self, mock_today):
+        """Test fallback behavior for invalid metadata structures."""
+        self.document.metadata = "invalid"
+        mock_today.today.return_value = date(2025, 3, 23)
+        self.assertEqual("2025-03-23", self.postbox_item.date())
+
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_023b_date_with_invalid_statement_datetime(self, mock_today):
+        """Test fallback date when statementDateTime is present but invalid."""
+        self.document.metadata = {"statementDateTime": "invalid-datetime"}
+        mock_today.today.return_value = date(2025, 3, 23)
+        self.assertEqual("2025-03-23", self.postbox_item.date())
+
+    @patch("dkb_robo.postbox.datetime.date")
+    def test_023c_date_with_invalid_creation_date(self, mock_today):
+        """Test fallback date when creationDate is present but invalid."""
+        self.document.metadata = {"creationDate": "invalid-date"}
+        mock_today.fromisoformat.side_effect = ValueError("invalid")
+        mock_today.today.return_value = date(2025, 3, 23)
+        self.assertEqual("2025-03-23", self.postbox_item.date())
 
     @patch("dkb_robo.postbox.datetime.date")
     def test_024_date_invalid(self, mock_today):
@@ -336,6 +473,13 @@ class TestPostboxItem(unittest.TestCase):
         )
         target_file.unlink()  # Remove the downloaded test file
 
+    def test_034_check_checsum_alias_calls_check_checksum(self):
+        """Test backward-compatible alias for typo method name."""
+        with patch.object(self.postbox_item, "check_checksum") as mock_check:
+            target_file = Path(tempfile.gettempdir()) / "dummy_alias_target.pdf"
+            self.postbox_item.check_checsum(target_file)
+            mock_check.assert_called_once_with(target_file)
+
 
 class TestPostBox(unittest.TestCase):
     """Tests for the PostBox class."""
@@ -422,6 +566,35 @@ class TestPostBox(unittest.TestCase):
         self.assertEqual(item.category(), "Kreditkartenabrechnungen")
 
     @patch("requests.Session")
+    def test_028_fetch_items_request_error(self, mock_session):
+        """Test fetch_items wraps request exceptions in DKBRoboError."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = requests.Timeout("timeout")
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("postbox fetch failed", str(err.exception))
+
+    @patch("requests.Session")
+    def test_029_fetch_items_invalid_json(self, mock_session):
+        """Test fetch_items raises DKBRoboError for invalid JSON."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.raise_for_status.return_value = None
+        mock_client.get.return_value.json.side_effect = ValueError("invalid")
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("invalid json", str(err.exception))
+
+    @patch("requests.Session")
+    def test_030_fetch_items_invalid_payload_type(self, mock_session):
+        """Test fetch_items raises DKBRoboError for non-dict JSON payloads."""
+        mock_client = mock_session.return_value
+        mock_client.get.return_value.raise_for_status.return_value = None
+        mock_client.get.return_value.json.return_value = []
+        with self.assertRaises(DKBRoboError) as err:
+            PostBox(client=mock_client).fetch_items()
+        self.assertIn("invalid payload type", str(err.exception))
+
+    @patch("requests.Session")
     def test_028_fetch_empty_responses(self, mock_session):
         """Test that the fetch_items method raises an exception if the responses are empty."""
         mock_client = mock_session.return_value
@@ -447,8 +620,105 @@ class TestPostBox(unittest.TestCase):
         """Test that the fetch_items method raises an exception if the request fails."""
         mock_client = mock_session.return_value
         mock_client.get.side_effect = requests.HTTPError()
-        with self.assertRaises(requests.HTTPError):
+        with self.assertRaises(DKBRoboError):
             PostBox(client=mock_client).fetch_items()
+
+    @patch("requests.Session")
+    def test_031_fetch_items_skips_malformed_document_entries(self, mock_session):
+        """Test malformed document entries are ignored while valid entries are returned."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = [
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        {
+                            "id": "valid-id",
+                            "attributes": {"subject": "valid"},
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/messages/valid-id"
+                            },
+                        }
+                    ]
+                },
+            ),
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        "bad-entry",
+                        {"id": "missing-links", "attributes": {}},
+                        {
+                            "id": "valid-id",
+                            "attributes": {
+                                "fileName": "x",
+                                "contentType": "application/pdf",
+                            },
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/documents/valid-id"
+                            },
+                        },
+                    ]
+                },
+            ),
+        ]
+
+        items = PostBox(client=mock_client).fetch_items()
+        self.assertEqual(["valid-id"], list(items.keys()))
+
+    @patch("requests.Session")
+    def test_032_fetch_items_skips_malformed_message_entries(self, mock_session):
+        """Test malformed message entries are ignored while valid message is merged."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = [
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        "bad-entry",
+                        {"id": "valid-id", "attributes": {"subject": "ok"}},
+                        {
+                            "id": "valid-id",
+                            "attributes": {"subject": "merged"},
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/messages/valid-id"
+                            },
+                        },
+                    ]
+                },
+            ),
+            MagicMock(
+                status_code=200,
+                json=lambda: {
+                    "data": [
+                        {
+                            "id": "valid-id",
+                            "attributes": {
+                                "fileName": "doc",
+                                "contentType": "application/pdf",
+                            },
+                            "links": {
+                                "self": "https://api.dkb.de/documentstorage/documents/valid-id"
+                            },
+                        }
+                    ]
+                },
+            ),
+        ]
+
+        items = PostBox(client=mock_client).fetch_items()
+        self.assertEqual(items["valid-id"].message.subject, "merged")
+
+    @patch("requests.Session")
+    def test_033_fetch_items_with_non_list_data(self, mock_session):
+        """Test non-list payload data fields are handled as empty lists."""
+        mock_client = mock_session.return_value
+        mock_client.get.side_effect = [
+            MagicMock(status_code=200, json=lambda: {"data": {"unexpected": 1}}),
+            MagicMock(status_code=200, json=lambda: {"data": {"unexpected": 2}}),
+        ]
+        items = PostBox(client=mock_client).fetch_items()
+        self.assertEqual(items, {})
 
 
 if __name__ == "__main__":
