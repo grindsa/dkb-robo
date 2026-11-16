@@ -1,7 +1,9 @@
 """Module for handling DKB portfolio data."""
 
+from __future__ import annotations
+
 # pylint: disable=c0415, r0913, c0103
-from typing import Any, Dict, List, Tuple, Optional, Union, Type
+from typing import Any, Dict, List, Tuple, Optional, Type
 from dataclasses import dataclass, asdict
 import logging
 from urllib.parse import urljoin
@@ -290,25 +292,25 @@ class Overview:
 class AccountItem:
     """Account dataclass"""
 
-    availableBalance: Optional[Union[Dict, str]] = None
-    balance: Optional[Union[Dict, str]] = None
+    availableBalance: Dict | str | None = None
+    balance: Dict | str | None = None
     currencyCode: Optional[str] = None
     displayName: Optional[str] = None
     holderName: Optional[str] = None
     id: Optional[str] = None
     iban: Optional[str] = None
-    interestRate: Optional[Union[Dict, str]] = None
+    interestRate: Dict | str | None = None
     interests: Optional[List] = None
     lastAccountStatementDate: Optional[str] = None
-    nearTimeBalance: Optional[Union[Dict, str]] = None
+    nearTimeBalance: Dict | str | None = None
     openingDate: Optional[str] = None
-    overdraftLimit: Optional[Union[Dict, str]] = None
+    overdraftLimit: Dict | str | None = None
     permissions: Optional[List] = None
     product: Optional[Dict] = None
     productGroup: Optional[str] = None
     state: Optional[str] = None
     type: Optional[str] = None
-    unauthorizedOverdraftInterestRate: Optional[Union[Dict, str]] = None
+    unauthorizedOverdraftInterestRate: Dict | str | None = None
     updatedAt: Optional[str] = None
     transactions: Optional[str] = None
 
@@ -343,7 +345,7 @@ class AccountItem:
         class DetailsItem:
             """details class"""
 
-            condition: Optional[Union[Dict, str]] = None
+            condition: Dict | str | None = None
             interestRate: Optional[float] = None
 
             def __post_init__(self):
@@ -408,10 +410,10 @@ class CardItem:
     """Card class"""
 
     activationDate: Optional[str] = None
-    authorizedAmount: Optional[Union[Dict, str]] = None
-    availableLimit: Optional[Union[Dict, str]] = None
-    balance: Optional[Union[Dict, str]] = None
-    billingDetails: Optional[Union[Dict, str]] = None
+    authorizedAmount: Dict | str | None = None
+    availableLimit: Dict | str | None = None
+    balance: Dict | str | None = None
+    billingDetails: Dict | str | None = None
     blockedSince: Optional[str] = None
     creationDate: Optional[str] = None
     engravedLine1: Optional[str] = None
@@ -419,16 +421,16 @@ class CardItem:
     expiryDate: Optional[str] = None
     failedPinAttempts: Optional[int] = None
     followUpCardId: Optional[str] = None
-    holder: Optional[Union[Dict, str]] = None
+    holder: Dict | str | None = None
     id: Optional[str] = None
-    limit: Optional[Union[Dict, str]] = None
+    limit: Dict | str | None = None
     maskedPan: Optional[str] = None
     network: Optional[str] = None
-    owner: Optional[Union[Dict, str]] = None
-    product: Optional[Union[Dict, str]] = None
+    owner: Dict | str | None = None
+    product: Dict | str | None = None
     referenceAccount: Optional[str] = None
     state: Optional[str] = None
-    status: Optional[Union[Dict, str]] = None
+    status: Dict | str | None = None
     type: Optional[str] = None
     transactions: Optional[str] = None
 
@@ -576,9 +578,9 @@ class CardItem:
 class DepotItem:
     """Depot class"""
 
-    brokerageAccountPerformance: Optional[Union[Dict, str]] = None
+    brokerageAccountPerformance: Dict | str | None = None
     depositAccountId: Optional[str] = None
-    holder: Optional[Union[Dict, str]] = None
+    holder: Dict | str | None = None
     holderName: Optional[str] = None
     id: Optional[str] = None
     referenceAccounts: Optional[List] = None
@@ -609,9 +611,9 @@ class DepotItem:
     class BrokerageAccountPerformance:
         """BrokerageAccountPerformance class"""
 
-        currentValue: Optional[Union[Dict, str]] = None
-        averagePrice: Optional[Union[Dict, str]] = None
-        overallAbsolute: Optional[Union[Dict, str]] = None
+        currentValue: Dict | str | None = None
+        averagePrice: Dict | str | None = None
+        overallAbsolute: Dict | str | None = None
         overallRelative: Optional[str] = None
         isOutdated: bool = False
 

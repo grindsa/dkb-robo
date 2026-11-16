@@ -1,11 +1,13 @@
 """Module for handling the DKB postbox."""
 
+from __future__ import annotations
+
 import datetime
 import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 import requests
 from dkb_robo.utilities import (
     get_valid_filename,
@@ -29,7 +31,7 @@ class Document:
     contentType: Optional[str] = None
     checksum: Optional[str] = None
     fileName: Optional[str] = None
-    metadata: Optional[Union[Dict, str]] = None
+    metadata: Dict | str | None = None
     owner: Optional[str] = None
     link: Optional[str] = None
     rcode: Optional[str] = None
@@ -106,7 +108,7 @@ class PostboxItem:
             filename = f"{filename}.pdf"
         return filename or ""
 
-    def _parse_metadata_date(self) -> Optional[Union[datetime.date, datetime.datetime]]:
+    def _parse_metadata_date(self) -> datetime.date | datetime.datetime | None:
         """Parse date from known metadata fields."""
         if self._has_metadata_key("statementDate"):
             try:

@@ -1,8 +1,10 @@
 """Module for handling dkb transactions"""
 
+from __future__ import annotations
+
 # pylint: disable=c0415, r0913, c0103
 import datetime
-from typing import Any, Dict, List, Optional, Union, Type
+from typing import Any, Dict, List, Optional, Type
 from dataclasses import dataclass, field
 import logging
 import requests
@@ -345,8 +347,8 @@ class AccountTransactionItem:
     purposeCode: Optional[str] = None
     businessTransactionCode: Optional[str] = None
     amount: Optional[Dict] = None
-    creditor: Optional[Union[Dict, str]] = None
-    debtor: Optional[Union[Dict, str]] = None
+    creditor: Dict | str | None = None
+    debtor: Dict | str | None = None
     isRevocable: bool = False
 
     def __post_init__(self):
@@ -514,13 +516,13 @@ class DepotTransactionItem:
     """DepotTransaction class"""
 
     id: Optional[str] = None
-    availableQuantity: Optional[Union[Dict, str]] = None
-    custody: Optional[Union[Dict, str]] = None
-    instrument: Optional[Union[Dict, str]] = None
+    availableQuantity: Dict | str | None = None
+    custody: Dict | str | None = None
+    instrument: Dict | str | None = None
     lastOrderDate: Optional[str] = None
-    performance: Optional[Union[Dict, str]] = None
-    quantity: Optional[Union[Dict, str]] = None
-    quote: Optional[Union[Dict, str]] = None
+    performance: Dict | str | None = None
+    quantity: Dict | str | None = None
+    quote: Dict | str | None = None
 
     def __post_init__(self):
         self.availableQuantity = ulal(self.Quantity, self.availableQuantity)
@@ -535,9 +537,9 @@ class DepotTransactionItem:
     class Custody:
         """dataclass for custody"""
 
-        block: Optional[Union[Dict, str]] = None
+        block: Dict | str | None = None
         certificateType: Optional[str] = None
-        characteristic: Optional[Union[Dict, str]] = None
+        characteristic: Dict | str | None = None
         custodyType: Optional[str] = None
         custodyTypeId: Optional[str] = None
 
@@ -566,7 +568,7 @@ class DepotTransactionItem:
 
         id: Optional[str] = None
         identifiers: Optional[List] = field(default_factory=list)
-        name: Optional[Union[Dict, str]] = None
+        name: Dict | str | None = None
         unit: Optional[str] = None
 
         def __post_init__(self):
@@ -599,7 +601,7 @@ class DepotTransactionItem:
     class Performance:
         """dataclass for performance"""
 
-        currentValue: Optional[Union[Dict, str]] = None
+        currentValue: Dict | str | None = None
         isOutdated: Optional[bool] = False
 
         def __post_init__(self):
@@ -626,7 +628,7 @@ class DepotTransactionItem:
 
         id: Optional[str] = None
         market: Optional[str] = None
-        price: Optional[Union[Dict, str]] = None
+        price: Dict | str | None = None
         timestamp: Optional[str] = None
 
         def __post_init__(self):

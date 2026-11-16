@@ -1,11 +1,13 @@
 """miscellaneous functions"""
 
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 import random
 from string import digits, ascii_letters
-from typing import Any, Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Tuple, Optional
 from datetime import datetime, timezone, date
 from dataclasses import dataclass, fields, asdict, is_dataclass
 import time
@@ -221,7 +223,7 @@ def get_valid_filename(name):
     return s + p.suffix
 
 
-def string2float(value: Union[str, float, int]) -> Union[float, str, int]:
+def string2float(value: str | float | int) -> float | str | int:
     """convert string to float value"""
     try:
         result = float(value.replace(".", "").replace(",", "."))
