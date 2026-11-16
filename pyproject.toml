@@ -3,7 +3,7 @@ authors = [{ name = "grindsa", email = "grindelsack@gmail.com" }]
 name = "dkb_robo"
 description = "Download transactions from the website of Deutsche Kreditbak AG"
 keywords = ["Deutsche Kreditbank", "DKB"]
-version = "0.31.2"
+version = "0.32"
 readme = "README.md"
 classifiers = [
     # Keep in sync with the Python version matrix in test_lint.yaml GitHub workflow.
@@ -45,6 +45,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch]
 build.targets.sdist.only-packages = true
+
+[tool.black]
+# Match requires-python; avoids Black defaulting to py315 on a 3.14 hook env.
+target-version = ["py38"]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
 
 [tool.pytest.ini_options]
 addopts = [

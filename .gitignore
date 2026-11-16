@@ -118,3 +118,5 @@ connectedMode.json
 og_weekly.py
 downloaded_files/*
 documents/*
+.cursor/*
+.cursorrules

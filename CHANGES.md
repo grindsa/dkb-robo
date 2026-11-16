@@ -5,10 +5,27 @@ This is a high-level summary of the most important changes. For a full list of c
 
 ## Unreleased
 
+## Changes in 0.32
+
+**Features**:
+
+- `curl-cffi` as alternate/default HTTP session backend (`session_backend`)
+- `headless` and `xvfb` options for captcha browser automation
+- `login_via_browser` option
+- `http1_only` option for `curl-cffi` sessions
+- Interactive CLI mode, MFA device selection (incl. cancel), proxy and password-env support
+- CLI option to fetch exemption orders
+
 **Bugfixes**:
 
-- Forward new `headless` option from CLI and DKBRobo into captcha token solving
-- Captcha flow: dismiss Usercentrics via `denyAllConsents()` + `closeCMP()` (and remove leftover overlay), then OS-level-click the Friendly Captcha checkbox
+- Captcha redeem-token flow: dismiss Usercentrics via `denyAllConsents()` + `closeCMP()`, then OS-level-click the Friendly Captcha checkbox
+- Forward `headless` from CLI / `DKBRobo` into captcha token solving
+- Robustness improvements for portfolio, transactions, standing orders, exemption orders, and utilities
+- Remove legacy HTML scraping mode and unused BeautifulSoup / MechanicalSoup imports
+
+**Documentation**:
+
+- Unofficial OpenAPI description of DKB REST endpoints used by dkb-robo (`doc/openapi.yaml`)
 
 ## Changes in 0.31.1
 
