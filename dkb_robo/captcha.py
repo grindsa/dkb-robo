@@ -27,18 +27,18 @@ class _UcDebugPortGuard:
     """
 
     def __enter__(self):
-        self._original_get = requests.Session.get
+        self.original_get = requests.Session.get
 
         def _get(session, url, *args, **kwargs):
             if isinstance(url, str) and url.startswith("http://127.0.0.1:9222"):
                 return type("_Probe", (), {"status_code": 200})()
-            return self._original_get(session, url, *args, **kwargs)
+            return self.original_get(session, url, *args, **kwargs)
 
         requests.Session.get = _get
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        requests.Session.get = self._original_get
+        requests.Session.get = self.original_get
         return False
 
 

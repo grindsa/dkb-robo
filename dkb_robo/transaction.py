@@ -415,15 +415,17 @@ class AccountTransactionItem:
 
     def _incoming_peer(self) -> Dict[str, Optional[str]]:
         """Peer details for incoming transactions (debtor side)."""
+        if self.debtor and self.debtor.intermediaryName:
+            peer = self.debtor.intermediaryName
+        elif self.debtor:
+            peer = self.debtor.name
+        else:
+            peer = None
         return {
             "peeraccount": self.debtor.iban if self.debtor else None,
             "peerbic": self.debtor.bic if self.debtor else None,
             "peerid": self.debtor.id if self.debtor else None,
-            "peer": (
-                self.debtor.intermediaryName
-                if self.debtor and self.debtor.intermediaryName
-                else (self.debtor.name if self.debtor else None)
-            ),
+            "peer": peer,
         }
 
     def _outgoing_peer(self, reason_for_payment: str) -> Dict[str, Optional[str]]:
@@ -433,15 +435,17 @@ class AccountTransactionItem:
             and self.creditor.intermediaryName
             and "visa debitkartenumsatz" not in reason_for_payment.lower()
         )
+        if use_intermediary:
+            peer = self.creditor.intermediaryName
+        elif self.creditor:
+            peer = self.creditor.name
+        else:
+            peer = None
         return {
             "peeraccount": self.creditor.iban if self.creditor else None,
             "peerbic": self.creditor.bic if self.creditor else None,
             "peerid": self.creditor.id if self.creditor else None,
-            "peer": (
-                self.creditor.intermediaryName
-                if use_intermediary
-                else (self.creditor.name if self.creditor else None)
-            ),
+            "peer": peer,
         }
 
     def format(self):

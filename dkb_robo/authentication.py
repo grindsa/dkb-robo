@@ -104,15 +104,19 @@ class Authentication:
         http1_only: bool = False,
         request_timeout: int = 15,
         login_via_browser: bool = False,
-        input_callback: Optional[Callable[[str], str]] = None,
-        output_callback: Optional[Callable[[str], None]] = None,
+        **callbacks,
     ):
         """Constructor"""
         self.account_dic = {}
         self.client = None
         self.login_via_browser = login_via_browser
-        self.input_callback = input_callback
-        self.output_callback = output_callback
+        self.input_callback = callbacks.pop("input_callback", None)
+        self.output_callback = callbacks.pop("output_callback", None)
+        if callbacks:
+            unexpected = ", ".join(sorted(callbacks))
+            raise TypeError(
+                f"Authentication.__init__() got unexpected keyword argument(s): {unexpected}"
+            )
         self.chip_tan = chip_tan
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password
@@ -295,13 +299,10 @@ class Authentication:
     def _mfa_get(self) -> MFAMethodsResponse:
         """get mfa methods"""
         logger.debug("Authentication._mfa_get()\n")
-        mfa_dic: MFAMethodsResponse = {"data": []}
 
         # check for access_token and get mfa_methods
         if "access_token" in self.token_dic and "mfa_id" in self.token_dic:
             response = self.client.get(
-                # self.base_url
-                # + f"/mfa/mfa/{self.token_dic['mfa_id']}/methods?filter%5BmethodType%5D={self.mfa_method}"
                 self.base_url
                 + f"/mfa/mfa/methods?filter%5BmethodType%5D={self.mfa_method}",
                 timeout=self.request_timeout,
@@ -653,8 +654,6 @@ class Authentication:
     def _rest_login(self) -> None:
         """login into DKB banking area via REST backend"""
         logger.debug("Authentication.login()\n")
-
-        mfa_dic: MFAMethodsResponse = {"data": []}
 
         # fetch captcha token required since 2025-11-01
         captcha_kwargs = {

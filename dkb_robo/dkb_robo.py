@@ -33,14 +33,21 @@ class DKBRobo(object):
         headless=False,
         xvfb=False,
         session_backend="curl-cffi",
-        http1_only=False,
-        request_timeout=15,
         proxies=None,
-        login_via_browser=False,
+        **options,
     ):
         self.last_login = None
         self.account_dic = {}
         self.wrapper = None
+
+        http1_only = options.pop("http1_only", False)
+        request_timeout = options.pop("request_timeout", 15)
+        login_via_browser = options.pop("login_via_browser", False)
+        if options:
+            unexpected = ", ".join(sorted(options))
+            raise TypeError(
+                f"DKBRobo.__init__() got unexpected keyword argument(s): {unexpected}"
+            )
 
         self.dkb_user = dkb_user
         self.dkb_password = dkb_password

@@ -512,11 +512,11 @@ class TestUcDebugPortGuard(unittest.TestCase):
         with _UcDebugPortGuard() as guard:
             probe = session.get("http://127.0.0.1:9222/json/version")
             self.assertEqual(200, probe.status_code)
-            saved_original = guard._original_get
-            guard._original_get = passthrough
+            saved_original = guard.original_get
+            guard.original_get = passthrough
             self.assertEqual("passthrough", session.get("http://example.com/other"))
             passthrough.assert_called()
-            guard._original_get = saved_original
+            guard.original_get = saved_original
 
         self.assertIs(original_get, requests.Session.get)
 

@@ -38,9 +38,7 @@ jobs:
           flags: unittests
 
       - name: run coverage
-        run: |
-          pip install pytest-cov
-          pytest --cov=./ --cov-report=xml
+        run: pytest --cov=./ --cov-report=xml
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0

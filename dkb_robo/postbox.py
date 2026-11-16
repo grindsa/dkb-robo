@@ -140,7 +140,8 @@ class PostboxItem:
             content = file.read()
 
         if len(checksum) == 32:
-            return hashlib.md5(content).hexdigest()
+            # Integrity check against DKB-provided digests only (not security).
+            return hashlib.md5(content).hexdigest()  # NOSONAR
         if len(checksum) == 128:
             return hashlib.sha512(content).hexdigest()
         raise DKBRoboError(f"Unsupported checksum length: {len(checksum)}, {checksum}")
